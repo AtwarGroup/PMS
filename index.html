@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة أداء مشرف المشتريات والمخزون</title>
+    <title>البوابة الرئيسية | نظام إدارة الأداء المؤسسي</title>
     
-    <!-- خط تجوال ليعطي مظهراً احترافياً للغة العربية -->
+    <!-- خط تجوال -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
@@ -21,747 +21,445 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- ExcelJS & FileSaver -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
     <style>
         body { font-family: 'Tajawal', sans-serif; }
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                background-color: white !important;
-            }
-            @page {
-                size: A4 landscape;
-                margin: 1.5cm;
-            }
-            ::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .hero-pattern {
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 100% 0%, #0369a1 0%, transparent 50%), 
+                              radial-gradient(circle at 0% 100%, #1e40af 0%, transparent 50%);
         }
     </style>
 </head>
-<body class="bg-[#F8FAFC] print:bg-white">
+<body class="bg-[#F8FAFC]">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const App = () => {
-          const [activeTab, setActiveTab] = useState('dashboard');
-          const [selectedReport, setSelectedReport] = useState(null);
-          const [isExporting, setIsExporting] = useState(false);
-          const reportViewRef = useRef(null);
-
-          useEffect(() => {
-            if (selectedReport && activeTab === 'reports' && reportViewRef.current) {
-              setTimeout(() => {
-                const offset = 120;
-                const bodyRect = document.body.getBoundingClientRect().top;
-                const elementRect = reportViewRef.current.getBoundingClientRect().top;
-                const elementPosition = elementRect - bodyRect;
-                
-                window.scrollTo({
-                  top: elementPosition - offset,
-                  behavior: "smooth"
-                });
-              }, 100);
-            }
-          }, [selectedReport, activeTab]);
-
-          const handleExportToExcel = async (report) => {
-            if (!report) return;
-            setIsExporting(true);
-            
-            try {
-              const workbook = new ExcelJS.Workbook();
-              workbook.creator = "إدارة الإمداد والتموين";
-              
-              const worksheet = workbook.addWorksheet(report.name, {
-                  views: [{ rightToLeft: true }]
-              });
-
-              const columns = [{ header: '#', key: 'id', width: 8 }];
-              report.fields.forEach((field, index) => {
-                  columns.push({ header: field, key: `col_${index}`, width: 28 });
-              });
-              worksheet.columns = columns;
-
-              const headerRow = worksheet.getRow(1);
-              headerRow.height = 35;
-              headerRow.eachCell((cell) => {
-                  cell.fill = {
-                      type: 'pattern',
-                      pattern: 'solid',
-                      fgColor: { argb: 'FFE0F2FE' }
-                  };
-                  cell.font = {
-                      name: 'Arial',
-                      size: 11,
-                      bold: true,
-                      color: { argb: 'FF0369A1' }
-                  };
-                  cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                  cell.border = {
-                      top: { style: 'thin', color: { argb: 'FFBAE6FD' } },
-                      left: { style: 'thin', color: { argb: 'FFBAE6FD' } },
-                      bottom: { style: 'thin', color: { argb: 'FFBAE6FD' } },
-                      right: { style: 'thin', color: { argb: 'FFBAE6FD' } }
-                  };
-              });
-
-              [1, 2, 3, 4, 5].forEach(num => {
-                  const rowData = { id: num };
-                  report.fields.forEach((_, index) => {
-                      rowData[`col_${index}`] = '-';
-                  });
-                  const row = worksheet.addRow(rowData);
-                  row.height = 28;
-                  
-                  row.eachCell((cell, colNumber) => {
-                      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                      if (colNumber === 1) {
-                        cell.font = { bold: true, color: { argb: 'FF64748B' }};
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' }};
-                      }
-                      cell.border = {
-                          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-                          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
-                      };
-                  });
-              });
-
-              const buffer = await workbook.xlsx.writeBuffer();
-              const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-              saveAs(blob, `${report.name}.xlsx`);
-              
-            } catch (error) {
-              console.error("خطأ أثناء التصدير: ", error);
-              alert("حدث خطأ أثناء تصدير الملف.");
-            } finally {
-              setIsExporting(false);
-            }
-          };
-
-          const Icon = ({ name, className }) => {
+        const Icon = ({ name, className }) => {
             const spanRef = useRef(null);
             useEffect(() => {
-              if (spanRef.current) {
-                spanRef.current.innerHTML = `<i data-lucide="${name}" class="${className || ''}"></i>`;
-                lucide.createIcons({ root: spanRef.current });
-              }
+                if (spanRef.current) {
+                    spanRef.current.innerHTML = `<i data-lucide="${name}" class="${className || ''}"></i>`;
+                    lucide.createIcons({ root: spanRef.current });
+                }
             }, [name, className]);
             return <span ref={spanRef} style={{ display: 'contents' }}></span>;
-          };
+        };
 
-          const employeeName = "المسؤول المعين"; 
-          const jobTitle = "مشرف المشتريات والمخزون";
-          
-          const hierarchyInfo = {
-            dependency: "إدارة الإمداد والتموين",
-            supervisor: "مدير إدارة الإمداد والتموين"
-          };
-
-          const jobDescriptionExact = "الإشراف على عمليات التخطيط والشراء وإدارة المخزون بما يضمن توفير الأصناف بالكمية والوقت المناسب، وتحقيق أفضل استثمار لرأس المال العامل، وتطوير الموردين، وتحسين كفاءة سلسلة الإمداد، بما يدعم تحقيق الأهداف التشغيلية والمالية للمؤسسة.";
-
-          const jobData = [
+        // الإدارات والوظائف مع روابطها
+        const departments = [
             {
-              id: 'daily',
-              frequency: 'متابعة جارية',
-              tag: 'استمرارية',
-              duty: 'متابعة توفر الأصناف، معالجة طلبات الشراء العاجلة والحرجة، متابعة أوامر الشراء المفتوحة والمتأخرة مع الموردين، والتحقق من سلامة تسجيل الحركات المخزنية على نظام ERP.',
-              reports: ['تقرير الأصناف الحرجة والمنقطعة', 'تقرير أوامر الشراء المفتوحة والمتأخرة'],
-              kpis: ['معدل توفر الأصناف (Target: 98%)، متابعة وإغلاق أوامر الشراء المتأخرة بدون تعطيل للعمليات التشغيلية.'],
-              color: 'sky'
+                id: 'sales',
+                name: 'إدارة العمليات والمبيعات',
+                icon: 'bar-chart-3',
+                color: 'emerald',
+                gradient: 'from-emerald-500 to-teal-600',
+                desc: 'تحقيق الأهداف البيعية، إدارة الفروع، وتحسين تجربة العملاء.',
+                roles: [
+                    { title: 'مدير المبيعات', url: '#' },
+                    { title: 'مشرف العمليات', url: '#' },
+                    { title: 'مدير منطقة', url: '#' },
+                    { title: 'مشرف معرض', url: '#' },
+                    { title: 'ممثل مبيعات', url: '#' }
+                ]
             },
             {
-              id: 'weekly',
-              frequency: 'جدولة وتنسيق',
-              tag: 'رقابة',
-              duty: 'متابعة مستويات المخزون والحد الأدنى والحد الأعلى ونقاط إعادة الطلب (ROP)، التنسيق مع المستودعات لمطابقة الأرصدة، ومتابعة جدول شحنات التوريد المحلية والدولية.',
-              reports: ['موقف شحنات التوريد والإنذار المبكر', 'تقرير حركات ومطابقات المستودعات'],
-              kpis: ['دقة بيانات المخزون الدفتري مقارنة بالفعلي، الالتزام بمواعيد التوريد وشروط الاتفاقيات.'],
-              color: 'blue'
+                id: 'finance',
+                name: 'الإدارة المالية',
+                icon: 'calculator',
+                color: 'yellow',
+                gradient: 'from-yellow-500 to-orange-500',
+                desc: 'الرقابة المالية، الحسابات العامة، وإعداد الميزانيات والتقارير.',
+                roles: [
+                    { title: 'المدير المالي', url: '#' },
+                    { title: 'رئيس حسابات', url: '#' },
+                    { title: 'محاسب عام', url: '#' },
+                    { title: 'أخصائي تحصيل', url: '#' },
+                    { title: 'مراجع مالي داخلي', url: '#' }
+                ]
             },
             {
-              id: 'monthly',
-              frequency: 'إغلاق ومطابقة',
-              tag: 'تحليل',
-              duty: 'تحليل معدل دوران المخزون، حصر الأصناف بطيئة الحركة والرواكد وإعداد خطط المعالجة، تقييم أداء الموردين الشهري، ومراجعة إجمالي المشتريات والوفر المالي.',
-              reports: ['تقرير المشتريات الشهري', 'تقرير دوران المخزون', 'تقرير الأصناف بطيئة الحركة والرواكد', 'تقرير أداء الموردين'],
-              kpis: ['تحقيق مستهدف دوران المخزون، نسبة تقييم الموردين (≥90%)، وإنجاز خطة تقليل الرواكد.'],
-              color: 'indigo'
+                id: 'bd',
+                name: 'إدارة تطوير الأعمال',
+                icon: 'trending-up',
+                color: 'sky',
+                gradient: 'from-sky-500 to-blue-600',
+                desc: 'تطوير استراتيجيات النمو، تحليل السوق، وقيادة المبادرات التوسعية.',
+                roles: [
+                    { title: 'مدير تطوير الأعمال', url: '#' },
+                    { title: 'أخصائي تحليل بيانات', url: '#' },
+                    { title: 'مدير مشاريع', url: '#' },
+                    { title: 'باحث تسويقي', url: '#' }
+                ]
             },
             {
-              id: 'yearly',
-              frequency: 'تقييم سنوي',
-              tag: 'تطوير',
-              duty: 'إعداد وتحديث خطة المشتريات السنوية، إعادة قياس واعتماد الموردين، تطبيق مبادرات التحسين المستمر وأتمتة العمليات داخل ERP، وتطوير فريق العمل.',
-              reports: ['خطة المشتريات السنوية والتقييم السنوي للموردين', 'تقرير مبادرات أتمتة وتحسين سلاسل الإمداد'],
-              kpis: ['تنفيذ مبادرات التحسين المعتمدة (≥90%)، خفض تكلفة الشراء والتفاوض، وتطوير الفريق بنسبة ≥90%.'],
-              color: 'emerald'
+                id: 'hr',
+                name: 'إدارة الموارد البشرية',
+                icon: 'users',
+                color: 'pink',
+                gradient: 'from-pink-500 to-rose-600',
+                desc: 'استقطاب الكفاءات، إدارة الأداء، وتطوير بيئة العمل والموظفين.',
+                roles: [
+                    { title: 'مدير الموارد البشرية', url: '#' },
+                    { title: 'أخصائي توظيف', url: '#' },
+                    { title: 'مسؤول شؤون الموظفين', url: '#' },
+                    { title: 'أخصائي تدريب وتطوير', url: '#' },
+                    { title: 'أخصائي رواتب', url: '#' }
+                ]
+            },
+            {
+                id: 'supply',
+                name: 'إدارة الإمداد والتموين',
+                icon: 'package',
+                color: 'indigo',
+                gradient: 'from-indigo-500 to-violet-600',
+                desc: 'إدارة المشتريات، العقود، وضمان تدفق الإمدادات بأفضل تكلفة.',
+                roles: [
+                    { title: 'مدير الإمداد والتموين', url: '#' },
+                    { title: 'مشرف المشتريات والمخزون', url: 'مشرف_المشتريات_والمخزون_أطوار_النهائي_2.html' },
+                    { title: 'أخصائي مشتريات محلية', url: '#' },
+                    { title: 'أخصائي مشتريات دولية', url: '#' },
+                    { title: 'منسق موردين', url: '#' }
+                ]
+            },
+            {
+                id: 'logistics',
+                name: 'إدارة المستودعات واللوجستيك',
+                icon: 'truck',
+                color: 'orange',
+                gradient: 'from-orange-500 to-amber-600',
+                desc: 'إدارة المخزون الفعلي، حركة السيارات، وعمليات الشحن والتفريغ.',
+                roles: [
+                    { title: 'مدير المستودعات', url: '#' },
+                    { title: 'مشرف حركة ونقل', url: '#' },
+                    { title: 'أمين مستودع', url: '#' },
+                    { title: 'مراقب مخزون', url: '#' },
+                    { title: 'منسق شحنات', url: '#' }
+                ]
+            },
+            {
+                id: 'it',
+                name: 'إدارة تقنية المعلومات',
+                icon: 'monitor-smartphone',
+                color: 'slate',
+                gradient: 'from-slate-600 to-gray-700',
+                desc: 'إدارة البنية التحتية، الأنظمة، والدعم الفني التقني.',
+                roles: [
+                    { title: 'مدير تقنية المعلومات', url: '#' },
+                    { title: 'مسؤول نظام ERP', url: '#' },
+                    { title: 'أخصائي دعم فني', url: '#' },
+                    { title: 'مهندس شبكات', url: '#' },
+                    { title: 'مطور برمجيات', url: '#' }
+                ]
             }
-          ];
+        ];
 
-          const reportModels = {
-            'daily': [
-              { name: 'تقرير الأصناف الحرجة والمنقطعة', fields: ['رمز الصنف', 'اسم الصنف', 'الفرع/المستودع', 'الرصيد الفعلي', 'حد الأمان (Safety Stock)', 'الكمية المطلوبة', 'حالة الطلب'] },
-              { name: 'تقرير أوامر الشراء المفتوحة والمتأخرة', fields: ['رقم أمر الشراء (PO)', 'اسم المورد', 'تاريخ الأمر', 'تاريخ الاستلام المتوقع', 'أيام التأخير', 'سبب التأخير', 'الإجراء التصحيحي'] }
-            ],
-            'weekly': [
-              { name: 'موقف شحنات التوريد والإنذار المبكر', fields: ['رقم الشحنة/الفاتورة', 'المورد', 'طريقة الشحن (محلي/دولي)', 'تاريخ الشحن', 'تاريخ الوصول المتوقع', 'نسبة الإنجاز', 'ملاحظات'] },
-              { name: 'تقرير حركات ومطابقات المستودعات', fields: ['المستودع', 'إجمالي التحويلات الواردة', 'التحويلات الصادرة', 'فروقات التسوية', 'موافقة المشرف'] }
-            ],
-            'monthly': [
-              { name: 'تقرير المشتريات الشهري', fields: ['الفئة/التصنيف', 'إجمالي قيمة المشتريات', 'المشتريات المحلية', 'المشتريات الدولية', 'نسبة التغير عن الشهر السابق', 'نسبة الوفر المحقق'] },
-              { name: 'تقرير دوران المخزون', fields: ['كود المجموعة', 'اسم الفئة', 'متوسط قيمة المخزون', 'تكلفة المبيعات (COGS)', 'معدل الدوران (مرّة)', 'التقييم التشغيلي'] },
-              { name: 'تقرير الأصناف بطيئة الحركة والرواكد', fields: ['رمز الصنف', 'وصف الصنف', 'تاريخ آخر حركة', 'الكمية الراكدة', 'إجمالي القيمة المادية', 'مقترح المعالجة (تخفيض/إعادة تصدير)'] },
-              { name: 'تقرير أداء الموردين', fields: ['اسم المورد', 'مجموع أوامر الشراء', 'الالتزام بالمواعيد %', 'مطابقة الجودة %', 'الالتزام بالسعر %', 'التقييم الإجمالي %'] }
-            ],
-            'yearly': [
-              { name: 'خطة المشتريات السنوية والتقييم السنوي للموردين', fields: ['البند/الفئة', 'الميزانية المعتمدة', 'التوريد المتوقع', 'الموردين المعتمدين', 'مستوى المخاطر', 'استراتيجية التوريد'] },
-              { name: 'تقرير مبادرات أتمتة وتحسين سلاسل الإمداد', fields: ['اسم المبادرة', 'الوصف', 'نسبة التطبيق بـ ERP', 'الأثر المالي/التشغيلي', 'حالة الإنجاز'] }
-            ]
-          };
+        const App = () => {
+            const [currentView, setCurrentView] = useState('home');
+            const [activeDept, setActiveDept] = useState(null);
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-          const scorecardKPIs = [
-            {
-              id: 1,
-              title: "توفر الأصناف ومواجهة الطلب (OTIF)",
-              unit: "نسبة مئوية %",
-              plan: "متابعة النواقص يوماً بيوم وضمان بقاء جميع الأصناف الأساسية فوق حد الأمان",
-              scale: ["< 85%", "85% - 90%", "91% - 95% (المستهدف)", "96% - 97%", "98% - 100%"],
-              weight: "25%",
-              targetVal: "98%",
-              source: "تقرير الأصناف الحرجة - نظام ERP",
-              dept: "إدارة الإمداد والتموين"
-            },
-            {
-              id: 2,
-              title: "قياس وتقييم أداء الموردين",
-              unit: "مؤشر مئوي %",
-              plan: "متابعة التزام الموردين بالمواعيد والجودة والكميات وشروط الدفع والتسليم",
-              scale: ["< 70%", "70% - 79%", "80% - 89%", "90% - 94% (المستهدف)", "95% - 100%"],
-              weight: "20%",
-              targetVal: "≥ 90%",
-              source: "نموذج تقييم الموردين المعتمد",
-              dept: "المشتريات وسلاسل الإمداد"
-            },
-            {
-              id: 3,
-              title: "معدل دوران المخزون وخفض التكلفة",
-              unit: "نسبة / معامل",
-              plan: "حساب تكلفة البضاعة المباعة مقسومة على متوسط المخزون مع تسريع حركة أصناف A&B",
-              scale: ["دوران بطيء", "مقابلة الحد الأدنى", "المستهدف السنوي", "أعلى من المستهدف بـ 10%", "أعلى من المستهدف بـ 20%"],
-              weight: "20%",
-              targetVal: "حسب الخطة",
-              source: "تقرير دوران المخزون وقائمة الدخل",
-              dept: "إدارة المشتريات والمالية"
-            },
-            {
-              id: 4,
-              title: "أتمتة وحوكمة العمليات عبر ERP",
-              unit: "نسبة الإنجاز %",
-              plan: "تنفيذ وتحديث أتمتة طلبات الشراء، نقاط ROP، والتنبؤ التلقائي بااحتياجات الفروع",
-              scale: ["< 60%", "60% - 74%", "75% - 89%", "90% - 95% (المستهدف)", "96% - 100%"],
-              weight: "15%",
-              targetVal: "≥ 90%",
-              source: "تقرير مبادرات تطوير الإجراءات",
-              dept: "الإمداد والتموين / IT"
-            },
-            {
-              id: 5,
-              title: "تخفيض المخزون الراكد وبطيء الحركة",
-              unit: "مبلغ مالي / نسبة",
-              plan: "وضع خطط تصفية ومعالجة للأصناف الراكدة بالتنسيق مع المبيعات والتسويق",
-              scale: ["عدم خفض", "تحقيق 50% من الخطة", "تحقيق 75%", "تحقيق 100% من الخطة", "تجاوز المستهدف بـ 15%"],
-              weight: "10%",
-              targetVal: "حسب البطاقة",
-              source: "تقرير الرواكد والجرد الشهري",
-              dept: "المشتريات والمبيعات"
-            },
-            {
-              id: 6,
-              title: "إدارة وتطوير فريق العمل",
-              unit: "نسبة التقييم %",
-              plan: "توزيع المهام بفاعلية، تدريب موظفي القسم، ورفع كفاءة التفاوض والرقابة",
-              scale: ["< 70%", "70% - 79%", "80% - 89%", "90% - 94% (المستهدف)", "95% - 100%"],
-              weight: "10%",
-              targetVal: "≥ 90%",
-              source: "تقارير تقييم الأداء المعتمدة",
-              dept: "المشتريات والموارد البشرية"
-            }
-          ];
+            const handleNavigateToDeptsIndex = () => {
+                setCurrentView('departments_index');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
 
-          const authorities = [
-            { item: "إعداد خطط المشتريات والخطط التشغيلية ومراجعة الاحتياجات", level: "إعداد وتنفيذ" },
-            { item: "مراجعة واعتماد طلبات الشراء ضمن حدود الصلاحيات المالية المعتمدة", level: "توصية ورفع للاعتماد" },
-            { item: "طلب عروض الأسعار والتفاوض مع الموردين بشأن الأسعار وشروط التوريد", level: "تنفيذ مباشر" },
-            { item: "تقييم الموردين وااختيارهم ورفع التوصية باعتمادهم أو إيقاف التعامل معهم", level: "توصية ورفع للاعتماد" },
-            { item: "مراجعة مستويات المخزون واقتراح تعديل الحد الأدنى والحد الأعلى ونقاط ROP", level: "توصية ورفع للاعتماد" },
-            { item: "متابعة أوامر الشراء والتوريد واتخاذ الإجراءات التصحيحية مع الموردين", level: "تنفيذ مباشر" },
-            { item: "الإشراف على فريق العمل وتوزيع المهام ومتابعة الأداء اليومي", level: "اعتماد وتوجيه" },
-            { item: "اعتماد طلبات تحديث بيانات الأصناف والموردين داخل نظام ERP", level: "اعتماد مباشر" },
-            { item: "اقتراح معالجة المخزون الراكد أو بطيء الحركة ورفع التوصيات", level: "توصية ورفع للاعتماد" }
-          ];
+            const handleNavigateToDeptDetails = (dept) => {
+                setActiveDept(dept);
+                setCurrentView('department_details');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
 
-          const proposals = [
-            {
-              title: "تطبيق التنبؤ الذكي بالطلب (Forecast Accuracy Enhancement)",
-              desc: "ربط معدلات المبيعات التاريخية والموسمية داخل نظام ERP لتحديد احتياجات الشراء بدقة متناهية، مما يمنع التكدس أو الانقطاع الأهوائي.",
-              icon: "trending-up"
-            },
-            {
-              title: "أتمتة نقطة إعادة الطلب (Automated Reorder Point - ROP)",
-              desc: "ضبط إشعارات تلقائية فورية لمشرف المشتريات عندما يصل أي صنف استراتيجي إلى حد الأمان، لإصدار أمر الشراء تلقائياً بدون انتظار الجرد اليدوي.",
-              icon: "bell"
-            },
-            {
-              title: "تصنيف المخزون المتقدم (ABC / FSN Analysis)",
-              desc: "تصنيف أصناف المخزون حسب القيمة المادية (A/B/C) وحسب سرعة الحركة (F/S/N) للتركيز العالي والرقابة المشددة على الأصناف ذات التأثير المالي المرتفع.",
-              icon: "pie-chart"
-            },
-            {
-              title: "مؤشر نسبة الوفر المالي والتفاوض (Cost Savings & Avoidance Ratio)",
-              desc: "إضافة قياس دوري للوفر المالي المحقق نتيجة مهارات التفاوض وإعادة مراجعة عقود الموردين سنويًا كمؤشر حافز إضافي.",
-              icon: "dollar-sign"
-            }
-          ];
+            return (
+                <div className="min-h-screen flex flex-col bg-[#F8FAFC] font-sans text-slate-900" dir="rtl">
+                    
+                    {/* Header */}
+                    <header className="bg-slate-900/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-50 shadow-2xl overflow-hidden flex-shrink-0">
+                        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-sky-600/10 via-transparent to-transparent pointer-events-none"></div>
+                        <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-5">
+                            <div className="flex justify-between items-center relative z-10">
+                                
+                                <div className="flex items-center gap-6 cursor-pointer" onClick={() => setCurrentView('home')}>
+                                    <div className="relative hidden sm:block">
+                                        <div className="h-14 w-1.5 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                                            نظام إدارة الأداء المؤسسي
+                                        </h1>
+                                        <div className="flex items-center gap-3 mt-1.5 text-slate-400">
+                                            <div className="flex items-center gap-3">
+                                                {/* تم تعديل سطر الصورة هنا ليقرأ من ملف محلي */}
+                                                <img src="logo.png" alt="شعار مؤسسة أطوار للتجارة" className="h-10 w-auto bg-white p-1 rounded-xl shadow-sm" />
+                                                <p className="font-bold text-xs uppercase tracking-[0.2em] text-slate-300 hidden sm:block">مؤسسة أطوار للتجارة</p>
+                                            </div>
+                                            <span className="w-1 h-1 bg-slate-600 rounded-full hidden sm:block"></span>
+                                            <span className="text-[10px] font-black italic text-sky-400 hidden sm:block">Performance Management System</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-          return (
-            <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 print:bg-white" dir="rtl">
-              
-              {/* Header */}
-              <header className="bg-slate-900/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-50 shadow-2xl overflow-hidden print:hidden">
-                <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-sky-600/10 via-transparent to-transparent pointer-events-none"></div>
-                <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-5">
-                  <div className="flex flex-col xl:flex-row justify-between items-center gap-6 relative z-10">
-                    <div className="flex items-center gap-6">
-                       <div className="relative hidden sm:block">
-                          <div className="h-14 w-1.5 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
-                       </div>
-                       <div>
-                          <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-                            {jobTitle}
-                          </h1>
-                          <div className="flex items-center gap-3 mt-1.5 text-slate-400">
-                            <Icon name="building-2" className="w-4 h-4 text-sky-400" />
-                            <div className="flex items-center gap-3">
-                              <img src="data:image/png;base64,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" alt="شعار مؤسسة أطوار للتجارة" className="h-10 w-auto bg-white p-1 rounded-xl shadow-sm" />
-                              <p className="font-bold text-xs uppercase tracking-[0.2em] text-slate-300">مؤسسة أطوار للتجارة</p>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setCurrentView('home')}
+                                        className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${currentView === 'home' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}
+                                    >
+                                        <Icon name="home" className="w-4 h-4" />
+                                        <span className="hidden sm:inline">الرئيسية</span>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => handleNavigateToDeptsIndex()}
+                                        className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${currentView !== 'home' ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}
+                                    >
+                                        <Icon name="layers" className="w-4 h-4" />
+                                        <span className="hidden sm:inline">الإدارات</span>
+                                    </button>
+
+                                    {/* Mobile Menu Toggle (only visible in department details view on mobile) */}
+                                    {currentView === 'department_details' && (
+                                        <button 
+                                            className="lg:hidden p-2 text-white bg-white/10 rounded-xl"
+                                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                        >
+                                            <Icon name={isMobileMenuOpen ? 'x' : 'menu'} className="w-6 h-6" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-                            <span className="text-[10px] font-black italic text-sky-400">Supply Chain Control Center</span>
-                          </div>
-                       </div>
-                    </div>
+                        </div>
+                    </header>
 
-                    <div className="flex flex-wrap items-center gap-4">
-                       <div className="flex bg-white/5 rounded-2xl p-1.5 border border-white/10 backdrop-blur-sm">
-                          <div className="flex items-center gap-3 px-5 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
-                             <Icon name="users" className="w-4 h-4 text-sky-400" />
-                             <div className="flex flex-col">
-                                <span className="text-[9px] text-slate-400 font-black uppercase">الإدارة التابعة</span>
-                                <span className="text-xs text-white font-bold">{hierarchyInfo.dependency}</span>
-                             </div>
-                          </div>
-                          <div className="flex items-center gap-3 px-5 py-2">
-                             <Icon name="user-check" className="w-4 h-4 text-emerald-400" />
-                             <div className="flex flex-col">
-                                <span className="text-[9px] text-slate-400 font-black uppercase">الرئيس المباشر</span>
-                                <span className="text-xs text-white font-bold">{hierarchyInfo.supervisor}</span>
-                             </div>
-                          </div>
-                       </div>
-                       
-                       <div className="bg-gradient-to-l from-sky-600 to-blue-700 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg shadow-sky-600/20 border border-sky-400/30">
-                          <div className="flex flex-col text-right">
-                            <span className="text-[9px] font-black text-sky-200 uppercase tracking-widest leading-none">Code</span>
-                            <span className="text-sm font-black text-white leading-tight italic">SCM-SUP-001</span>
-                          </div>
-                          <Icon name="boxes" className="w-5 h-5 text-white" />
-                       </div>
-                    </div>
-                  </div>
-                </div>
-              </header>
-
-              <main className="max-w-[1600px] mx-auto px-6 lg:px-10 py-10 print:p-0">
-                
-                {/* Welcome Banner */}
-                <div className="bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-slate-200 overflow-hidden mb-12 relative group print:hidden">
-                  <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-sky-50/80 to-transparent pointer-events-none"></div>
-                  <div className="p-10 lg:p-12 relative z-10">
-                    <div className="max-w-6xl mx-auto">
-                      
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 bg-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-500">
-                          <Icon name="truck" className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                           <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">
-                             منظومة إدارة المشتريات والمخزون الحاكمة
-                           </h3>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                        <div className="lg:col-span-7 flex flex-col justify-center">
-                          <p className="text-slate-700 leading-relaxed font-bold text-base md:text-lg tracking-tight border-r-4 border-sky-600 pr-6 py-1 bg-gradient-to-l from-sky-50/50 to-transparent rounded-l-2xl">
-                            <span className="text-sky-700 font-black">هدف الوظيفة الرئيسي:</span> {jobDescriptionExact}
-                          </p>
-                        </div>
+                    {/* Main Content Area */}
+                    <div className="flex-grow flex flex-col">
                         
-                        <div className="lg:col-span-5">
-                           <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden h-full flex flex-col justify-center">
-                              <Icon name="zap" className="absolute -bottom-6 -left-6 w-32 h-32 text-sky-500/10" />
-                              <div className="flex items-start gap-4 relative z-10">
-                                <div className="mt-1 p-2 bg-sky-600 rounded-xl shadow-lg flex-shrink-0"><Icon name="shield-check" className="w-5 h-5 text-white" /></div>
-                                <p className="text-sky-50 text-xs leading-relaxed font-medium">
-                                  <span className="font-bold text-sky-300">دليل التميز والرقابة: </span> 
-                                  تم إعداد هذه المنظومة لتوضح المهام الدورية، مؤشرات KPI بالوزن النسبي، ونماذج التقارير المعتمدة لضمان كفاءة سلاسل الإمداد وتقليل التكاليف التشغيلية.
-                                </p>
-                              </div>
-                           </div>
-                        </div>
-                      </div>
+                        {/* ======================= HOME VIEW ======================= */}
+                        {currentView === 'home' && (
+                            <div className="flex-grow animate-in fade-in duration-700 pb-20">
+                                {/* Hero Section */}
+                                <section className="hero-pattern border-b border-slate-800 relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
+                                    <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-20 lg:py-32 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+                                        
+                                        <div className="lg:w-1/2 text-center lg:text-right">
+                                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-900/50 border border-sky-700 mb-6 backdrop-blur-sm">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                <span className="text-sky-200 text-xs font-bold tracking-wider">نظام ذكي متكامل للمؤسسات</span>
+                                            </div>
+                                            <h2 className="text-4xl lg:text-6xl font-black text-white leading-tight mb-6">
+                                                حوكمة الأداء وتحقيق <br/>
+                                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400">
+                                                    الأهداف الاستراتيجية
+                                                </span>
+                                            </h2>
+                                            <p className="text-slate-300 text-lg leading-relaxed mb-10 max-w-2xl mx-auto lg:mx-0 font-medium">
+                                                مرحباً بك في البوابة المركزية لنظام إدارة الأداء. يهدف هذا النظام إلى أتمتة وحوكمة العمليات ومتابعة مؤشرات الأداء الرئيسية (KPIs) لجميع إدارات مؤسسة أطوار للتجارة، مما يضمن تحقيق الأهداف الاستراتيجية بكفاءة وشفافية عالية.
+                                            </p>
+                                            
+                                            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                                                <button 
+                                                    onClick={() => handleNavigateToDeptsIndex()}
+                                                    className="w-full sm:w-auto bg-sky-600 hover:bg-sky-500 text-white px-8 py-4 rounded-2xl font-black text-lg transition-all shadow-[0_0_20px_rgba(14,165,233,0.4)] hover:shadow-[0_0_30px_rgba(14,165,233,0.6)] flex items-center justify-center gap-3 group"
+                                                >
+                                                    تصفح الإدارات والقطاعات
+                                                    <Icon name="arrow-left" className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="lg:w-1/2 relative">
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-sky-600 to-emerald-500 rounded-3xl blur-[100px] opacity-30 animate-pulse"></div>
+                                            <img 
+                                                src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                                                alt="لوحة القياس وتحليل الأداء" 
+                                                className="rounded-[2.5rem] relative z-10 shadow-2xl border-4 border-slate-800/50"
+                                            />
+                                            
+                                            {/* Floating Badge */}
+                                            <div className="absolute -bottom-8 -left-8 bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 z-20 flex items-center gap-4 animate-bounce" style={{animationDuration: '3s'}}>
+                                                <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                                                    <Icon name="trending-up" className="w-6 h-6 text-emerald-600" />
+                                                </div>
+                                                <div>
+                                                    <span className="block text-slate-500 text-xs font-black uppercase mb-1">دقة الإنجاز</span>
+                                                    <span className="block text-xl font-black text-slate-900">98.5%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
 
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex flex-wrap gap-4 md:gap-8 mb-10 border-b border-slate-200 print:hidden">
-                  <button 
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'dashboard' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
-                  >
-                    <Icon name="layout-dashboard" className="w-5 h-5" />
-                    منظومة المهام الدورية
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('scorecard')}
-                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'scorecard' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
-                  >
-                    <Icon name="target" className="w-5 h-5" />
-                    بطاقة الأداء ومؤشرات KPI
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('reports')}
-                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'reports' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
-                  >
-                    <Icon name="file-spreadsheet" className="w-5 h-5" />
-                    دليل النماذج وتصدير Excel
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('authorities')}
-                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'authorities' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
-                  >
-                    <Icon name="award" className="w-5 h-5" />
-                    الصلاحيات والمواصفات
-                  </button>
-
-                </div>
-
-                {/* Tab 1: Dashboard Tasks */}
-                {activeTab === 'dashboard' && (
-                  <div className="animate-in fade-in duration-500">
-                    <div className="bg-white rounded-[3rem] shadow-lg border border-slate-200 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-right border-collapse min-w-[1000px]">
-                          <thead>
-                            <tr className="bg-slate-50/80 border-b border-slate-200">
-                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest w-32">التوقيت</th>
-                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest w-1/4">المسؤولية الإجرائية</th>
-                              <th className="px-8 py-6 text-base text-center font-black text-sky-700 uppercase tracking-widest border-x border-slate-200 bg-sky-50/50">مخرجات العمل (التقارير)</th>
-                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest">معايير القياس (KPI)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {jobData.map((row) => (
-                              <tr key={row.id} className="hover:bg-sky-50/10 transition-all duration-300 group">
-                                <td className="px-8 py-10 align-top text-center">
-                                  <div className={`relative w-24 h-24 rounded-[2rem] flex flex-col items-center justify-center p-3 shadow-xl border border-white/50 mx-auto transition-transform group-hover:scale-105 bg-gradient-to-br ${
-                                    row.id === 'daily' ? 'from-sky-500 to-sky-600 text-white shadow-sky-500/20' :
-                                    row.id === 'weekly' ? 'from-blue-600 to-blue-700 text-white shadow-blue-500/20' :
-                                    row.id === 'monthly' ? 'from-indigo-600 to-indigo-700 text-white shadow-indigo-500/20' :
-                                    'from-emerald-600 to-emerald-700 text-white shadow-emerald-500/20'
-                                  }`}>
-                                    <span className="text-[10px] font-black uppercase opacity-80 leading-none mb-1">{row.tag}</span>
-                                    <span className="text-xs font-black leading-tight">{row.frequency}</span>
-                                  </div>
-                                </td>
-                                <td className="px-8 py-10 align-top">
-                                  <h4 className="text-slate-800 font-black text-lg mb-3 group-hover:text-sky-600 transition-colors">
-                                     {row.duty}
-                                  </h4>
-                                </td>
-                                <td className="px-8 py-10 align-top bg-sky-50/10 border-x border-slate-100">
-                                  <div className="grid grid-cols-1 gap-3">
-                                    {row.reports.map((report, idx) => (
-                                      <button 
-                                        key={idx}
-                                        onClick={() => {
-                                          setActiveTab('reports'); 
-                                          const found = Object.values(reportModels).flat().find(m => m.name === report);
-                                          if (found) setSelectedReport(found);
-                                        }}
-                                        className="flex items-center gap-3 text-sky-700 font-bold text-sm w-fit bg-white px-4 py-2.5 rounded-xl border border-sky-100 shadow-sm hover:bg-sky-600 hover:text-white transition-all duration-300 group/link"
-                                      >
-                                         <Icon name="file-text" className="w-4 h-4 text-sky-500 group-hover/link:text-white" />
-                                         <span>{report}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </td>
-                                <td className="px-8 py-10 align-top">
-                                  <ul className="space-y-3">
-                                    {row.kpis.map((kpi, idx) => (
-                                      <li key={idx} className="flex items-start gap-3">
-                                        <Icon name="check-circle-2" className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                        <p className="text-slate-700 text-sm font-bold leading-relaxed border-r-2 border-slate-200 pr-3">
-                                          {kpi}
-                                        </p>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 2: KPI Scorecard */}
-                {activeTab === 'scorecard' && (
-                  <div className="animate-in fade-in duration-500 space-y-8">
-                    <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
-                       <div>
-                          <span className="text-sky-400 text-xs font-black uppercase tracking-widest">Balanced Scorecard Framework</span>
-                          <h3 className="text-2xl font-black mt-1">بطاقة تقييم أداء مشرف المشتريات والمخزون</h3>
-                          <p className="text-slate-400 text-xs mt-1">مصممة وفق سلم التقييم الخماسي (1 إلى 5) والأوزان النسبية المعتمدة</p>
-                       </div>
-                       <div className="flex gap-4">
-                          <div className="bg-white/10 px-5 py-3 rounded-2xl text-center border border-white/10">
-                             <span className="text-[10px] text-slate-300 block font-bold">إجمالي وزن الأهداف</span>
-                             <span className="text-xl font-black text-sky-400">100%</span>
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="bg-white rounded-[3rem] shadow-lg border border-slate-200 overflow-hidden">
-                       <div className="overflow-x-auto">
-                          <table className="w-full text-right text-xs">
-                             <thead>
-                                <tr className="bg-slate-100 text-slate-700 font-black border-b border-slate-200">
-                                   <th className="p-4 text-center">#</th>
-                                   <th className="p-4 w-1/5">المستهدف (KPI)</th>
-                                   <th className="p-4">وحدة التقييم</th>
-                                   <th className="p-4 w-1/4">الهدف والتطوير الإجرائي</th>
-                                   <th className="p-4 text-center">سلم التقييم (1 - 5)</th>
-                                   <th className="p-4 text-center">الوزن %</th>
-                                   <th className="p-4 text-center">المستهدف</th>
-                                   <th className="p-4">المصدر</th>
-                                </tr>
-                             </thead>
-                             <tbody className="divide-y divide-slate-100 font-bold">
-                                {scorecardKPIs.map((kpi) => (
-                                   <tr key={kpi.id} className="hover:bg-sky-50/20 transition-colors">
-                                      <td className="p-4 text-center font-black text-slate-400 bg-slate-50">{kpi.id}</td>
-                                      <td className="p-4 text-slate-900 font-black text-sm">{kpi.title}</td>
-                                      <td className="p-4 text-slate-500">{kpi.unit}</td>
-                                      <td className="p-4 text-slate-600 leading-relaxed">{kpi.plan}</td>
-                                      <td className="p-4">
-                                         <div className="grid grid-cols-5 gap-1 text-[9px] text-center">
-                                            {kpi.scale.map((lvl, idx) => (
-                                               <div key={idx} className={`p-1.5 rounded font-black ${idx === 2 ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-600'}`}>
-                                                  <span className="block text-[8px] opacity-75">{idx+1}</span>
-                                                  {lvl}
-                                               </div>
-                                            ))}
-                                         </div>
-                                      </td>
-                                      <td className="p-4 text-center font-black text-sky-600 text-sm">{kpi.weight}</td>
-                                      <td className="p-4 text-center font-black text-emerald-600">{kpi.targetVal}</td>
-                                      <td className="p-4 text-slate-500 text-[11px]">{kpi.source}</td>
-                                   </tr>
-                                ))}
-                             </tbody>
-                          </table>
-                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 3: Reports Directory & Excel Export */}
-                {activeTab === 'reports' && (
-                  <div className="animate-in fade-in duration-500">
-                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                      <div className="xl:col-span-1">
-                        <div className="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl sticky top-28 border border-slate-800">
-                           <h3 className="flex items-center gap-3 text-lg font-black mb-6 border-b border-white/10 pb-4 text-sky-400">
-                              <Icon name="filter" className="w-5 h-5" />
-                              دليل النماذج
-                           </h3>
-                           {['daily', 'weekly', 'monthly', 'yearly'].map((freq) => (
-                              <div key={freq} className="mb-6 last:mb-0">
-                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                                    {freq === 'daily' ? 'التقارير الجارية' : freq === 'weekly' ? 'التقارير الأسبوعية' : freq === 'monthly' ? 'التقارير الشهرية' : 'التقارير السنوية'}
-                                 </p>
-                                 <div className="space-y-1.5 pr-3 border-r border-slate-800">
-                                    {reportModels[freq].map((rep) => (
-                                       <button 
-                                        key={rep.name}
-                                        onClick={() => setSelectedReport(rep)}
-                                        className={`w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${selectedReport?.name === rep.name ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                       >
-                                          <span className="truncate">{rep.name}</span>
-                                          <Icon name="chevron-left" className="w-3.5 h-3.5 flex-shrink-0" />
-                                       </button>
-                                    ))}
-                                 </div>
-                              </div>
-                           ))}
-                        </div>
-                      </div>
-
-                      <div className="xl:col-span-3" ref={reportViewRef}>
-                        {selectedReport ? (
-                          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl p-8 md:p-12 animate-in zoom-in-95 duration-300">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-100 gap-6">
-                               <div>
-                                  <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Standard Schema Mode</span>
-                                  <h3 className="text-2xl md:text-3xl font-black text-slate-900 mt-1">{selectedReport.name}</h3>
-                               </div>
-                               
-                               <button 
-                                  onClick={() => handleExportToExcel(selectedReport)}
-                                  disabled={isExporting}
-                                  className={`bg-emerald-50 text-emerald-800 px-6 py-3.5 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm transition-all group ${isExporting ? 'opacity-70 cursor-wait' : 'hover:bg-emerald-100 hover:shadow-md'}`}
-                               >
-                                  <Icon name={isExporting ? "loader-2" : "download"} className={`w-5 h-5 text-emerald-600 ${isExporting ? 'animate-spin' : ''}`} />
-                                  <span className="text-sm font-black">{isExporting ? 'جاري إنشاء Excel...' : 'تصدير نموذج Excel'}</span>
-                               </button>
+                                {/* Features Section */}
+                                <section className="max-w-[1600px] mx-auto px-6 lg:px-10 py-20">
+                                    <div className="text-center mb-16">
+                                        <h3 className="text-3xl font-black text-slate-900 mb-4">ركائز النظام الأساسية</h3>
+                                        <p className="text-slate-500 font-bold max-w-xl mx-auto">نعتمد في مؤسسة أطوار على أحدث المعايير لبناء بيئة عمل تقيس الإنجاز بشكل دقيق ولحظي.</p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        <div className="bg-white p-10 rounded-[2.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-sky-300 transition-colors group">
+                                            <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-sky-600 group-hover:text-white text-sky-600 transition-colors">
+                                                <Icon name="target" className="w-8 h-8" />
+                                            </div>
+                                            <h4 className="text-xl font-black text-slate-900 mb-4">مؤشرات أداء دقيقة (KPIs)</h4>
+                                            <p className="text-slate-600 font-bold leading-relaxed">تحديد أهداف واضحة وأوزان نسبية دقيقة لكل وظيفة لضمان التوافق التام مع الخطة الاستراتيجية العامة.</p>
+                                        </div>
+                                        <div className="bg-white p-10 rounded-[2.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-emerald-300 transition-colors group">
+                                            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white text-emerald-600 transition-colors">
+                                                <Icon name="pie-chart" className="w-8 h-8" />
+                                            </div>
+                                            <h4 className="text-xl font-black text-slate-900 mb-4">تقارير ونماذج موحدة</h4>
+                                            <p className="text-slate-600 font-bold leading-relaxed">أتمتة مخرجات العمل والنماذج الدورية لتوفير الوقت والجهد، مع إمكانية التصدير والتحليل المباشر.</p>
+                                        </div>
+                                        <div className="bg-white p-10 rounded-[2.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 hover:border-indigo-300 transition-colors group">
+                                            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-indigo-600 group-hover:text-white text-indigo-600 transition-colors">
+                                                <Icon name="shield-check" className="w-8 h-8" />
+                                            </div>
+                                            <h4 className="text-xl font-black text-slate-900 mb-4">حوكمة الصلاحيات</h4>
+                                            <p className="text-slate-600 font-bold leading-relaxed">توضيح تسلسل الاعتمادات ومستويات التفويض لكل مسؤولية لضمان سير العمل بلا تعقيد أو تداخل.</p>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
-
-                            <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-inner bg-slate-50/50 p-4">
-                               <table className="w-full text-right text-xs font-mono">
-                                  <thead>
-                                     <tr className="bg-sky-100/70 text-sky-900 font-black border-b border-sky-200">
-                                        <th className="p-3 text-center w-12 border-l border-sky-200">#</th>
-                                        {selectedReport.fields.map((field, idx) => (
-                                           <th key={idx} className="p-3 border-l border-sky-200 whitespace-nowrap">{field}</th>
-                                        ))}
-                                     </tr>
-                                  </thead>
-                                  <tbody>
-                                     {[1, 2, 3].map((row) => (
-                                        <tr key={row} className="border-b border-slate-200 bg-white">
-                                           <td className="p-3 text-center text-slate-400 font-bold bg-slate-100/50 border-l border-slate-200">{row}</td>
-                                           {selectedReport.fields.map((_, idx) => (
-                                              <td key={idx} className="p-3 border-l border-slate-200 text-slate-300 text-center">-</td>
-                                           ))}
-                                        </tr>
-                                     ))}
-                                  </tbody>
-                               </table>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-300 h-[450px] flex flex-col items-center justify-center text-slate-400 gap-4">
-                             <Icon name="file-search" className="w-16 h-16 text-sky-300" />
-                             <p className="text-xl font-black text-slate-600">اختر تقريراً من القائمة للفتحه وتصديره</p>
-                          </div>
                         )}
-                      </div>
+
+                        {/* ======================= DEPARTMENTS INDEX GRID VIEW ======================= */}
+                        {currentView === 'departments_index' && (
+                            <div className="flex-grow max-w-[1600px] w-full mx-auto px-6 lg:px-10 py-10 lg:py-16 animate-in fade-in duration-500 pb-20">
+                                <div className="text-center mb-12">
+                                    <h2 className="text-3xl font-black text-slate-900 mb-4">الإدارات والقطاعات</h2>
+                                    <p className="text-slate-500 font-bold max-w-2xl mx-auto">اختر الإدارة لعرض الوظائف ومنظومة الأداء الخاصة بها</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                    {departments.map((dept) => (
+                                        <div 
+                                            key={dept.id} 
+                                            onClick={() => handleNavigateToDeptDetails(dept)}
+                                            className="bg-white rounded-[2rem] p-8 shadow-lg border border-slate-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group flex flex-col items-center text-center"
+                                        >
+                                            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${dept.gradient} text-white flex items-center justify-center mb-6 shadow-lg shadow-${dept.color}-500/30 group-hover:scale-110 transition-transform duration-300`}>
+                                                <Icon name={dept.icon} className="w-10 h-10" />
+                                            </div>
+                                            <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-sky-600 transition-colors">{dept.name}</h3>
+                                            <p className="text-sm font-bold text-slate-500 leading-relaxed mb-6 flex-grow">{dept.desc}</p>
+                                            <div className={`w-full py-3 bg-slate-50 text-slate-600 text-xs font-black rounded-xl group-hover:bg-${dept.color}-50 group-hover:text-${dept.color}-700 transition-colors flex items-center justify-center gap-2 border border-transparent group-hover:border-${dept.color}-200`}>
+                                                عرض الوظائف ({dept.roles.length})
+                                                <Icon name="arrow-left" className="w-4 h-4" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ======================= DEPARTMENT DETAILS VIEW ======================= */}
+                        {currentView === 'department_details' && activeDept && (
+                            <div className="flex-grow flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto px-6 lg:px-10 py-10 gap-8 animate-in fade-in duration-500 pb-20">
+                                
+                                {/* Sidebar (Departments Navigation) */}
+                                <aside className={`lg:w-1/4 xl:w-1/5 flex-shrink-0 ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+                                    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sticky top-28">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 px-2 flex items-center gap-2">
+                                            <Icon name="layers" className="w-4 h-4" />
+                                            الإدارات
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {departments.map((dept) => (
+                                                <button
+                                                    key={dept.id}
+                                                    onClick={() => {
+                                                        setActiveDept(dept);
+                                                        setIsMobileMenuOpen(false);
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }}
+                                                    className={`w-full text-right flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 font-bold group ${
+                                                        activeDept.id === dept.id 
+                                                        ? `bg-${dept.color}-50 border border-${dept.color}-100 shadow-sm` 
+                                                        : 'hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-transparent'
+                                                    }`}
+                                                >
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-sm flex-shrink-0 ${
+                                                        activeDept.id === dept.id 
+                                                        ? `bg-${dept.color}-600 text-white` 
+                                                        : `bg-slate-100 text-slate-400 group-hover:text-${dept.color}-600 group-hover:bg-${dept.color}-50`
+                                                    }`}>
+                                                        <Icon name={dept.icon} className="w-5 h-5" />
+                                                    </div>
+                                                    <span className={`text-sm ${activeDept.id === dept.id ? `text-${dept.color}-900` : ''}`}>
+                                                        {dept.name}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </aside>
+
+                                {/* Main Content (Roles Grid) */}
+                                <main className="lg:w-3/4 xl:w-4/5 flex-grow">
+                                    
+                                    {/* Selected Department Banner */}
+                                    <div className="bg-white rounded-[2.5rem] shadow-lg border border-slate-200 overflow-hidden mb-10 relative">
+                                        <div className={`absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l ${activeDept.gradient} opacity-10 pointer-events-none`}></div>
+                                        <div className="p-8 md:p-12 relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
+                                            <div className={`w-20 h-20 bg-gradient-to-br ${activeDept.gradient} text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-${activeDept.color}-500/30 flex-shrink-0`}>
+                                                <Icon name={activeDept.icon} className="w-10 h-10" />
+                                            </div>
+                                            <div className="text-center md:text-right flex-grow">
+                                                <span className={`text-xs font-black uppercase tracking-widest text-${activeDept.color}-600 mb-2 block`}>دليل الأداء الوظيفي</span>
+                                                <h2 className="text-3xl font-black text-slate-900 mb-3">{activeDept.name}</h2>
+                                                <p className="text-slate-500 font-bold max-w-2xl leading-relaxed">
+                                                    {activeDept.desc} اختر الوظيفة أدناه لاستعراض المهام الدورية، مؤشرات القياس (KPIs)، والصلاحيات المعتمدة للتقييم.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Roles Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {activeDept.roles.map((role, index) => (
+                                            <a 
+                                                key={index} 
+                                                href={role.url}
+                                                target={role.url !== '#' ? "_blank" : "_self"}
+                                                className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-xl transition-all duration-300 group flex flex-col items-center text-center cursor-pointer hover:-translate-y-1 block"
+                                            >
+                                                <div className={`w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-5 group-hover:bg-${activeDept.color}-600 transition-colors shadow-inner group-hover:shadow-${activeDept.color}-500/40`}>
+                                                    <Icon name="contact" className={`w-8 h-8 text-slate-400 group-hover:text-white transition-colors`} />
+                                                </div>
+                                                <h4 className="font-black text-slate-800 text-lg mb-4 h-12 flex items-center justify-center">{role.title}</h4>
+                                                
+                                                <div className="w-full h-px bg-slate-100 mb-4 group-hover:bg-slate-200 transition-colors"></div>
+                                                
+                                                <div className={`w-full py-3 bg-slate-50 text-slate-600 text-xs font-black rounded-xl group-hover:bg-${activeDept.color}-50 group-hover:text-${activeDept.color}-700 transition-colors flex items-center justify-center gap-2 border border-transparent group-hover:border-${activeDept.color}-200`}>
+                                                    <Icon name="arrow-up-left" className="w-4 h-4" />
+                                                    {role.url === '#' ? 'قريباً...' : 'عرض منظومة الأداء'}
+                                                </div>
+                                            </a>
+                                        ))}
+                                    </div>
+
+                                </main>
+
+                            </div>
+                        )}
+                        
+                        {/* Global Footer (Visible on all pages) */}
+                        <footer className="py-10 text-center border-t border-slate-200 bg-white mt-auto flex-shrink-0">
+                            <div className="max-w-[1600px] mx-auto px-6 flex flex-col items-center justify-center gap-3">
+                                <Icon name="shield-check" className="w-6 h-6 text-sky-500" />
+                                <p className="text-slate-800 font-black text-base">نظام إدارة الأداء - إدارة تطوير الأعمال</p>
+                                <p className="text-slate-400 font-bold text-xs mt-1">جميع الحقوق محفوظة لمؤسسة أطوار للتجارة &copy; 2026</p>
+                            </div>
+                        </footer>
+
                     </div>
-                  </div>
-                )}
-
-                {/* Tab 4: Authorities & Qualifications */}
-                {activeTab === 'authorities' && (
-                  <div className="animate-in fade-in duration-500 grid grid-cols-1 lg:grid-cols-12 gap-8">
-                     <div className="lg:col-span-7 bg-white p-8 rounded-[3rem] shadow-lg border border-slate-200">
-                        <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-                           <Icon name="shield-check" className="w-6 h-6 text-sky-600" />
-                           مصفوفة الصلاحيات المعتمدة
-                        </h3>
-                        <div className="space-y-3">
-                           {authorities.map((auth, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-sky-50/30 transition-colors">
-                                 <span className="text-sm font-bold text-slate-800">{auth.item}</span>
-                                 <span className="text-xs font-black bg-sky-100 text-sky-800 px-3 py-1.5 rounded-xl">{auth.level}</span>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-
-                     <div className="lg:col-span-5 bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl flex flex-col justify-between">
-                        <div>
-                           <h3 className="text-xl font-black text-sky-400 mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
-                              <Icon name="user-check" className="w-6 h-6 text-sky-400" />
-                              مواصفات شاغل الوظيفة
-                           </h3>
-                           <div className="space-y-6 text-sm font-bold">
-                              <div>
-                                 <span className="text-slate-400 text-xs block mb-1">المؤهل العلمي</span>
-                                 <p className="text-white">بكالوريوس في سلاسل الإمداد / إدارة الأعمال / الهندسة / المحاسبة</p>
-                              </div>
-                              <div>
-                                 <span className="text-slate-400 text-xs block mb-1">الخبرة العملية</span>
-                                 <p className="text-white">خبرة لا تقل عن 6 سنوات في إدارة المشتريات والمخزون</p>
-                              </div>
-                              <div>
-                                 <span className="text-slate-400 text-xs block mb-1">المهارات والتدريب</span>
-                                 <ul className="grid grid-cols-2 gap-2 text-xs text-slate-300 mt-2">
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> القيادة والإشراف</li>
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> التخطيط والتنبؤ</li>
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> مهارات التفاوض</li>
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> إدارة أنظمة ERP</li>
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> تحليل المخاطر</li>
-                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> إدارة الموردين</li>
-                                 </ul>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                )}
-
-                {/* Tab 5: Strategic Proposals */}
-                {activeTab === 'proposals' && (
-                  <div className="animate-in fade-in duration-500">
-                    <div className="mb-8">
-                       <h3 className="text-2xl font-black text-slate-900">المقترحات والتطويرات الاستراتيجية الموصى بها</h3>
-                       <p className="text-slate-500 font-bold text-sm">مبادرات قيمة مضافة لرفع كفاءة إدارة المشتريات والمخزون بالمؤسسة</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                       {proposals.map((prop, idx) => (
-                          <div key={idx} className="bg-white p-8 rounded-[3rem] shadow-lg border border-slate-200 hover:border-sky-300 transition-all group">
-                             <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-sky-600 group-hover:text-white transition-colors">
-                                <Icon name={prop.icon} className="w-6 h-6" />
-                             </div>
-                             <h4 className="text-lg font-black text-slate-900 mb-3">{prop.title}</h4>
-                             <p className="text-slate-600 font-bold text-sm leading-relaxed">{prop.desc}</p>
-                          </div>
-                       ))}
-                    </div>
-                  </div>
-                )}
-
-              </main>
-
-              <footer className="py-12 text-center border-t border-slate-200 mt-12 bg-white print:hidden">
-                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال</p>
-              </footer>
-            </div>
-          );
+                </div>
+            );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
