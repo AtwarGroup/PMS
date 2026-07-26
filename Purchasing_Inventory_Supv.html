@@ -39,6 +39,14 @@
             }
             ::-webkit-scrollbar { display: none; }
         }
+        /* إخفاء شريط التمرير في شريط التنقل العلوي */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] print:bg-white">
@@ -337,6 +345,32 @@
               {/* Header */}
               <header className="bg-slate-900/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-50 shadow-2xl overflow-hidden print:hidden">
                 <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-sky-600/10 via-transparent to-transparent pointer-events-none"></div>
+                
+                {/* --- شريط التنقل العلوي (Breadcrumbs) --- */}
+                <div className="w-full bg-slate-950/40 border-b border-white/5 relative z-10">
+                  <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-2.5 flex justify-between items-center">
+                    <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
+                       <a href="#" title="الصفحة الرئيسية" className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold">
+                          <Icon name="home" className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">الرئيسية</span>
+                       </a>
+                       <Icon name="chevron-left" className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                       <a href="#" title="هيكل وظائف الإدارة" className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold">
+                          <Icon name="network" className="w-3.5 h-3.5" />
+                          <span>وظائف إدارة الإمداد والتموين</span>
+                       </a>
+                       <Icon name="chevron-left" className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                       <span className="text-slate-200 text-[11px] sm:text-xs font-bold truncate">{jobTitle}</span>
+                    </div>
+                    
+                    <a href="#" onClick={(e) => {e.preventDefault(); window.history.back();}} title="العودة للصفحة السابقة" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-slate-300 hover:text-white transition-all text-xs font-bold mr-4 shrink-0">
+                       <Icon name="arrow-right" className="w-3.5 h-3.5" />
+                       <span className="hidden sm:inline">رجوع</span>
+                    </a>
+                  </div>
+                </div>
+                {/* --------------------------------- */}
+
                 <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-5">
                   <div className="flex flex-col xl:flex-row justify-between items-center gap-6 relative z-10">
                     <div className="flex items-center gap-6">
