@@ -351,10 +351,10 @@
                   <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-2.5 flex justify-between items-center">
                     <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
                        
-                       {/* رابط الصفحة الرئيسية - يمكنك تغيير href إلى مسار الصفحة الرئيسية الفعلي */}
+                       {/* رابط الصفحة الرئيسية */}
                        <a 
                          href="https://atwargroup.github.io/PMS/" 
-                                                  title="الصفحة الرئيسية" 
+                         title="الصفحة الرئيسية" 
                          className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold"
                        >
                           <Icon name="home" className="w-3.5 h-3.5" />
@@ -362,14 +362,28 @@
                        </a>
                        
                        <Icon name="chevron-left" className="w-3 h-3 text-slate-600 flex-shrink-0" />
-                                           
+                       
+                       {/* رابط وظائف الإدارة */}
+                       <a 
+                         href="https://atwargroup.github.io/PMS/" 
+                         title="هيكل وظائف الإدارة" 
+                         className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold"
+                       >
+                          <Icon name="network" className="w-3.5 h-3.5" />
+                          <span>وظائف إدارة الإمداد والتموين</span>
+                       </a>
+                       
+                       <Icon name="chevron-left" className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                       <span className="text-slate-200 text-[11px] sm:text-xs font-bold truncate">{jobTitle}</span>
+                    </div>
+                    
                     {/* زر الرجوع للخلف */}
                     <button 
                       onClick={() => {
                         if (window.history.length > 1) {
                           window.history.back();
                         } else {
-                          alert('لا توجد صفحة سابقة في سجل المتصفح للرجوع إليها.');
+                          window.location.href = 'https://atwargroup.github.io/PMS/';
                         }
                       }} 
                       title="العودة للصفحة السابقة" 
