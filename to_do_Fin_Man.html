@@ -28,19 +28,27 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        // متغير عالمي للمهام
         window.tasks = [];
         const tasksRef = ref(db, 'tasks');
 
-        // الاستماع للتغييرات لحظياً
+        // المهام الافتراضية في حال كانت القاعدة فارغة
+        const initialTasks = [
+            {title: "متطلبات المستشار", status: "مكتملة", progress: 100},
+            {title: "مراجعة المتطلبات", status: "مكتملة", progress: 100}
+        ];
+
         onValue(tasksRef, (snapshot) => {
             const data = snapshot.val();
-            window.tasks = data ? Object.keys(data).map(key => ({ dbKey: key, ...data[key] })) : [];
-            renderTable();
-            updateStats();
+            if (!data) {
+                // إذا كانت قاعدة البيانات فارغة، نضيف المهام الافتراضية تلقائياً
+                initialTasks.forEach(task => push(tasksRef, task));
+            } else {
+                window.tasks = Object.keys(data).map(key => ({ dbKey: key, ...data[key] }));
+                renderTable();
+                updateStats();
+            }
         });
 
-        // دوال تعديل السحاب
         window.saveToCloud = function(task, key) {
             if (key) {
                 update(ref(db, 'tasks/' + key), task);
@@ -56,38 +64,36 @@
 
     <style>
         body{font-family:'Tajawal',sans-serif;}
-        .desc-textarea{line-height:1.4;max-height:38px;transition:max-height .3s ease;}
-        .desc-textarea:focus{max-height:120px;overflow-y:auto!important;}
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
-        <div class="max-w-[98%] mx-auto px-4 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div class="max-w-[98%] mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="w-3 h-9 bg-blue-500 rounded-full"></div>
                 <h1 class="text-xl font-bold">مهام وأعمال ومشاريع المدير المالي</h1>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="addNewTask()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl">➕ إضافة مهمة جديدة</button>
-            </div>
+            <button onclick="addNewTask()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md">➕ إضافة مهمة جديدة</button>
         </div>
     </header>
 
     <!-- Main Table -->
-    <main class="max-w-[98%] mx-auto px-2 py-6">
+    <main class="max-w-[98%] mx-auto px-2 py-6 w-full flex-1">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table class="w-full text-right text-xs">
-                <thead class="bg-slate-800 text-white">
-                    <tr>
-                        <th class="p-3">عنوان المهمة</th>
-                        <th class="p-3">الحالة</th>
-                        <th class="p-3">إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksTableBody" class="divide-y divide-slate-200"></tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead class="bg-slate-800 text-white font-bold">
+                        <tr>
+                            <th class="p-3">عنوان المهمة</th>
+                            <th class="p-3">الحالة</th>
+                            <th class="p-3 text-center">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody" class="divide-y divide-slate-200 font-medium text-slate-800"></tbody>
+                </table>
+            </div>
         </div>
     </main>
 
@@ -97,15 +103,17 @@
         tbody.innerHTML = '';
         window.tasks.forEach((t, i) => {
             const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 transition-colors";
             tr.innerHTML = `
-                <td class="p-3"><input type="text" value="${t.title}" onchange="updateField(${i},'title',this.value)" class="w-full bg-transparent"></td>
+                <td class="p-3"><input type="text" value="${t.title || ''}" onchange="updateField(${i},'title',this.value)" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none font-bold"></td>
                 <td class="p-3">
-                    <select onchange="updateField(${i},'status',this.value)">
-                        <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>مكتملة</option>
-                        <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>قيد التنفيذ</option>
+                    <select onchange="updateField(${i},'status',this.value)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold">
+                        <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
+                        <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
+                        <option value="قيد الانتظار" ${t.status==='قيد الانتظار'?'selected':''}>🟡 قيد الانتظار</option>
                     </select>
                 </td>
-                <td class="p-3"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-rose-500">حذف</button></td>
+                <td class="p-3 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg">🗑️ حذف</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -123,7 +131,7 @@
         saveToCloud({title: "مهمة جديدة", status: "قيد الانتظار", progress: 0});
     }
 
-    function updateStats() { /* نفس كود الإحصائيات القديم */ }
+    function updateStats() {}
 </script>
 </body>
 </html>
