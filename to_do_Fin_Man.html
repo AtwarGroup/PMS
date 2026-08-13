@@ -3,99 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مهام وأعمال ومشاريع المدير المالي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <title>إدارة مهام المدير المالي</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Tajawal', sans-serif; }</style>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCgvfHsmtb0qYAMfUJv7iKmZUCJ5n_aSy4",
-            authDomain: "atwarpms.firebaseapp.com",
-            databaseURL: "https://atwarpms-default-rtdb.firebaseio.com",
-            projectId: "atwarpms",
-            storageBucket: "atwarpms.appspot.com",
-            messagingSenderId: "352965627186",
-            appId: "1:352965627186:web:4da393db672e3d90c45b2b"
+            databaseURL: "https://atwarpms-default-rtdb.firebaseio.com"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        
-        window.tasks = [];
         const tasksRef = ref(db, 'tasks');
-
-        // المهام الافتراضية في حال كانت القاعدة فارغة
-        const initialTasks = [
-            {title: "متطلبات المستشار", status: "مكتملة", progress: 100},
-            {title: "مراجعة المتطلبات", status: "مكتملة", progress: 100}
-        ];
 
         onValue(tasksRef, (snapshot) => {
             const data = snapshot.val();
-            if (!data) {
-                // إذا كانت قاعدة البيانات فارغة، نضيف المهام الافتراضية تلقائياً
-                initialTasks.forEach(task => push(tasksRef, task));
-            } else {
-                window.tasks = Object.keys(data).map(key => ({ dbKey: key, ...data[key] }));
-                renderTable();
-                updateStats();
-            }
+            window.tasks = data ? Object.keys(data).map(key => ({ dbKey: key, ...data[key] })) : [];
+            renderTable();
         });
 
-        window.saveToCloud = function(task, key) {
-            if (key) {
-                update(ref(db, 'tasks/' + key), task);
-            } else {
-                push(tasksRef, task);
-            }
+        window.saveToCloud = (task, key) => {
+            if (key) update(ref(db, 'tasks/' + key), task);
+            else push(tasksRef, task);
         };
 
-        window.deleteFromCloud = function(key) {
-            remove(ref(db, 'tasks/' + key));
-        };
+        window.deleteFromCloud = (key) => remove(ref(db, 'tasks/' + key));
     </script>
-
-    <style>
-        body{font-family:'Tajawal',sans-serif;}
-    </style>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col">
+<body class="bg-slate-50 p-6">
 
-    <!-- Header -->
-    <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
-        <div class="max-w-[98%] mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-9 bg-blue-500 rounded-full"></div>
-                <h1 class="text-xl font-bold">مهام وأعمال ومشاريع المدير المالي</h1>
-            </div>
-            <button onclick="addNewTask()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md">➕ إضافة مهمة جديدة</button>
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-slate-800">📋 مهام المدير المالي</h1>
+            <button onclick="addNewTask()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">➕ إضافة مهمة</button>
         </div>
-    </header>
 
-    <!-- Main Table -->
-    <main class="max-w-[98%] mx-auto px-2 py-6 w-full flex-1">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-right text-xs">
-                    <thead class="bg-slate-800 text-white font-bold">
-                        <tr>
-                            <th class="p-3">عنوان المهمة</th>
-                            <th class="p-3">الحالة</th>
-                            <th class="p-3 text-center">إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasksTableBody" class="divide-y divide-slate-200 font-medium text-slate-800"></tbody>
-                </table>
-            </div>
+        <div class="bg-white shadow rounded-xl overflow-hidden">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-slate-800 text-white">
+                    <tr>
+                        <th class="p-4">عنوان المهمة</th>
+                        <th class="p-4">الوصف</th>
+                        <th class="p-4">المسؤول</th>
+                        <th class="p-4">التاريخ</th>
+                        <th class="p-4">الحالة</th>
+                        <th class="p-4 text-center">حذف</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
         </div>
-    </main>
+    </div>
 
 <script>
     function renderTable() {
@@ -103,23 +66,24 @@
         tbody.innerHTML = '';
         window.tasks.forEach((t, i) => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-slate-50 transition-colors";
             tr.innerHTML = `
-                <td class="p-3"><input type="text" value="${t.title || ''}" onchange="updateField(${i},'title',this.value)" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none font-bold"></td>
+                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.title || ''}" onchange="updateRow(${i}, 'title', this.value)"></td>
+                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.desc || ''}" onchange="updateRow(${i}, 'desc', this.value)"></td>
+                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.owner || ''}" onchange="updateRow(${i}, 'owner', this.value)"></td>
+                <td class="p-3"><input type="date" class="bg-transparent border-none outline-none" value="${t.date || ''}" onchange="updateRow(${i}, 'date', this.value)"></td>
                 <td class="p-3">
-                    <select onchange="updateField(${i},'status',this.value)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold">
-                        <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
+                    <select onchange="updateRow(${i}, 'status', this.value)" class="text-xs font-bold p-1 rounded">
                         <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
-                        <option value="قيد الانتظار" ${t.status==='قيد الانتظار'?'selected':''}>🟡 قيد الانتظار</option>
+                        <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
                     </select>
                 </td>
-                <td class="p-3 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg">🗑️ حذف</button></td>
+                <td class="p-3 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-red-500 font-bold">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    function updateField(i, field, val) {
+    function updateRow(i, field, val) {
         let task = {...window.tasks[i]};
         const key = task.dbKey;
         delete task.dbKey;
@@ -128,10 +92,8 @@
     }
 
     function addNewTask() {
-        saveToCloud({title: "مهمة جديدة", status: "قيد الانتظار", progress: 0});
+        saveToCloud({title: "مهمة جديدة", desc: "-", owner: "-", date: "", status: "قيد التنفيذ"});
     }
-
-    function updateStats() {}
 </script>
 </body>
 </html>
