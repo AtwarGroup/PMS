@@ -2,11 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة مهام المدير المالي</title>
+    <title>مهام المدير المالي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Tajawal', sans-serif; }</style>
+    <style>body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }</style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -35,24 +34,28 @@
         window.deleteFromCloud = (key) => remove(ref(db, 'tasks/' + key));
     </script>
 </head>
-<body class="bg-slate-50 p-6">
+<body class="p-10">
 
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-800">📋 مهام المدير المالي</h1>
-            <button onclick="addNewTask()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">➕ إضافة مهمة</button>
+            <button onclick="addNewTask()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700">
+                <span>➕</span> إضافة مهمة
+            </button>
+            <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">مهام المدير المالي 📋</h1>
         </div>
 
-        <div class="bg-white shadow rounded-xl overflow-hidden">
-            <table class="w-full text-right text-sm">
+        <!-- Table -->
+        <div class="bg-white shadow rounded-xl overflow-hidden border border-slate-200">
+            <table class="w-full text-right">
                 <thead class="bg-slate-800 text-white">
                     <tr>
-                        <th class="p-4">عنوان المهمة</th>
-                        <th class="p-4">الوصف</th>
-                        <th class="p-4">المسؤول</th>
-                        <th class="p-4">التاريخ</th>
-                        <th class="p-4">الحالة</th>
                         <th class="p-4 text-center">حذف</th>
+                        <th class="p-4 text-center">الحالة</th>
+                        <th class="p-4 text-center">التاريخ</th>
+                        <th class="p-4 text-right">المسؤول</th>
+                        <th class="p-4 text-right">الوصف</th>
+                        <th class="p-4 text-right">عنوان المهمة</th>
                     </tr>
                 </thead>
                 <tbody id="tasksTableBody" class="divide-y divide-slate-100"></tbody>
@@ -67,17 +70,17 @@
         window.tasks.forEach((t, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.title || ''}" onchange="updateRow(${i}, 'title', this.value)"></td>
-                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.desc || ''}" onchange="updateRow(${i}, 'desc', this.value)"></td>
-                <td class="p-3"><input class="w-full bg-transparent border-none outline-none" value="${t.owner || ''}" onchange="updateRow(${i}, 'owner', this.value)"></td>
-                <td class="p-3"><input type="date" class="bg-transparent border-none outline-none" value="${t.date || ''}" onchange="updateRow(${i}, 'date', this.value)"></td>
-                <td class="p-3">
-                    <select onchange="updateRow(${i}, 'status', this.value)" class="text-xs font-bold p-1 rounded">
-                        <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
+                <td class="p-4 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-slate-400 hover:text-red-500">🗑️</button></td>
+                <td class="p-4 text-center">
+                    <select onchange="updateRow(${i}, 'status', this.value)" class="text-xs font-bold bg-transparent">
                         <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
+                        <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
                     </select>
                 </td>
-                <td class="p-3 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-red-500 font-bold">🗑️</button></td>
+                <td class="p-4 text-center"><input type="date" class="bg-transparent text-sm w-32" value="${t.date || ''}" onchange="updateRow(${i}, 'date', this.value)"></td>
+                <td class="p-4"><input class="w-full bg-transparent outline-none" value="${t.owner || ''}" onchange="updateRow(${i}, 'owner', this.value)"></td>
+                <td class="p-4"><input class="w-full bg-transparent outline-none" value="${t.desc || ''}" onchange="updateRow(${i}, 'desc', this.value)"></td>
+                <td class="p-4 font-bold text-slate-800"><input class="w-full bg-transparent outline-none" value="${t.title || ''}" onchange="updateRow(${i}, 'title', this.value)"></td>
             `;
             tbody.appendChild(tr);
         });
@@ -92,7 +95,7 @@
     }
 
     function addNewTask() {
-        saveToCloud({title: "مهمة جديدة", desc: "-", owner: "-", date: "", status: "قيد التنفيذ"});
+        saveToCloud({title: "مهمة جديدة", desc: "", owner: "", date: "", status: "قيد التنفيذ"});
     }
 </script>
 </body>
