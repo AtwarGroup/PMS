@@ -1,102 +1,612 @@
 <!DOCTYPE html>
+
 <html lang="ar" dir="rtl">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>مهام المدير المالي</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>مهام وأعمال ومشاريع المدير المالي</title>
+
+ 
+
+    <!-- Tajawal Font -->
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+
+
+    <!-- Tailwind CSS -->
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }</style>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCgvfHsmtb0qYAMfUJv7iKmZUCJ5n_aSy4",
-            databaseURL: "https://atwarpms-default-rtdb.firebaseio.com"
-        };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const tasksRef = ref(db, 'tasks');
+    <!-- Icon Library -->
 
-        onValue(tasksRef, (snapshot) => {
-            const data = snapshot.val();
-            window.tasks = data ? Object.keys(data).map(key => ({ dbKey: key, ...data[key] })) : [];
-            renderTable();
-        });
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-        window.saveToCloud = (task, key) => {
-            if (key) update(ref(db, 'tasks/' + key), task);
-            else push(tasksRef, task);
-        };
 
-        window.deleteFromCloud = (key) => remove(ref(db, 'tasks/' + key));
-    </script>
+
+    <!-- ExcelJS for export -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+    <!-- SheetJS for import -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+
+    <style>
+
+        body{font-family:'Tajawal',sans-serif;}
+
+        .desc-textarea{line-height:1.4;max-height:38px;transition:max-height .3s ease;}
+
+        .desc-textarea:focus{max-height:120px;overflow-y:auto!important;}
+
+        select{cursor:pointer;appearance:auto;}
+
+    </style>
+
 </head>
-<body class="p-10">
 
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
-            <button onclick="addNewTask()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700">
-                <span>➕</span> إضافة مهمة
-            </button>
-            <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">مهام المدير المالي 📋</h1>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col">
+
+
+
+    <!-- Header -->
+
+    <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
+
+        <div class="max-w-[98%] mx-auto px-4 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+
+ 
+
+            <!-- يمين: الشعار + زر الصفحة الرئيسية -->
+
+            <div class="flex items-center gap-3">
+
+                <!-- زر الصفحة الرئيسية (تصحيح تداخل العناصر) -->
+
+                <a href="Financial_Manager.html" class="p-2.5 rounded-xl bg-white/10 hover:bg-sky-600 transition-colors shadow-md flex items-center justify-center group" title="الصفحة الرئيسية">
+
+                    <i data-lucide="home" class="w-5 h-5 text-sky-400 group-hover:text-white"></i>
+
+                </a>
+
+
+
+                <!-- شريط اللون الصغير -->
+
+                <div class="w-3 h-9 bg-blue-500 rounded-full"></div>
+
+
+
+                <!-- العنوان -->
+
+                <h1 class="text-xl font-bold whitespace-nowrap">مهام وأعمال ومشاريع المدير المالي</h1>
+
+            </div>
+
+
+
+            <div class="flex flex-wrap gap-2">
+
+                <button onclick="addNewTask()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md">
+
+                    ➕ إضافة مهمة جديدة
+
+                </button>
+
+                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md">
+
+                    ⬇️ تصدير Excel
+
+                </button>
+
+                <label for="importFile" class="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer">
+
+                    ⬆️ رفع Excel
+
+                </label>
+
+                <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
+
+            </div>
+
         </div>
+
+    </header>
+
+
+
+    <!-- Main -->
+
+    <main class="max-w-[98%] mx-auto px-2 py-6 flex-1 w-full space-y-6">
+
+
+
+        <!-- Stats -->
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+
+            <div class="stat-card"><p>إجمالي المهام</p><h3 id="stat-total">0</h3></div>
+
+            <div class="stat-card text-emerald-600"><p>مكتملة</p><h3 id="stat-completed">0</h3></div>
+
+            <div class="stat-card text-blue-600"><p>قيد التنفيذ</p><h3 id="stat-progress">0</h3></div>
+
+            <div class="stat-card text-amber-600"><p>قيد الانتظار</p><h3 id="stat-pending">0</h3></div>
+
+            <div class="stat-card text-rose-600"><p>متأخرة</p><h3 id="stat-delayed">0</h3></div>
+
+        </div>
+
+
+
+        <!-- Filters -->
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+
+            <input type="text" id="searchInput" oninput="renderTable()" placeholder="🔍 بحث..."
+
+                   class="w-full md:w-96 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <select id="statusFilter" onchange="renderTable()"
+
+                    class="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-700 focus:outline-none">
+
+                <option value="ALL">جميع الحالات</option>
+
+                <option value="مكتملة">مكتملة</option>
+
+                <option value="قيد التنفيذ">قيد التنفيذ</option>
+
+                <option value="قيد الانتظار">قيد الانتظار</option>
+
+            </select>
+
+        </div>
+
+
 
         <!-- Table -->
-        <div class="bg-white shadow rounded-xl overflow-hidden border border-slate-200">
-            <table class="w-full text-right">
-                <thead class="bg-slate-800 text-white">
-                    <tr>
-                        <th class="p-4 text-center">حذف</th>
-                        <th class="p-4 text-center">الحالة</th>
-                        <th class="p-4 text-center">التاريخ</th>
-                        <th class="p-4 text-right">المسؤول</th>
-                        <th class="p-4 text-right">الوصف</th>
-                        <th class="p-4 text-right">عنوان المهمة</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksTableBody" class="divide-y divide-slate-100"></tbody>
-            </table>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+            <div class="overflow-x-auto">
+
+                <table class="w-full text-right text-xs whitespace-nowrap">
+
+                    <thead>
+
+                        <tr class="bg-slate-800 text-white font-bold border-b border-slate-700">
+
+                            <th class="p-3">رقم</th>
+
+                            <th class="p-3 min-w-[160px]">عنوان المهمة</th>
+
+                            <th class="p-3 w-[280px] min-w-[280px]">الوصف</th>
+
+                            <th class="p-3">نوع المهمة</th>
+
+                            <th class="p-3">أنشئت بواسطة</th>
+
+                            <th class="p-3">المسؤول</th>
+
+                            <th class="p-3">تاريخ البداية</th>
+
+                            <th class="p-3">تاريخ النهاية</th>
+
+                            <th class="p-3 text-center">المدة</th>
+
+                            <th class="p-3">النهاية الفعلي</th>
+
+                            <th class="p-3 text-center">تأخير</th>
+
+                            <th class="p-3">الحالة</th>
+
+                            <th class="p-3 text-center">الإنجاز</th>
+
+                            <th class="p-3 min-w-[180px]">ملاحظات</th>
+
+                            <th class="p-3 text-center">إجراءات</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tasksTableBody" class="divide-y divide-slate-200 font-medium text-slate-800"></tbody>
+
+                </table>
+
+            </div>
+
         </div>
-    </div>
+
+    </main>
+
+
 
 <script>
-    function renderTable() {
-        const tbody = document.getElementById('tasksTableBody');
-        tbody.innerHTML = '';
-        window.tasks.forEach((t, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="p-4 text-center"><button onclick="deleteFromCloud('${t.dbKey}')" class="text-slate-400 hover:text-red-500">🗑️</button></td>
-                <td class="p-4 text-center">
-                    <select onchange="updateRow(${i}, 'status', this.value)" class="text-xs font-bold bg-transparent">
-                        <option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
-                        <option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
-                    </select>
-                </td>
-                <td class="p-4 text-center"><input type="date" class="bg-transparent text-sm w-32" value="${t.date || ''}" onchange="updateRow(${i}, 'date', this.value)"></td>
-                <td class="p-4"><input class="w-full bg-transparent outline-none" value="${t.owner || ''}" onchange="updateRow(${i}, 'owner', this.value)"></td>
-                <td class="p-4"><input class="w-full bg-transparent outline-none" value="${t.desc || ''}" onchange="updateRow(${i}, 'desc', this.value)"></td>
-                <td class="p-4 font-bold text-slate-800"><input class="w-full bg-transparent outline-none" value="${t.title || ''}" onchange="updateRow(${i}, 'title', this.value)"></td>
-            `;
-            tbody.appendChild(tr);
-        });
+
+// ----- Sample initial tasks -----
+
+const initialTasks=[
+
+{id:"1",title:"متطلبات المستشار",desc:"التأكد من استكمال المتطلبات",type:"متطلبات",createdBy:"المدير المالي",assign:"المدير المالي",start:"2026-06-28",end:"2026-08-06",actualEnd:"2026-08-06",status:"مكتملة",progress:100,notes:""},
+
+{id:"1.1",title:"مراجعة المتطلبات",desc:"مراجعة القائمة الحالية",type:"تشغيلي",createdBy:"المدير المالي",assign:"المدير المالي",start:"2026-06-28",end:"2026-06-29",actualEnd:"2026-07-10",status:"مكتملة",progress:100,notes:""}
+
+];
+
+
+
+let tasks=JSON.parse(localStorage.getItem('atwar_tasks_v4'))||initialTasks;
+
+let teamOptions=new Set(["المدير المالي","رئيس الحسابات","الرئيس التنفيذي","حمزة يوسف"]);
+
+let typeOptions=new Set(["متطلبات","تشغيلي","رقابة مالية","أتمتة"]);
+
+
+
+// ---------- Helpers ----------
+
+function updateOptionsSets(){
+
+    tasks.forEach(t=>{
+
+        if(t.assign)teamOptions.add(t.assign);
+
+        if(t.createdBy)teamOptions.add(t.createdBy);
+
+        if(t.type)typeOptions.add(t.type);
+
+    });
+
+}
+
+function buildSelect(optionsSet,selected){
+
+    let html='<option value="" disabled '+(!selected?'selected':'')+'>اختر...</option>';
+
+    optionsSet.forEach(opt=>{
+
+        html+=`<option value="${opt}" ${opt===selected?'selected':''}>${opt}</option>`;
+
+    });
+
+    html+='<option value="ADD_NEW" class="font-bold text-blue-600 bg-blue-50">➕ إضافة جديد...</option>';
+
+    return html;
+
+}
+
+function calcDuration(s,e){
+
+    if(!s||!e)return 0;
+
+    const diff=Math.ceil((new Date(e)-new Date(s))/(1000*60*60*24));
+
+    return diff>=0?diff:0;
+
+}
+
+function calcDelay(e,a,status){
+
+    if(!e)return 0;
+
+    const endDate=new Date(e);
+
+    let compare=a?new Date(a):new Date();
+
+    if(status==='مكتملة'&&!a)return 0;
+
+    return compare>endDate?Math.floor((compare-endDate)/(1000*60*60*24)):0;
+
+}
+
+function save(){localStorage.setItem('atwar_tasks_v4',JSON.stringify(tasks));}
+
+
+
+// ---------- CRUD ----------
+
+function updateField(i,f,v){tasks[i][f]=v;save();renderTable();updateStats();}
+
+function addNewTask(){
+
+    const today=new Date().toISOString().split('T')[0];
+
+    tasks.push({id:(tasks.length+1).toString(),title:"مهمة جديدة",desc:"",type:"",createdBy:"",assign:"",start:today,end:today,actualEnd:"",status:"قيد الانتظار",progress:0,notes:""});
+
+    save();renderTable();updateStats();
+
+}
+
+function deleteTask(i){if(confirm('تأكيد الحذف؟')){tasks.splice(i,1);save();renderTable();updateStats();}}
+
+function resetData(){if(confirm('استعادة البيانات الأصلية؟')){tasks=[...initialTasks];save();renderTable();updateStats();}}
+
+
+
+// ---------- Rendering ----------
+
+function renderTable(){
+
+    updateOptionsSets();
+
+    const tbody=document.getElementById('tasksTableBody');
+
+    const search=document.getElementById('searchInput').value.toLowerCase();
+
+    const status=document.getElementById('statusFilter').value;
+
+    tbody.innerHTML='';
+
+    tasks.forEach((t,i)=>{
+
+        if(status!=='ALL'&&t.status!==status)return;
+
+        if(search&&!Object.values(t).some(v=>String(v).toLowerCase().includes(search)))return;
+
+        const duration=calcDuration(t.start,t.end);
+
+        const delay=calcDelay(t.end,t.actualEnd,t.status);
+
+        const tr=document.createElement('tr');tr.className="hover:bg-slate-50 transition-colors border-b border-slate-200";
+
+        tr.innerHTML=`
+
+<td class="p-3 font-bold text-slate-500">${t.id}</td>
+
+<td class="p-3"><input type="text" value="${t.title}" onchange="updateField(${i},'title',this.value)" class="bg-transparent font-bold w-full border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none"></td>
+
+<td class="p-3 min-w-[280px] max-w-[320px]"><textarea onchange="updateField(${i},'desc',this.value)" class="desc-textarea bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 focus:bg-white rounded-lg p-1.5 w-full focus:outline-none">${t.desc||''}</textarea></td>
+
+<td class="p-3"><select onchange="handleSelectChange(this,${i},'type')" class="bg-white border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none">${buildSelect(typeOptions,t.type)}</select></td>
+
+<td class="p-3"><select onchange="handleSelectChange(this,${i},'createdBy')" class="bg-white border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none">${buildSelect(teamOptions,t.createdBy)}</select></td>
+
+<td class="p-3"><select onchange="handleSelectChange(this,${i},'assign')" class="bg-white border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none font-bold text-blue-700">${buildSelect(teamOptions,t.assign)}</select></td>
+
+<td class="p-3"><input type="date" value="${t.start}" onchange="updateField(${i},'start',this.value)" class="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-xs focus:outline-none"></td>
+
+<td class="p-3"><input type="date" value="${t.end}" onchange="updateField(${i},'end',this.value)" class="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-xs focus:outline-none"></td>
+
+<td class="p-3 text-center font-bold bg-slate-50/50">${duration} يوم</td>
+
+<td class="p-3"><input type="date" value="${t.actualEnd||''}" onchange="updateField(${i},'actualEnd',this.value)" class="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-xs focus:outline-none"></td>
+
+<td class="p-3 text-center"><span class="${delay>0?'bg-rose-100 text-rose-700 font-extrabold px-2 py-0.5 rounded-full':'text-slate-400'}">${delay}</span></td>
+
+<td class="p-3"><select onchange="updateField(${i},'status',this.value)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold focus:outline-none cursor-pointer">
+
+<option value="مكتملة" ${t.status==='مكتملة'?'selected':''}>🟢 مكتملة</option>
+
+<option value="قيد التنفيذ" ${t.status==='قيد التنفيذ'?'selected':''}>🔵 قيد التنفيذ</option>
+
+<option value="قيد الانتظار" ${t.status==='قيد الانتظار'?'selected':''}>🟡 قيد الانتظار</option>
+
+</select></td>
+
+<td class="p-3 text-center"><div class="flex items-center gap-1 justify-center"><input type="number" min="0" max="100" value="${t.progress}" onchange="updateField(${i},'progress',this.value)" class="w-12 border border-slate-200 rounded px-1 text-center font-bold"><span class="text-slate-500 font-bold">%</span></div></td>
+
+<td class="p-3"><input type="text" value="${t.notes||''}" onchange="updateField(${i},'notes',this.value)" class="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 w-full focus:outline-none text-slate-600"></td>
+
+<td class="p-3 text-center"><button onclick="deleteTask(${i})" class="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-all" title="حذف">🗑️</button></td>`;
+
+        tbody.appendChild(tr);
+
+    });
+
+    
+
+    // إعادة تفعيل أيقونات Lucide بعد تحديث الجدول
+
+    if (window.lucide) {
+
+        window.lucide.createIcons();
+
     }
 
-    function updateRow(i, field, val) {
-        let task = {...window.tasks[i]};
-        const key = task.dbKey;
-        delete task.dbKey;
-        task[field] = val;
-        saveToCloud(task, key);
+}
+
+
+
+function handleSelectChange(sel,i,f){
+
+    if(sel.value==='ADD_NEW'){
+
+        const val=prompt("أدخل القيمة الجديدة:");
+
+        if(val&&val.trim()!==''){
+
+            tasks[i][f]=val.trim();
+
+            save();
+
+            renderTable();
+
+            updateStats();
+
+        } else {
+
+            sel.value=tasks[i][f]||'';
+
+        }
+
+    } else {
+
+        updateField(i,f,sel.value);
+
     }
 
-    function addNewTask() {
-        saveToCloud({title: "مهمة جديدة", desc: "", owner: "", date: "", status: "قيد التنفيذ"});
+}
+
+
+
+function updateStats(){
+
+    document.getElementById('stat-total').innerText=tasks.length;
+
+    document.getElementById('stat-completed').innerText=tasks.filter(t=>t.status==='مكتملة').length;
+
+    document.getElementById('stat-progress').innerText=tasks.filter(t=>t.status==='قيد التنفيذ').length;
+
+    document.getElementById('stat-pending').innerText=tasks.filter(t=>t.status==='قيد الانتظار').length;
+
+    document.getElementById('stat-delayed').innerText=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status)>0).length;
+
+}
+
+
+
+// ---------- Excel Export ----------
+
+async function exportToExcel(){
+
+    const wb=new ExcelJS.Workbook();
+
+    const ws=wb.addWorksheet("Tasks",{views:[{rightToLeft:true}]});
+
+    ws.columns=[
+
+        {header:'#',key:'id',width:8},
+
+        {header:'عنوان المهمة',key:'title',width:25},
+
+        {header:'الوصف',key:'desc',width:35},
+
+        {header:'نوع المهمة',key:'type',width:15},
+
+        {header:'أنشئت بواسطة',key:'createdBy',width:15},
+
+        {header:'المسؤول',key:'assign',width:15},
+
+        {header:'تاريخ البداية',key:'start',width:12},
+
+        {header:'تاريخ النهاية',key:'end',width:12},
+
+        {header:'النهاية الفعلي',key:'actualEnd',width:12},
+
+        {header:'الحالة',key:'status',width:12},
+
+        {header:'الإنجاز %',key:'progress',width:10},
+
+        {header:'ملاحظات',key:'notes',width:25}
+
+    ];
+
+    tasks.forEach(t=>ws.addRow({...t}));
+
+    const buf=await wb.xlsx.writeBuffer();
+
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks_export.xlsx';a.click();
+
+}
+
+
+
+// ---------- Excel Import ----------
+
+function handleImport(e){
+
+    const file=e.target.files[0];if(!file)return;
+
+    const reader=new FileReader();
+
+    reader.onload=(evt)=>{
+
+        const data=evt.target.result;
+
+        const wb=XLSX.read(data,{type:'binary'});
+
+        const sheetName=wb.SheetNames[0];
+
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
+
+        tasks=rows.map((r,i)=>({
+
+            id:String(r["#"]||i+1),
+
+            title:r["عنوان المهمة"]||"",
+
+            desc:r["الوصف"]||"",
+
+            type:r["نوع المهمة"]||"",
+
+            createdBy:r["أنشئت بواسطة"]||"",
+
+            assign:r["المسؤول"]||"",
+
+            start:r["تاريخ البداية"]||"",
+
+            end:r["تاريخ النهاية"]||"",
+
+            actualEnd:r["النهاية الفعلي"]||"",
+
+            status:r["الحالة"]||"قيد الانتظار",
+
+            progress:parseInt(r["الإنجاز %"]||0,10),
+
+            notes:r["ملاحظات"]||""
+
+        }));
+
+        save();renderTable();updateStats();
+
+        alert("تم استيراد المهام بنجاح!");
+
+    };
+
+    reader.readAsBinaryString(file);
+
+}
+
+
+
+// Stat cards design utility
+
+document.querySelectorAll('.stat-card').forEach(el=>{
+
+    el.classList.add('bg-white','p-4','rounded-2xl','border','border-slate-200','shadow-sm');
+
+    const p=el.querySelector('p');p.classList.add('text-xs','font-bold','text-slate-500','mb-1');
+
+    const h=el.querySelector('h3');h.classList.add('text-2xl','font-black');
+
+});
+
+
+
+// ---------- Initialization ----------
+
+renderTable();
+
+updateStats();
+
+
+
+window.addEventListener('DOMContentLoaded', () => {
+
+    if (window.lucide) {
+
+        window.lucide.createIcons();
+
     }
+
+});
+
 </script>
+
 </body>
-</html>
+
+</html> 
+
