@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATWAR ONE – Tasks V1.3.3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:'Tajawal',sans-serif}
+    .task-card{transition:.16s ease}
+    .task-card:hover{background:#f8fafc}
+    .task-card.selected{background:#eff6ff;box-shadow:inset -3px 0 0 #3b82f6}
+    .thin-scroll{scrollbar-width:thin}
+    .thin-scroll::-webkit-scrollbar{width:7px;height:7px}
+    .thin-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+    input,textarea,select{outline:none}
+  
+    #workspaceGrid.details-closed #taskListPanel{grid-column:1 / -1}
+    #workspaceGrid.details-closed #detailsPanel{display:none}
+    @media (min-width:1280px){
+      #detailsPanel{width:390px}
+    }
+
+
+    /* V2.7 UX enhancements */
+    #listHeaderSticky{background:white;box-shadow:0 1px 0 rgba(148,163,184,.18);}
+    .task-card.is-overdue{background:linear-gradient(90deg,rgba(254,242,242,.85),rgba(255,255,255,0))}
+    .task-card.is-overdue::before{
+      content:""; position:absolute; right:0; top:0; bottom:0; width:3px; background:#ef4444;
+    }
+    .task-card{position:relative}
+    .priority-dot{width:8px;height:8px;border-radius:999px;display:inline-block;flex:0 0 auto}
+    .priority-normal{background:#94a3b8}
+    .priority-important{background:#f59e0b}
+    .priority-urgent{background:#ef4444}
+    .quick-add{background:white;border-top:1px solid #e2e8f0;}
+    .blocker-icon{cursor:help}
+    @media (max-width: 768px){
+      .task-operational .hide-mobile{display:none}
+      .task-operational{gap:.45rem!important}
+      .task-title-line{font-size:13px!important}
+      #detailsPanel{width:100%!important}
+    }
+
+
+    .qf{padding:.5rem .8rem;border:1px solid #e2e8f0;border-radius:999px;background:#fff;font-size:12px;font-weight:700;color:#475569}
+    .qf:hover{background:#f8fafc}.qf.active{background:#0f172a;color:white;border-color:#0f172a}
+    .group-title{font-size:12px;font-weight:900;color:#64748b;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;cursor:pointer}
+    .manager-note-icon{font-size:12px;color:#b45309;cursor:help}
+
+
+    .team-card{transition:background .15s ease,border-color .15s ease,transform .15s ease}
+    .team-card:hover{background:#f8fafc;border-color:#cbd5e1;transform:translateY(-1px)}
+    .team-metric{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.75rem;padding:.4rem .55rem}
+
+
+    /* V1.1 UI Improvements */
+    #toastContainer{
+      position:fixed;left:20px;bottom:20px;z-index:120;
+      display:flex;flex-direction:column;gap:10px;max-width:min(420px,calc(100vw - 40px));
+    }
+    .toast{
+      display:flex;align-items:flex-start;gap:10px;
+      background:#fff;border:1px solid #e2e8f0;border-radius:14px;
+      box-shadow:0 14px 40px rgba(15,23,42,.14);
+      padding:12px 14px;animation:toastIn .2s ease;
+    }
+    .toast-success{border-right:4px solid #16a34a}
+    .toast-error{border-right:4px solid #dc2626}
+    .toast-warning{border-right:4px solid #d97706}
+    .toast-info{border-right:4px solid #2563eb}
+    @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .dialog-backdrop{
+      position:fixed;inset:0;z-index:115;background:rgba(15,23,42,.45);
+      backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;
+    }
+    input[type=range]{
+      -webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+      background:linear-gradient(to left,#2563eb 0%,#2563eb var(--range-progress,0%),#e2e8f0 var(--range-progress,0%),#e2e8f0 100%);
+    }
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;appearance:none;height:16px;width:16px;border-radius:50%;
+      background:#2563eb;cursor:pointer;box-shadow:0 0 0 3px #bfdbfe;
+    }
+    input[type=range]::-moz-range-thumb{
+      height:16px;width:16px;border:0;border-radius:50%;
+      background:#2563eb;cursor:pointer;box-shadow:0 0 0 3px #bfdbfe;
+    }
+
+</style>
+</head>
+
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+
+<!-- Login -->
+<section id="loginScreen" class="min-h-screen flex items-center justify-center p-5 bg-slate-100">
+  <div class="w-full max-w-md bg-white rounded-[28px] shadow-xl border border-slate-200 p-7">
+    <div class="flex items-center gap-3 mb-7">
+      <div class="w-3 h-11 bg-blue-500 rounded-full"></div>
+      <div>
+        <h1 class="text-2xl font-black text-slate-900">نظام إدارة المهام</h1>
+        <p class="text-sm text-slate-500 mt-1">تسجيل الدخول للوصول إلى مهامك <span class="text-[10px] font-bold text-emerald-600">V1.0 Production</span></p>
+      </div>
+    </div>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold mb-2">البريد الإلكتروني</label>
+        <input id="loginEmail" type="email" required class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500" autocomplete="username">
+      </div>
+      <div>
+        <label class="block text-sm font-bold mb-2">كلمة المرور</label>
+        <input id="loginPassword" type="password" required class="w-full border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500" autocomplete="current-password">
+      </div>
+      <button id="loginButton" class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-3 font-black">دخول</button>
+      <div id="loginError" class="hidden text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3 text-center"></div>
+    </form>
+  </div>
+</section>
+
+<!-- App -->
+<div id="appShell" class="hidden min-h-screen flex-col">
+  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-40">
+    <div class="max-w-[1600px] mx-auto px-4 py-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between">
+      <div class="flex items-center gap-3 self-stretch lg:self-auto">
+        <div class="w-3 h-10 bg-blue-500 rounded-full"></div>
+        <div>
+          <h1 class="text-xl font-black">ATWAR ONE – Tasks</h1>
+          <p id="pageSubtitle" class="text-[11px] text-blue-200">المهام </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span id="currentUserBadge" class="text-xs font-bold px-3 py-2 rounded-xl bg-white/10"></span>
+        <span id="saveStatus" class="text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-emerald-300">☁️ تم الحفظ</span>
+        <a href="user-guide.html" target="_blank" rel="noopener noreferrer" class="bg-white/10 hover:bg-white/15 text-white text-base font-bold w-10 h-10 rounded-xl flex items-center justify-center" title="دليل المستخدم" aria-label="دليل المستخدم">📘</a>
+        <div class="relative">
+          <button id="notificationButton" type="button" onclick="toggleNotifications()" class="relative bg-white/10 hover:bg-white/15 text-white text-base font-bold w-10 h-10 rounded-xl" title="الإشعارات">🔔
+            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center">0</span>
+          </button>
+          <div id="notificationPanel" class="hidden absolute left-0 mt-2 w-[340px] max-w-[90vw] bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-[70]">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <b class="text-sm">الإشعارات</b>
+              <button onclick="markAllNotificationsRead()" class="text-[11px] font-bold text-blue-600">تحديد الكل كمقروء</button>
+            </div>
+            <div id="notificationList" class="max-h-[360px] overflow-auto"></div>
+          </div>
+        </div>
+        <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm">👥 المستخدمون</button>
+        <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md">＋ إضافة مهمة</button>
+        <div class="relative">
+          <button type="button" onclick="toggleMoreMenu()" class="bg-white/10 hover:bg-white/15 text-white text-lg font-black px-3 py-1.5 rounded-xl" title="المزيد">⋯</button>
+          <div id="moreMenu" class="hidden absolute left-0 mt-2 w-44 bg-white text-slate-700 rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
+            <a href="user-guide.html" target="_blank" rel="noopener noreferrer" onclick="toggleMoreMenu(false)" class="block w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50">📘 دليل المستخدم</a>
+            <button onclick="exportToExcel();toggleMoreMenu(false)" class="w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50">⬇ تصدير Excel</button>
+            <label id="importLabel" for="importFile" class="block w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50 cursor-pointer">⬆ رفع Excel</label>
+          </div>
+        </div>
+        <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
+        <button onclick="logoutUser()" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl">تسجيل خروج</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full max-w-[1600px] mx-auto p-3 lg:p-4 space-y-3">
+
+    <!-- Stats -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">إجمالي المهام</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+    </section>
+
+    <!-- Manager Dashboard -->
+    <section id="managerDashboard" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="font-black text-sm text-slate-900">نظرة الفريق</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">ملخص سريع لأداء المهام حسب الموظف</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="filterByTeamMember('ALL')" class="text-xs font-bold text-slate-500 hover:bg-slate-50 px-3 py-2 rounded-lg">كل المسؤولين</button>
+          <button type="button" onclick="toggleManagerDashboard()" class="text-xs font-bold text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-lg">
+            <span id="managerDashboardToggleText">إخفاء</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="managerDashboardBody" class="p-3">
+        <div id="teamSummary" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+        <div id="teamMembersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"></div>
+        <div id="teamEmptyState" class="hidden py-6 text-center text-sm text-slate-400">لا يوجد موظفون ضمن فريقك حالياً.</div>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 flex flex-col md:flex-row items-center gap-3 justify-between">
+      <input id="searchInput" type="text" placeholder="🔍 بحث في المهام..." class="w-full md:w-[420px] border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
+      <div class="flex flex-wrap gap-1.5" id="quickFilters">
+        <button type="button" data-filter="ALL" onclick="setQuickFilter('ALL')" class="qf active">الكل</button>
+        <button type="button" data-filter="TODAY" onclick="setQuickFilter('TODAY')" class="qf">اليوم</button>
+        <button type="button" data-filter="DELAYED" onclick="setQuickFilter('DELAYED')" class="qf">متأخرة</button>
+        <button type="button" data-filter="قيد التنفيذ" onclick="setQuickFilter('قيد التنفيذ')" class="qf">قيد التنفيذ</button>
+        <button type="button" data-filter="مكتملة" onclick="setQuickFilter('مكتملة')" class="qf">مكتملة</button>
+      </div>
+      <select id="sortFilter" onchange="setSortFilter(this.value)" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
+        <option value="DEFAULT">الترتيب الافتراضي</option>
+        <option value="NEWEST">الأحدث</option>
+        <option value="OLDEST">الأقدم</option>
+        <option value="PRIORITY">الأولوية</option>
+        <option value="DUE">تاريخ الاستحقاق</option>
+      </select>
+      <select id="assigneeFilter" onchange="setAssigneeFilter(this.value)" class="hidden border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
+        <option value="ALL">كل المسؤولين</option>
+      </select>
+      <select id="statusFilter" class="hidden">
+        <option value="ALL">الكل</option><option value="TODAY">اليوم</option><option value="DELAYED">متأخرة</option>
+        <option value="قيد التنفيذ">قيد التنفيذ</option><option value="بانتظار الاعتماد">بانتظار الاعتماد</option>
+                  <option value="مكتملة">مكتملة</option>
+      </select>
+    </section>
+
+    <!-- To Do layout -->
+    <section id="workspaceGrid" class="details-closed grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_390px] gap-4 items-start">
+      <div id="taskListPanel" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[360px] xl:order-1">
+        <div id="listHeaderSticky" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="font-black text-lg">المهام</h2>
+          <span id="visibleCount" class="text-xs font-bold text-slate-500">0 مهام</span>
+        </div>
+          <div id="quickAddBox" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
+            <div class="flex items-center gap-2">
+              <input id="quickAddInput" type="text" onkeydown="quickAddKey(event)" placeholder="اكتب عنوان المهمة واضغط Enter..." class="flex-1 border border-blue-200 bg-white rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-400">
+              <button type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold">إضافة</button>
+              <button type="button" onclick="hideQuickAdd()" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500">×</button>
+            </div>
+          </div>
+        <div id="tasksList" class="divide-y divide-slate-100 overflow-visible"></div>
+        <div id="emptyState" class="hidden py-20 text-center text-slate-400">
+          <div class="text-4xl mb-3">✓</div>
+          <p class="font-bold">لا توجد مهام حالياً</p>
+          <p class="text-xs mt-2">استخدم إضافة مهمة لبدء قائمة جديدة.</p>
+        </div>
+        <div class="quick-add p-3">
+          <button onclick="showQuickAdd()" class="w-full text-right px-4 py-3 rounded-xl hover:bg-slate-50 text-sm font-bold text-blue-700 flex items-center gap-2">
+            <span class="text-xl leading-none">＋</span>
+            <span>إضافة مهمة</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <aside id="detailsPanel" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden  xl:order-2">
+        <div id="noSelection" class="hidden py-16 px-6 text-center text-slate-400">
+          <div class="text-4xl mb-3">☑</div>
+          <p class="font-bold">اختر مهمة لعرض التفاصيل</p>
+        </div>
+
+        <div id="taskDetails" class="hidden">
+          <div id="detailsHeader" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 class="font-black text-lg">تفاصيل المهمة</h2>
+              <div id="taskLockHint" class="hidden text-[10px] font-bold text-amber-600 mt-0.5"></div>
+            </div>
+            <button type="button" onclick="closeDetailsKeepPosition()" class="text-slate-400 hover:text-slate-700 text-xl">×</button>
+          </div>
+
+          <div class="p-3 space-y-2 overflow-visible">
+            <div class="bg-white border border-slate-200 rounded-xl p-3">
+              <input id="detailTitle" onchange="updateSelectedField('title',this.value)" class="w-full text-base font-black bg-transparent border-0 p-0 focus:ring-0" placeholder="عنوان المهمة">
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div class="px-3 py-2.5 border-b border-slate-100 flex items-center gap-3">
+                <span class="text-slate-400 text-sm">●</span>
+                <select id="detailStatus" onchange="updateSelectedField('status',this.value)" class="w-full bg-transparent font-bold text-sm border-0">
+                  <option value="قيد الانتظار">قيد الانتظار</option>
+                  <option value="قيد التنفيذ">قيد التنفيذ</option>
+                  <option value="مكتملة">مكتملة</option>
+                </select>
+              </div>
+              <div class="px-3 py-2.5 border-b border-slate-100 flex items-center gap-3">
+                <span class="text-slate-400 text-sm">👤</span>
+                <div id="assigneeBox" class="flex-1"></div>
+              </div>
+              <div class="px-3 py-2.5 flex items-center gap-3">
+                <span class="text-slate-400 text-sm">⚑</span>
+                <select id="detailPriority" onchange="updateSelectedField('priority',this.value)" class="w-full bg-transparent font-bold text-sm border-0">
+                  <option value="normal">عادية</option>
+                  <option value="important">مهمة</option>
+                  <option value="urgent">عاجلة</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div class="px-3 py-2.5 border-b border-slate-100 flex items-center gap-3">
+                <span class="text-slate-400 text-sm">📅</span>
+                <span class="text-xs font-bold text-slate-500 w-24">تاريخ البداية</span>
+                <input id="detailStart" type="date" onchange="updateSelectedField('start',this.value)" class="flex-1 bg-transparent border-0 text-sm">
+              </div>
+              <div class="px-3 py-2.5 border-b border-slate-100 flex items-center gap-3">
+                <span class="text-slate-400 text-sm">⏰</span>
+                <span class="text-xs font-bold text-slate-500 w-24">تاريخ النهاية</span>
+                <input id="detailEnd" type="date" onchange="updateSelectedField('end',this.value)" class="flex-1 bg-transparent border-0 text-sm">
+              </div>
+              <div class="grid grid-cols-2 divide-x divide-x-reverse divide-slate-100">
+                <div class="px-3 py-2.5">
+                  <div class="text-[11px] font-bold text-slate-500">المدة</div>
+                  <div id="detailDuration" class="mt-1 text-sm font-black text-slate-800">0 يوم</div>
+                </div>
+                <div class="px-3 py-2.5">
+                  <div class="text-[11px] font-bold text-slate-500">أيام التأخير</div>
+                  <div id="detailDelay" class="mt-1 text-sm font-black text-slate-800">0 يوم</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="taskWorkflowActions" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs font-black text-slate-700">إجراء المهمة</div>
+                  <div id="taskWorkflowHint" class="text-[11px] text-slate-400 mt-1"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="startTaskButton" type="button" onclick="startSelectedTask()" class="hidden px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black">▶ بدء المهمة</button>
+                  <button id="completeTaskButton" type="button" onclick="completeSelectedTask()" class="hidden px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black">✓ إنهاء المهمة</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-3">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-slate-500">نسبة الإنجاز</span>
+                <span id="progressText" class="text-xs font-black">0%</span>
+              </div>
+              <input id="detailProgress" type="range" min="0" max="100" step="5" oninput="document.getElementById('progressText').textContent=this.value+'%';updateRangeVisual(this)" onchange="updateSelectedField('progress',this.value)" class="w-full accent-blue-600">
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-3">
+              <textarea id="detailDesc" rows="3" onchange="updateSelectedField('desc',this.value)" placeholder="أضف وصفًا..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
+            </div>
+
+            <div id="subtasksSection" class="bg-white border border-slate-200 rounded-xl p-3">
+              <div class="flex items-center justify-between gap-3 mb-2">
+                <div>
+                  <div class="text-xs font-black text-slate-700">المهام الفرعية</div>
+                  <div id="subtasksSummary" class="text-[10px] text-slate-400 mt-0.5">لا توجد مهام فرعية</div>
+                </div>
+                <button id="addSubtaskButton" type="button" onclick="addSubtask()" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-black hover:bg-blue-100">+ إضافة</button>
+              </div>
+              <div id="subtasksList" class="space-y-2"></div>
+              <div id="subtaskInputRow" class="hidden mt-2 flex gap-2">
+                <input id="newSubtaskInput" type="text" maxlength="120" onkeydown="if(event.key==='Enter'){event.preventDefault();saveNewSubtask()}" placeholder="اكتب المهمة الفرعية..." class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <button type="button" onclick="saveNewSubtask()" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-black">حفظ</button>
+                <button type="button" onclick="cancelNewSubtask()" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold">إلغاء</button>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-3">
+              <textarea id="detailNotes" rows="3" onchange="updateSelectedField('notes',this.value)" placeholder="أضف ملاحظة..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
+            </div>
+            <div class="bg-white border border-amber-200 rounded-xl p-3">
+              <div class="flex items-center gap-2 mb-2 text-xs font-black text-amber-700"><span>📝</span><span>ملاحظات المدير</span></div>
+              <textarea id="detailManagerNotes" rows="2" onchange="updateSelectedField('managerNotes',this.value)" placeholder="ملاحظة خاصة بالمدير..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
+            </div>
+
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-500 space-y-1">
+              <p>أنشئت بواسطة: <span id="detailCreatedBy" class="font-bold text-slate-700"></span></p>
+              <p id="detailTiming"></p><p class="text-slate-400">يتم احتساب المدة والتأخير تلقائيًا.</p>
+            </div>
+
+            <div id="activityLogSection" class="bg-white border border-slate-200 rounded-xl p-3">
+              <div class="flex items-center justify-between gap-3 mb-2">
+                <div>
+                  <div class="text-xs font-black text-slate-700">سجل النشاط</div>
+                  <div id="activityLogSummary" class="text-[10px] text-slate-400 mt-0.5">لا يوجد نشاط مسجل</div>
+                </div>
+                <button id="activityLogToggle" type="button" onclick="toggleActivityLog()" class="text-[11px] font-bold text-blue-700 hover:bg-blue-50 px-2 py-1.5 rounded-lg">إظهار</button>
+              </div>
+              <div id="activityLogList" class="hidden space-y-2 max-h-72 overflow-auto pr-1"></div>
+            </div>
+
+            <div id="managerApprovalActions" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-3">
+              <div class="text-xs font-black text-emerald-800 mb-1">مراجعة إكمال المهمة</div>
+              <div class="text-[11px] text-emerald-700 mb-3">الموظف أنهى المهمة وهي بانتظار اعتمادك.</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="approveSelectedTask()" class="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black">✓ اعتماد الإكمال</button>
+                <button type="button" onclick="reopenSelectedTask()" class="px-3 py-2.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-700 text-xs font-black">↩ إعادة فتح</button>
+              </div>
+            </div>
+
+            <button type="button" onclick="closeDetailsKeepPosition()" class="w-full mb-2 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm flex items-center justify-center gap-2">
+                <span>✓</span><span>تم — إغلاق التفاصيل</span>
+              </button>
+              <button id="deleteSelectedButton" onclick="deleteSelectedTask()" class="hidden w-full border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl py-2.5 font-bold">🗑 حذف المهمة</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+</div>
+
+
+  <!-- User Management -->
+  <div id="usersModal" onclick="if(event.target===this)closeUsersModal()" class="hidden fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm p-4">
+    <div class="max-w-4xl mx-auto mt-8 bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[86vh] flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h2 class="font-black text-lg text-slate-900">إدارة المستخدمين</h2>
+          <p class="text-xs text-slate-500 mt-1">إدارة الاسم والصلاحية والحالة للمستخدمين المسجلين. يتم منع تكرار البريد الإلكتروني.</p>
+        </div>
+        <button type="button" onclick="closeUsersModal()" class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 text-xl">×</button>
+      </div>
+
+      <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+        <div class="text-xs text-slate-500">أنشئ الحساب أولاً في Firebase Authentication، ثم أضف بيانات المستخدم هنا. استخدم الإعدادات المتقدمة فقط لربط UID عند الإضافة الأولى.</div>
+        <button type="button" onclick="showUserForm()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl">＋ إضافة مستخدم</button>
+      </div>
+
+      <div id="userFormBox" class="hidden p-4 border-b border-blue-100 bg-blue-50/40">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input id="userUidInput" type="hidden">
+          <button type="button" id="advancedFirebaseToggle" onclick="toggleFirebaseAdvanced()" class="md:col-span-2 text-right text-xs font-bold text-slate-500 hover:text-blue-700">
+            ⚙️ إعدادات متقدمة
+          </button>
+          <div id="firebaseAdvancedBox" hidden class="hidden md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <label class="block text-[11px] font-bold text-slate-500 mb-2">Firebase UID</label>
+            <input id="userUidAdvancedInput" placeholder="الصق UID من Firebase Authentication" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <p class="text-[10px] text-slate-400 mt-2">اختياري للعرض، ويستخدم فقط لربط حساب Firebase عند الإضافة الأولى.</p>
+          </div>
+          <input id="userNameInput" placeholder="اسم المستخدم" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+          <input id="userEmailInput" type="email" placeholder="البريد الإلكتروني" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+          <select id="userRoleInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <option value="employee">موظف</option>
+            <option value="manager">مدير</option>
+            <option value="admin">مدير النظام</option>
+          </select>
+
+          <select id="userManagerUidInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <option value="">بدون مدير مباشر</option>
+          </select>
+          <select id="userStatusInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <option value="active">نشط</option>
+            <option value="inactive">غير نشط</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="hideUserForm()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold">إلغاء</button>
+          <button type="button" onclick="saveUserProfile()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">حفظ المستخدم</button>
+        </div>
+      </div>
+
+      <div class="overflow-auto">
+        <div id="usersList" class="divide-y divide-slate-100"></div>
+        <div id="usersEmpty" class="hidden py-14 text-center text-slate-400 text-sm">لا توجد ملفات مستخدمين.</div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="toastContainer" aria-live="polite"></div>
+
+  <div id="appDialog" onclick="if(event.target===this)document.getElementById('appDialogCancel').click()" class="hidden dialog-backdrop">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100">
+        <h3 id="appDialogTitle" class="font-black text-base text-slate-900">تأكيد</h3>
+        <p id="appDialogMessage" class="text-sm text-slate-500 mt-1"></p>
+      </div>
+      <div id="appDialogInputWrap" class="hidden px-5 pt-4">
+        <textarea id="appDialogInput" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-y" placeholder=""></textarea>
+      </div>
+      <div class="px-5 py-4 flex items-center justify-end gap-2">
+        <button id="appDialogCancel" type="button" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold">إلغاء</button>
+        <button id="appDialogConfirm" type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">تأكيد</button>
+      </div>
+    </div>
+  </div>
+
+<!--
+  ATWAR ONE – Tasks
+  Production Version: 1.3.3
+  Frozen from validated UAT build V3.21.2
+-->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, update, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCgvfHsmtb0qYAMfUjV7iKmZUcJ5n_aSy4",
+  authDomain: "atwarpms.firebaseapp.com",
+  databaseURL: "https://atwarpms-default-rtdb.firebaseio.com",
+  projectId: "atwarpms",
+  storageBucket: "atwarpms.firebasestorage.app",
+  messagingSenderId: "352965627186",
+  appId: "1:352965627186:web:4da393db672e3d90c45b2b",
+  measurementId: "G-6L59HHPPJW"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+const auth=getAuth(app);
+
+let currentUser=null;
+let currentProfile=null;
+let users=[];
+let tasks=[];
+let unsubscribeTasks=[];
+let selectedTaskKey=null;
+let assigneeFilterValue='ALL';
+let sortFilterValue='DEFAULT';
+let notifications=[];
+let unsubscribeNotifications=null;
+let managerDashboardCollapsed=false;
+let activityLogExpanded=false;
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+
+  const dialog=document.getElementById('appDialog');
+  if(dialog && !dialog.classList.contains('hidden')){
+    document.getElementById('appDialogCancel')?.click();
+    return;
+  }
+
+  const usersModal=document.getElementById('usersModal');
+  if(usersModal && !usersModal.classList.contains('hidden')){
+    closeUsersModal();
+    return;
+  }
+
+  const notificationPanel=document.getElementById('notificationPanel');
+  if(notificationPanel && !notificationPanel.classList.contains('hidden')){
+    toggleNotifications(false);
+    return;
+  }
+
+  const moreMenu=document.getElementById('moreMenu');
+  if(moreMenu && !moreMenu.classList.contains('hidden')){
+    toggleMoreMenu(false);
+  }
+});
+
+
+
+function showToast(message,type='info',duration=3200){
+  const box=document.getElementById('toastContainer'); if(!box)return;
+  const icons={success:'✓',error:'✕',warning:'⚠',info:'ℹ'};
+  const item=document.createElement('div');
+  item.className=`toast toast-${type}`;
+  item.innerHTML=`<div class="font-black">${icons[type]||'ℹ'}</div><div class="text-sm font-bold text-slate-700">${escapeHTML(message)}</div>`;
+  box.appendChild(item);
+  setTimeout(()=>{item.style.opacity='0';item.style.transform='translateY(6px)';setTimeout(()=>item.remove(),180)},duration);
+}
+
+function appConfirm(message,title='تأكيد'){
+  return new Promise(resolve=>{
+    const dialog=document.getElementById('appDialog');
+    const inputWrap=document.getElementById('appDialogInputWrap');
+    document.getElementById('appDialogTitle').textContent=title;
+    document.getElementById('appDialogMessage').textContent=message;
+    inputWrap.classList.add('hidden');
+    dialog.classList.remove('hidden');
+
+    const ok=document.getElementById('appDialogConfirm');
+    const cancel=document.getElementById('appDialogCancel');
+    const cleanup=()=>{
+      dialog.classList.add('hidden');
+      ok.onclick=null; cancel.onclick=null;
+    };
+    ok.onclick=()=>{cleanup();resolve(true)};
+    cancel.onclick=()=>{cleanup();resolve(false)};
+  });
+}
+
+function appPrompt(message,title='إدخال مطلوب',placeholder=''){
+  return new Promise(resolve=>{
+    const dialog=document.getElementById('appDialog');
+    const inputWrap=document.getElementById('appDialogInputWrap');
+    const input=document.getElementById('appDialogInput');
+    document.getElementById('appDialogTitle').textContent=title;
+    document.getElementById('appDialogMessage').textContent=message;
+    input.placeholder=placeholder;
+    input.value='';
+    inputWrap.classList.remove('hidden');
+    dialog.classList.remove('hidden');
+    requestAnimationFrame(()=>input.focus());
+
+    const ok=document.getElementById('appDialogConfirm');
+    const cancel=document.getElementById('appDialogCancel');
+    const cleanup=()=>{
+      dialog.classList.add('hidden');
+      inputWrap.classList.add('hidden');
+      ok.onclick=null; cancel.onclick=null;
+    };
+    ok.onclick=()=>{const v=input.value;cleanup();resolve(v)};
+    cancel.onclick=()=>{cleanup();resolve(null)};
+  });
+}
+
+function updateRangeVisual(el){
+  if(!el)return;
+  const min=Number(el.min||0),max=Number(el.max||100),val=Number(el.value||0);
+  const pct=max===min?0:((val-min)/(max-min))*100;
+  el.style.setProperty('--range-progress',`${pct}%`);
+}
+
+function setSortFilter(value){
+  sortFilterValue=String(value||'DEFAULT');
+  renderTasks();
+  updateVisibleCount();
+}
+
+function sortTasksForDisplay(rows){
+  const result=[...rows];
+  const priorityWeight={urgent:0,important:1,normal:2};
+
+  if(sortFilterValue==='NEWEST'){
+    return result.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  }
+  if(sortFilterValue==='OLDEST'){
+    return result.sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+  }
+  if(sortFilterValue==='PRIORITY'){
+    return result.sort((a,b)=>(priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) || String(a.end||'9999').localeCompare(String(b.end||'9999')));
+  }
+  if(sortFilterValue==='DUE'){
+    return result.sort((a,b)=>String(a.end||'9999').localeCompare(String(b.end||'9999')));
+  }
+  return result;
+}
+
+function escapeHTML(value=''){
+  return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+}
+function parseDateOnly(v){
+  if(!v)return null;
+  const d=new Date(v+(String(v).length===10?'T00:00:00':''));
+  return Number.isNaN(d.getTime())?null:d;
+}
+function calcDuration(s,e){
+  const a=parseDateOnly(s),b=parseDateOnly(e); if(!a||!b)return 0;
+  const d=Math.floor((b-a)/86400000); return d>=0?d+1:0;
+}
+function calcDelay(e,a,status,submittedAt){
+  const end=parseDateOnly(e); if(!end)return 0;
+  if(status==='مكتملة'&&!a)return 0;
+
+  let compare=null;
+  if(status==='بانتظار الاعتماد' && submittedAt){
+    compare=new Date(Number(submittedAt));
+  }else if(a){
+    compare=parseDateOnly(a);
+  }else{
+    compare=new Date();
+  }
+
+  if(!compare || Number.isNaN(compare.getTime()))return 0;
+  const limit=new Date(end); limit.setHours(23,59,59,999);
+  return compare>limit?Math.max(0,Math.floor((compare-limit)/86400000)):0;
+}
+function normalizeProgress(v){return Math.max(0,Math.min(100,Number.parseInt(v||0,10)||0))}
+
+function formatDateAR(v){
+  if(!v)return '—';
+  const d=parseDateOnly(v); if(!d)return String(v);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+function priorityLabel(v){return ({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[v]||'عادية'}
+function smartDate(v){
+  const d=parseDateOnly(v); if(!d)return '—';
+  const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0);
+  const diff=Math.round((d-now)/86400000);
+  if(diff===0)return 'اليوم'; if(diff===1)return 'غدًا'; if(diff===-1)return 'أمس';
+  return formatDateAR(v);
+}
+function isToday(v){const d=parseDateOnly(v);if(!d)return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()}
+function roleLabel(role){return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||'موظف'}
+function compositeKey(t){return `${t._ownerUid}::${t._key}`}
+function selectedTask(){return tasks.find(t=>compositeKey(t)===selectedTaskKey)||null}
+
+function scrollSelectedTaskIntoView(focusDetails=false){
+  if(!selectedTaskKey)return;
+  const el=document.querySelector(`[data-task-key="${CSS.escape(selectedTaskKey)}"]`);
+  if(el){
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    if(focusDetails){
+      setTimeout(()=>document.getElementById('detailTitle')?.focus({preventScroll:true}),350);
+    }
+  }
+}
+
+function closeDetailsKeepPosition(){
+  selectedTaskKey=null;
+  const panel=document.getElementById('detailsPanel');
+  const grid=document.getElementById('workspaceGrid');
+  if(panel)panel.classList.add('hidden');
+  if(grid)grid.classList.add('details-closed');
+  renderTasks();
+  renderDetails();
+
+  // بعد الضغط على "تم": إغلاق التفاصيل والعودة إلى أعلى الصفحة.
+  requestAnimationFrame(()=>{
+    window.scrollTo({top:0,left:0,behavior:'smooth'});
+  });
+}
+
+function nextDisplayId(){
+  const nums=tasks.map(t=>Number.parseInt(String(t.id).split('.')[0],10)).filter(Number.isFinite);
+  return String((nums.length?Math.max(...nums):0)+1);
+}
+function setSaveStatus(state){
+  const el=document.getElementById('saveStatus'); if(!el)return;
+  if(state==='saving'){el.textContent='⏳ جاري الحفظ...';el.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-amber-300'}
+  else if(state==='error'){el.textContent='⚠️ تعذر الحفظ';el.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-rose-300'}
+  else{el.textContent='☁️ تم الحفظ';el.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-emerald-300'}
+}
+function visibleUsers(){
+  if(!currentProfile)return [];
+  if(currentProfile.role==='admin')return users.filter(u=>u.active!==false);
+  if(currentProfile.role==='manager')return users.filter(u=>u.active!==false&&(u.uid===currentUser.uid||u.managerUid===currentUser.uid));
+  return users.filter(u=>u.uid===currentUser.uid);
+}
+function canManageUser(uid){
+  if(!currentProfile)return false;
+  if(currentProfile.role==='admin')return true;
+  if(uid===currentUser.uid)return true;
+  return currentProfile.role==='manager'&&users.some(u=>u.uid===uid&&u.managerUid===currentUser.uid);
+}
+function canDeleteTasks(){return currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager')}
+
+function canApproveTask(task){
+  if(!task||!currentProfile||!currentUser)return false;
+
+  // منع الاعتماد الذاتي مهما كانت الصلاحية.
+  if(String(task._ownerUid||'')===String(currentUser.uid||''))return false;
+
+  if(currentProfile.role==='admin')return true;
+
+  if(currentProfile.role==='manager'){
+    const owner=users.find(u=>u.uid===task._ownerUid);
+    return !!owner && String(owner.managerUid||'')===String(currentUser.uid||'');
+  }
+
+  return false;
+}
+
+
+function isManagerRole(){
+  return currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager');
+}
+function isTaskOwner(task){
+  return !!task && String(task._ownerUid||'')===String(currentUser?.uid||'');
+}
+function canEditTaskField(task,field){
+  if(!task||!currentProfile)return false;
+
+  const status=String(task.status||'قيد الانتظار');
+
+  // المهام المكتملة: للقراءة فقط للجميع حتى يعيد المدير فتحها.
+  if(status==='مكتملة')return false;
+
+  // بانتظار الاعتماد: المدير فقط يستطيع المراجعة، وليس تعديل محتوى المهمة.
+  if(status==='بانتظار الاعتماد'){
+    return false;
+  }
+
+  // المسؤول: المدير/مدير النظام فقط.
+  if(field==='assignUid'){
+    return isManagerRole();
+  }
+
+  // ملاحظات المدير: المدير/مدير النظام فقط.
+  if(field==='managerNotes'){
+    return isManagerRole();
+  }
+
+  // الموظف لا يعدل بيانات المهمة إلا إذا كان صاحبها.
+  if(currentProfile.role==='employee'&&!isTaskOwner(task)){
+    return false;
+  }
+
+  // قيد التنفيذ: تغيير المسؤول للمدير فقط، وبقية الحقول التشغيلية مسموحة.
+  if(status==='قيد التنفيذ'){
+    const allowed=['title','desc','start','end','priority','progress','notes','status'];
+    return allowed.includes(field) || isManagerRole();
+  }
+
+  // قيد الانتظار: أغلب الحقول قابلة للتعديل.
+  return true;
+}
+
+function showApp(show){
+  document.getElementById('loginScreen').classList.toggle('hidden',show);
+  const shell=document.getElementById('appShell');
+  shell.classList.toggle('hidden',!show); shell.classList.toggle('flex',show);
+}
+function applyRoleUI(){
+  const isEmployee=currentProfile?.role==='employee';
+  document.getElementById('importLabel').classList.toggle('hidden',isEmployee);
+  document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTasks());
+}
+function excelDateToISO(v){
+  if(!v)return '';
+  if(v instanceof Date&&!Number.isNaN(v.getTime()))return v.toISOString().slice(0,10);
+  if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);if(d)return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`}
+  const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const d=new Date(s); return Number.isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+}
+
+document.getElementById('statusFilter').addEventListener('change',()=>{renderTasks();});
+document.getElementById('searchInput').addEventListener('input',()=>{renderTasks();});
+
+document.addEventListener('click',(e)=>{
+  const menu=document.getElementById('moreMenu');
+  if(!menu||menu.classList.contains('hidden'))return;
+  const wrapper=menu.parentElement;
+  if(wrapper&&!wrapper.contains(e.target))toggleMoreMenu(false);
+});
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape'){
+    toggleMoreMenu(false);
+    const box=document.getElementById('quickAddBox');
+    if(box&&!box.classList.contains('hidden'))hideQuickAdd();
+  }
+});
+
+document.getElementById('loginForm').addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  const btn=document.getElementById('loginButton'),err=document.getElementById('loginError');
+  btn.disabled=true;btn.textContent='جاري الدخول...';err.classList.add('hidden');
+  try{await signInWithEmailAndPassword(auth,email,password)}
+  catch(error){
+    console.error(error);
+    const code=error?.code||'';
+    err.textContent=code==='auth/user-disabled'?'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.':
+      code==='auth/too-many-requests'?'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى لاحقًا.':
+      code==='auth/network-request-failed'?'تعذر الاتصال بالخدمة. تحقق من الإنترنت ثم حاول مرة أخرى.':
+      'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.';
+    err.classList.remove('hidden');
+  }finally{btn.disabled=false;btn.textContent='دخول'}
+});
+
+async function logoutUser(){await signOut(auth)}
+
+onAuthStateChanged(auth,async(user)=>{
+  clearTaskListeners();
+  currentUser=user;currentProfile=null;users=[];tasks=[];selectedTaskKey=null;
+  assigneeFilterValue='ALL';
+  if(!user){showApp(false);return}
+  try{
+    const profileSnap=await get(ref(db,`users/${user.uid}`));
+    if(!profileSnap.exists()){
+      await signOut(auth);const err=document.getElementById('loginError');
+      err.textContent='الحساب غير معرف داخل قاعدة بيانات النظام.';err.classList.remove('hidden');return;
+    }
+    currentProfile={uid:user.uid,...profileSnap.val()};
+    if(currentProfile.active===false){await signOut(auth);showToast('هذا الحساب غير مفعل.','warning');return}
+    const usersSnap=await get(ref(db,'users'));
+    users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v})):[];
+    const me=users.find(u=>u.uid===user.uid);if(me)currentProfile=me;
+    document.getElementById('currentUserBadge').textContent=`👤 ${currentProfile.name||user.email} • ${roleLabel(currentProfile.role)}`;
+    document.getElementById('pageSubtitle').textContent=currentProfile.role==='admin'?'عرض جميع المهام':currentProfile.role==='manager'?'مهامك ومهام فريقك':'مهامك الشخصية';
+    document.getElementById('usersButton')?.classList.toggle('hidden',currentProfile.role!=='admin');
+    applyRoleUI();showApp(true);renderManagerDashboard();subscribeVisibleTasks();subscribeNotifications();
+    setTimeout(()=>checkOverdueNotifications(),1200);
+  }catch(error){console.error(error);await signOut(auth);showToast('تعذر تحميل بيانات المستخدم أو الصلاحيات.','error')}
+});
+
+
+
+function managerTeamUsers(){
+  if(!currentProfile)return [];
+  if(currentProfile.role==='admin'){
+    return users.filter(u=>u.active!==false && u.uid!==currentUser.uid);
+  }
+  if(currentProfile.role==='manager'){
+    return users.filter(u=>u.active!==false && u.managerUid===currentUser.uid);
+  }
+  return [];
+}
+
+function renderManagerDashboard(){
+  const section=document.getElementById('managerDashboard');
+  const body=document.getElementById('managerDashboardBody');
+  const summary=document.getElementById('teamSummary');
+  const grid=document.getElementById('teamMembersGrid');
+  const empty=document.getElementById('teamEmptyState');
+  const toggleText=document.getElementById('managerDashboardToggleText');
+  if(!section||!body||!summary||!grid||!empty)return;
+
+  const allowed=currentProfile && (currentProfile.role==='manager'||currentProfile.role==='admin');
+  section.classList.toggle('hidden',!allowed);
+  if(!allowed)return;
+
+  body.classList.toggle('hidden',managerDashboardCollapsed);
+  if(toggleText)toggleText.textContent=managerDashboardCollapsed?'إظهار':'إخفاء';
+  if(managerDashboardCollapsed)return;
+
+  const team=managerTeamUsers();
+  empty.classList.toggle('hidden',team.length!==0);
+
+  const teamTasks=tasks.filter(t=>team.some(u=>u.uid===t._ownerUid));
+  const total=teamTasks.length;
+  const overdue=teamTasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+  const inProgress=teamTasks.filter(t=>t.status==='قيد التنفيذ').length;
+  const completed=teamTasks.filter(t=>t.status==='مكتملة').length;
+  const completionRate=total?Math.round((completed/total)*100):0;
+
+  summary.innerHTML=`
+    <div class="team-metric"><div class="text-[10px] font-bold text-slate-500">مهام الفريق</div><div class="text-lg font-black mt-1">${total}</div></div>
+    <div class="team-metric"><div class="text-[10px] font-bold text-slate-500">متأخرة</div><div class="text-lg font-black mt-1 ${overdue?'text-rose-600':'text-slate-800'}">${overdue}</div></div>
+    <div class="team-metric"><div class="text-[10px] font-bold text-slate-500">قيد التنفيذ</div><div class="text-lg font-black mt-1 text-blue-600">${inProgress}</div></div>
+    <div class="team-metric"><div class="text-[10px] font-bold text-slate-500">نسبة الإكمال</div><div class="text-lg font-black mt-1 text-emerald-600">${completionRate}%</div></div>`;
+
+  grid.innerHTML=team.map(u=>{
+    const rows=tasks.filter(t=>t._ownerUid===u.uid);
+    const tTotal=rows.length;
+    const tDone=rows.filter(t=>t.status==='مكتملة').length;
+    const tProgress=rows.filter(t=>t.status==='قيد التنفيذ').length;
+    const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+    const rate=tTotal?Math.round((tDone/tTotal)*100):0;
+    return `
+      <button type="button" onclick="filterByTeamMember('${escapeHTML(u.uid)}')" class="team-card text-right border border-slate-200 rounded-xl px-3 py-2.5 bg-white min-h-[96px]">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">${escapeHTML((u.name||u.email||'?').charAt(0).toUpperCase())}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-black text-sm truncate">${escapeHTML(u.name||u.email||'مستخدم')}</div>
+            <div class="text-[10px] text-slate-400 truncate">${escapeHTML(u.email||'')}</div>
+          </div>
+          ${tOverdue?`<span class="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-1 rounded-full">${tOverdue} متأخرة</span>`:''}
+        </div>
+        <div class="grid grid-cols-4 gap-1 mt-2 text-center">
+          <div><div class="font-black text-sm">${tTotal}</div><div class="text-[9px] text-slate-400">إجمالي</div></div>
+          <div><div class="font-black text-sm text-blue-600">${tProgress}</div><div class="text-[9px] text-slate-400">تنفيذ</div></div>
+          <div><div class="font-black text-sm text-emerald-600">${tDone}</div><div class="text-[9px] text-slate-400">مكتملة</div></div>
+          <div><div class="font-black text-sm">${rate}%</div><div class="text-[9px] text-slate-400">إنجاز</div></div>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+function toggleManagerDashboard(){
+  managerDashboardCollapsed=!managerDashboardCollapsed;
+  renderManagerDashboard();
+}
+
+function filterByTeamMember(uid){
+  assigneeFilterValue=uid||'ALL';
+  setupAssigneeFilter();
+  renderTasks();
+  updateVisibleCount();
+
+  const taskSection=document.getElementById('taskListPanel')||document.getElementById('tasksList');
+  requestAnimationFrame(()=>{
+    taskSection?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
+function notificationPath(uid){return `notificationsByUser/${uid}`}
+
+function subscribeNotifications(){
+  if(unsubscribeNotifications){try{unsubscribeNotifications()}catch{} unsubscribeNotifications=null;}
+  if(!currentUser?.uid)return;
+  unsubscribeNotifications=onValue(ref(db,notificationPath(currentUser.uid)),snapshot=>{
+    notifications=snapshot.exists()
+      ?Object.entries(snapshot.val()).map(([key,v])=>({_key:key,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0))
+      :[];
+    renderNotifications();
+  },error=>console.error('Notifications:',error));
+}
+
+function renderNotifications(){
+  const list=document.getElementById('notificationList');
+  const badge=document.getElementById('notificationBadge');
+  if(!list||!badge)return;
+  const unread=notifications.filter(n=>!n.read).length;
+  badge.textContent=unread>99?'99+':String(unread);
+  badge.classList.toggle('hidden',unread===0);
+  if(!notifications.length){
+    list.innerHTML='<div class="p-8 text-center text-xs text-slate-400">لا توجد إشعارات.</div>';
+    return;
+  }
+  list.innerHTML=notifications.slice(0,30).map(n=>`
+    <button type="button" onclick="openNotification('${escapeHTML(n._key)}')" class="w-full text-right px-4 py-3 border-b border-slate-100 hover:bg-slate-50 ${n.read?'bg-white':'bg-blue-50/60'}">
+      <div class="flex gap-2 items-start">
+        <span class="mt-0.5">${n.type==='overdue'?'⚠️':n.type==='manager_note'?'📝':n.type==='approved'?'✅':n.type==='reopened'?'↩️':n.type==='approval'?'⏳':n.type==='completed'?'✅':n.type==='started'?'▶️':n.type==='updated'?'✏️':'📌'}</span>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-black truncate">${escapeHTML(n.title||'إشعار')}</div>
+          <div class="text-[11px] text-slate-500 mt-1">${escapeHTML(n.message||'')}</div>
+        </div>
+        ${n.read?'':'<span class="w-2 h-2 rounded-full bg-blue-600 mt-1.5"></span>'}
+      </div>
+    </button>`).join('');
+}
+
+function toggleNotifications(force){
+  const panel=document.getElementById('notificationPanel'); if(!panel)return;
+  const show=typeof force==='boolean'?force:panel.classList.contains('hidden');
+  panel.classList.toggle('hidden',!show);
+}
+
+
+function safeNotificationKey(value=''){
+  return String(value).replace(/[^A-Za-z0-9_-]/g,'_').slice(0,120);
+}
+
+async function createUniqueNotification(uid,key,data){
+  if(!uid||!key)return;
+  try{
+    const path=`${notificationPath(uid)}/${safeNotificationKey(key)}`;
+    const snap=await get(ref(db,path));
+    if(snap.exists())return;
+    await set(ref(db,path),{...data,read:false,createdAt:Date.now()});
+  }catch(error){console.error('Create unique notification:',error)}
+}
+
+async function checkOverdueNotifications(){
+  if(!currentUser?.uid||!currentProfile)return;
+  const today=new Date().toISOString().slice(0,10).replaceAll('-','');
+
+  // الموظف: تنبيه مهامه الشخصية المتأخرة.
+  // المدير: تنبيه مهامه + مهام فريقه المتأخرة التي يستطيع رؤيتها.
+  // مدير النظام: تنبيه المهام المتأخرة الظاهرة له.
+  const overdueTasks=tasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0);
+
+  for(const task of overdueTasks){
+    const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt);
+    const isOwn=String(task._ownerUid||'')===String(currentUser.uid||'');
+    const owner=users.find(u=>u.uid===task._ownerUid);
+    const ownerName=owner?.name||task.assign||'الموظف';
+
+    let message='';
+    if(isOwn){
+      message=`المهمة "${task.title||'مهمة'}" متأخرة ${delay} يوم.`;
+    }else{
+      message=`مهمة ${ownerName} "${task.title||'مهمة'}" متأخرة ${delay} يوم.`;
+    }
+
+    await createUniqueNotification(
+      currentUser.uid,
+      `overdue_${task._ownerUid}_${task._key}_${today}`,
+      {
+        type:'overdue',
+        title:isOwn?'مهمة متأخرة':'مهمة متأخرة لدى الفريق',
+        message,
+        ownerUid:task._ownerUid,
+        taskKey:task._key
+      }
+    );
+  }
+}
+
+async function createNotification(uid,data){
+  if(!uid||uid===currentUser?.uid)return;
+  try{
+    const nr=push(ref(db,notificationPath(uid)));
+    await set(nr,{...data,read:false,createdAt:Date.now()});
+  }catch(error){console.error('Create notification:',error)}
+}
+
+async function markAllNotificationsRead(){
+  if(!currentUser?.uid)return;
+  const unread=notifications.filter(n=>!n.read);
+  if(!unread.length)return;
+  const changes={};
+  unread.forEach(n=>changes[`${notificationPath(currentUser.uid)}/${n._key}/read`]=true);
+  try{await update(ref(db),changes)}catch(error){console.error(error)}
+}
+
+async function openNotification(key){
+  const n=notifications.find(x=>x._key===key); if(!n)return;
+
+  try{
+    await update(ref(db,`${notificationPath(currentUser.uid)}/${key}`),{read:true});
+  }catch(error){
+    console.error('Mark notification read:',error);
+  }
+
+  toggleNotifications(false);
+  if(!n.ownerUid||!n.taskKey)return;
+
+  const composite=`${n.ownerUid}::${n.taskKey}`;
+
+  // اعرض مهام صاحب الإشعار مباشرة حتى لا تختفي المهمة بسبب الفلتر الحالي.
+  assigneeFilterValue=n.ownerUid;
+  setupAssigneeFilter();
+
+  let task=tasks.find(t=>compositeKey(t)===composite);
+
+  // في حال لم تصل المهمة بعد إلى الاشتراك اللحظي، اجلبها مباشرة من Firebase.
+  if(!task){
+    try{
+      const snap=await get(ref(db,`tasksByUser/${n.ownerUid}/${n.taskKey}`));
+      if(snap.exists()){
+        task={_key:n.taskKey,_ownerUid:n.ownerUid,...snap.val()};
+        const existingIndex=tasks.findIndex(t=>compositeKey(t)===composite);
+        if(existingIndex>=0)tasks[existingIndex]=task;
+        else tasks.push(task);
+      }
+    }catch(error){
+      console.error('Open notification task:',error);
+    }
+  }
+
+  if(!task){
+    showToast('تعذر العثور على المهمة المرتبطة بهذا الإشعار.','error');
+    return;
+  }
+
+  selectedTaskKey=composite;
+  renderTasks();
+  updateStats();
+  updateVisibleCount();
+  renderDetails();
+
+  requestAnimationFrame(()=>{
+    const card=document.querySelector(`[data-task-key="${CSS.escape(composite)}"]`);
+    if(card){
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.classList.add('ring-2','ring-blue-400','ring-offset-2');
+      setTimeout(()=>card.classList.remove('ring-2','ring-blue-400','ring-offset-2'),1800);
+    }else{
+      scrollSelectedTaskIntoView(true);
+    }
+  });
+}
+
+async function notifyTaskAssigned(task,ownerUid,key){
+  if(!task||!ownerUid||ownerUid===currentUser?.uid)return;
+  await createNotification(ownerUid,{
+    type:'assigned',title:'مهمة جديدة',
+    message:`تم إسناد "${task.title||'مهمة'}" إليك بواسطة ${currentProfile?.name||currentUser?.email||'المدير'}`,
+    ownerUid,taskKey:key
+  });
+}
+
+
+async function notifyManagerOfEmployeeAction(task,action){
+  if(!task?._ownerUid||!currentUser?.uid)return;
+  if(String(task._ownerUid)!==String(currentUser.uid))return;
+
+  const employee=users.find(u=>u.uid===currentUser.uid);
+  const managerUid=employee?.managerUid;
+  if(!managerUid)return;
+
+  const employeeName=employee?.name||currentProfile?.name||currentUser.email||'الموظف';
+  let title='تحديث على مهمة';
+  let message=`قام ${employeeName} بتحديث "${task.title||'مهمة'}".`;
+
+  if(action==='started'){
+    title='تم بدء المهمة';
+    message=`بدأ ${employeeName} العمل على "${task.title||'مهمة'}".`;
+  }else if(action==='submitted'){
+    title='مهمة بانتظار الاعتماد';
+    message=`أنهى ${employeeName} العمل على "${task.title||'مهمة'}" وأرسلها لاعتمادك.`;
+  }else if(action==='completed'){
+    title='تم إكمال المهمة';
+    message=`أكمل ${employeeName} المهمة "${task.title||'مهمة'}".`;
+  }else if(action==='note'){
+    title='ملاحظة من الموظف';
+    message=`أضاف ${employeeName} ملاحظة على "${task.title||'مهمة'}".`;
+  }
+
+  await createNotification(managerUid,{
+    type:action==='completed'?'completed':action==='submitted'?'approval':action==='started'?'started':'updated',
+    title,
+    message,
+    ownerUid:task._ownerUid,
+    taskKey:task._key
+  });
+}
+
+async function notifyTaskUpdated(task,field){
+  if(!task?._ownerUid||task._ownerUid===currentUser?.uid)return;
+  const importantFields=['title','start','end','status','priority','notes','managerNotes','progress'];
+  if(!importantFields.includes(field))return;
+
+  if(field==='managerNotes'){
+    await createNotification(task._ownerUid,{
+      type:'manager_note',
+      title:'ملاحظة جديدة من المدير',
+      message:`أضاف ${currentProfile?.name||currentUser?.email||'المدير'} ملاحظة على "${task.title||'مهمة'}".`,
+      ownerUid:task._ownerUid,
+      taskKey:task._key
+    });
+    return;
+  }
+
+  await createNotification(task._ownerUid,{
+    type:'updated',
+    title:'تم تعديل مهمة',
+    message:`تم تحديث "${task.title||'مهمة'}" بواسطة ${currentProfile?.name||currentUser?.email||'المدير'}`,
+    ownerUid:task._ownerUid,
+    taskKey:task._key
+  });
+}
+
+function clearTaskListeners(){unsubscribeTasks.forEach(fn=>{try{fn()}catch{}});unsubscribeTasks=[]}
+
+function subscribeVisibleTasks(){
+  clearTaskListeners();
+  const scoped=visibleUsers(),scopeData=new Map();
+  if(!scoped.length){tasks=[];renderTasks();updateStats();return}
+  scoped.forEach(u=>{
+    const unsub=onValue(ref(db,`tasksByUser/${u.uid}`),(snapshot)=>{
+      const rows=snapshot.exists()?Object.entries(snapshot.val()).map(([key,v])=>({_key:key,_ownerUid:u.uid,...v})):[];
+      scopeData.set(u.uid,rows);
+      tasks=[...scopeData.values()].flat().sort((a,b)=>{
+        const ac=a.status==='مكتملة'?1:0,bc=b.status==='مكتملة'?1:0;
+        if(ac!==bc)return ac-bc;
+        const weight={urgent:0,important:1,normal:2};
+        const ap=weight[a.priority||'normal']??2,bp=weight[b.priority||'normal']??2;
+        if(ap!==bp)return ap-bp;
+        if(ac===0){
+          const aNew=Number(a.createdAt||0),bNew=Number(b.createdAt||0);
+          if(aNew!==bNew)return bNew-aNew;
+        }
+        return String(a.end||'9999').localeCompare(String(b.end||'9999'))||String(a.id).localeCompare(String(b.id),'en',{numeric:true});
+      });
+      if(selectedTaskKey&&!selectedTask())selectedTaskKey=null;
+      renderTasks();updateStats();renderDetails();renderManagerDashboard();setSaveStatus('saved');
+      checkOverdueNotifications();
+      // لا نغيّر موضع الصفحة عند التحديث اللحظي العادي؛
+      // التنقل الصريح من الإشعارات/اختيار المهمة يتولى التمرير عند الحاجة.
+    },error=>{console.error(error);setSaveStatus('error')});
+    unsubscribeTasks.push(unsub);
+  });
+}
+
+async function saveTask(task){
+  if(!task?._key||!task?._ownerUid)return;
+  const {_key,_ownerUid,...payload}=task;
+  setSaveStatus('saving');
+  try{await set(ref(db,`tasksByUser/${_ownerUid}/${_key}`),payload);setSaveStatus('saved')}
+  catch(error){console.error(error);setSaveStatus('error');throw error}
+}
+
+async function updateTaskField(task,f,v){
+  if(!task)return;
+  if(f==='progress' && normalizeSubtasks(task).length){
+    showToast('نسبة الإنجاز محسوبة تلقائيًا من المهام الفرعية.','info');
+    renderDetails();
+    return;
+  }
+  if(!canEditTaskField(task,f)){
+    showToast('لا يمكن تعديل هذا الحقل في حالة المهمة الحالية.','warning');
+    renderDetails();
+    return;
+  }
+  if(f==='assignUid'){
+    const target=users.find(u=>u.uid===v);
+    if(!target||!canManageUser(v)){showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');return}
+    if(v===task._ownerUid)return;
+    const oldOwner=task._ownerUid,key=task._key;
+    const moved={...task,assignUid:v,assign:target.name||target.email||v,updatedAt:Date.now()};
+    appendActivity(moved,'assigned',`تم إسناد المهمة إلى ${target.name||target.email||v}`);
+    delete moved._key;delete moved._ownerUid;
+    setSaveStatus('saving');
+    try{
+      await set(ref(db,`tasksByUser/${v}/${key}`),moved);
+      await remove(ref(db,`tasksByUser/${oldOwner}/${key}`));
+      await notifyTaskAssigned(moved,v,key);
+      selectedTaskKey=`${v}::${key}`;
+      setSaveStatus('saved');
+    }catch(error){console.error(error);setSaveStatus('error');showToast('تعذر نقل المهمة للمستخدم المحدد.','error')}
+    return;
+  }
+  if(f==='progress'){
+    v=normalizeProgress(v);task.progress=v;
+    if(v===100){task.status='مكتملة';if(!task.actualEnd)task.actualEnd=new Date().toISOString().slice(0,10)}
+    else if(task.status==='مكتملة')task.status='قيد التنفيذ';
+  }else if(f==='status'){
+    task.status=v;
+    if(v==='مكتملة'){task.progress=100;if(!task.actualEnd)task.actualEnd=new Date().toISOString().slice(0,10)}
+    else if(task.progress===100)task.progress=0;
+  }else task[f]=v;
+  if(f==='progress'){
+    appendActivity(task,'progress',`نسبة الإنجاز: ${normalizeProgress(task.progress)}%`);
+  }else if(f==='notes' && String(v||'').trim()){
+    appendActivity(task,'note','تم تحديث ملاحظات المهمة');
+  }else if(f==='managerNotes' && String(v||'').trim()){
+    appendActivity(task,'manager_note','تم تحديث ملاحظات المدير');
+  }else if(f==='status'){
+    if(v==='قيد التنفيذ')appendActivity(task,'started','تم تحويل المهمة إلى قيد التنفيذ');
+    else if(v==='مكتملة')appendActivity(task,'completed','تم إكمال المهمة');
+    else appendActivity(task,'updated',`تم تغيير الحالة إلى ${v}`);
+  }else if(['title','start','end','priority','desc'].includes(f)){
+    appendActivity(task,'updated',`تم تعديل ${f==='title'?'عنوان المهمة':f==='start'?'تاريخ البداية':f==='end'?'تاريخ الاستحقاق':f==='priority'?'الأولوية':'الوصف'}`);
+  }
+
+  task.updatedAt=Date.now();
+  await saveTask(task);
+  await notifyTaskUpdated(task,f);
+
+  // إشعارات المدير من تحديثات الموظف على مهمته.
+  if(String(task._ownerUid||'')===String(currentUser?.uid||'')){
+    if(f==='notes' && String(v||'').trim()){
+      await notifyManagerOfEmployeeAction(task,'note');
+    }else if(f==='status' && v==='قيد التنفيذ'){
+      await notifyManagerOfEmployeeAction(task,'started');
+    }else if(f==='status' && v==='مكتملة'){
+      await notifyManagerOfEmployeeAction(task,'completed');
+    }
+  }
+}
+
+async function startSelectedTask(){
+  const task=selectedTask();
+  if(!task)return;
+  if(String(task._ownerUid)!==String(currentUser.uid)){
+    showToast('بدء المهمة متاح للمسؤول عن المهمة فقط.','error');
+    return;
+  }
+  if(task.status==='مكتملة')return;
+
+  task.status='قيد التنفيذ';
+  task.startedAt=task.startedAt||Date.now();
+  if(normalizeProgress(task.progress)===0)task.progress=5;
+  appendActivity(task,'started','بدأ المسؤول العمل على المهمة');
+  task.updatedAt=Date.now();
+
+  await saveTask(task);
+  await notifyManagerOfEmployeeAction(task,'started');
+  renderDetails();
+}
+
+async function completeSelectedTask(){
+  const task=selectedTask();
+  if(!task)return;
+  const checklist=normalizeSubtasks(task);
+  if(checklist.length && checklist.some(x=>!x.done)){
+    showToast('أكمل جميع المهام الفرعية قبل إرسال المهمة للاعتماد.','warning');
+    return;
+  }
+  if(String(task._ownerUid)!==String(currentUser.uid)){
+    showToast('إنهاء المهمة متاح للمسؤول عن المهمة فقط.','error');
+    return;
+  }
+
+  const employee=users.find(u=>u.uid===currentUser.uid);
+  const hasManager=!!employee?.managerUid;
+
+  task.status=hasManager?'بانتظار الاعتماد':'مكتملة';
+  task.progress=100;
+  task.submittedAt=Date.now();
+  if(hasManager){
+    appendActivity(task,'submitted','تم إرسال المهمة للمدير للاعتماد');
+  }else{
+    task.actualEnd=new Date().toISOString().slice(0,10);
+    task.completedAt=Date.now();
+    appendActivity(task,'completed','تم إكمال المهمة');
+  }
+  task.updatedAt=Date.now();
+
+  await saveTask(task);
+  await notifyManagerOfEmployeeAction(task,hasManager?'submitted':'completed');
+  renderDetails();
+}
+
+
+async function approveSelectedTask(){
+  const task=selectedTask(); if(!task)return;
+  if(!canApproveTask(task)){
+    showToast('لا يمكن اعتماد المهمة بواسطة المسؤول عنها. الاعتماد متاح للمدير المباشر أو مدير النظام.','warning');
+    return;
+  }
+  if(task.status!=='بانتظار الاعتماد')return;
+
+  task.status='مكتملة';
+  task.progress=100;
+  task.actualEnd=new Date().toISOString().slice(0,10);
+  task.approvedAt=Date.now();
+  task.approvedByUid=currentUser.uid;
+  task.approvedBy=currentProfile?.name||currentUser.email||'المدير';
+  appendActivity(task,'approved',`تم اعتماد المهمة بواسطة ${task.approvedBy}`);
+  task.updatedAt=Date.now();
+  await saveTask(task);
+
+  await createNotification(task._ownerUid,{
+    type:'approved',
+    title:'تم اعتماد المهمة',
+    message:`تم اعتماد إكمال "${task.title||'مهمة'}" بواسطة ${task.approvedBy}.`,
+    ownerUid:task._ownerUid,
+    taskKey:task._key
+  });
+  renderDetails();
+}
+
+async function reopenSelectedTask(){
+  const task=selectedTask(); if(!task)return;
+  if(!canApproveTask(task)){
+    showToast('لا يمكن إعادة فتح/اعتماد المهمة بواسطة المسؤول عنها. الإجراء متاح للمدير المباشر أو مدير النظام.','warning');
+    return;
+  }
+  if(task.status!=='بانتظار الاعتماد')return;
+
+  const note=await appPrompt('اكتب سبب إعادة فتح المهمة أو المطلوب من الموظف:','إعادة فتح المهمة','اكتب الملاحظة هنا...');
+  if(note===null)return;
+  if(!String(note).trim()){showToast('يرجى كتابة ملاحظة للموظف قبل إعادة فتح المهمة.','warning');return;}
+
+  task.status='قيد التنفيذ';
+  task.progress=Math.min(95,normalizeProgress(task.progress));
+  task.managerNotes=String(note).trim();
+  task.reopenedAt=Date.now();
+  appendActivity(task,'reopened',`سبب إعادة الفتح: ${task.managerNotes}`);
+  task.updatedAt=Date.now();
+  await saveTask(task);
+
+  await createNotification(task._ownerUid,{
+    type:'reopened',
+    title:'تمت إعادة فتح المهمة',
+    message:`أعاد ${currentProfile?.name||currentUser.email||'المدير'} فتح "${task.title||'مهمة'}": ${task.managerNotes}`,
+    ownerUid:task._ownerUid,
+    taskKey:task._key
+  });
+  renderDetails();
+}
+
+async function updateSelectedField(f,v){await updateTaskField(selectedTask(),f,v)}
+async function toggleCompleteByKey(key){
+  const task=tasks.find(t=>compositeKey(t)===key);if(!task)return;
+  await updateTaskField(task,'status',task.status==='مكتملة'?'قيد التنفيذ':'مكتملة');
+}
+
+function toggleMoreMenu(force){
+  const m=document.getElementById('moreMenu'); if(!m)return;
+  const show=typeof force==='boolean'?force:m.classList.contains('hidden');
+  m.classList.toggle('hidden',!show);
+}
+function setQuickFilter(v){
+  const s=document.getElementById('statusFilter');
+  if(!s)return;
+  s.value=v;
+  document.querySelectorAll('.qf').forEach(b=>b.classList.toggle('active',b.dataset.filter===v));
+  renderTasks();
+  updateVisibleCount();
+}
+function showQuickAdd(){
+  const box=document.getElementById('quickAddBox');
+  const input=document.getElementById('quickAddInput');
+  if(!box||!input){ console.error('Quick add controls not found'); return; }
+  box.classList.remove('hidden');
+  requestAnimationFrame(()=>{
+    box.scrollIntoView({behavior:'smooth',block:'center'});
+    input.focus();
+  });
+}
+function hideQuickAdd(){
+  const box=document.getElementById('quickAddBox');
+  const input=document.getElementById('quickAddInput');
+  if(box)box.classList.add('hidden');
+  if(input)input.value='';
+}
+function quickAddKey(e){
+  if(e.key==='Enter'){e.preventDefault();commitQuickAdd();}
+  else if(e.key==='Escape'){e.preventDefault();hideQuickAdd();}
+}
+async function commitQuickAdd(){
+  const input=document.getElementById('quickAddInput');
+  if(!input)return;
+  const title=input.value.trim();
+  if(!title){input.focus();return;}
+  await addNewTask(title,false);
+  hideQuickAdd();
+}
+
+
+function toggleFirebaseAdvanced(force){
+  const box=document.getElementById('firebaseAdvancedBox');
+  if(!box)return;
+  const show=typeof force==='boolean'?force:box.hidden;
+  box.hidden=!show;
+  box.classList.toggle('hidden',!show);
+}
+function roleArabic(role){
+  return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||role||'موظف';
+}
+function statusArabic(status){return status==='inactive'?'غير نشط':'نشط'}
+
+function openUsersModal(){
+  if(currentProfile?.role!=='admin')return;
+  document.getElementById('usersModal')?.classList.remove('hidden');
+  renderUsersManagement();
+}
+function closeUsersModal(){
+  document.getElementById('usersModal')?.classList.add('hidden');
+  hideUserForm();
+}
+
+function populateManagerOptions(selectedUid=''){
+  const select=document.getElementById('userManagerUidInput');
+  if(!select)return;
+
+  // Build a clean manager list: unique UID first, then unique email.
+  const uniqueByUid=new Map();
+  users.forEach(u=>{
+    if(u?.uid && u.active!==false && (u.role==='manager'||u.role==='admin')){
+      uniqueByUid.set(u.uid,u);
+    }
+  });
+
+  const selectedUser=users.find(u=>u.uid===selectedUid);
+  const selectedEmail=String(selectedUser?.email||'').trim().toLowerCase();
+  const seenEmails=new Set();
+  const managers=[];
+
+  [...uniqueByUid.values()]
+    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'))
+    .forEach(u=>{
+      const email=String(u.email||'').trim().toLowerCase();
+      if(email && seenEmails.has(email))return;
+      if(email)seenEmails.add(email);
+      managers.push(u);
+    });
+
+  select.innerHTML='<option value="">بدون مدير مباشر</option>'+managers.map(u=>{
+    const email=String(u.email||'').trim().toLowerCase();
+    // If an old duplicate UID was selected, preserve the same person by email.
+    const selected=(u.uid===selectedUid)||(!managers.some(x=>x.uid===selectedUid) && selectedEmail && email===selectedEmail);
+    return `<option value="${escapeHTML(u.uid)}" ${selected?'selected':''}>${escapeHTML(u.name||u.email||u.uid)} — ${escapeHTML(roleArabic(u.role))}</option>`;
+  }).join('');
+}
+function showUserForm(user=null){
+  if(currentProfile?.role!=='admin')return;
+  document.getElementById('userFormBox')?.classList.remove('hidden');
+  document.getElementById('userUidInput').value=user?.uid||'';
+  document.getElementById('userUidAdvancedInput').value=user?.uid||'';
+  document.getElementById('userNameInput').value=user?.name||'';
+  document.getElementById('userEmailInput').value=user?.email||'';
+  document.getElementById('userRoleInput').value=user?.role||'employee';
+  document.getElementById('userStatusInput').value=user?(user.status||(user.active===false?'inactive':'active')):'active';
+  populateManagerOptions(user?.managerUid||'');
+
+  // الإعدادات المتقدمة مخفية افتراضيًا دائمًا.
+  toggleFirebaseAdvanced(false);
+  document.getElementById('advancedFirebaseToggle').classList.toggle('hidden',!!user);
+}
+function hideUserForm(){
+  const box=document.getElementById('userFormBox');
+  if(box)box.classList.add('hidden');
+  const uid=document.getElementById('userUidInput');
+  const uidAdv=document.getElementById('userUidAdvancedInput');
+  if(uid)uid.value='';
+  if(uidAdv)uidAdv.value='';
+  toggleFirebaseAdvanced(false);
+  document.getElementById('advancedFirebaseToggle')?.classList.remove('hidden');
+}
+function renderUsersManagement(){
+  const list=document.getElementById('usersList'), empty=document.getElementById('usersEmpty');
+  if(!list||!empty)return;
+  const byUid=new Map();
+  users.forEach(u=>{ if(u?.uid) byUid.set(u.uid,u); });
+  const seenEmails=new Set();
+  const rows=[...byUid.values()]
+    .filter(u=>{
+      const email=String(u.email||'').trim().toLowerCase();
+      if(!email)return true;
+      if(seenEmails.has(email))return false;
+      seenEmails.add(email);
+      return true;
+    })
+    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'));
+  list.innerHTML='';
+  empty.classList.toggle('hidden',rows.length>0);
+  rows.forEach(u=>{
+    const row=document.createElement('div');
+    row.className='px-5 py-4 flex items-center gap-3 hover:bg-slate-50';
+    row.innerHTML=`
+      <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black">${escapeHTML((u.name||u.email||'?').trim().charAt(0).toUpperCase())}</div>
+      <div class="min-w-0 flex-1">
+        <div class="font-black text-sm text-slate-800 truncate">${escapeHTML(u.name||'بدون اسم')}</div>
+        <div class="text-xs text-slate-500 truncate">${escapeHTML(u.email||u.uid||'')}</div>
+      </div>
+      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">${escapeHTML(roleArabic(u.role))}</span>
+      <span class="text-[11px] font-bold ${u.status==='inactive'||u.active===false?'text-rose-600':'text-emerald-600'}">${u.status==='inactive'||u.active===false?'غير نشط':'نشط'}</span>
+      <button type="button" class="text-xs font-bold text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-lg">تعديل</button>`;
+    row.querySelector('button').onclick=()=>showUserForm(u);
+    list.appendChild(row);
+  });
+}
+async function saveUserProfile(){
+
+  if(currentProfile?.role!=='admin')return;
+  let uid=document.getElementById('userUidInput').value.trim();
+  if(!uid)uid=document.getElementById('userUidAdvancedInput').value.trim();
+  const name=document.getElementById('userNameInput').value.trim();
+  const email=document.getElementById('userEmailInput').value.trim();
+  const role=document.getElementById('userRoleInput').value;
+  const status=document.getElementById('userStatusInput').value;
+  let managerUid=document.getElementById('userManagerUidInput').value.trim();
+  if(managerUid===uid)managerUid='';
+  if(!uid){showToast('يرجى فتح الإعدادات المتقدمة وإدخال Firebase UID للمستخدم الجديد.','warning');toggleFirebaseAdvanced(true);document.getElementById('userUidAdvancedInput')?.focus();return;}
+  if(!name||!email){showToast('يرجى إدخال الاسم والبريد الإلكتروني.','warning');return;}
+  const normalizedEmail=email.toLowerCase();
+  const duplicate=users.find(u=>u.uid!==uid&&String(u.email||'').trim().toLowerCase()===normalizedEmail);
+  if(duplicate){
+    showToast('هذا البريد الإلكتروني مرتبط بمستخدم آخر بالفعل.','error');
+    return;
+  }
+  setSaveStatus('saving');
+  const saveButton=document.querySelector('button[onclick="saveUserProfile()"]');
+  if(saveButton){saveButton.disabled=true;saveButton.textContent='جاري الحفظ...';}
+  try{
+    const payload={uid,name,email,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
+    await update(ref(db,`users/${uid}`),payload);
+
+    const idx=users.findIndex(u=>u.uid===uid);
+    if(idx>=0)users[idx]={...users[idx],...payload};
+    else users.push(payload);
+
+    renderUsersManagement();
+    hideUserForm();
+    setSaveStatus('saved');
+    showToast('تم حفظ المستخدم بنجاح.','success');
+  }catch(error){
+    console.error('Save user error:',error);
+    setSaveStatus('error');
+    showToast(`تعذر حفظ المستخدم: ${error?.code||error?.message||'خطأ غير معروف'}`,'error',4500);
+  }finally{
+    if(saveButton){saveButton.disabled=false;saveButton.textContent='حفظ المستخدم';}
+  }
+}
+
+async function addNewTask(quickTitle='',openDetails=true){
+  const today=new Date().toISOString().slice(0,10),ownerUid=currentUser.uid;
+  const owner=users.find(u=>u.uid===ownerUid)||currentProfile;
+  const createdNow=Date.now();
+  const task={
+    id:nextDisplayId(),title:quickTitle||'مهمة جديدة',desc:'',type:'',
+    createdByUid:currentUser.uid,createdBy:currentProfile.name||currentUser.email,
+    assignUid:ownerUid,assign:owner.name||owner.email||ownerUid,
+    start:today,end:today,actualEnd:'',status:'قيد الانتظار',progress:0,priority:'normal',notes:'',managerNotes:'',
+    createdAt:createdNow,updatedAt:createdNow,
+    activity:[{
+      type:'created',
+      detail:'تم إنشاء المهمة',
+      userUid:currentUser.uid,
+      userName:currentProfile.name||currentUser.email,
+      createdAt:createdNow
+    }]
+  };
+  setSaveStatus('saving');
+  try{
+    const newRef=push(ref(db,`tasksByUser/${ownerUid}`));
+    await set(newRef,task);
+    await notifyTaskAssigned(task,ownerUid,newRef.key);
+    if(openDetails)selectedTaskKey=`${ownerUid}::${newRef.key}`;
+    setSaveStatus('saved');
+    if(openDetails)requestAnimationFrame(()=>scrollSelectedTaskIntoView(true));
+  }catch(error){console.error(error);setSaveStatus('error')}
+}
+async function deleteSelectedTask(){
+  if(!canDeleteTasks()){showToast('حذف المهام متاح للمدير ومدير النظام فقط.','error');return}
+  const task=selectedTask();if(!task)return;
+  if(task.status==='مكتملة'){showToast('المهمة المكتملة للقراءة فقط. أعد فتحها أولاً إذا لزم التعديل.','error');return;}
+  if(await appConfirm('هل تريد حذف المهمة نهائيًا؟','حذف المهمة')){
+    await remove(ref(db,`tasksByUser/${task._ownerUid}/${task._key}`));
+    selectedTaskKey=null;renderDetails();
+    showToast('تم حذف المهمة.','success');
+  }
+}
+
+function setAssigneeFilter(value){
+  assigneeFilterValue=String(value||'ALL');
+  const sel=document.getElementById('assigneeFilter');
+  if(sel && sel.value!==assigneeFilterValue)sel.value=assigneeFilterValue;
+  renderTasks();
+  updateVisibleCount();
+}
+
+function setupAssigneeFilter(){
+  const sel=document.getElementById('assigneeFilter');
+  if(!sel||!currentProfile)return;
+
+  const allowed=currentProfile.role==='manager'||currentProfile.role==='admin';
+  sel.classList.toggle('hidden',!allowed);
+
+  if(!allowed){
+    assigneeFilterValue='ALL';
+    sel.innerHTML='<option value="ALL">كل المسؤولين</option>';
+    sel.value='ALL';
+    return;
+  }
+
+  const options=[{value:'ALL',label:'كل المسؤولين'}];
+
+  if(currentProfile.role==='manager'){
+    options.push({value:'__MY_TASKS__',label:'مهامي'});
+  }
+
+  visibleUsers()
+    .filter(u=>currentProfile.role!=='manager'||u.uid!==currentUser.uid)
+    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'))
+    .forEach(u=>options.push({value:u.uid,label:u.name||u.email||'مستخدم'}));
+
+  // If current state is no longer valid, reset to ALL.
+  if(!options.some(o=>o.value===assigneeFilterValue)){
+    assigneeFilterValue='ALL';
+  }
+
+  sel.innerHTML=options.map(o=>`<option value="${escapeHTML(o.value)}">${escapeHTML(o.label)}</option>`).join('');
+  sel.value=assigneeFilterValue;
+}
+
+function filteredTasks(){
+  const search=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
+  const status=(document.getElementById('statusFilter')?.value||'ALL').trim();
+  const assignee=String(assigneeFilterValue||'ALL').trim();
+  return tasks.filter(t=>{
+    if(assignee!=='ALL'){
+      if(assignee==='__MY_TASKS__'){
+        // مهمة المدير نفسه = المهمة الموجودة تحت UID حسابه في tasksByUser.
+        if(String(t._ownerUid||'')!==String(currentUser.uid||''))return false;
+      }else{
+        // موظف محدد = المهمة الموجودة تحت UID ذلك الموظف فقط.
+        if(String(t._ownerUid||'')!==String(assignee))return false;
+      }
+    }
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt);
+    if(status==='DELAYED'&&delay<=0)return false;
+    if(status==='TODAY'&&!isToday(t.start)&&!isToday(t.end))return false;
+    if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&String(t.status||'').trim()!==String(status).trim())return false;
+    if(search&&!`${t.title||''} ${t.desc||''} ${t.notes||''} ${t.assign||''} ${priorityLabel(t.priority)}`.toLowerCase().includes(search))return false;
+    return true;
+  });
+}
+function statusBadge(status){
+  if(status==='مكتملة')return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">مكتملة</span>';
+  if(status==='قيد التنفيذ')return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">قيد التنفيذ</span>';
+  return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">قيد الانتظار</span>';
+}
+function updateVisibleCount(){
+  const el=document.getElementById('visibleCount');
+  if(!el)return;
+  const rows=filteredTasks();
+  el.textContent=rows.length===tasks.length?`${tasks.length} مهام`:`${rows.length} من ${tasks.length}`;
+}
+function renderTasks(){
+  setupAssigneeFilter();
+  const box=document.getElementById('tasksList'),rows=sortTasksForDisplay(filteredTasks());
+  box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
+  document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
+  rows.forEach(t=>{
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt),key=compositeKey(t);
+    const selected=key===selectedTaskKey;
+    const due=t.end||'بدون تاريخ';
+    const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(new Date().toISOString().slice(0,10),t.end)} يوم`;
+    const timingClass=delay>0?'text-rose-600':'text-slate-500';
+    const card=document.createElement('div');
+    card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
+    card.dataset.taskKey=key;
+    card.onclick=()=>{
+      selectedTaskKey=key;
+      renderTasks();
+      renderDetails();
+      requestAnimationFrame(()=>scrollSelectedTaskIntoView(false));
+    };
+    const operationalStrip = `
+        <div class="task-operational mt-2 pt-2 border-t ${selected?'border-blue-100':'border-slate-100'} flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-slate-500">
+          <span><b class="text-slate-400">البداية:</b> <span class="font-bold text-slate-700">${smartDate(t.start)}</span></span>
+          <span><b class="text-slate-400">النهاية:</b> <span class="font-bold text-slate-700">${smartDate(t.end)}</span></span>
+          <span class="hide-mobile"><b class="text-slate-400">المدة:</b> <span class="font-bold text-slate-700">${calcDuration(t.start,t.end)} يوم</span></span>
+          <span><b class="text-slate-400">التأخير:</b> <span class="font-black ${delay>0?'text-rose-600':'text-slate-700'}">${delay} يوم</span></span>
+          <span class="flex items-center gap-1.5">
+            <b class="text-slate-400">الإنجاز:</b>
+            <span class="font-black text-slate-700">${normalizeProgress(t.progress)}%</span>
+            <span class="inline-block w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden align-middle">
+              <span class="block h-full bg-blue-600 rounded-full" style="width:${normalizeProgress(t.progress)}%"></span>
+            </span>
+          </span>
+        </div>`;
+
+    card.innerHTML=`
+      <div class="flex items-center gap-3 min-h-[44px]">
+        <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="تغيير حالة الإنجاز">${t.status==='مكتملة'?'✓':''}</button>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              ${(t.priority||'normal')==='normal'?'':`<span class="priority-dot priority-${escapeHTML(t.priority)}" title="الأولوية: ${priorityLabel(t.priority)}"></span>`}
+              <h3 class="task-title-line font-semibold text-[14px] ${t.status==='مكتملة'?'line-through text-slate-400':'text-slate-800'} truncate">${escapeHTML(t.title||'بدون عنوان')}</h3>
+            </div>
+
+          </div>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500">
+            ${currentProfile?.role!=='employee'?`<span>👤 ${escapeHTML(t.assign||'')}</span>`:''}
+            ${t.end?`<span>📅 ${escapeHTML(due)}</span>`:''}
+            ${t.status==='قيد التنفيذ'?'<span class="text-blue-600 font-bold">قيد التنفيذ</span>':''}
+            ${t.status==='بانتظار الاعتماد'?'<span class="text-amber-600 font-bold">بانتظار الاعتماد</span>':''}
+            ${t.status==='مكتملة'?'<span class="text-emerald-600 font-bold">مكتملة</span>':''}
+            ${t.managerNotes?`<span class="text-amber-700 font-bold" title="${escapeHTML(t.managerNotes)}">📝 ملاحظة مدير</span>`:''}
+          </div>
+        </div>
+      </div>
+      ${operationalStrip}`;
+    const btn=card.querySelector('button');
+    btn.onclick=async(e)=>{e.stopPropagation();await toggleCompleteByKey(key)};
+    box.appendChild(card);
+  });
+}
+
+
+function applyTaskFieldPermissions(task){
+  const map=[
+    ['detailTitle','title'],
+    ['detailStatus','status'],
+    ['detailPriority','priority'],
+    ['detailStart','start'],
+    ['detailEnd','end'],
+    ['detailProgress','progress'],
+    ['detailDesc','desc'],
+    ['detailNotes','notes'],
+    ['detailManagerNotes','managerNotes']
+  ];
+
+  map.forEach(([id,field])=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const allowed=canEditTaskField(task,field);
+    el.disabled=!allowed;
+    el.classList.toggle('opacity-60',!allowed);
+    el.classList.toggle('cursor-not-allowed',!allowed);
+    if(!allowed && (el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT')){
+      el.title='هذا الحقل للقراءة فقط في حالة المهمة الحالية';
+    }else{
+      el.removeAttribute('title');
+    }
+  });
+}
+
+
+
+function captureScrollPosition(){
+  return {x:window.scrollX,y:window.scrollY};
+}
+function restoreScrollPosition(pos){
+  if(!pos)return;
+  requestAnimationFrame(()=>{
+    window.scrollTo({left:pos.x,top:pos.y,behavior:'auto'});
+  });
+}
+
+function normalizeSubtasks(task){
+  return Array.isArray(task?.subtasks)?task.subtasks:[];
+}
+function subtaskProgress(task){
+  const items=normalizeSubtasks(task);
+  if(!items.length)return null;
+  return Math.round((items.filter(x=>x&&x.done).length/items.length)*100);
+}
+function canEditSubtasks(task){
+  if(!task||!currentProfile)return false;
+  if(task.status==='مكتملة'||task.status==='بانتظار الاعتماد')return false;
+  if(currentProfile.role==='employee')return isTaskOwner(task);
+  return true;
+}
+function renderSubtasks(task){
+  const list=document.getElementById('subtasksList');
+  const summary=document.getElementById('subtasksSummary');
+  const addBtn=document.getElementById('addSubtaskButton');
+  const progress=document.getElementById('detailProgress');
+  if(!list||!summary||!addBtn)return;
+
+  const items=normalizeSubtasks(task);
+  const editable=canEditSubtasks(task);
+  const done=items.filter(x=>x&&x.done).length;
+  summary.textContent=items.length?`${done} من ${items.length} مكتملة — ${subtaskProgress(task)}%`:'لا توجد مهام فرعية';
+  addBtn.classList.toggle('hidden',!editable);
+
+  list.innerHTML=items.map((item,index)=>`
+    <div class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
+      <input type="checkbox" ${item.done?'checked':''} ${editable?'':'disabled'} onchange="toggleSubtask(${index},this.checked)" class="w-4 h-4 accent-blue-600">
+      <span class="flex-1 text-xs ${item.done?'line-through text-slate-400':'text-slate-700'}">${escapeHTML(item.title||'')}</span>
+      ${editable?`<button type="button" onclick="deleteSubtask(${index})" class="text-slate-400 hover:text-rose-600 text-xs px-1" title="حذف">✕</button>`:''}
+    </div>`).join('');
+
+  const auto=subtaskProgress(task);
+  if(progress){
+    progress.disabled=items.length>0 || !canEditTaskField(task,'progress');
+    progress.classList.toggle('opacity-60',progress.disabled);
+    progress.title=items.length?'يتم احتساب نسبة الإنجاز تلقائيًا من المهام الفرعية':'';
+  }
+  if(auto!==null){
+    document.getElementById('progressText').textContent=`${auto}% تلقائي`;
+    progress.value=auto;
+    updateRangeVisual(progress);
+  }
+}
+function addSubtask(){
+  const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  document.getElementById('subtaskInputRow').classList.remove('hidden');
+  requestAnimationFrame(()=>document.getElementById('newSubtaskInput')?.focus());
+}
+function cancelNewSubtask(){
+  document.getElementById('subtaskInputRow').classList.add('hidden');
+  const input=document.getElementById('newSubtaskInput');if(input)input.value='';
+}
+async function saveNewSubtask(){
+  const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  const input=document.getElementById('newSubtaskInput');
+  const title=String(input?.value||'').trim();
+  if(!title){showToast('اكتب اسم المهمة الفرعية أولاً.','warning');return;}
+  const scrollPos=captureScrollPosition();
+  task.subtasks=[...normalizeSubtasks(task),{title,done:false,createdAt:Date.now()}];
+  task.progress=subtaskProgress(task);
+  appendActivity(task,'subtask',`تمت إضافة مهمة فرعية: ${title}`);
+  task.updatedAt=Date.now();
+  await saveTask(task);
+  cancelNewSubtask();
+  renderDetails();
+  restoreScrollPosition(scrollPos);
+}
+async function toggleSubtask(index,done){
+  const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  const scrollPos=captureScrollPosition();
+  const items=normalizeSubtasks(task).map(x=>({...x}));
+  if(!items[index])return;
+  items[index].done=!!done;
+  items[index].completedAt=done?Date.now():null;
+  task.subtasks=items;
+  task.progress=subtaskProgress(task);
+  appendActivity(task,'subtask',`${done?'تم إنجاز':'تم إلغاء إنجاز'} المهمة الفرعية: ${items[index].title||''}`);
+  if(task.progress>0&&task.status==='قيد الانتظار')task.status='قيد التنفيذ';
+  task.updatedAt=Date.now();
+  await saveTask(task);
+  renderDetails();
+  restoreScrollPosition(scrollPos);
+}
+async function deleteSubtask(index){
+  const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  const scrollPos=captureScrollPosition();
+  const before=normalizeSubtasks(task);
+  const removed=before[index];
+  const items=before.filter((_,i)=>i!==index);
+  task.subtasks=items;
+  if(items.length)task.progress=subtaskProgress(task);
+  appendActivity(task,'subtask',`تم حذف مهمة فرعية: ${removed?.title||''}`);
+  task.updatedAt=Date.now();
+  await saveTask(task);
+  renderDetails();
+  restoreScrollPosition(scrollPos);
+}
+
+function normalizeActivity(task){
+  return Array.isArray(task?.activity)?task.activity:[];
+}
+function activityLabel(type){
+  return ({
+    created:'تم إنشاء المهمة',
+    assigned:'تم تغيير المسؤول',
+    started:'تم بدء المهمة',
+    progress:'تم تحديث نسبة الإنجاز',
+    note:'تمت إضافة ملاحظة',
+    manager_note:'تمت إضافة ملاحظة مدير',
+    subtask:'تم تحديث المهام الفرعية',
+    submitted:'تم إرسال المهمة للاعتماد',
+    approved:'تم اعتماد المهمة',
+    reopened:'تمت إعادة فتح المهمة',
+    completed:'تم إكمال المهمة',
+    updated:'تم تعديل المهمة'
+  })[type]||'تم تحديث المهمة';
+}
+function activityIcon(type){
+  return ({
+    created:'＋',
+    assigned:'👤',
+    started:'▶',
+    progress:'%',
+    note:'📝',
+    manager_note:'📝',
+    subtask:'☑',
+    submitted:'⏳',
+    approved:'✓',
+    reopened:'↩',
+    completed:'✓',
+    updated:'✎'
+  })[type]||'•';
+}
+function formatActivityTime(ts){
+  const d=new Date(Number(ts||0));
+  if(Number.isNaN(d.getTime()))return '';
+  return d.toLocaleString('ar-SA',{
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit'
+  });
+}
+function buildActivityEntry(type,detail=''){
+  return {
+    type,
+    detail:String(detail||''),
+    userUid:currentUser?.uid||'',
+    userName:currentProfile?.name||currentUser?.email||'',
+    createdAt:Date.now()
+  };
+}
+function appendActivity(task,type,detail=''){
+  if(!task)return;
+  const rows=normalizeActivity(task);
+  task.activity=[...rows,buildActivityEntry(type,detail)].slice(-100);
+}
+function renderActivityLog(task){
+  const list=document.getElementById('activityLogList');
+  const summary=document.getElementById('activityLogSummary');
+  const toggle=document.getElementById('activityLogToggle');
+  if(!list||!summary||!toggle)return;
+
+  const rows=[...normalizeActivity(task)].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  summary.textContent=rows.length?`${rows.length} حركة مسجلة`:'لا يوجد نشاط مسجل';
+  toggle.textContent=activityLogExpanded?'إخفاء':'إظهار';
+  list.classList.toggle('hidden',!activityLogExpanded);
+
+  if(!rows.length){
+    list.innerHTML='<div class="text-xs text-slate-400 py-2">لا يوجد نشاط مسجل لهذه المهمة.</div>';
+    return;
+  }
+
+  list.innerHTML=rows.map(a=>`
+    <div class="flex gap-3 items-start rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+      <div class="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xs shrink-0">${activityIcon(a.type)}</div>
+      <div class="min-w-0 flex-1">
+        <div class="text-xs font-black text-slate-700">${escapeHTML(activityLabel(a.type))}</div>
+        ${a.detail?`<div class="text-[11px] text-slate-500 mt-0.5">${escapeHTML(a.detail)}</div>`:''}
+        <div class="text-[10px] text-slate-400 mt-1">${escapeHTML(a.userName||'')} • ${escapeHTML(formatActivityTime(a.createdAt))}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleActivityLog(){
+  activityLogExpanded=!activityLogExpanded;
+  const task=selectedTask();
+  if(task)renderActivityLog(task);
+}
+
+function renderDetails(){
+  const task=selectedTask();
+  const panel=document.getElementById('detailsPanel');
+  const grid=document.getElementById('workspaceGrid');
+  panel.classList.toggle('hidden',!task);
+  grid.classList.toggle('details-closed',!task);
+  document.getElementById('noSelection').classList.add('hidden');
+  document.getElementById('taskDetails').classList.toggle('hidden',!task);
+  if(!task)return;
+  const lockHint=document.getElementById('taskLockHint');
+  if(lockHint){
+    if(task.status==='بانتظار الاعتماد'){
+      lockHint.textContent='بانتظار اعتماد المدير — المهمة للقراءة فقط';
+      lockHint.classList.remove('hidden');
+    }else if(task.status==='مكتملة'){
+      lockHint.textContent='مكتملة ومعتمدة — للقراءة فقط';
+      lockHint.classList.remove('hidden');
+    }else{
+      lockHint.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('detailTitle').value=task.title||'';
+  document.getElementById('detailStatus').value=task.status||'قيد الانتظار';
+  const statusSelect=document.getElementById('detailStatus');
+  statusSelect.disabled=currentProfile?.role==='employee';
+  document.getElementById('detailPriority').value=task.priority||'normal';
+  document.getElementById('detailStart').value=task.start||'';
+  document.getElementById('detailEnd').value=task.end||'';
+  document.getElementById('detailProgress').value=normalizeProgress(task.progress);
+  document.getElementById('progressText').textContent=`${normalizeProgress(task.progress)}%`;
+  updateRangeVisual(document.getElementById('detailProgress'));
+
+  const workflowBox=document.getElementById('taskWorkflowActions');
+  const startBtn=document.getElementById('startTaskButton');
+  const completeBtn=document.getElementById('completeTaskButton');
+  const workflowHint=document.getElementById('taskWorkflowHint');
+  const isOwner=String(task._ownerUid||'')===String(currentUser?.uid||'');
+
+  workflowBox.classList.toggle('hidden',!isOwner);
+  startBtn.classList.toggle('hidden',!isOwner || task.status!=='قيد الانتظار');
+  completeBtn.classList.toggle('hidden',!isOwner || task.status!=='قيد التنفيذ');
+
+  if(isOwner){
+    workflowHint.textContent=
+      task.status==='قيد الانتظار'?'ابدأ المهمة عند بدء العمل الفعلي.':
+      task.status==='قيد التنفيذ'?'حدّث نسبة الإنجاز والملاحظات ثم أرسلها للاعتماد عند الاكتمال.':
+      task.status==='بانتظار الاعتماد'?'تم إرسال المهمة للمدير وهي بانتظار الاعتماد.':
+      'تم اعتماد وإكمال المهمة.';
+  }
+
+  const approvalBox=document.getElementById('managerApprovalActions');
+  const canApprove=canApproveTask(task);
+  approvalBox.classList.toggle('hidden',!(canApprove&&task.status==='بانتظار الاعتماد'));
+
+  document.getElementById('detailDesc').value=task.desc||'';
+  document.getElementById('detailNotes').value=task.notes||'';
+  const managerNotes=document.getElementById('detailManagerNotes');
+  managerNotes.value=task.managerNotes||'';
+  const canManagerNote=currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager');
+  managerNotes.disabled=!canManagerNote;
+  managerNotes.classList.toggle('bg-slate-50',!canManagerNote);
+  managerNotes.placeholder=canManagerNote?'ملاحظة خاصة بالمدير...':'ملاحظات المدير — للقراءة فقط';
+  document.getElementById('detailCreatedBy').textContent=task.createdBy||'';
+  const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt),duration=calcDuration(task.start,task.end);
+  document.getElementById('detailDuration').textContent=`${duration} يوم`;
+  const delayEl=document.getElementById('detailDelay');
+  delayEl.textContent=`${delay} يوم`;
+  delayEl.className=`mt-1 text-sm font-black ${delay>0?'text-rose-600':'text-slate-800'}`;
+  document.getElementById('detailTiming').textContent=`المدة: ${duration} يوم${delay>0?` • التأخير: ${delay} يوم`:''}`;
+  const assigneeBox=document.getElementById('assigneeBox');
+  const allowed=visibleUsers();
+  if(allowed.length>1){
+    assigneeBox.innerHTML=`<select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${u.uid===(task.assignUid||task._ownerUid)?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}</select>`;
+    const assigneeSelect=document.getElementById('detailAssignee');
+    assigneeSelect.onchange=e=>updateSelectedField('assignUid',e.target.value);
+    assigneeSelect.disabled=!canEditTaskField(task,'assignUid');
+    assigneeSelect.classList.toggle('opacity-60',assigneeSelect.disabled);
+  }else{
+    assigneeBox.innerHTML=`<div class="font-bold text-sm text-blue-700">${escapeHTML(task.assign||currentProfile.name||'')}</div>`;
+  }
+  document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTasks());
+  applyTaskFieldPermissions(task);
+  renderSubtasks(task);
+  renderActivityLog(task);
+}
+function clearSelection(){selectedTaskKey=null;renderTasks();renderDetails()}
+
+function updateStats(){
+  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-completed').textContent=tasks.filter(t=>t.status==='مكتملة').length;
+  document.getElementById('stat-progress').textContent=tasks.filter(t=>t.status==='قيد التنفيذ').length;
+  document.getElementById('stat-pending').textContent=tasks.filter(t=>t.status==='قيد الانتظار').length;
+  document.getElementById('stat-delayed').textContent=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+}
+
+async function exportToExcel(){
+  const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Tasks',{views:[{rightToLeft:true}]});
+  ws.columns=[
+    {header:'#',key:'id',width:8},{header:'عنوان المهمة',key:'title',width:28},{header:'الوصف',key:'desc',width:40},
+    {header:'أنشئت بواسطة',key:'createdBy',width:20},{header:'المسؤول',key:'assign',width:20},
+    {header:'تاريخ البداية',key:'start',width:14},{header:'تاريخ الاستحقاق',key:'end',width:14},
+    {header:'الحالة',key:'status',width:14},{header:'الأولوية',key:'priority',width:12},{header:'الإنجاز %',key:'progress',width:12},
+    {header:'التأخير (يوم)',key:'delay',width:14},{header:'ملاحظات',key:'notes',width:30},{header:'ملاحظات المدير',key:'managerNotes',width:30}
+  ];
+  tasks.forEach(t=>ws.addRow({...t,delay:calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)}));
+  ws.getRow(1).font={bold:true};
+  const buf=await wb.xlsx.writeBuffer(),blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='tasks_export.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function handleImport(e){
+  if(currentProfile?.role==='employee'){showToast('رفع Excel متاح للمدير ومدير النظام فقط.','error');e.target.value='';return}
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async(evt)=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(evt.target.result),{type:'array',cellDates:true});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true});
+      const allowed=visibleUsers(),byName=new Map(allowed.map(u=>[(u.name||u.email||'').trim(),u]));
+      for(let i=0;i<rows.length;i++){
+        const r=rows[i],target=byName.get(String(r['المسؤول']||'').trim())||currentProfile;
+        const task={
+          id:String(r['#']||i+1),title:r['عنوان المهمة']||'',desc:r['الوصف']||'',type:'',
+          createdByUid:currentUser.uid,createdBy:r['أنشئت بواسطة']||currentProfile.name||currentUser.email,
+          assignUid:target.uid,assign:target.name||target.email,
+          start:excelDateToISO(r['تاريخ البداية']),end:excelDateToISO(r['تاريخ الاستحقاق']||r['تاريخ النهاية']),
+          actualEnd:'',status:r['الحالة']||'قيد الانتظار',priority:r['الأولوية']||'normal',progress:normalizeProgress(r['الإنجاز %']||0),
+          notes:r['ملاحظات']||'',managerNotes:r['ملاحظات المدير']||'',createdAt:Date.now(),updatedAt:Date.now()
+        };
+        await set(push(ref(db,`tasksByUser/${target.uid}`)),task);
+      }
+      showToast('تم استيراد المهام بنجاح.','success');
+    }catch(error){console.error(error);showToast('تعذر استيراد الملف. تحقق من تنسيق الأعمدة.','error')}
+    finally{e.target.value=''}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+Object.assign(window,{
+  addNewTask, logoutUser, exportToExcel, handleImport, updateSelectedField,
+  deleteSelectedTask, clearSelection, closeDetailsKeepPosition,
+  toggleMoreMenu, setQuickFilter, showQuickAdd, hideQuickAdd, quickAddKey, commitQuickAdd
+,
+  openUsersModal,
+  closeUsersModal,
+  showUserForm,
+  hideUserForm,
+  saveUserProfile,
+  toggleFirebaseAdvanced,
+  setupAssigneeFilter,
+  setAssigneeFilter,
+  toggleNotifications,
+  markAllNotificationsRead,
+  openNotification,
+  toggleManagerDashboard,
+  filterByTeamMember,
+  startSelectedTask,
+  completeSelectedTask,
+  approveSelectedTask,
+  reopenSelectedTask,
+  setSortFilter,
+  updateRangeVisual,
+  addSubtask,
+  cancelNewSubtask,
+  saveNewSubtask,
+  toggleSubtask,
+  deleteSubtask,
+  toggleActivityLog});
+</script>
+</body>
+</html>
