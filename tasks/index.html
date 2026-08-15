@@ -1669,14 +1669,32 @@ async function addNewTask(quickTitle='',openDetails=true){
   }catch(error){console.error(error);setSaveStatus('error')}
 }
 async function deleteSelectedTask(){
-  if(!canDeleteTasks()){showToast('حذف المهام متاح للمدير ومدير النظام فقط.','error');return}
-  const task=selectedTask();if(!task)return;
-  if(task.status==='مكتملة'){showToast('المهمة المكتملة للقراءة فقط. أعد فتحها أولاً إذا لزم التعديل.','error');return;}
-  if(await appConfirm('هل تريد حذف المهمة نهائيًا؟','حذف المهمة')){
+  if(!canDeleteTasks()){
+    showToast('حذف المهام متاح للمدير ومدير النظام فقط.','error');
+    return;
+  }
+
+  const task = selectedTask();
+  if(!task) return;
+
+  // المهمة المكتملة: يسمح بحذفها لمدير النظام فقط
+  if(task.status === 'مكتملة' && currentUserProfile?.role !== 'admin'){
+    showToast('المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.','error');
+    return;
+  }
+
+  // رسالة تأكيد أقوى عند حذف مهمة مكتملة
+  const confirmMessage = task.status === 'مكتملة'
+    ? 'هذه المهمة مكتملة. سيتم حذفها نهائيًا. هل أنت متأكد؟'
+    : 'هل تريد حذف المهمة نهائيًا؟';
+
+  if(await appConfirm(confirmMessage,'حذف المهمة')){
     await remove(ref(db,`tasksByUser/${task._ownerUid}/${task._key}`));
-    selectedTaskKey=null;renderDetails();
+    selectedTaskKey = null;
+    renderDetails();
     showToast('تم حذف المهمة.','success');
   }
+}
 }
 
 function setAssigneeFilter(value){
