@@ -1678,12 +1678,11 @@ async function deleteSelectedTask(){
   if(!task) return;
 
   // المهمة المكتملة: يسمح بحذفها لمدير النظام فقط
-  if(task.status === 'مكتملة' && currentUserProfile?.role !== 'admin'){
+  if(task.status === 'مكتملة' && currentProfile?.role !== 'admin'){
     showToast('المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.','error');
     return;
   }
 
-  // رسالة تأكيد أقوى عند حذف مهمة مكتملة
   const confirmMessage = task.status === 'مكتملة'
     ? 'هذه المهمة مكتملة. سيتم حذفها نهائيًا. هل أنت متأكد؟'
     : 'هل تريد حذف المهمة نهائيًا؟';
@@ -1695,9 +1694,7 @@ async function deleteSelectedTask(){
     showToast('تم حذف المهمة.','success');
   }
 }
-}
-
-function setAssigneeFilter(value){
+  function setAssigneeFilter(value){
   assigneeFilterValue=String(value||'ALL');
   const sel=document.getElementById('assigneeFilter');
   if(sel && sel.value!==assigneeFilterValue)sel.value=assigneeFilterValue;
