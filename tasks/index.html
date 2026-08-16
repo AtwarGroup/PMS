@@ -504,7 +504,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.5 (Hierarchy Visibility)
+  Production Version: 1.3.5 (Hierarchy Visibility - Assignee Fix)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -2520,7 +2520,7 @@ function renderDetails(){
   delayEl.className=`mt-1 text-sm font-black ${delay>0?'text-rose-600':'text-slate-800'}`;
   document.getElementById('detailTiming').textContent=`المدة: ${duration} يوم${delay>0?` • التأخير: ${delay} يوم`:''}`;
   const assigneeBox=document.getElementById('assigneeBox');
-  const allowed=visibleUsers();
+  const allowed=assignableUsers();
   if(allowed.length>1){
     assigneeBox.innerHTML=`<select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${u.uid===(task.assignUid||task._ownerUid)?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}</select>`;
     const assigneeSelect=document.getElementById('detailAssignee');
