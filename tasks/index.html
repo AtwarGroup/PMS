@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.3</title>
+  <title>ATWAR ONE – Tasks V1.3.4</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -504,7 +504,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.3 (DB Connection Fix)
+  Production Version: 1.3.4 (Hierarchy Delegation)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -741,17 +741,94 @@ function setSaveStatus(state){
   else if(state==='error'){el.textContent='⚠️ تعذر الحفظ';el.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-rose-300'}
   else{el.textContent='☁️ تم الحفظ';el.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-emerald-300'}
 }
+
+function getUserByUid(uid){
+  return users.find(u=>String(u.uid||'')===String(uid||''))||null;
+}
+
+function isDescendantOf(userOrUid,managerUid){
+  const user=typeof userOrUid==='string'?getUserByUid(userOrUid):userOrUid;
+  if(!user||!managerUid)return false;
+
+  const visited=new Set();
+  let cursor=user;
+
+  while(cursor?.managerUid){
+    const parentUid=String(cursor.managerUid);
+    if(visited.has(parentUid))break;
+    visited.add(parentUid);
+
+    if(parentUid===String(managerUid))return true;
+    cursor=getUserByUid(parentUid);
+  }
+
+  return false;
+}
+
+function buildManagerChainForUser(user){
+  const chain={};
+  const visited=new Set();
+  let cursor=user;
+
+  while(cursor?.managerUid){
+    const parentUid=String(cursor.managerUid);
+    if(visited.has(parentUid))break;
+    visited.add(parentUid);
+    chain[parentUid]=true;
+    cursor=getUserByUid(parentUid);
+  }
+
+  return chain;
+}
+
+async function syncManagerChains(){
+  if(currentProfile?.role!=='admin'||!users.length)return;
+
+  const updates={};
+  users.forEach(u=>{
+    updates[`users/${u.uid}/managerChain`]=buildManagerChainForUser(u);
+  });
+
+  try{
+    await update(ref(db),updates);
+
+    // Update local cache too.
+    users=users.map(u=>({...u,managerChain:buildManagerChainForUser(u)}));
+    const me=users.find(u=>u.uid===currentUser?.uid);
+    if(me)currentProfile=me;
+  }catch(error){
+    console.error('Manager chain sync:',error);
+    showToast('تعذر تحديث التسلسل الإداري في قاعدة البيانات.','warning',4500);
+  }
+}
+
 function visibleUsers(){
   if(!currentProfile)return [];
-  if(currentProfile.role==='admin')return users.filter(u=>u.active!==false);
-  if(currentProfile.role==='manager')return users.filter(u=>u.active!==false&&(u.uid===currentUser.uid||u.managerUid===currentUser.uid));
-  return users.filter(u=>u.uid===currentUser.uid);
+
+  if(currentProfile.role==='admin'){
+    return users.filter(u=>u.active!==false);
+  }
+
+  if(currentProfile.role==='manager'){
+    return users.filter(u=>
+      u.active!==false &&
+      (
+        String(u.uid)===String(currentUser.uid) ||
+        isDescendantOf(u,currentUser.uid)
+      )
+    );
+  }
+
+  return users.filter(u=>String(u.uid)===String(currentUser.uid));
 }
+
 function canManageUser(uid){
-  if(!currentProfile)return false;
+  if(!currentProfile||!currentUser)return false;
+
   if(currentProfile.role==='admin')return true;
-  if(uid===currentUser.uid)return true;
-  return currentProfile.role==='manager'&&users.some(u=>u.uid===uid&&u.managerUid===currentUser.uid);
+  if(String(uid)===String(currentUser.uid))return true;
+
+  return currentProfile.role==='manager' && isDescendantOf(uid,currentUser.uid);
 }
 function canDeleteTasks(){return currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager')}
 
@@ -761,14 +838,11 @@ function canApproveTask(task){
   // منع الاعتماد الذاتي مهما كانت الصلاحية.
   if(String(task._ownerUid||'')===String(currentUser.uid||''))return false;
 
-  if(currentProfile.role==='admin')return true;
+  // الاعتماد للمدير المباشر فقط، حتى لو كان منشئ المهمة مديرًا أعلى أو Admin.
+  const owner=getUserByUid(task._ownerUid);
+  if(!owner?.managerUid)return false;
 
-  if(currentProfile.role==='manager'){
-    const owner=users.find(u=>u.uid===task._ownerUid);
-    return !!owner && String(owner.managerUid||'')===String(currentUser.uid||'');
-  }
-
-  return false;
+  return String(owner.managerUid)===String(currentUser.uid);
 }
 
 
@@ -960,6 +1034,11 @@ onAuthStateChanged(auth,async(user)=>{
     const me=users.find(u=>u.uid===user.uid);
     if(me)currentProfile=me;
 
+    // Admin يحافظ على managerChain محدثة لكل المستخدمين.
+    if(currentProfile.role==='admin'){
+      await syncManagerChains();
+    }
+
     document.getElementById('currentUserBadge').textContent=
       `👤 ${currentProfile.name||user.email} • ${roleLabel(currentProfile.role)}`;
 
@@ -997,12 +1076,15 @@ onAuthStateChanged(auth,async(user)=>{
 
 function managerTeamUsers(){
   if(!currentProfile)return [];
+
   if(currentProfile.role==='admin'){
-    return users.filter(u=>u.active!==false && u.uid!==currentUser.uid);
+    return users.filter(u=>u.active!==false && String(u.uid)!==String(currentUser.uid));
   }
+
   if(currentProfile.role==='manager'){
-    return users.filter(u=>u.active!==false && u.managerUid===currentUser.uid);
+    return users.filter(u=>u.active!==false && isDescendantOf(u,currentUser.uid));
   }
+
   return [];
 }
 
@@ -1734,6 +1816,9 @@ async function saveUserProfile(){
     const idx=users.findIndex(u=>u.uid===uid);
     if(idx>=0)users[idx]={...users[idx],...payload};
     else users.push(payload);
+
+    // أي تغيير في المدير المباشر قد يؤثر على كل من تحته، لذلك نعيد بناء الشجرة.
+    await syncManagerChains();
 
     renderUsersManagement();
     hideUserForm();
