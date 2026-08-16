@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.4</title>
+  <title>ATWAR ONE – Tasks V1.3.5</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -504,7 +504,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.4 (Hierarchy Delegation)
+  Production Version: 1.3.5 (Hierarchy Visibility)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -802,8 +802,34 @@ async function syncManagerChains(){
   }
 }
 
+// المستخدمون الذين يحق للمستخدم رؤية كامل مهامهم:
+// الموظف: نفسه فقط.
+// المدير: نفسه + مرؤوسوه المباشرون فقط.
+// مدير النظام: الجميع.
 function visibleUsers(){
-  if(!currentProfile)return [];
+  if(!currentProfile||!currentUser)return [];
+
+  if(currentProfile.role==='admin'){
+    return users.filter(u=>u.active!==false);
+  }
+
+  if(currentProfile.role==='manager'){
+    return users.filter(u=>
+      u.active!==false &&
+      (
+        String(u.uid)===String(currentUser.uid) ||
+        String(u.managerUid||'')===String(currentUser.uid)
+      )
+    );
+  }
+
+  return users.filter(u=>String(u.uid)===String(currentUser.uid));
+}
+
+// المستخدمون الذين يمكن إسناد مهمة إليهم:
+// المدير يستطيع التكليف عبر كامل الشجرة الإدارية.
+function assignableUsers(){
+  if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
     return users.filter(u=>u.active!==false);
@@ -1037,6 +1063,7 @@ onAuthStateChanged(auth,async(user)=>{
     // Admin يحافظ على managerChain محدثة لكل المستخدمين.
     if(currentProfile.role==='admin'){
       await syncManagerChains();
+      await syncCreatedTaskIndex();
     }
 
     document.getElementById('currentUserBadge').textContent=
@@ -1075,14 +1102,17 @@ onAuthStateChanged(auth,async(user)=>{
 
 
 function managerTeamUsers(){
-  if(!currentProfile)return [];
+  if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
     return users.filter(u=>u.active!==false && String(u.uid)!==String(currentUser.uid));
   }
 
   if(currentProfile.role==='manager'){
-    return users.filter(u=>u.active!==false && isDescendantOf(u,currentUser.uid));
+    return users.filter(u=>
+      u.active!==false &&
+      String(u.managerUid||'')===String(currentUser.uid)
+    );
   }
 
   return [];
@@ -1404,36 +1434,187 @@ async function notifyTaskUpdated(task,field){
   });
 }
 
-function clearTaskListeners(){unsubscribeTasks.forEach(fn=>{try{fn()}catch{}});unsubscribeTasks=[]}
+
+async function setCreatedTaskIndex(taskKey,ownerUid,creatorUid){
+  if(!taskKey||!ownerUid||!creatorUid)return;
+  await set(ref(db,`createdTaskIndex/${creatorUid}/${taskKey}`),ownerUid);
+}
+
+async function removeCreatedTaskIndex(taskKey,creatorUid){
+  if(!taskKey||!creatorUid)return;
+  await remove(ref(db,`createdTaskIndex/${creatorUid}/${taskKey}`));
+}
+
+// ترحيل/إصلاح الفهرس للمهام الموجودة سابقًا.
+// ينفذه مدير النظام فقط بعد تسجيل الدخول.
+async function syncCreatedTaskIndex(){
+  if(currentProfile?.role!=='admin'||!users.length)return;
+
+  const updates={};
+
+  try{
+    for(const u of users){
+      const snap=await get(ref(db,`tasksByUser/${u.uid}`));
+      if(!snap.exists())continue;
+
+      for(const [taskKey,task] of Object.entries(snap.val())){
+        const creatorUid=String(task?.createdByUid||'');
+        if(creatorUid){
+          updates[`createdTaskIndex/${creatorUid}/${taskKey}`]=u.uid;
+        }
+      }
+    }
+
+    if(Object.keys(updates).length){
+      await update(ref(db),updates);
+    }
+  }catch(error){
+    console.error('Created-task index sync:',error);
+    showToast('تعذر تحديث فهرس المهام المنشأة.','warning',4500);
+  }
+}
+
+function clearTaskListeners(){
+  unsubscribeTasks.forEach(fn=>{try{fn()}catch{}});
+  unsubscribeTasks=[];
+}
 
 function subscribeVisibleTasks(){
   clearTaskListeners();
-  const scoped=visibleUsers(),scopeData=new Map();
-  if(!scoped.length){tasks=[];renderTasks();updateStats();return}
+
+  const ownerData=new Map();
+  const createdData=new Map();
+  let createdExactUnsubs=[];
+
+  const sortAndRender=()=>{
+    const merged=new Map();
+
+    // المهام الكاملة المسموح برؤيتها حسب نطاق المستخدم.
+    for(const rows of ownerData.values()){
+      rows.forEach(t=>merged.set(compositeKey(t),t));
+    }
+
+    // مهام أنشأها المدير بنفسه لمستخدمين خارج فريقه المباشر.
+    for(const t of createdData.values()){
+      merged.set(compositeKey(t),t);
+    }
+
+    tasks=[...merged.values()].sort((a,b)=>{
+      const ac=a.status==='مكتملة'?1:0,bc=b.status==='مكتملة'?1:0;
+      if(ac!==bc)return ac-bc;
+      const weight={urgent:0,important:1,normal:2};
+      const ap=weight[a.priority||'normal']??2,bp=weight[b.priority||'normal']??2;
+      if(ap!==bp)return ap-bp;
+      if(ac===0){
+        const aNew=Number(a.createdAt||0),bNew=Number(b.createdAt||0);
+        if(aNew!==bNew)return bNew-aNew;
+      }
+      return String(a.end||'9999').localeCompare(String(b.end||'9999'))||
+        String(a.id).localeCompare(String(b.id),'en',{numeric:true});
+    });
+
+    if(selectedTaskKey&&!selectedTask())selectedTaskKey=null;
+    renderTasks();
+    updateStats();
+    renderDetails();
+    renderManagerDashboard();
+    setSaveStatus('saved');
+    checkOverdueNotifications();
+  };
+
+  const scoped=visibleUsers();
+
+  if(!scoped.length){
+    tasks=[];
+    renderTasks();
+    updateStats();
+    return;
+  }
+
+  // 1) المهام التي يحق له رؤية كامل مسار صاحبها:
+  // نفسه + فريقه المباشر، أو الجميع للـAdmin.
   scoped.forEach(u=>{
-    const unsub=onValue(ref(db,`tasksByUser/${u.uid}`),(snapshot)=>{
-      const rows=snapshot.exists()?Object.entries(snapshot.val()).map(([key,v])=>({_key:key,_ownerUid:u.uid,...v})):[];
-      scopeData.set(u.uid,rows);
-      tasks=[...scopeData.values()].flat().sort((a,b)=>{
-        const ac=a.status==='مكتملة'?1:0,bc=b.status==='مكتملة'?1:0;
-        if(ac!==bc)return ac-bc;
-        const weight={urgent:0,important:1,normal:2};
-        const ap=weight[a.priority||'normal']??2,bp=weight[b.priority||'normal']??2;
-        if(ap!==bp)return ap-bp;
-        if(ac===0){
-          const aNew=Number(a.createdAt||0),bNew=Number(b.createdAt||0);
-          if(aNew!==bNew)return bNew-aNew;
-        }
-        return String(a.end||'9999').localeCompare(String(b.end||'9999'))||String(a.id).localeCompare(String(b.id),'en',{numeric:true});
-      });
-      if(selectedTaskKey&&!selectedTask())selectedTaskKey=null;
-      renderTasks();updateStats();renderDetails();renderManagerDashboard();setSaveStatus('saved');
-      checkOverdueNotifications();
-      // لا نغيّر موضع الصفحة عند التحديث اللحظي العادي؛
-      // التنقل الصريح من الإشعارات/اختيار المهمة يتولى التمرير عند الحاجة.
-    },error=>{console.error(error);setSaveStatus('error')});
+    const unsub=onValue(
+      ref(db,`tasksByUser/${u.uid}`),
+      snapshot=>{
+        const rows=snapshot.exists()
+          ? Object.entries(snapshot.val()).map(([key,v])=>({_key:key,_ownerUid:u.uid,...v}))
+          : [];
+
+        ownerData.set(u.uid,rows);
+        sortAndRender();
+      },
+      error=>{
+        console.error('Owner tasks listener:',error);
+        setSaveStatus('error');
+      }
+    );
+
     unsubscribeTasks.push(unsub);
   });
+
+  // 2) المدير يرى أيضًا فقط المهام التي أنشأها بنفسه للأشخاص
+  // الموجودين أسفل فريقه المباشر، بدون كشف بقية مهامهم الشخصية.
+  if(currentProfile?.role==='manager'){
+    const indexUnsub=onValue(
+      ref(db,`createdTaskIndex/${currentUser.uid}`),
+      snapshot=>{
+        createdExactUnsubs.forEach(fn=>{try{fn()}catch{}});
+        createdExactUnsubs=[];
+        createdData.clear();
+
+        const indexRows=snapshot.exists()?snapshot.val():{};
+
+        Object.entries(indexRows).forEach(([taskKey,ownerUid])=>{
+          ownerUid=String(ownerUid||'');
+          if(!ownerUid)return;
+
+          // إذا كان صاحب المهمة ضمن النطاق المباشر فهي موجودة أصلًا في ownerData.
+          if(scoped.some(u=>String(u.uid)===ownerUid))return;
+
+          const exactUnsub=onValue(
+            ref(db,`tasksByUser/${ownerUid}/${taskKey}`),
+            taskSnap=>{
+              const mapKey=`${ownerUid}::${taskKey}`;
+
+              if(taskSnap.exists()){
+                const task={_key:taskKey,_ownerUid:ownerUid,...taskSnap.val()};
+
+                // طبقة حماية إضافية في الواجهة.
+                if(String(task.createdByUid||'')===String(currentUser.uid)){
+                  createdData.set(mapKey,task);
+                }else{
+                  createdData.delete(mapKey);
+                }
+              }else{
+                createdData.delete(mapKey);
+              }
+
+              sortAndRender();
+            },
+            error=>{
+              console.error('Created task listener:',error);
+              createdData.delete(`${ownerUid}::${taskKey}`);
+              sortAndRender();
+            }
+          );
+
+          createdExactUnsubs.push(exactUnsub);
+        });
+
+        sortAndRender();
+      },
+      error=>{
+        console.error('Created-task index listener:',error);
+      }
+    );
+
+    unsubscribeTasks.push(indexUnsub);
+    unsubscribeTasks.push(()=>{
+      createdExactUnsubs.forEach(fn=>{try{fn()}catch{}});
+      createdExactUnsubs=[];
+    });
+  }
 }
 
 async function saveTask(task){
@@ -1468,6 +1649,7 @@ async function updateTaskField(task,f,v){
     try{
       await set(ref(db,`tasksByUser/${v}/${key}`),moved);
       await remove(ref(db,`tasksByUser/${oldOwner}/${key}`));
+      await setCreatedTaskIndex(key,v,moved.createdByUid);
       await notifyTaskAssigned(moved,v,key);
       selectedTaskKey=`${v}::${key}`;
       setSaveStatus('saved');
@@ -1855,6 +2037,7 @@ async function addNewTask(quickTitle='',openDetails=true){
   try{
     const newRef=push(ref(db,`tasksByUser/${ownerUid}`));
     await set(newRef,task);
+    await setCreatedTaskIndex(newRef.key,ownerUid,task.createdByUid);
     await notifyTaskAssigned(task,ownerUid,newRef.key);
     if(openDetails)selectedTaskKey=`${ownerUid}::${newRef.key}`;
     setSaveStatus('saved');
@@ -1883,6 +2066,7 @@ async function deleteSelectedTask(){
     try{
       setSaveStatus('saving');
       await remove(ref(db,`tasksByUser/${task._ownerUid}/${task._key}`));
+      await removeCreatedTaskIndex(task._key,task.createdByUid);
       selectedTaskKey=null;
       renderTasks();
       renderDetails();
@@ -1924,7 +2108,7 @@ function setupAssigneeFilter(){
     options.push({value:'__MY_TASKS__',label:'مهامي'});
   }
 
-  visibleUsers()
+  assignableUsers()
     .filter(u=>currentProfile.role!=='manager'||u.uid!==currentUser.uid)
     .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'))
     .forEach(u=>options.push({value:u.uid,label:u.name||u.email||'مستخدم'}));
@@ -2384,7 +2568,7 @@ function handleImport(e){
     try{
       const wb=XLSX.read(new Uint8Array(evt.target.result),{type:'array',cellDates:true});
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true});
-      const allowed=visibleUsers(),byName=new Map(allowed.map(u=>[(u.name||u.email||'').trim(),u]));
+      const allowed=assignableUsers(),byName=new Map(allowed.map(u=>[(u.name||u.email||'').trim(),u]));
       for(let i=0;i<rows.length;i++){
         const r=rows[i],target=byName.get(String(r['المسؤول']||'').trim())||currentProfile;
         const task={
@@ -2395,7 +2579,9 @@ function handleImport(e){
           actualEnd:'',status:r['الحالة']||'قيد الانتظار',priority:r['الأولوية']||'normal',progress:normalizeProgress(r['الإنجاز %']||0),
           notes:r['ملاحظات']||'',managerNotes:r['ملاحظات المدير']||'',createdAt:Date.now(),updatedAt:Date.now()
         };
-        await set(push(ref(db,`tasksByUser/${target.uid}`)),task);
+        const importRef=push(ref(db,`tasksByUser/${target.uid}`));
+        await set(importRef,task);
+        await setCreatedTaskIndex(importRef.key,target.uid,task.createdByUid);
       }
       showToast('تم استيراد المهام بنجاح.','success');
     }catch(error){console.error(error);showToast('تعذر استيراد الملف. تحقق من تنسيق الأعمدة.','error')}
