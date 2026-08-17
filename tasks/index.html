@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.5</title>
+  <title>ATWAR ONE – Tasks V1.3.6</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -89,6 +89,62 @@
     input[type=range]::-moz-range-thumb{
       height:16px;width:16px;border:0;border-radius:50%;
       background:#2563eb;cursor:pointer;box-shadow:0 0 0 3px #bfdbfe;
+    }
+
+
+    /* V1.3.6 Readability improvements */
+    .task-title-line{
+      font-size:16px!important;
+      line-height:1.45!important;
+      font-weight:700!important;
+    }
+    .task-secondary{
+      font-size:12.5px!important;
+      line-height:1.5!important;
+    }
+    .task-operational{
+      font-size:12px!important;
+      line-height:1.55!important;
+    }
+    #listHeaderSticky h2,
+    #detailsHeader h2{
+      font-size:18px!important;
+    }
+    #visibleCount{
+      font-size:12px!important;
+    }
+    #managerDashboard h2{
+      font-size:16px!important;
+    }
+    #managerDashboard p{
+      font-size:12px!important;
+    }
+    .team-card .team-member-name{
+      font-size:15px!important;
+      line-height:1.4!important;
+    }
+    .team-card .team-member-email{
+      font-size:11px!important;
+    }
+    .team-card .team-number{
+      font-size:15px!important;
+    }
+    .team-card .team-label{
+      font-size:10.5px!important;
+    }
+    #detailsPanel input,
+    #detailsPanel textarea,
+    #detailsPanel select{
+      font-size:14px;
+    }
+    #detailsPanel .text-\[10px\],
+    #detailsPanel .text-\[11px\]{
+      font-size:12px!important;
+    }
+    @media (max-width:768px){
+      .task-title-line{font-size:15px!important}
+      .task-secondary{font-size:11.5px!important}
+      .task-operational{font-size:11px!important}
     }
 
 </style>
@@ -504,7 +560,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.5 (Hierarchy Visibility - Assignee Fix)
+  Production Version: 1.3.6 (Readability + Details Navigation)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -715,6 +771,32 @@ function scrollSelectedTaskIntoView(focusDetails=false){
     }
   }
 }
+
+function scrollDetailsIntoViewIfNeeded(){
+  const panel=document.getElementById('detailsPanel');
+  if(!panel || panel.classList.contains('hidden'))return;
+
+  requestAnimationFrame(()=>{
+    const rect=panel.getBoundingClientRect();
+    const header=document.querySelector('header');
+    const headerHeight=header?.getBoundingClientRect().height||0;
+    const safeTop=headerHeight+12;
+    const visibleEnough=rect.top>=safeTop && rect.top<=window.innerHeight*0.45;
+
+    if(!visibleEnough){
+      const targetY=Math.max(
+        0,
+        window.scrollY + rect.top - safeTop
+      );
+      window.scrollTo({
+        top:targetY,
+        left:0,
+        behavior:'smooth'
+      });
+    }
+  });
+}
+
 
 function closeDetailsKeepPosition(){
   selectedTaskKey=null;
@@ -1163,16 +1245,16 @@ function renderManagerDashboard(){
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">${escapeHTML((u.name||u.email||'?').charAt(0).toUpperCase())}</div>
           <div class="min-w-0 flex-1">
-            <div class="font-black text-sm truncate">${escapeHTML(u.name||u.email||'مستخدم')}</div>
-            <div class="text-[10px] text-slate-400 truncate">${escapeHTML(u.email||'')}</div>
+            <div class="team-member-name font-black text-sm truncate">${escapeHTML(u.name||u.email||'مستخدم')}</div>
+            <div class="team-member-email text-[10px] text-slate-400 truncate">${escapeHTML(u.email||'')}</div>
           </div>
           ${tOverdue?`<span class="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-1 rounded-full">${tOverdue} متأخرة</span>`:''}
         </div>
         <div class="grid grid-cols-4 gap-1 mt-2 text-center">
-          <div><div class="font-black text-sm">${tTotal}</div><div class="text-[9px] text-slate-400">إجمالي</div></div>
-          <div><div class="font-black text-sm text-blue-600">${tProgress}</div><div class="text-[9px] text-slate-400">تنفيذ</div></div>
-          <div><div class="font-black text-sm text-emerald-600">${tDone}</div><div class="text-[9px] text-slate-400">مكتملة</div></div>
-          <div><div class="font-black text-sm">${rate}%</div><div class="text-[9px] text-slate-400">إنجاز</div></div>
+          <div><div class="team-number font-black text-sm">${tTotal}</div><div class="team-label text-[9px] text-slate-400">إجمالي</div></div>
+          <div><div class="team-number font-black text-sm text-blue-600">${tProgress}</div><div class="team-label text-[9px] text-slate-400">تنفيذ</div></div>
+          <div><div class="team-number font-black text-sm text-emerald-600">${tDone}</div><div class="team-label text-[9px] text-slate-400">مكتملة</div></div>
+          <div><div class="team-number font-black text-sm">${rate}%</div><div class="team-label text-[9px] text-slate-400">إنجاز</div></div>
         </div>
       </button>`;
   }).join('');
@@ -2173,7 +2255,7 @@ function renderTasks(){
       selectedTaskKey=key;
       renderTasks();
       renderDetails();
-      requestAnimationFrame(()=>scrollSelectedTaskIntoView(false));
+      scrollDetailsIntoViewIfNeeded();
     };
     const operationalStrip = `
         <div class="task-operational mt-2 pt-2 border-t ${selected?'border-blue-100':'border-slate-100'} flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-slate-500">
@@ -2201,7 +2283,7 @@ function renderTasks(){
             </div>
 
           </div>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500">
+          <div class="task-secondary flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500">
             ${currentProfile?.role!=='employee'?`<span>👤 ${escapeHTML(t.assign||'')}</span>`:''}
             ${t.end?`<span>📅 ${escapeHTML(due)}</span>`:''}
             ${t.status==='قيد التنفيذ'?'<span class="text-blue-600 font-bold">قيد التنفيذ</span>':''}
