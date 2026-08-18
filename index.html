@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.10</title>
+  <title>ATWAR ONE – Tasks V1.3.11</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.10 (Manager Approval Queue)
+  Production Version: 1.3.11 (Approval Queue Hard Priority)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -718,56 +718,54 @@ function setSortFilter(value){
 }
 
 function sortTasksForDisplay(rows){
-  const result=[...rows];
   const priorityWeight={urgent:0,important:1,normal:2};
+  const allRows=[...rows];
 
-  // المهام التي تنتظر اعتماد المستخدم الحالي تظهر أولاً دائماً.
-  // نستخدم canApproveTask نفسها حتى يتطابق الترتيب مع صلاحية الاعتماد الفعلية.
-  const approvalWeight=(task)=>{
-    if(!currentProfile)return 1;
+  // للموظف نحافظ على السلوك المعتاد.
+  const isManagerView=currentProfile && currentProfile.role!=='employee';
 
-    // لدى المدير ومدير النظام: أي مهمة ظاهرة بحالة "بانتظار الاعتماد"
-    // تتصدر القائمة، بغض النظر عن مسار الاعتماد الفعلي.
-    if(
-      (currentProfile.role==='manager' || currentProfile.role==='admin') &&
-      task.status==='بانتظار الاعتماد'
-    ){
-      return 0;
+  // تقسيم صريح: طلبات الاعتماد أولاً ثم بقية المهام.
+  // لا نعتمد هنا على canApproveTask أو managerUid أو قيمة manager/admin حرفياً.
+  const approvalRows=isManagerView
+    ? allRows.filter(t=>String(t.status||'').trim()==='بانتظار الاعتماد')
+    : [];
+
+  const normalRows=isManagerView
+    ? allRows.filter(t=>String(t.status||'').trim()!=='بانتظار الاعتماد')
+    : allRows;
+
+  const sortGroup=(group)=>{
+    const result=[...group];
+
+    if(sortFilterValue==='NEWEST'){
+      return result.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
     }
 
-    return 1;
+    if(sortFilterValue==='OLDEST'){
+      return result.sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+    }
+
+    if(sortFilterValue==='PRIORITY'){
+      return result.sort((a,b)=>
+        (priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) ||
+        String(a.end||'9999').localeCompare(String(b.end||'9999'))
+      );
+    }
+
+    if(sortFilterValue==='DUE'){
+      return result.sort((a,b)=>
+        String(a.end||'9999').localeCompare(String(b.end||'9999'))
+      );
+    }
+
+    // في الترتيب الافتراضي نحافظ على الترتيب القادم من البيانات.
+    return result;
   };
 
-  const withApprovalFirst=(compareFn)=>
-    result.sort((a,b)=>{
-      const approvalDiff=approvalWeight(a)-approvalWeight(b);
-      if(approvalDiff!==0)return approvalDiff;
-      return compareFn(a,b);
-    });
-
-  if(sortFilterValue==='NEWEST'){
-    return withApprovalFirst((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-  }
-
-  if(sortFilterValue==='OLDEST'){
-    return withApprovalFirst((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
-  }
-
-  if(sortFilterValue==='PRIORITY'){
-    return withApprovalFirst((a,b)=>
-      (priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) ||
-      String(a.end||'9999').localeCompare(String(b.end||'9999'))
-    );
-  }
-
-  if(sortFilterValue==='DUE'){
-    return withApprovalFirst((a,b)=>
-      String(a.end||'9999').localeCompare(String(b.end||'9999'))
-    );
-  }
-
-  // الترتيب الافتراضي: طلبات الاعتماد أولاً، ثم نحتفظ بترتيب البيانات الحالي.
-  return withApprovalFirst(()=>0);
+  return [
+    ...sortGroup(approvalRows),
+    ...sortGroup(normalRows)
+  ];
 }
 
 function escapeHTML(value=''){
