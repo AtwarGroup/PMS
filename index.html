@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.7</title>
+  <title>ATWAR ONE – Tasks V1.3.8</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.7 (Approval Priority)
+  Production Version: 1.3.8 (Approval Queue Priority)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -721,19 +721,41 @@ function sortTasksForDisplay(rows){
   const result=[...rows];
   const priorityWeight={urgent:0,important:1,normal:2};
 
+  // المهام التي تنتظر اعتماد المستخدم الحالي تظهر أولاً دائماً.
+  // نستخدم canApproveTask نفسها حتى يتطابق الترتيب مع صلاحية الاعتماد الفعلية.
+  const approvalWeight=(task)=>
+    task.status==='بانتظار الاعتماد' && canApproveTask(task) ? 0 : 1;
+
+  const withApprovalFirst=(compareFn)=>
+    result.sort((a,b)=>{
+      const approvalDiff=approvalWeight(a)-approvalWeight(b);
+      if(approvalDiff!==0)return approvalDiff;
+      return compareFn(a,b);
+    });
+
   if(sortFilterValue==='NEWEST'){
-    return result.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+    return withApprovalFirst((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
   }
+
   if(sortFilterValue==='OLDEST'){
-    return result.sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+    return withApprovalFirst((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
   }
+
   if(sortFilterValue==='PRIORITY'){
-    return result.sort((a,b)=>(priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) || String(a.end||'9999').localeCompare(String(b.end||'9999')));
+    return withApprovalFirst((a,b)=>
+      (priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) ||
+      String(a.end||'9999').localeCompare(String(b.end||'9999'))
+    );
   }
+
   if(sortFilterValue==='DUE'){
-    return result.sort((a,b)=>String(a.end||'9999').localeCompare(String(b.end||'9999')));
+    return withApprovalFirst((a,b)=>
+      String(a.end||'9999').localeCompare(String(b.end||'9999'))
+    );
   }
-  return result;
+
+  // الترتيب الافتراضي: طلبات الاعتماد أولاً، ثم نحتفظ بترتيب البيانات الحالي.
+  return withApprovalFirst(()=>0);
 }
 
 function escapeHTML(value=''){
