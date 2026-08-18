@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.8</title>
+  <title>ATWAR ONE – Tasks V1.3.9</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.8 (Approval Queue Priority)
+  Production Version: 1.3.9 (Approval Owner Resolution)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -990,10 +990,33 @@ function canApproveTask(task){
   if(!task||!currentProfile||!currentUser)return false;
 
   // منع الاعتماد الذاتي مهما كانت الصلاحية.
-  if(String(task._ownerUid||'')===String(currentUser.uid||''))return false;
+  const taskOwnerUid=String(
+    task._ownerUid ||
+    task.assignUid ||
+    ''
+  );
 
-  // الاعتماد للمدير المباشر فقط، حتى لو كان منشئ المهمة مديرًا أعلى أو Admin.
-  const owner=getUserByUid(task._ownerUid);
+  if(taskOwnerUid && taskOwnerUid===String(currentUser.uid||''))return false;
+
+  // محاولة تحديد صاحب المهمة بأكثر من طريقة لدعم المهام القديمة والمنقولة.
+  let owner=null;
+
+  if(taskOwnerUid){
+    owner=users.find(u=>String(u.uid||'')===taskOwnerUid) || null;
+  }
+
+  if(!owner && task.assignUid){
+    owner=users.find(u=>String(u.uid||'')===String(task.assignUid||'')) || null;
+  }
+
+  if(!owner && task.assign){
+    const targetName=String(task.assign||'').trim().toLowerCase();
+    owner=users.find(u=>
+      String(u.name||'').trim().toLowerCase()===targetName ||
+      String(u.email||'').trim().toLowerCase()===targetName
+    ) || null;
+  }
+
   if(!owner?.managerUid)return false;
 
   return String(owner.managerUid)===String(currentUser.uid);
