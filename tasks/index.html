@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.15</title>
+  <title>ATWAR ONE – Tasks V1.3.16</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.15 (Reassignment Render Lock)
+  Production Version: 1.3.16 (Deferred Assignee Save)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -621,6 +621,7 @@ let notifications=[];
 let unsubscribeNotifications=null;
 let managerDashboardCollapsed=false;
 let activityLogExpanded=false;
+let pendingAssigneeChange=null; // تغيير المسؤول المؤجل
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -867,8 +868,14 @@ function scrollDetailsIntoViewIfNeeded(){
 }
 
 
-function closeDetailsKeepPosition(){
+async function closeDetailsKeepPosition(){
+  if(pendingAssigneeChange){
+    const saved=await commitPendingAssigneeChange();
+    if(!saved)return;
+  }
+
   selectedTaskKey=null;
+  transientSelectedTask=null;
   const panel=document.getElementById('detailsPanel');
   const grid=document.getElementById('workspaceGrid');
   if(panel)panel.classList.add('hidden');
@@ -876,7 +883,6 @@ function closeDetailsKeepPosition(){
   renderTasks();
   renderDetails();
 
-  // بعد الضغط على "تم": إغلاق التفاصيل والعودة إلى أعلى الصفحة.
   requestAnimationFrame(()=>{
     window.scrollTo({top:0,left:0,behavior:'smooth'});
   });
@@ -1825,6 +1831,97 @@ async function saveTask(task){
   catch(error){console.error(error);setSaveStatus('error');throw error}
 }
 
+
+function setPendingAssignee(task,newOwnerUid){
+  if(!task||!newOwnerUid)return;
+
+  const target=users.find(u=>String(u.uid||'')===String(newOwnerUid));
+  if(!target||!canManageUser(newOwnerUid)){
+    showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
+    renderDetails();
+    return;
+  }
+
+  const currentOwnerUid=String(task._ownerUid||'');
+  if(String(newOwnerUid)===currentOwnerUid){
+    pendingAssigneeChange=null;
+    setSaveStatus('saved');
+    renderDetails();
+    return;
+  }
+
+  pendingAssigneeChange={
+    taskKey:String(task._key||''),
+    oldOwnerUid:currentOwnerUid,
+    newOwnerUid:String(newOwnerUid)
+  };
+
+  const saveStatus=document.getElementById('saveStatus');
+  if(saveStatus){
+    saveStatus.textContent='● تغييرات غير محفوظة';
+    saveStatus.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-amber-300';
+  }
+
+  renderDetails();
+}
+
+async function commitPendingAssigneeChange(){
+  if(!pendingAssigneeChange)return true;
+
+  const task=selectedTask();
+  if(!task){
+    showToast('تعذر العثور على المهمة الحالية.','error');
+    return false;
+  }
+
+  const {taskKey,oldOwnerUid,newOwnerUid}=pendingAssigneeChange;
+  const target=users.find(u=>String(u.uid||'')===String(newOwnerUid));
+  if(!target||!canManageUser(newOwnerUid)){
+    showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
+    return false;
+  }
+
+  const moved={
+    ...task,
+    assignUid:newOwnerUid,
+    assign:target.name||target.email||newOwnerUid,
+    updatedAt:Date.now()
+  };
+  appendActivity(moved,'assigned',`تم إسناد المهمة إلى ${target.name||target.email||newOwnerUid}`);
+
+  const payload={...moved};
+  delete payload._key;
+  delete payload._ownerUid;
+
+  setSaveStatus('saving');
+
+  try{
+    await set(ref(db,`tasksByUser/${newOwnerUid}/${taskKey}`),payload);
+    await setCreatedTaskIndex(taskKey,newOwnerUid,payload.createdByUid);
+    await remove(ref(db,`tasksByUser/${oldOwnerUid}/${taskKey}`));
+    await notifyTaskAssigned(payload,newOwnerUid,taskKey);
+
+    const oldComposite=`${oldOwnerUid}::${taskKey}`;
+    const newComposite=`${newOwnerUid}::${taskKey}`;
+    const movedForUi={...payload,_key:taskKey,_ownerUid:newOwnerUid};
+
+    tasks=tasks.filter(t=>{
+      const k=compositeKey(t);
+      return k!==oldComposite && k!==newComposite;
+    });
+    tasks.push(movedForUi);
+    selectedTaskKey=newComposite;
+    pendingAssigneeChange=null;
+    setSaveStatus('saved');
+    return true;
+  }catch(error){
+    console.error('Deferred reassignment error:',error);
+    setSaveStatus('error');
+    showToast('تعذر حفظ تغيير المسؤول. لم يتم إغلاق المهمة.','error');
+    return false;
+  }
+}
+
 async function updateTaskField(task,f,v){
   if(!task)return;
   if(f==='progress' && normalizeSubtasks(task).length){
@@ -1838,102 +1935,7 @@ async function updateTaskField(task,f,v){
     return;
   }
   if(f==='assignUid'){
-    const target=users.find(u=>u.uid===v);
-    if(!target||!canManageUser(v)){
-      showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
-      return;
-    }
-    if(v===task._ownerUid)return;
-
-    const oldOwner=task._ownerUid;
-    const key=task._key;
-    const oldComposite=`${oldOwner}::${key}`;
-    const newComposite=`${v}::${key}`;
-
-    const moved={
-      ...task,
-      assignUid:v,
-      assign:target.name||target.email||v,
-      updatedAt:Date.now()
-    };
-    appendActivity(moved,'assigned',`تم إسناد المهمة إلى ${target.name||target.email||v}`);
-
-    const movedForUi={
-      ...moved,
-      _key:key,
-      _ownerUid:v
-    };
-
-    // 1) ثبّت الواجهة قبل بدء Firebase.
-    isReassigningTask=true;
-    transientSelectedTask=movedForUi;
-    selectedTaskKey=newComposite;
-
-    // 2) حدّث النسخة المحلية فورًا؛ لا ننتظر listeners.
-    tasks=tasks.filter(t=>{
-      const k=compositeKey(t);
-      return k!==oldComposite && k!==newComposite;
-    });
-    tasks.push(movedForUi);
-
-    // حدّث لوحة التفاصيل في مكانها فقط، بدون إعادة بناء قائمة المهام.
-    renderDetails();
-    setSaveStatus('saving');
-
-    const payload={...moved};
-    delete payload._key;
-    delete payload._ownerUid;
-
-    try{
-      // 3) نفّذ النقل في Firebase بينما إعادة الرسم معلقة.
-      await set(ref(db,`tasksByUser/${v}/${key}`),payload);
-      await setCreatedTaskIndex(key,v,payload.createdByUid);
-      await remove(ref(db,`tasksByUser/${oldOwner}/${key}`));
-      await notifyTaskAssigned(payload,v,key);
-
-      // 4) أنهِ التعليق ثم أعد الرسم مرة واحدة فقط.
-      isReassigningTask=false;
-
-      // أعد تثبيت النسخة المحلية الجديدة تحسبًا لو لم تصل listeners بعد.
-      tasks=tasks.filter(t=>{
-        const k=compositeKey(t);
-        return k!==oldComposite && k!==newComposite;
-      });
-      tasks.push(movedForUi);
-
-      selectedTaskKey=newComposite;
-      transientSelectedTask=null;
-
-      renderTasks();
-      updateStats();
-      renderDetails();
-      renderManagerDashboard();
-      setSaveStatus('saved');
-
-      requestAnimationFrame(()=>scrollDetailsIntoViewIfNeeded());
-
-    }catch(error){
-      console.error(error);
-
-      // رجوع كامل للحالة السابقة عند فشل النقل.
-      isReassigningTask=false;
-      transientSelectedTask=null;
-      selectedTaskKey=oldComposite;
-
-      tasks=tasks.filter(t=>compositeKey(t)!==newComposite);
-      if(!tasks.some(t=>compositeKey(t)===oldComposite)){
-        tasks.push(task);
-      }
-
-      renderTasks();
-      updateStats();
-      renderDetails();
-      renderManagerDashboard();
-
-      setSaveStatus('error');
-      showToast('تعذر نقل المهمة للمستخدم المحدد.','error');
-    }
-
+    setPendingAssignee(task,v);
     return;
   }
   if(f==='progress'){
@@ -2741,6 +2743,17 @@ function renderDetails(){
   document.getElementById('noSelection').classList.add('hidden');
   document.getElementById('taskDetails').classList.toggle('hidden',!task);
   if(!task)return;
+
+  const closeBtn=document.querySelector('button[onclick="closeDetailsKeepPosition()"]');
+  if(closeBtn){
+    const hasPending=
+      pendingAssigneeChange &&
+      String(pendingAssigneeChange.taskKey)===String(task._key);
+    closeBtn.innerHTML=hasPending
+      ? '<span>✓</span><span>حفظ وإغلاق التفاصيل</span>'
+      : '<span>✓</span><span>تم — إغلاق التفاصيل</span>';
+  }
+
   const lockHint=document.getElementById('taskLockHint');
   if(lockHint){
     if(task.status==='بانتظار الاعتماد'){
@@ -2805,7 +2818,23 @@ function renderDetails(){
   const assigneeBox=document.getElementById('assigneeBox');
   const allowed=assignableUsers();
   if(allowed.length>1){
-    assigneeBox.innerHTML=`<select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${u.uid===(task.assignUid||task._ownerUid)?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}</select>`;
+    const pendingForThisTask=
+      pendingAssigneeChange &&
+      String(pendingAssigneeChange.taskKey)===String(task._key) &&
+      String(pendingAssigneeChange.oldOwnerUid)===String(task._ownerUid);
+
+    const selectedAssigneeUid=pendingForThisTask
+      ? String(pendingAssigneeChange.newOwnerUid)
+      : String(task.assignUid||task._ownerUid);
+
+    assigneeBox.innerHTML=`
+      <div>
+        <select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">
+          ${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${String(u.uid)===selectedAssigneeUid?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}
+        </select>
+        ${pendingForThisTask?'<div class="text-[11px] font-bold text-amber-600 mt-1">تغيير المسؤول غير محفوظ — اضغط «حفظ وإغلاق التفاصيل»</div>':''}
+      </div>`;
+
     const assigneeSelect=document.getElementById('detailAssignee');
     assigneeSelect.onchange=e=>updateSelectedField('assignUid',e.target.value);
     assigneeSelect.disabled=!canEditTaskField(task,'assignUid');
@@ -2818,7 +2847,7 @@ function renderDetails(){
   renderSubtasks(task);
   renderActivityLog(task);
 }
-function clearSelection(){transientSelectedTask=null;selectedTaskKey=null;renderTasks();renderDetails()}
+function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 
 function updateStats(){
   document.getElementById('stat-total').textContent=tasks.length;
