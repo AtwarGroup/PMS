@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.12</title>
+  <title>ATWAR ONE – Tasks V1.3.13</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.12 (Reassignment Details Fix)
+  Production Version: 1.3.13 (Reassignment Selection Bridge)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -613,6 +613,7 @@ let users=[];
 let tasks=[];
 let unsubscribeTasks=[];
 let selectedTaskKey=null;
+let transientSelectedTask=null; // يحافظ على تفاصيل المهمة أثناء إعادة الإسناد
 let assigneeFilterValue='ALL';
 let sortFilterValue='DEFAULT';
 let notifications=[];
@@ -815,7 +816,19 @@ function smartDate(v){
 function isToday(v){const d=parseDateOnly(v);if(!d)return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()}
 function roleLabel(role){return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||'موظف'}
 function compositeKey(t){return `${t._ownerUid}::${t._key}`}
-function selectedTask(){return tasks.find(t=>compositeKey(t)===selectedTaskKey)||null}
+function selectedTask(){
+  const live=tasks.find(t=>compositeKey(t)===selectedTaskKey);
+  if(live)return live;
+
+  if(
+    transientSelectedTask &&
+    compositeKey(transientSelectedTask)===selectedTaskKey
+  ){
+    return transientSelectedTask;
+  }
+
+  return null;
+}
 
 function scrollSelectedTaskIntoView(focusDetails=false){
   if(!selectedTaskKey)return;
@@ -1691,7 +1704,20 @@ function subscribeVisibleTasks(){
         String(a.id).localeCompare(String(b.id),'en',{numeric:true});
     });
 
-    if(selectedTaskKey&&!selectedTask())selectedTaskKey=null;
+    // أثناء إعادة الإسناد قد تصل تحديثات Firebase على مرحلتين.
+    // إذا وصلت النسخة الحية الجديدة، ننهي النسخة المؤقتة.
+    if(
+      transientSelectedTask &&
+      tasks.some(t=>compositeKey(t)===compositeKey(transientSelectedTask))
+    ){
+      transientSelectedTask=null;
+    }
+
+    // لا نغلق التفاصيل أثناء وجود نسخة مؤقتة للمهمة المنقولة.
+    if(selectedTaskKey&&!selectedTask()&&!transientSelectedTask){
+      selectedTaskKey=null;
+    }
+
     renderTasks();
     updateStats();
     renderDetails();
@@ -1822,6 +1848,16 @@ async function updateTaskField(task,f,v){
     const oldOwner=task._ownerUid,key=task._key;
     const moved={...task,assignUid:v,assign:target.name||target.email||v,updatedAt:Date.now()};
     appendActivity(moved,'assigned',`تم إسناد المهمة إلى ${target.name||target.email||v}`);
+
+    // جهّز المهمة المؤقتة ومفتاح التحديد قبل أي عملية Firebase.
+    // بذلك تبقى لوحة التفاصيل مفتوحة حتى لو وصلت أحداث listeners بترتيب مختلف.
+    transientSelectedTask={
+      ...moved,
+      _key:key,
+      _ownerUid:v
+    };
+    selectedTaskKey=`${v}::${key}`;
+
     delete moved._key;delete moved._ownerUid;
     setSaveStatus('saving');
     try{
@@ -1831,10 +1867,6 @@ async function updateTaskField(task,f,v){
       // حدّث فهرس المهمة قبل حذف المسار القديم حتى تبقى المهمة
       // مرئية للمدير أثناء إعادة الإسناد، خصوصاً للمستويات الأدنى.
       await setCreatedTaskIndex(key,v,moved.createdByUid);
-
-      // حدّث مفتاح المهمة المحددة قبل حذف النسخة القديمة.
-      // هذا يمنع renderTasks/renderDetails من اعتبار أن المهمة اختفت.
-      selectedTaskKey=`${v}::${key}`;
 
       // الآن يمكن حذف المسار القديم بأمان.
       await remove(ref(db,`tasksByUser/${oldOwner}/${key}`));
@@ -1848,8 +1880,27 @@ async function updateTaskField(task,f,v){
         scrollDetailsIntoViewIfNeeded();
       });
 
+      // احتياطياً: إذا وصلت النسخة الحية لاحقاً فـ sortAndRender سيزيل المؤقت.
+      // وإذا لم يصل listener لأي سبب، لا نغلق التفاصيل فوراً.
+      setTimeout(()=>{
+        if(
+          transientSelectedTask &&
+          tasks.some(t=>compositeKey(t)===compositeKey(transientSelectedTask))
+        ){
+          transientSelectedTask=null;
+        }
+      },1500);
+
       setSaveStatus('saved');
-    }catch(error){console.error(error);setSaveStatus('error');showToast('تعذر نقل المهمة للمستخدم المحدد.','error')}
+    }catch(error){
+      console.error(error);
+      transientSelectedTask=null;
+      selectedTaskKey=`${oldOwner}::${key}`;
+      setSaveStatus('error');
+      renderTasks();
+      renderDetails();
+      showToast('تعذر نقل المهمة للمستخدم المحدد.','error');
+    }
     return;
   }
   if(f==='progress'){
@@ -2366,6 +2417,7 @@ function renderTasks(){
     card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
+      transientSelectedTask=null;
       selectedTaskKey=key;
       renderTasks();
       renderDetails();
@@ -2731,7 +2783,7 @@ function renderDetails(){
   renderSubtasks(task);
   renderActivityLog(task);
 }
-function clearSelection(){selectedTaskKey=null;renderTasks();renderDetails()}
+function clearSelection(){transientSelectedTask=null;selectedTaskKey=null;renderTasks();renderDetails()}
 
 function updateStats(){
   document.getElementById('stat-total').textContent=tasks.length;
