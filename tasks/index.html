@@ -621,7 +621,7 @@ let notifications=[];
 let unsubscribeNotifications=null;
 let managerDashboardCollapsed=false;
 let activityLogExpanded=false;
-let pendingAssigneeChange=null; // تغيير المسؤول المؤجل
+let pendingAssigneeChange=null;
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -874,12 +874,15 @@ async function closeDetailsKeepPosition(){
     if(!saved)return;
   }
 
-  selectedTaskKey=null;
+  pendingAssigneeChange=null;
   transientSelectedTask=null;
+  selectedTaskKey=null;
+
   const panel=document.getElementById('detailsPanel');
   const grid=document.getElementById('workspaceGrid');
   if(panel)panel.classList.add('hidden');
   if(grid)grid.classList.add('details-closed');
+
   renderTasks();
   renderDetails();
 
@@ -1832,50 +1835,42 @@ async function saveTask(task){
 }
 
 
-function setPendingAssignee(task,newOwnerUid){
-  if(!task||!newOwnerUid)return;
-
-  const target=users.find(u=>String(u.uid||'')===String(newOwnerUid));
-  if(!target||!canManageUser(newOwnerUid)){
+function stageAssigneeChange(task,newUid){
+  if(!task)return;
+  const target=users.find(u=>String(u.uid||'')===String(newUid||''));
+  if(!target||!canManageUser(newUid)){
     showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
     renderDetails();
     return;
   }
-
-  const currentOwnerUid=String(task._ownerUid||'');
-  if(String(newOwnerUid)===currentOwnerUid){
+  const originalUid=String(task._ownerUid||'');
+  if(String(newUid)===originalUid){
     pendingAssigneeChange=null;
     setSaveStatus('saved');
     renderDetails();
     return;
   }
-
   pendingAssigneeChange={
     taskKey:String(task._key||''),
-    oldOwnerUid:currentOwnerUid,
-    newOwnerUid:String(newOwnerUid)
+    oldOwnerUid:originalUid,
+    newOwnerUid:String(newUid)
   };
-
   const saveStatus=document.getElementById('saveStatus');
   if(saveStatus){
     saveStatus.textContent='● تغييرات غير محفوظة';
     saveStatus.className='text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-amber-300';
   }
-
   renderDetails();
 }
 
 async function commitPendingAssigneeChange(){
   if(!pendingAssigneeChange)return true;
-
   const task=selectedTask();
-  if(!task){
-    showToast('تعذر العثور على المهمة الحالية.','error');
-    return false;
-  }
+  if(!task)return false;
 
   const {taskKey,oldOwnerUid,newOwnerUid}=pendingAssigneeChange;
   const target=users.find(u=>String(u.uid||'')===String(newOwnerUid));
+
   if(!target||!canManageUser(newOwnerUid)){
     showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
     return false;
@@ -1893,6 +1888,7 @@ async function commitPendingAssigneeChange(){
   delete payload._key;
   delete payload._ownerUid;
 
+  isReassigningTask=true;
   setSaveStatus('saving');
 
   try{
@@ -1901,23 +1897,15 @@ async function commitPendingAssigneeChange(){
     await remove(ref(db,`tasksByUser/${oldOwnerUid}/${taskKey}`));
     await notifyTaskAssigned(payload,newOwnerUid,taskKey);
 
-    const oldComposite=`${oldOwnerUid}::${taskKey}`;
-    const newComposite=`${newOwnerUid}::${taskKey}`;
-    const movedForUi={...payload,_key:taskKey,_ownerUid:newOwnerUid};
-
-    tasks=tasks.filter(t=>{
-      const k=compositeKey(t);
-      return k!==oldComposite && k!==newComposite;
-    });
-    tasks.push(movedForUi);
-    selectedTaskKey=newComposite;
     pendingAssigneeChange=null;
+    isReassigningTask=false;
     setSaveStatus('saved');
     return true;
   }catch(error){
     console.error('Deferred reassignment error:',error);
+    isReassigningTask=false;
     setSaveStatus('error');
-    showToast('تعذر حفظ تغيير المسؤول. لم يتم إغلاق المهمة.','error');
+    showToast('تعذر حفظ تغيير المسؤول.','error');
     return false;
   }
 }
@@ -1935,7 +1923,7 @@ async function updateTaskField(task,f,v){
     return;
   }
   if(f==='assignUid'){
-    setPendingAssignee(task,v);
+    stageAssigneeChange(task,v);
     return;
   }
   if(f==='progress'){
@@ -2452,6 +2440,10 @@ function renderTasks(){
     card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
+      if(selectedTaskKey!==key && pendingAssigneeChange){
+        pendingAssigneeChange=null;
+        setSaveStatus('saved');
+      }
       if(!transientSelectedTask || compositeKey(transientSelectedTask)!==key){
         transientSelectedTask=null;
       }
@@ -2744,12 +2736,9 @@ function renderDetails(){
   document.getElementById('taskDetails').classList.toggle('hidden',!task);
   if(!task)return;
 
-  const closeBtn=document.querySelector('button[onclick="closeDetailsKeepPosition()"]');
-  if(closeBtn){
-    const hasPending=
-      pendingAssigneeChange &&
-      String(pendingAssigneeChange.taskKey)===String(task._key);
-    closeBtn.innerHTML=hasPending
+  const closeDetailsButton=document.querySelector('button[onclick="closeDetailsKeepPosition()"]');
+  if(closeDetailsButton){
+    closeDetailsButton.innerHTML=pendingAssigneeChange
       ? '<span>✓</span><span>حفظ وإغلاق التفاصيل</span>'
       : '<span>✓</span><span>تم — إغلاق التفاصيل</span>';
   }
@@ -2817,24 +2806,24 @@ function renderDetails(){
   document.getElementById('detailTiming').textContent=`المدة: ${duration} يوم${delay>0?` • التأخير: ${delay} يوم`:''}`;
   const assigneeBox=document.getElementById('assigneeBox');
   const allowed=assignableUsers();
+
+  const pendingForTask=
+    pendingAssigneeChange &&
+    String(pendingAssigneeChange.taskKey)===String(task._key) &&
+    String(pendingAssigneeChange.oldOwnerUid)===String(task._ownerUid);
+
+  const displayedAssigneeUid=pendingForTask
+    ? String(pendingAssigneeChange.newOwnerUid)
+    : String(task.assignUid||task._ownerUid);
+
   if(allowed.length>1){
-    const pendingForThisTask=
-      pendingAssigneeChange &&
-      String(pendingAssigneeChange.taskKey)===String(task._key) &&
-      String(pendingAssigneeChange.oldOwnerUid)===String(task._ownerUid);
-
-    const selectedAssigneeUid=pendingForThisTask
-      ? String(pendingAssigneeChange.newOwnerUid)
-      : String(task.assignUid||task._ownerUid);
-
     assigneeBox.innerHTML=`
-      <div>
+      <div class="w-full">
         <select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">
-          ${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${String(u.uid)===selectedAssigneeUid?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}
+          ${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${String(u.uid)===displayedAssigneeUid?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}
         </select>
-        ${pendingForThisTask?'<div class="text-[11px] font-bold text-amber-600 mt-1">تغيير المسؤول غير محفوظ — اضغط «حفظ وإغلاق التفاصيل»</div>':''}
+        ${pendingForTask?'<div class="text-[11px] font-bold text-amber-600 mt-1">تغيير المسؤول غير محفوظ — اضغط «حفظ وإغلاق التفاصيل»</div>':''}
       </div>`;
-
     const assigneeSelect=document.getElementById('detailAssignee');
     assigneeSelect.onchange=e=>updateSelectedField('assignUid',e.target.value);
     assigneeSelect.disabled=!canEditTaskField(task,'assignUid');
