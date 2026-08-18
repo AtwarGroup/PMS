@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.13</title>
+  <title>ATWAR ONE – Tasks V1.3.14</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
@@ -584,7 +584,7 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.13 (Reassignment Selection Bridge)
+  Production Version: 1.3.14 (Stable Reassignment Details)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
@@ -817,9 +817,8 @@ function isToday(v){const d=parseDateOnly(v);if(!d)return false;const n=new Date
 function roleLabel(role){return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||'موظف'}
 function compositeKey(t){return `${t._ownerUid}::${t._key}`}
 function selectedTask(){
-  const live=tasks.find(t=>compositeKey(t)===selectedTaskKey);
-  if(live)return live;
-
+  // أثناء إعادة الإسناد نفضّل النسخة المؤقتة حتى لا تتأثر لوحة التفاصيل
+  // بتتابع تحديثات Firebase على المسار القديم والجديد.
   if(
     transientSelectedTask &&
     compositeKey(transientSelectedTask)===selectedTaskKey
@@ -827,7 +826,7 @@ function selectedTask(){
     return transientSelectedTask;
   }
 
-  return null;
+  return tasks.find(t=>compositeKey(t)===selectedTaskKey)||null;
 }
 
 function scrollSelectedTaskIntoView(focusDetails=false){
@@ -1704,16 +1703,8 @@ function subscribeVisibleTasks(){
         String(a.id).localeCompare(String(b.id),'en',{numeric:true});
     });
 
-    // أثناء إعادة الإسناد قد تصل تحديثات Firebase على مرحلتين.
-    // إذا وصلت النسخة الحية الجديدة، ننهي النسخة المؤقتة.
-    if(
-      transientSelectedTask &&
-      tasks.some(t=>compositeKey(t)===compositeKey(transientSelectedTask))
-    ){
-      transientSelectedTask=null;
-    }
-
-    // لا نغلق التفاصيل أثناء وجود نسخة مؤقتة للمهمة المنقولة.
+    // أثناء إعادة الإسناد قد تصل تحديثات Firebase من عدة listeners وبترتيب مختلف.
+    // لا نحذف النسخة المؤقتة هنا عند أول ظهور للمهمة؛ نبقيها حتى يستقر النقل.
     if(selectedTaskKey&&!selectedTask()&&!transientSelectedTask){
       selectedTaskKey=null;
     }
@@ -1880,16 +1871,18 @@ async function updateTaskField(task,f,v){
         scrollDetailsIntoViewIfNeeded();
       });
 
-      // احتياطياً: إذا وصلت النسخة الحية لاحقاً فـ sortAndRender سيزيل المؤقت.
-      // وإذا لم يصل listener لأي سبب، لا نغلق التفاصيل فوراً.
+      // نبقي النسخة المؤقتة لمدة كافية حتى تستقر جميع Firebase listeners.
+      // بعدها إذا كانت النسخة الحية موجودة نزيل المؤقت ونعيد رسم التفاصيل مرة أخيرة.
       setTimeout(()=>{
-        if(
-          transientSelectedTask &&
-          tasks.some(t=>compositeKey(t)===compositeKey(transientSelectedTask))
-        ){
+        if(!transientSelectedTask)return;
+
+        const live=tasks.find(t=>compositeKey(t)===selectedTaskKey);
+        if(live){
           transientSelectedTask=null;
+          renderTasks();
+          renderDetails();
         }
-      },1500);
+      },4000);
 
       setSaveStatus('saved');
     }catch(error){
@@ -2417,7 +2410,9 @@ function renderTasks(){
     card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
-      transientSelectedTask=null;
+      if(!transientSelectedTask || compositeKey(transientSelectedTask)!==key){
+        transientSelectedTask=null;
+      }
       selectedTaskKey=key;
       renderTasks();
       renderDetails();
