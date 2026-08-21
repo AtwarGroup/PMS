@@ -34,25 +34,22 @@
 <div class="day-head"><div><h1>يومي</h1><p>ما يحتاج انتباهك اليوم، بدون أن تبحث بين الصفحات.</p></div></div>
 
 <section class="summary">
-<div class="sum"><b>3</b><span>مهام اليوم</span></div>
-<div class="sum"><b style="color:#c83c43">1</b><span>مهمة متأخرة</span></div>
-<div class="sum"><b>2</b><span>متابعات قريبة</span></div>
-<div class="sum" data-role-min="manager"><b>2</b><span>بانتظار اعتمادي</span></div>
+<div class="sum"><b id="dayTaskCount">—</b><span>مهام اليوم</span></div>
+<div class="sum"><b id="dayLateCount" style="color:#c83c43">—</b><span>مهمة متأخرة</span></div>
+<div class="sum"><b id="dayFollowCount">—</b><span>متابعات قريبة</span></div>
+<div class="sum" data-role-min="manager"><b id="dayApprovalCount">—</b><span>بانتظار اعتمادي</span></div>
 </section>
 
 <div class="day-grid">
 <section class="card">
 <h3>الأولوية اليوم</h3>
-<div class="item"><div><b>معالجة فرق كشف الحساب</b><small>متأخرة يومين • مهمة</small></div><span class="tag late">متأخرة</span></div>
-<div class="item"><div><b>مراجعة سندات الصرف</b><small>استحقاق اليوم • مهمة</small></div><span class="tag task">مهمة</span></div>
-<div class="item"><div><b>انتظار رد المورد على كشف الحساب</b><small>موعد المتابعة اليوم</small></div><span class="tag follow">متابعة</span></div>
-<div class="item" data-role-min="manager"><div><b>رفع مطالبات الحوادث</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>
+<div id="dayPriority"><div class="item"><div><b>جاري تجهيز يومك...</b><small>من بيانات حسابك</small></div></div></div>
 </section>
 
 <section>
 <div class="card">
 <h3>ملاحظتي</h3>
-<div id="dayNote" class="note">لا توجد ملاحظة محفوظة.</div>
+<div id="dayNote" class="note">جاري تحميل ملاحظتك...</div>
 <div class="quick">
 <a href="../workspace/index.html">فتح مساحة عملي</a>
 <a href="../tasks/index.html">فتح مهامي</a>
@@ -63,24 +60,58 @@
 </section>
 </div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>Prototype V0.16</span><span>بدون Firebase</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>V0.37.8</span><span>Firebase Live Data</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
- setTimeout(()=>{
-  const s=getAtwarDemoSession?.()||{};
-  const note=localStorage.getItem('atwarPersonalNote_'+(s.email||'demo'));
-  if(note) document.getElementById('dayNote').textContent=note;
- },0);
- const q=document.querySelector('[data-global-search]');
- if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())});
-});
-lucide.createIcons();
-</script>
+
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+
+<script type="module" id="myDayFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const today=()=>new Date().toISOString().slice(0,10);
+function late(t){if(!t?.end||t.status==='مكتملة'||t.status==='بانتظار الاعتماد')return false;return new Date()>new Date(t.end+'T23:59:59')}
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href='../login.html';return}
+ try{
+  const us=await get(ref(db,'users')),users=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
+  const profile=users.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee'};
+  const direct=users.filter(u=>u.managerUid===user.uid);
+  const ownerIds=profile.role==='admin'?users.map(u=>u.uid):profile.role==='manager'?[user.uid,...direct.map(u=>u.uid)]:[user.uid];
+  const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([k,v])=>({_key:k,_ownerUid:uid,...v})):[]}catch{return []}}));
+  const all=buckets.flat(),mine=all.filter(t=>t._ownerUid===user.uid),d=today();
+  const todayTasks=mine.filter(t=>t.status!=='مكتملة'&&(t.start===d||t.end===d));
+  const lateTasks=mine.filter(late);
+  let follows=[];
+  try{const fs=await get(ref(db,`followUpsByUser/${user.uid}`));follows=fs.exists()?Object.entries(fs.val()).map(([id,v])=>({id,...v})):[]}catch{}
+  const closeFollows=follows.filter(x=>x.status!=='done'&&(!x.date||x.date<=d));
+  const approvals=all.filter(t=>{
+    if(t.status!=='بانتظار الاعتماد'||t._ownerUid===user.uid)return false;
+    if(profile.role==='admin')return true;
+    const owner=users.find(u=>u.uid===t._ownerUid);
+    return profile.role==='manager'&&owner?.managerUid===user.uid;
+  });
+  document.getElementById('dayTaskCount').textContent=todayTasks.length;
+  document.getElementById('dayLateCount').textContent=lateTasks.length;
+  document.getElementById('dayFollowCount').textContent=closeFollows.length;
+  const ap=document.getElementById('dayApprovalCount');if(ap)ap.textContent=approvals.length;
+  const rows=[
+    ...lateTasks.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>مهمة متأخرة</small></div><span class="tag late">متأخرة</span></div>`),
+    ...todayTasks.slice(0,3).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>استحقاق اليوم</small></div><span class="tag task">مهمة</span></div>`),
+    ...closeFollows.slice(0,2).map(x=>`<div class="item"><div><b>${esc(x.title||'متابعة')}</b><small>متابعة شخصية</small></div><span class="tag follow">متابعة</span></div>`),
+    ...approvals.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>`)
+  ];
+  document.getElementById('dayPriority').innerHTML=rows.length?rows.join(''):'<div class="item"><div><b>يومك واضح</b><small>لا توجد عناصر عاجلة مسجلة حالياً.</small></div></div>';
+  try{const ns=await get(ref(db,`notesByUser/${user.uid}/quickNote`));const v=ns.exists()?ns.val():null;document.getElementById('dayNote').textContent=(typeof v==='string'?v:v?.text)||'لا توجد ملاحظة محفوظة.'}catch{document.getElementById('dayNote').textContent='الملاحظة غير متاحة حالياً.'}
+  try{lucide.createIcons()}catch{}
+ }catch(e){console.error('My Day:',e);document.getElementById('dayPriority').innerHTML='<div class="item"><div><b>بيانات يومك غير متاحة حالياً</b><small>أعد تحميل الصفحة بعد لحظات.</small></div></div>'}
+});
+</script>
 </body></html>

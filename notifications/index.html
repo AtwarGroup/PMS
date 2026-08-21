@@ -40,7 +40,7 @@
 <section id="notifList"></section>
 <div id="notifEmpty" class="n-empty">لا توجد إشعارات في هذا التصنيف.</div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • Notifications</span><span>Prototype V0.11</span><span>بدون Firebase</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Notifications</span><span>V0.37.8</span><span>Firebase Live Data</span></footer>
 </main>
 </section>
 </div>
@@ -49,47 +49,31 @@
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-const session=getAtwarDemoSession?.()||{role:'employee'};
-const baseNotifications=[
- {id:1,type:'task',title:'تم تحديث مهمة',text:'تم تعديل موعد مهمة مراجعة سندات الصرف.',time:'منذ 10 دقائق',read:false,minRole:'employee',href:'../tasks/index.html'},
- {id:2,type:'alert',title:'مهمة متأخرة',text:'يوجد لديك مهمة تجاوزت تاريخ الاستحقاق.',time:'منذ ساعة',read:false,minRole:'employee',href:'../tasks/index.html'},
- {id:3,type:'system',title:'تحديث الملف الوظيفي',text:'تم تحديث بيانات في ملفك الوظيفي.',time:'اليوم',read:true,minRole:'employee',href:'../profile/index.html'},
- {id:4,type:'approval',title:'طلب بانتظار اعتمادك',text:'تم إرسال مهمة رفع مطالبات الحوادث لاعتمادك.',time:'منذ 20 دقيقة',read:false,minRole:'manager',href:'../approvals/index.html'},
- {id:5,type:'approval',title:'طلب بانتظار اعتمادك',text:'تسوية حساب مورد تحتاج قرارك.',time:'أمس',read:false,minRole:'manager',href:'../approvals/index.html'}
-];
-
-const rank={employee:1,manager:2,admin:3};
-let notifications=JSON.parse(localStorage.getItem('atwarDemoNotifications_'+(session.email||session.role))||'null') ||
-  baseNotifications.filter(n=>rank[session.role]>=rank[n.minRole]);
-
-let filter='all';
-function save(){localStorage.setItem('atwarDemoNotifications_'+(session.email||session.role),JSON.stringify(notifications))}
-function iconFor(t){return t==='task'?'square-check-big':t==='approval'?'badge-check':t==='alert'?'triangle-alert':'info'}
+<script type="module" id="notificationsFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+let uid='',notifications=[],filter='all';
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function iconFor(t){return t==='approval'?'badge-check':t==='overdue'?'triangle-alert':t==='approved'?'circle-check-big':t==='manager_note'?'notebook-pen':'info'}
+function timeLabel(ts){if(!ts)return '';const d=Math.max(0,Date.now()-Number(ts)),m=Math.floor(d/60000);return m<1?'الآن':m<60?`منذ ${m} دقيقة`:m<1440?`منذ ${Math.floor(m/60)} ساعة`:`منذ ${Math.floor(m/1440)} يوم`}
 function render(){
-  const list=document.getElementById('notifList');
-  const rows=notifications.filter(n=>filter==='all'||!n.read);
-  list.innerHTML=rows.map(n=>`
-    <article class="n-card ${n.read?'':'unread'}" onclick="openNotif(${n.id})" style="cursor:pointer">
-      <div class="n-icon ${n.type}"><i data-lucide="${iconFor(n.type)}"></i></div>
-      <div><div class="n-title">${n.title}</div><div class="n-text">${n.text}</div></div>
-      <div class="n-time">${n.time}</div>
-    </article>`).join('');
-  document.getElementById('notifEmpty').style.display=rows.length?'none':'block';
-  const unread=notifications.filter(n=>!n.read).length;
-  const badge=document.getElementById('topBadge');
-  badge.textContent=unread;
-  badge.style.display=unread?'grid':'none';
-  lucide.createIcons();
+ const rows=notifications.filter(n=>filter==='all'||!n.read);
+ const list=document.getElementById('notifList');
+ list.innerHTML=rows.map(n=>`<article class="n-card ${n.read?'':'unread'}" data-id="${esc(n.id)}" style="cursor:pointer"><div class="n-icon ${n.type==='overdue'?'alert':n.type==='approval'?'approval':n.type==='approved'?'system':'task'}"><i data-lucide="${iconFor(n.type)}"></i></div><div><div class="n-title">${esc(n.title||'إشعار')}</div><div class="n-text">${esc(n.message||'')}</div></div><div class="n-time">${esc(timeLabel(n.createdAt))}</div></article>`).join('');
+ document.getElementById('notifEmpty').style.display=rows.length?'none':'block';
+ list.querySelectorAll('[data-id]').forEach(card=>card.addEventListener('click',()=>openNotif(card.dataset.id)));
+ try{lucide.createIcons()}catch{}
 }
-function setNotifFilter(v,btn){filter=v;document.querySelectorAll('.n-actions button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
-function markAllRead(){notifications=notifications.map(n=>({...n,read:true}));save();render()}
-function openNotif(id){
-  const n=notifications.find(x=>x.id===id); if(!n)return;
-  n.read=true;save();
-  location.href=n.href;
-}
-render();
+window.setNotifFilter=function(v,btn){filter=v;document.querySelectorAll('.n-actions button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()};
+window.markAllRead=async function(){if(!uid)return;const changes={};notifications.filter(n=>!n.read).forEach(n=>changes[`${n.id}/read`]=true);if(Object.keys(changes).length)await update(ref(db,`notificationsByUser/${uid}`),changes)};
+async function openNotif(id){const n=notifications.find(x=>x.id===id);if(!n)return;if(!n.read)await update(ref(db,`notificationsByUser/${uid}/${id}`),{read:true});location.href=n.taskKey?'../tasks/index.html':'../index.html'}
+onAuthStateChanged(auth,user=>{
+ if(!user){location.href='../login.html';return}
+ uid=user.uid;
+ onValue(ref(db,`notificationsByUser/${uid}`),snap=>{notifications=snap.exists()?Object.entries(snap.val()).map(([id,v])=>({id,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)):[];render()},e=>{console.error('Notifications:',e);document.getElementById('notifList').innerHTML='';document.getElementById('notifEmpty').style.display='block';document.getElementById('notifEmpty').textContent='الإشعارات غير متاحة حالياً.'});
+});
 </script>
 
 <script>

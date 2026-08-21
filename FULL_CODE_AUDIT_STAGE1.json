@@ -1,0 +1,434 @@
+{
+  "summary": {
+    "source": "ATWAR_ONE_V0_37_7_FULL_FIX.zip",
+    "files_total": 82,
+    "html_files": 21,
+    "js_files": 10,
+    "json_files": 22
+  },
+  "broken_links": [],
+  "duplicate_ids": [],
+  "onclick_issues": [
+    {
+      "file": "tasks/index.html",
+      "handler": "filterByTeamMember",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "toggleManagerDashboard",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "setQuickFilter",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "setQuickFilter",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "setQuickFilter",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "setQuickFilter",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "setQuickFilter",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "commitQuickAdd",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "hideQuickAdd",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "showQuickAdd",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "addSubtask",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "saveNewSubtask",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "cancelNewSubtask",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "deleteSelectedTask",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "if",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "closeUsersModal",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "showUserForm",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "toggleFirebaseAdvanced",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "hideUserForm",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "saveUserProfile",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "if",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "filterByTeamMember",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "openNotification",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "saveUserProfile",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "tasks/index.html",
+      "handler": "deleteSubtask",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "admin/users.html",
+      "handler": "if",
+      "reason": "handler definition not found"
+    },
+    {
+      "file": "admin/users.html",
+      "handler": "saveUser",
+      "reason": "handler definition not found"
+    },
+    {
+      "file": "team/employee.html",
+      "handler": "showEmployeeTab",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "team/employee.html",
+      "handler": "showEmployeeTab",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "team/employee.html",
+      "handler": "showEmployeeTab",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "team/employee.html",
+      "handler": "showEmployeeTab",
+      "reason": "module handler not exported to window"
+    },
+    {
+      "file": "follow-up/index.html",
+      "handler": "if",
+      "reason": "module handler not exported to window"
+    }
+  ],
+  "event_attribute_issues": [
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "reload"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "filterByTeamMember"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "toggleManagerDashboard"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "setQuickFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "setQuickFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "setQuickFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "setQuickFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "setQuickFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "commitQuickAdd"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "hideQuickAdd"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "showQuickAdd"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "addSubtask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "saveNewSubtask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "cancelNewSubtask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "deleteSelectedTask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "closeUsersModal"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "showUserForm"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "toggleFirebaseAdvanced"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "hideUserForm"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "saveUserProfile"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "filterByTeamMember"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "openNotification"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "saveUserProfile"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onclick",
+      "handler": "deleteSubtask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onchange",
+      "handler": "setSortFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onchange",
+      "handler": "setAssigneeFilter"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onchange",
+      "handler": "toggleSubtask"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "oninput",
+      "handler": "getElementById"
+    },
+    {
+      "file": "tasks/index.html",
+      "attr": "onkeydown",
+      "handler": "quickAddKey"
+    },
+    {
+      "file": "team/employee.html",
+      "attr": "onclick",
+      "handler": "showEmployeeTab"
+    },
+    {
+      "file": "team/employee.html",
+      "attr": "onclick",
+      "handler": "showEmployeeTab"
+    },
+    {
+      "file": "team/employee.html",
+      "attr": "onclick",
+      "handler": "showEmployeeTab"
+    },
+    {
+      "file": "team/employee.html",
+      "attr": "onclick",
+      "handler": "showEmployeeTab"
+    }
+  ],
+  "syntax_failures": [],
+  "firebase_paths": {
+    "users": 10,
+    "tasksByUser/${ownerUid}": 2,
+    "notesByUser/${uid}/quickNote": 1,
+    "users/${user.uid}": 2,
+    "usersModal": 4,
+    "usersList": 2,
+    "usersEmpty": 2,
+    "users/${u.uid}/managerChain": 1,
+    "usersButton": 2,
+    "notificationsByUser/${uid}": 1,
+    "tasksByUser/${n.ownerUid}/${n.taskKey}": 1,
+    "createdTaskIndex/${creatorUid}/${taskKey}": 3,
+    "tasksByUser/${u.uid}": 2,
+    "createdTaskIndex/${currentUser.uid}": 1,
+    "tasksByUser/${ownerUid}/${taskKey}": 1,
+    "tasksByUser/${_ownerUid}/${_key}": 1,
+    "tasksByUser/${newOwnerUid}/${taskKey}": 1,
+    "tasksByUser/${oldOwnerUid}/${taskKey}": 1,
+    "users/${uid}": 3,
+    "tasksByUser/${task._ownerUid}/${task._key}": 1,
+    "tasksByUser/${target.uid}": 1,
+    "users.html": 1,
+    "users-cog": 1,
+    "notesByUser/${currentUid}/quickNote": 1,
+    "users/${session.uid}": 2,
+    "users/${managerUid}": 1,
+    "followUpsByUser/${currentUid}": 1,
+    "followUpsByUser/${currentUid}/${id}": 2,
+    "users-round": 2
+  },
+  "rules_present": true,
+  "rules_json_valid": true,
+  "rules_paths": [
+    ".read",
+    ".write",
+    "users",
+    "tasksByUser",
+    "createdTaskIndex",
+    "notificationsByUser",
+    "notesByUser",
+    "followUpsByUser"
+  ],
+  "rules_parse_error": "",
+  "workflow_checks": {
+    "employee_complete_to_waiting_approval": true,
+    "manager_approval_to_completed": true,
+    "completed_locked": true,
+    "admin_only_reopen": true,
+    "reopen_reason_required": true,
+    "return_for_correction": true,
+    "no_direct_completed_toggle": true
+  },
+  "static_prototype_hits": [
+    {
+      "file": "team/employee.html",
+      "marker": "مراجعة سندات الصرف"
+    },
+    {
+      "file": "notifications/index.html",
+      "marker": "مراجعة سندات الصرف"
+    },
+    {
+      "file": "my-day/index.html",
+      "marker": "مراجعة سندات الصرف"
+    }
+  ],
+  "page_checks": {
+    "home.html": {
+      "uses_firebase": true,
+      "uses_auth_state": true
+    },
+    "workspace/index.html": {
+      "uses_firebase": true,
+      "uses_auth_state": true
+    },
+    "follow-up/index.html": {
+      "uses_firebase": true,
+      "uses_auth_state": true
+    },
+    "tasks/index.html": {
+      "uses_firebase": true,
+      "uses_auth_state": true
+    },
+    "team/index.html": {
+      "uses_firebase": true,
+      "uses_auth_state": false
+    },
+    "team/employee.html": {
+      "uses_firebase": true,
+      "uses_auth_state": false
+    }
+  }
+}

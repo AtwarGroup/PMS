@@ -2144,10 +2144,6 @@ async function adminReopenCompletedTask(){
 
 // Inline UI handlers used from HTML onclick attributes.
 // Module-scoped functions must be exported explicitly to window.
-window.adminReopenCompletedTask=adminReopenCompletedTask;
-window.returnTaskForCorrection=returnTaskForCorrection;
-window.approveSelectedTask=approveSelectedTask;
-
 async function updateSelectedField(f,v){await updateTaskField(selectedTask(),f,v)}
 async function toggleCompleteByKey(key){
   const task=tasks.find(t=>compositeKey(t)===key);if(!task)return;
@@ -3006,6 +3002,37 @@ Object.assign(window,{
   toggleSubtask,
   deleteSubtask,
   toggleActivityLog});
+
+// ATWAR ONE: expose HTML inline event handlers from ES module scope.
+window.addSubtask=addSubtask;
+window.adminReopenCompletedTask=adminReopenCompletedTask;
+window.approveSelectedTask=approveSelectedTask;
+window.cancelNewSubtask=cancelNewSubtask;
+window.closeDetailsKeepPosition=closeDetailsKeepPosition;
+window.closeUsersModal=closeUsersModal;
+window.commitQuickAdd=commitQuickAdd;
+window.completeSelectedTask=completeSelectedTask;
+window.deleteSelectedTask=deleteSelectedTask;
+window.deleteSubtask=deleteSubtask;
+window.filterByTeamMember=filterByTeamMember;
+window.hideQuickAdd=hideQuickAdd;
+window.hideUserForm=hideUserForm;
+window.openNotification=openNotification;
+window.quickAddKey=quickAddKey;
+window.returnTaskForCorrection=returnTaskForCorrection;
+window.saveNewSubtask=saveNewSubtask;
+window.saveUserProfile=saveUserProfile;
+window.setAssigneeFilter=setAssigneeFilter;
+window.setQuickFilter=setQuickFilter;
+window.setSortFilter=setSortFilter;
+window.showQuickAdd=showQuickAdd;
+window.showUserForm=showUserForm;
+window.startSelectedTask=startSelectedTask;
+window.toggleActivityLog=toggleActivityLog;
+window.toggleFirebaseAdvanced=toggleFirebaseAdvanced;
+window.toggleManagerDashboard=toggleManagerDashboard;
+window.toggleSubtask=toggleSubtask;
+window.updateSelectedField=updateSelectedField;
 </script>
 
 <script src="../assets/js/permissions.js"></script>
