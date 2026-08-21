@@ -21,8 +21,8 @@
 <main class="atwar-content">
   <section class="hero">
     <div style="display:flex;justify-content:space-between;gap:24px;align-items:center">
-      <div><span style="display:inline-block;background:rgba(255,255,255,.1);padding:7px 12px;border-radius:999px;font-size:11px;font-weight:900">الإدارة المالية</span><h1 style="font-size:32px;margin:14px 0 6px">فريقي</h1><p style="margin:0;color:#cdd9e8;line-height:1.8">نظرة موحدة على أعضاء الفريق، المهام، الهيكل التنظيمي وملفات الأداء الوظيفي.</p></div>
-      <div class="summary"><div><b>4</b><span>أعضاء الفريق</span></div><div><b style="color:#fbbf24">7</b><span>تحتاج متابعة</span></div><div><b style="color:#6ee7b7">86%</b><span>متوسط الإنجاز</span></div></div>
+      <div><span id="teamScopeLabel" style="display:inline-block;background:rgba(255,255,255,.1);padding:7px 12px;border-radius:999px;font-size:11px;font-weight:900">الفريق</span><h1 id="teamPageTitle" style="font-size:32px;margin:14px 0 6px">فريقي</h1><p id="teamPageSubtitle" style="margin:0;color:#cdd9e8;line-height:1.8">أعضاء الفريق والمهام وفق الهيكل الفعلي في النظام.</p></div>
+      <div class="summary"><div><b id="teamMemberCount">—</b><span>أعضاء الفريق</span></div><div><b id="teamAttentionCount" style="color:#fbbf24">—</b><span>تحتاج متابعة</span></div><div><b id="teamCompletionRate" style="color:#6ee7b7">—</b><span>نسبة الإكمال</span></div></div>
     </div>
   </section>
 
@@ -31,16 +31,16 @@
     <span>صفحة الفريق هي بوابة المتابعة؛ التفاصيل الكاملة تظهر داخل ملف كل موظف: المهام، الوصف الوظيفي ومؤشرات الأداء.</span>
   </section>
   <section class="team-list">
-    <div class="team-toolbar"><div><h2 style="margin:0;font-size:20px">أعضاء الفريق</h2><p style="margin:4px 0 0;color:#7b8aa5;font-size:12px">اضغط على الموظف لعرض ملفه الوظيفي ومهامه ومؤشرات الأداء.</p></div><input style="width:320px;border:1px solid #e6edf5;border-radius:12px;padding:11px 14px;font-family:inherit" placeholder="بحث في أعضاء الفريق..."></div>
+    <div class="team-toolbar"><div><h2 style="margin:0;font-size:20px">أعضاء الفريق</h2><p style="margin:4px 0 0;color:#7b8aa5;font-size:12px">اضغط على الموظف لعرض ملفه الوظيفي ومهامه ومؤشرات الأداء.</p></div><input style="width:320px;border:1px solid #e6edf5;border-radius:12px;padding:11px 14px;font-family:inherit" id="teamSearchInput" placeholder="بحث في أعضاء الفريق..."></div>
     <div id="teamGrid" class="team-grid"></div>
   </section>
 
   <section class="team-bottom">
-    <div class="panel"><h3>الهيكل الإداري</h3><div style="background:#0b1d3a;color:#fff;border-radius:12px;padding:12px 14px;font-weight:900">المدير المالي</div><div style="margin:12px 22px;border-right:2px solid #bfdbfe;padding-right:18px"><div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:12px 14px;font-weight:800">رئيس الحسابات</div><div style="margin:10px 20px;color:#64748b;line-height:2">محاسب أول<br>محاسب</div></div></div>
-    <div class="panel"><h3>مؤشرات الفريق</h3><div style="margin-top:14px">إنجاز المهام <b style="float:left">86%</b><div style="height:8px;background:#eef2f7;border-radius:999px;margin-top:8px;overflow:hidden"><div style="width:86%;height:100%;background:#1677ff"></div></div></div><div style="margin-top:18px">الالتزام بالمواعيد <b style="float:left">91%</b><div style="height:8px;background:#eef2f7;border-radius:999px;margin-top:8px;overflow:hidden"><div style="width:91%;height:100%;background:#10b981"></div></div></div></div>
+    <div class="panel"><h3>الهيكل الإداري</h3><div id="teamHierarchy" style="margin-top:12px;color:#64748b">جاري تحميل الهيكل...</div></div>
+    <div class="panel"><h3>مؤشرات الفريق</h3><div id="teamMetrics" style="margin-top:14px;color:#64748b">جاري احتساب المؤشرات...</div></div>
   </section>
 
-  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>Team Module V0.8</span><span>قابل للتوسع</span></footer>
+  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>V0.37.9</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -64,17 +64,102 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <script type="module" id="teamFirebaseBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-function s(){try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}}
-const me=s(),grid=document.getElementById('teamGrid');
-if(grid&&me?.uid){
- try{
-  const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),db=getDatabase(app);
-  const snap=await get(ref(db,'users')),all=snap.exists()?Object.entries(snap.val()).map(([uid,v])=>({uid,...v})):[];
-  const members=me.role==='admin'?all.filter(u=>u.uid!==me.uid):all.filter(u=>u.managerUid===me.uid||u.managerUID===me.uid||u.managerId===me.uid);
-  grid.innerHTML=members.length?members.map(u=>`<a class="person" href="employee.html?uid=${encodeURIComponent(u.uid)}"><div class="person-head"><div class="person-avatar">${(u.name||u.email||'م').trim().charAt(0)}</div><div><div class="person-name">${u.name||u.email||'مستخدم'}</div><div class="person-role">${u.title||u.jobTitle||u.position||'—'}</div></div></div></a>`).join(''):'<div class="person"><div class="person-head"><div><div class="person-name">لا يوجد أعضاء فريق</div><div class="person-role">لا توجد بيانات مرتبطة بحسابك حالياً</div></div></div></div>';
- }catch(e){grid.innerHTML='<div class="person"><div class="person-head"><div><div class="person-name">تعذر تحميل الفريق</div></div></div></div>'}
+
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+const grid=document.getElementById('teamGrid'),search=document.getElementById('teamSearchInput');
+let members=[],tasksByOwner=new Map(),profile=null,allUsers=[];
+
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function overdue(t){
+ if(!t?.end||t.status==='مكتملة'||t.status==='بانتظار الاعتماد')return false;
+ return new Date()>new Date(t.end+'T23:59:59');
 }
+function rowsFor(uid){return tasksByOwner.get(uid)||[]}
+function card(u){
+ const rows=rowsFor(u.uid),done=rows.filter(t=>t.status==='مكتملة').length,run=rows.filter(t=>t.status==='قيد التنفيذ').length,late=rows.filter(overdue).length,total=rows.length;
+ return `<a class="person" href="employee.html?uid=${encodeURIComponent(u.uid)}">
+   <div class="person-head"><div class="person-avatar">${esc((u.name||u.email||'م').trim().charAt(0))}</div><div><div class="person-name">${esc(u.name||u.email||'مستخدم')}</div><div class="person-role">${esc(u.title||u.jobTitle||u.position||'—')}</div></div></div>
+   <div class="metrics"><div class="metric"><b>${total}</b><span>المهام</span></div><div class="metric"><b>${run}</b><span>قيد التنفيذ</span></div><div class="metric"><b>${late}</b><span>متأخرة</span></div></div>
+ </a>`;
+}
+function renderMembers(){
+ const q=String(search?.value||'').trim().toLowerCase();
+ const filtered=members.filter(u=>!q||`${u.name||''} ${u.email||''} ${u.title||u.jobTitle||''}`.toLowerCase().includes(q));
+ grid.innerHTML=filtered.length?filtered.map(card).join(''):'<div class="person"><div class="person-head"><div><div class="person-name">لا يوجد أعضاء مطابقون</div><div class="person-role">لا توجد بيانات ضمن نطاق هذا الحساب.</div></div></div></div>';
+}
+function renderHierarchy(){
+ const host=document.getElementById('teamHierarchy');if(!host)return;
+ if(profile?.role==='manager'){
+   host.innerHTML=`<div style="background:#0b1d3a;color:#fff;border-radius:12px;padding:12px 14px;font-weight:900">${esc(profile.name||profile.email||'المدير')}</div>
+   <div style="margin:10px 20px;border-right:2px solid #bfdbfe;padding-right:16px">${members.length?members.map(u=>`<div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;padding:10px 12px;margin:7px 0;font-weight:800">${esc(u.name||u.email||'مستخدم')} <span style="font-size:10px;color:#64748b">• ${esc(u.title||u.jobTitle||'—')}</span></div>`).join(''):'<div>لا يوجد مرؤوسون مباشرون.</div>'}</div>`;
+   return;
+ }
+ // Admin: build actual hierarchy from all active users.
+ const active=allUsers.filter(u=>u.active!==false),byParent=new Map();
+ active.forEach(u=>{const key=String(u.managerUid||'ROOT');if(!byParent.has(key))byParent.set(key,[]);byParent.get(key).push(u)});
+ const draw=(parent,depth=0,seen=new Set())=>{
+   if(depth>6)return '';
+   return (byParent.get(String(parent))||[]).filter(u=>!seen.has(u.uid)).map(u=>{
+     const next=new Set(seen);next.add(u.uid);
+     return `<div style="margin:${depth?6:8}px ${depth*16}px 0 0;border-right:${depth?'2px solid #dbeafe':'0'};padding-right:${depth?12:0}">
+       <div style="background:${depth?'#eff6ff':'#0b1d3a'};color:${depth?'#263b55':'#fff'};border-radius:10px;padding:9px 12px;font-weight:800">${esc(u.name||u.email||'مستخدم')} <span style="font-size:9px;opacity:.75">• ${esc(u.title||u.jobTitle||u.role||'')}</span></div>
+       ${draw(u.uid,depth+1,next)}
+     </div>`;
+   }).join('');
+ };
+ host.innerHTML=draw('ROOT')||'<div>لا توجد علاقات إدارية مسجلة.</div>';
+}
+function renderMetrics(){
+ const host=document.getElementById('teamMetrics');if(!host)return;
+ const rows=[...tasksByOwner.values()].flat(),total=rows.length,done=rows.filter(t=>t.status==='مكتملة').length,late=rows.filter(overdue).length,waiting=rows.filter(t=>t.status==='بانتظار الاعتماد').length,rate=total?Math.round(done/total*100):0;
+ document.getElementById('teamMemberCount').textContent=members.length;
+ document.getElementById('teamAttentionCount').textContent=late+waiting;
+ document.getElementById('teamCompletionRate').textContent=`${rate}%`;
+ host.innerHTML=`
+   <div style="margin-top:12px">إجمالي المهام <b style="float:left">${total}</b></div>
+   <div style="margin-top:18px">المكتملة <b style="float:left">${done}</b></div>
+   <div style="margin-top:18px">المتأخرة <b style="float:left;color:#c83c43">${late}</b></div>
+   <div style="margin-top:18px">بانتظار الاعتماد <b style="float:left;color:#b66b00">${waiting}</b></div>
+   <div style="margin-top:18px">نسبة الإكمال <b style="float:left">${rate}%</b><div style="height:8px;background:#eef2f7;border-radius:999px;margin-top:8px;overflow:hidden"><div style="width:${rate}%;height:100%;background:#1677ff"></div></div></div>`;
+}
+
+search?.addEventListener('input',renderMembers);
+
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href='../login.html';return}
+ try{
+   const us=await get(ref(db,'users'));allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
+   profile=allUsers.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee',email:user.email};
+   if(profile.role==='employee'){location.href='../home.html';return}
+
+   if(profile.role==='admin'){
+     members=allUsers.filter(u=>u.active!==false&&u.uid!==user.uid);
+     document.getElementById('teamPageTitle').textContent='الفريق';
+     document.getElementById('teamScopeLabel').textContent='نطاق النظام';
+     document.getElementById('teamPageSubtitle').textContent='جميع المستخدمين النشطين والمهام ضمن صلاحيات مدير النظام.';
+   }else{
+     members=allUsers.filter(u=>u.active!==false&&String(u.managerUid||'')===String(user.uid));
+     document.getElementById('teamPageTitle').textContent='فريقي';
+     document.getElementById('teamScopeLabel').textContent=profile.department||profile.departmentName||'فريقي المباشر';
+     document.getElementById('teamPageSubtitle').textContent='أعضاء فريقك المباشر والمهام المرتبطة بهم.';
+   }
+
+   const buckets=await Promise.all(members.map(async u=>{
+     try{const snap=await get(ref(db,`tasksByUser/${u.uid}`));return [u.uid,snap.exists()?Object.entries(snap.val()).map(([id,v])=>({id,...v})):[]]}
+     catch{return [u.uid,[]]}
+   }));
+   tasksByOwner=new Map(buckets);
+   renderMembers();renderHierarchy();renderMetrics();
+   try{lucide.createIcons()}catch{}
+ }catch(e){
+   console.error('Team page:',e);
+   grid.innerHTML='<div class="person"><div class="person-head"><div><div class="person-name">بيانات الفريق غير متاحة حالياً</div><div class="person-role">أعد تحميل الصفحة بعد لحظات.</div></div></div></div>';
+   document.getElementById('teamHierarchy').textContent='بيانات الهيكل غير متاحة حالياً.';
+   document.getElementById('teamMetrics').textContent='المؤشرات غير متاحة حالياً.';
+ }
+});
 </script>
 </body>
 </html>

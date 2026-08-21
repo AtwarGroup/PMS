@@ -33,91 +33,21 @@
 <atwar-header></atwar-header>
 
 <main class="atwar-content">
-<div class="r-head"><div><h1>الأدوار والصلاحيات</h1><p>حدد ما الذي يمكن لكل دور الوصول إليه، وما النطاق الذي يراه داخل النظام.</p></div></div>
-
-<div class="info">
-هذه الصفحة <b>نموذج إعداد للصلاحيات فقط</b> في الـPrototype، ولا تعتبر حالياً حماية فعلية. الصلاحيات الدقيقة داخل كل وحدة — مثل من يستطيع التعديل أو الاعتماد أو الحذف — ستبقى منفصلة حتى لا تصبح الصلاحيات معقدة وغير واضحة.
-</div>
-
-<div class="role-tabs">
-<button class="role-tab active" data-role="employee" onclick="selectRole('employee',this)">موظف</button>
-<button class="role-tab" data-role="manager" onclick="selectRole('manager',this)">مدير</button>
-<button class="role-tab" data-role="admin" onclick="selectRole('admin',this)">مدير النظام</button>
-</div>
-
-<section class="matrix">
-<div class="m-row head"><div>الوحدة</div><div>السماح بالوصول</div><div>نطاق العرض الافتراضي</div></div>
-<div id="matrixRows"></div>
-</section>
-
-<div class="save-bar">
-<small id="saveHint">التغييرات محلية في هذه النسخة التجريبية.</small>
-<button class="save-btn" onclick="saveMatrix()">حفظ الصلاحيات</button>
-</div>
-
-<footer class="atwar-footer"><span>ATWAR ONE • Roles & Permissions</span><span>V0.37.8</span><span>قيد التطوير</span></footer>
+<section style="min-height:460px;display:flex;align-items:center;justify-content:center">
+<div style="width:min(620px,100%);background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:34px;text-align:center">
+<i data-lucide="shield-check" style="width:42px;height:42px;color:#1677ff"></i>
+<h1 style="font-size:24px;margin:14px 0 8px">الأدوار والصلاحيات</h1>
+<p style="font-size:12px;color:#66778d;line-height:1.9">الحماية الفعلية للنظام مطبقة حاليًا من خلال Firebase Rules ومنطق الصلاحيات داخل الوحدات. واجهة تعديل مصفوفة الصلاحيات من داخل النظام لم تُعتمد بعد، لذلك لن نعرض إعدادات محلية قد توحي بأنها صلاحيات فعلية.</p>
+<div style="margin-top:16px;padding:12px;background:#eef6ff;border-radius:12px;color:#41617f;font-size:11px">هذه الصفحة ستُفعّل فقط عند بناء إدارة صلاحيات مركزية مرتبطة مباشرة بقاعدة البيانات.</div>
+</div></section>
+<footer class="atwar-footer"><span>ATWAR ONE • Roles & Permissions</span><span>V0.37.9</span><span>قيد التطوير</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-const modules=[
- {id:'home',name:'الرئيسية',desc:'الصفحة الرئيسية بعد الدخول',icon:'home',scopes:{employee:'خاص بي',manager:'خاص بي + ملخص فريقي',admin:'جميع النطاقات'}},
- {id:'my-day',name:'يومي',desc:'أولويات المستخدم اليومية',icon:'sun',scopes:{employee:'خاص بي',manager:'خاص بي + ما يحتاج قراري',admin:'جميع النطاقات'}},
- {id:'workspace',name:'مساحة عملي',desc:'الملاحظات والوصول السريع',icon:'notebook-pen',scopes:{employee:'خاص بي',manager:'خاص بي',admin:'خاص بي'}},
- {id:'tasks',name:'المهام',desc:'نظام إدارة المهام',icon:'square-check-big',scopes:{employee:'مهامي',manager:'مهامي + فريقي',admin:'حسب الصلاحيات'}},
- {id:'follow-up',name:'المتابعات',desc:'المتابعات الخفيفة وانتظار الرد',icon:'clock-arrow-up',scopes:{employee:'متابعاتي',manager:'متابعاتي',admin:'حسب الصلاحيات'}},
- {id:'team',name:'الفريق',desc:'أعضاء الفريق وملفاتهم',icon:'users',scopes:{employee:'—',manager:'فريقي المباشر',admin:'جميع الفرق'}},
- {id:'approvals',name:'الاعتمادات',desc:'الطلبات التي تحتاج قرار',icon:'badge-check',scopes:{employee:'—',manager:'اعتماداتي',admin:'حسب الصلاحيات'}},
- {id:'profile',name:'ملفي الوظيفي',desc:'الوصف الوظيفي وKPI',icon:'circle-user-round',scopes:{employee:'ملفي',manager:'ملفي + ملفات فريقي',admin:'حسب الصلاحيات'}},
- {id:'organization',name:'الهيكل التنظيمي',desc:'الهيكل وعلاقات العمل',icon:'network',scopes:{employee:'موقعي',manager:'إدارتي',admin:'المؤسسة'}},
- {id:'notifications',name:'الإشعارات',desc:'التنبيهات والإشعارات الشخصية',icon:'bell',scopes:{employee:'إشعاراتي',manager:'إشعاراتي',admin:'إشعاراتي'}},
- {id:'search',name:'البحث',desc:'البحث الموحد',icon:'search',scopes:{employee:'نتائج مسموحة',manager:'نتائج مسموحة',admin:'جميع النتائج'}},
- {id:'admin',name:'إدارة النظام',desc:'المستخدمون والإعدادات',icon:'settings',scopes:{employee:'—',manager:'—',admin:'إدارة كاملة'}}
-];
-
-const defaults={
- employee:{home:true,'my-day':true,workspace:true,tasks:true,'follow-up':true,team:false,approvals:false,profile:true,organization:true,notifications:true,search:true,admin:false},
- manager:{home:true,'my-day':true,workspace:true,tasks:true,'follow-up':true,team:true,approvals:true,profile:true,organization:true,notifications:true,search:true,admin:false},
- admin:{home:true,'my-day':true,workspace:true,tasks:true,'follow-up':true,team:true,approvals:true,profile:true,organization:true,notifications:true,search:true,admin:true}
-};
-
-const storageKey='atwarRoleMatrix';
-let matrix=JSON.parse(localStorage.getItem(storageKey)||'null')||defaults;
-let currentRole='employee';
-
-function render(){
- const rows=document.getElementById('matrixRows');
- rows.innerHTML=modules.map(m=>`
- <div class="m-row">
-   <div class="module"><div class="mod-icon"><i data-lucide="${m.icon}"></i></div><div><div class="mod-name">${m.name}</div><div class="mod-desc">${m.desc}</div></div></div>
-   <div><label class="toggle"><input type="checkbox" data-module="${m.id}" ${matrix[currentRole]?.[m.id]?'checked':''}><span class="slider"></span></label></div>
-   <div class="scope">${m.scopes[currentRole]||'—'}</div>
- </div>`).join('');
- lucide.createIcons();
-}
-
-function selectRole(role,btn){
- currentRole=role;
- document.querySelectorAll('.role-tab').forEach(x=>x.classList.remove('active'));
- btn.classList.add('active');
- render();
-}
-
-function saveMatrix(){
- const updated={...(matrix[currentRole]||{})};
- document.querySelectorAll('#matrixRows input[data-module]').forEach(i=>updated[i.dataset.module]=i.checked);
- matrix[currentRole]=updated;
- localStorage.setItem(storageKey,JSON.stringify(matrix));
- const h=document.getElementById('saveHint');
- h.textContent='تم حفظ صلاحيات الدور محلياً.';
- setTimeout(()=>h.textContent='التغييرات محلية في هذه النسخة التجريبية.',1800);
-}
-
-render();lucide.createIcons();
-</script>
+<script>lucide.createIcons();</script>
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>

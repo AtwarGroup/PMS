@@ -24,8 +24,7 @@
         <nav class="atwar-nav">
           ${nav('home','home.html','home','الرئيسية')}
           ${nav('tasks','tasks/index.html','square-check-big','المهام')}
-          ${nav('notes','workspace/index.html','notebook-pen','ملاحظاتي')}
-          ${nav('follow','follow-up/index.html','clock-arrow-up','المتابعات')}
+          ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
         </nav>

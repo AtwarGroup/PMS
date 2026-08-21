@@ -1,0 +1,40 @@
+ATWAR ONE V0.37.9 — FINAL ARCHITECTURE & CODE REVIEW
+==============================================================
+
+Verdict: PASS_CODE_AUDIT
+Files checked: 86
+HTML files: 21
+JavaScript files: 10
+
+Automated checks:
+- Broken local links: 0
+- Duplicate HTML IDs: 0
+- JavaScript syntax failures: 0
+- Missing inline event handlers: 0
+- Firebase config ordering issues: 0
+- Misleading static/demo data hits: 0
+- Non-session LocalStorage writes: 0
+- Missing Firebase Rules roots: 0
+
+Functional changes in this release:
+- Details close buttons now use direct DOM event listeners inside the task module.
+- All four home indicators are interactive and open filtered task views.
+- Admin indicators use organization-wide task scope; personal 'My tasks today' remains personal.
+- Notes and follow-ups are merged into one Firebase-backed 'My Workspace' page.
+- Old Follow-up URL redirects to My Workspace to preserve bookmarks.
+- Team page is rebuilt from Firebase Auth + users + tasks, with role-based scope.
+- Manager sees direct team; Admin sees active system users.
+- Team hierarchy and metrics are calculated from live data, not static HTML.
+- Search now queries live accessible tasks/users plus system pages.
+- Job Description and KPI pages display only actual stored data; otherwise under construction.
+- Roles/Permissions page no longer saves fake permissions to LocalStorage.
+- Organization page no longer shows an invented static organization chart.
+
+Task workflow preserved:
+- Employee completes work -> Waiting Approval.
+- Direct manager/Admin approves -> Completed.
+- Completed task is locked.
+- Admin only may reopen completed task, with mandatory reason/audit fields.
+
+Important:
+Static/code audit passed. Final confirmation of network/auth/runtime behavior requires a short smoke test after deployment on GitHub Pages against the live Firebase project.

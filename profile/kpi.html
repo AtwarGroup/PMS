@@ -5,15 +5,13 @@
   <section class="atwar-main">
     <atwar-header></atwar-header>
 <main class="atwar-content">
-
-<section style="background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-  <div>
-    <div id="kpiUserName" style="font-size:16px;font-weight:900;color:#14243a">المستخدم</div>
-    <div id="kpiUserTitle" style="font-size:10px;color:#7b8aa5;margin-top:3px">—</div>
+<section id="profileDataHost" style="min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:min(680px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 10px 30px rgba(20,45,80,.05)">
+    <div style="font-size:22px;font-weight:900">مؤشرات الأداء</div>
+    <p style="margin:10px auto 0;font-size:11px;color:#7b8aa5">جاري التحقق من البيانات المعتمدة...</p>
   </div>
-  <div style="font-size:9px;color:#7b8aa5">مؤشرات الأداء الخاصة بالمستخدم المسجل دخوله</div>
 </section>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div><h1 style="margin:0;font-size:28px">مؤشرات الأداء KPI</h1><p style="color:#7b8aa5;font-weight:700">رئيس الحسابات</p></div><a href="index.html" style="text-decoration:none;color:#1677ff;font-weight:900">← العودة للملف الوظيفي</a></div><section class="kpi-grid"><div class="kpi-card"><b>إقفال الشهر في الموعد</b><div style="font-size:28px;font-weight:900;margin-top:10px">92%</div><div class="bar"><div class="fill" style="width:92%"></div></div></div><div class="kpi-card"><b>دقة المطابقات</b><div style="font-size:28px;font-weight:900;margin-top:10px">97%</div><div class="bar"><div class="fill" style="width:97%"></div></div></div><div class="kpi-card"><b>إنجاز مهام الفريق</b><div style="font-size:28px;font-weight:900;margin-top:10px">84%</div><div class="bar"><div class="fill" style="width:84%"></div></div></div></section></main>
+</main>
   </section>
 </div>
 <script src="../assets/js/shared.js"></script>
@@ -33,85 +31,29 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
 
-<script id="kpiSessionBinding">
-(function(){
-  try{
-    const s=JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null');
-    if(!s)return;
-    const n=document.getElementById('kpiUserName');
-    const t=document.getElementById('kpiUserTitle');
-    if(n)n.textContent=s.name||s.email||'المستخدم';
-    if(t)t.textContent=s.title||s.jobTitle||s.position||'—';
-  }catch(e){}
-})();
-</script>
 
-<script id="profileCompletenessGuard">
 
-(async function(){
-  function getSession(){
-    try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
-  }
 
-  function hasRealEmploymentProfile(record){
-    if(!record || typeof record !== 'object') return false;
-    if(record.profileComplete === true || record.profileReady === true || record.jobProfileReady === true) return true;
-
-    const fields=[
-      record.department,record.departmentName,record.employeeCode,record.employeeId,
-      record.employeeNumber,record.managerUid,record.managerId,record.joinDate,
-      record.joiningDate,record.hireDate,record.workLocation,record.branch,
-      record.employmentType,record.contractType,record.jobDescription,
-      record.jobDescriptionId,record.kpi,record.kpis
-    ];
-    return fields.filter(v=>{
-      if(v===undefined||v===null)return false;
-      if(Array.isArray(v))return v.length>0;
-      if(typeof v==='object')return Object.keys(v).length>0;
-      return String(v).trim()!=='';
-    }).length>=2;
-  }
-
-  function showFallback(){
-    const main=document.querySelector('main.atwar-content') || document.querySelector('main');
-    if(!main)return;
-    main.innerHTML=`
-      <section style="min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:24px">
-        <div style="width:min(520px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 10px 30px rgba(20,45,80,.05)">
-          <div style="width:58px;height:58px;margin:0 auto 16px;border-radius:16px;background:#eef6ff;color:#1677ff;display:grid;place-items:center">
-            <i data-lucide="construction"></i>
-          </div>
-          <h2 style="margin:0;font-size:24px;font-weight:900;color:#14243a">الصفحة تحت الإنشاء</h2>
-          <p style="margin:10px auto 0;max-width:420px;font-size:11px;line-height:1.9;color:#7b8aa5">
-            لم تتم إضافة بيانات هذا الجزء من الملف الوظيفي حتى الآن.
-            سيظهر المحتوى فور استكمال البيانات واعتمادها في النظام.
-          </p>
-        </div>
-      </section>`;
-    try{lucide.createIcons()}catch(e){}
-  }
-
-  const session=getSession();
-  if(!session?.uid){ location.href='../login.html'; return; }
-
-  try{
-    const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-
-    const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-    const db=getDatabase(app);
-    const snap=await get(ref(db,`users/${session.uid}`));
-    const record=snap.exists()?snap.val():{};
-
-    if(!hasRealEmploymentProfile(record)){
-      showFallback();
-    }
-  }catch(e){
-    console.error(e);
-    showFallback();
-  }
-})();
-
+<script type="module" id="realProfileDataBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+const host=document.getElementById('profileDataHost');
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function empty(){
+ host.innerHTML=`<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">الصفحة تحت الإنشاء</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات مؤشرات الأداء المعتمدة لهذا المستخدم حتى الآن.</p></div>`;
+}
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href='../login.html';return}
+ try{
+   const snap=await get(ref(db,`users/${user.uid}`));if(!snap.exists()){empty();return}
+   const record=snap.val(),data=record.kpis || record.kpi || null;
+   if(!data || (typeof data==='string'&&!data.trim()) || (typeof data==='object'&&!Object.keys(data).length)){empty();return}
+   const rows=Array.isArray(data)?data:Object.entries(data).map(([name,value])=>({name,value}));
+   host.innerHTML=`<div style="width:min(900px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">مؤشرات الأداء</h1><div style="display:grid;gap:10px">${rows.map(x=>`<div style="border:1px solid #e7edf5;border-radius:12px;padding:12px"><b>${esc(x.name||x.title||x.kpi||'مؤشر')}</b><div style="color:#607087;margin-top:5px">${esc(x.value??x.score??x.target??'—')}</div></div>`).join('')}</div></div>`;
+ }catch(e){console.error(e);empty()}
+});
 </script>
 </body>
 </html>

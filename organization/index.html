@@ -26,20 +26,14 @@
 <section class="atwar-main">
 <atwar-header></atwar-header>
 <main class="atwar-content">
-<div class="o-head"><div><h1>الهيكل التنظيمي</h1><p>عرض مبسط للإدارات وعلاقات العمل داخل المؤسسة حسب صلاحية المستخدم.</p></div></div>
-<section class="dept-grid">
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="landmark"></i></div><span class="count">الإدارة العليا</span></div><h3>الإدارة التنفيذية</h3><p>الإشراف العام واتخاذ القرارات ومتابعة أداء الإدارات.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="calculator"></i></div><span class="count">المالية</span></div><h3>الإدارة المالية</h3><p>الحسابات، التقارير المالية، الرقابة والمتابعة المالية.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="users-round"></i></div><span class="count">الموارد البشرية</span></div><h3>الموارد البشرية والإدارية</h3><p>شؤون الموظفين والخدمات الإدارية والعلاقات الحكومية.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="shopping-cart"></i></div><span class="count">المشتريات</span></div><h3>إدارة المشتريات</h3><p>الموردون والطلبات والتوريد ومتابعة الاحتياجات.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="handshake"></i></div><span class="count">B2B</span></div><h3>مبيعات التوزيع</h3><p>المبيعات التجارية والمناطق ومتابعة العملاء والمندوبين.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="store"></i></div><span class="count">B2C</span></div><h3>مبيعات التجزئة</h3><p>المعارض والفروع وخدمة عملاء التجزئة.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="monitor-cog"></i></div><span class="count">IT</span></div><h3>تقنية المعلومات</h3><p>الأنظمة والبنية التقنية والدعم والتطوير.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="package-check"></i></div><span class="count">العمليات</span></div><h3>العمليات والمخزون</h3><p>المستودعات والمخزون والتسليم والمتابعة التشغيلية.</p></div>
-<div class="dept"><div class="dept-top"><div class="dept-icon"><i data-lucide="wrench"></i></div><span class="count">التركيبات</span></div><h3>التركيبات والأنظمة</h3><p>تنفيذ ومتابعة أعمال التركيبات والخدمات المرتبطة بها.</p></div>
-</section>
-<section class="org-note"><h3>مبدأ العرض</h3><p>الهيكل هنا ليس قائمة لجميع بيانات الموظفين. في النسخة النهائية سيعرض للمستخدم فقط ما تسمح به صلاحياته: الموظف يرى موقعه وعلاقته الإدارية، المدير يرى فريقه المباشر، والإدارة العليا ترى نطاقاً أوسع حسب الصلاحيات.</p></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>V0.37.8</span><span>قيد التطوير</span></footer>
+<section style="min-height:460px;display:flex;align-items:center;justify-content:center">
+<div style="width:min(620px,100%);background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:34px;text-align:center">
+<i data-lucide="network" style="width:42px;height:42px;color:#1677ff"></i>
+<h1 style="font-size:24px;margin:14px 0 8px">الهيكل التنظيمي</h1>
+<p style="font-size:12px;color:#66778d;line-height:1.9">لن نعرض إدارات أو هيكلاً افتراضيًا غير مخزن في النظام. الهيكل التشغيلي الحالي يظهر ديناميكيًا في صفحة الفريق اعتمادًا على علاقات المدير المباشر المسجلة في Firebase.</p>
+<a href="../team/index.html" style="display:inline-block;margin-top:16px;padding:10px 16px;background:#0b1d3a;color:#fff;border-radius:10px;text-decoration:none;font-weight:900;font-size:11px">فتح الفريق والهيكل الفعلي</a>
+</div></section>
+<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>V0.37.9</span><span>بيانات فعلية فقط</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>

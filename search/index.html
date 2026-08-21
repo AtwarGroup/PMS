@@ -31,38 +31,59 @@
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.37.8</span><span>قيد التطوير</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.37.9</span><span>قيد التطوير</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-const items=[
- {title:'مهامي',meta:'المهام • قائمة المهام',icon:'square-check-big',href:'../tasks/index.html',min:'employee',keys:'مهمة مهام task'},
- {title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',min:'employee',keys:'وظيفة ملف وصف وظيفي'},
- {title:'مؤشرات الأداء',meta:'KPI • الملف الوظيفي',icon:'chart-no-axes-combined',href:'../profile/kpi.html',min:'employee',keys:'مؤشر مؤشرات أداء kpi'},
- {title:'ملاحظاتي',meta:'ملاحظات شخصية',icon:'notebook-pen',href:'../workspace/index.html',min:'employee',keys:'ملاحظات sticky note عملي'},
- {title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',min:'manager',keys:'فريق موظفين موظف'},
-];
-const rank={employee:1,manager:2,admin:3};
-const session=getAtwarDemoSession?.()||{role:'employee'};
+<script type="module" id="liveSearchBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+const input=document.getElementById('query'),results=document.getElementById('results');
+let pages=[],people=[],tasks=[],profile=null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
 function render(q=''){
- q=q.trim().toLowerCase();
- const allowed=items.filter(x=>rank[session.role]>=rank[x.min]);
- const rows=q?allowed.filter(x=>(x.title+' '+x.meta+' '+x.keys).toLowerCase().includes(q)):[];
- document.getElementById('results').innerHTML=!q
- ?'<div class="empty">ابدأ بكتابة كلمة البحث.</div>'
- :rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${x.title}</div><div class="r-meta">${x.meta}</div></div></a>`).join('')
- :'<div class="empty">لم يتم العثور على نتائج مطابقة.</div>';
- lucide.createIcons();
+ q=String(q||'').trim().toLowerCase();
+ if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}
+ const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));
+ const peopleRows=people.filter(x=>`${x.name||''} ${x.email||''} ${x.title||x.jobTitle||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.name||x.email||'مستخدم',meta:x.title||x.jobTitle||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.uid)}`,kind:'موظف'}));
+ const taskRows=tasks.filter(x=>`${x.title||''} ${x.desc||''} ${x.notes||''} ${x.assign||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assign||''}`,icon:'square-check-big',href:'../tasks/index.html',kind:'مهمة'}));
+ const rows=[...taskRows,...peopleRows,...pageRows];
+ results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';
+ try{lucide.createIcons()}catch{}
 }
-const input=document.getElementById('query');
+
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href='../login.html';return}
+ try{
+  const us=await get(ref(db,'users')),allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
+  profile=allUsers.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee'};
+  const direct=allUsers.filter(u=>String(u.managerUid||'')===String(user.uid));
+  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false):profile.role==='manager'?direct:[];
+  people=visibleUsers;
+
+  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...direct.map(u=>u.uid)]:[user.uid];
+  const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([id,v])=>({_key:id,_ownerUid:uid,...v})):[]}catch{return []}}));
+  tasks=buckets.flat();
+
+  pages=[
+   {title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},
+   {title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},
+   {title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},
+   ...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),
+   ...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])
+  ];
+
+  const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q);
+ }catch(e){console.error('Search:',e);results.innerHTML='<div class="empty">البحث غير متاح حالياً، حاول مرة أخرى بعد لحظات.</div>'}
+});
 input.addEventListener('input',e=>render(e.target.value));
-document.getElementById('topSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){input.value=e.target.value;render(e.target.value);input.focus()}});
-const q=new URLSearchParams(location.search).get('q')||''; input.value=q; render(q);
-lucide.createIcons();
 </script>
 <script src="../assets/js/consolidation.js"></script>
 

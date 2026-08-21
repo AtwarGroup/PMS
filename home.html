@@ -28,10 +28,10 @@
   </div>
 
   <section style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
-    <div class="dash-card"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small>هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
-    <div class="dash-card"><div><div id="homeStatOpen" class="dash-num">—</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
-    <div class="dash-card"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
-    <div class="dash-card" data-role-min="manager" onclick="location.href='tasks/index.html'" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
+    <div class="dash-card" data-task-scope="COMPLETED" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small id="homeStatCompletedScope">هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
+    <div class="dash-card" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
+    <div class="dash-card" data-task-scope="OVERDUE" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
+    <div class="dash-card" data-role-min="manager" data-task-scope="APPROVAL" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
   </section>
 
   <section style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
@@ -65,13 +65,15 @@
       <div class="home-head"><h3><i data-lucide="users"></i> فريقي</h3><a href="team/index.html">عرض الفريق بالكامل</a></div>
       <div id="homeTeamGrid" class="team-mini-grid">
 <div class="mini-member"><div><b>جاري تحميل الفريق...</b><small>يتم قراءة بيانات المستخدمين</small></div></div>
-</div></section>
+</div>
+    </article>
+  </section>
 
   
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.37.6</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.37.9</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -133,6 +135,16 @@ function friendly(hostId,title,small){
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
 const auth=getAuth(app),db=getDatabase(app);
 
+function bindDashboardCards(){
+  document.querySelectorAll('[data-task-scope]').forEach(card=>{
+    const open=()=>location.href=`tasks/index.html?scope=${encodeURIComponent(card.dataset.taskScope||'OPEN')}`;
+    card.addEventListener('click',open);
+    card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+  });
+}
+bindDashboardCards();
+
+
 onAuthStateChanged(auth,async authUser=>{
   if(!authUser){location.href='login.html';return}
   const uid=authUser.uid;
@@ -161,7 +173,12 @@ onAuthStateChanged(auth,async authUser=>{
 
     // Admin = organization-wide indicators. Manager/employee = own task indicators.
     const indicatorTasks=profile.role==='admin'?visibleTasks:myTasks;
-    setText('homeStatCompleted',indicatorTasks.filter(completedThisMonth).length);
+    if(profile.role==='admin'){
+      setText('homeStatCompleted',indicatorTasks.filter(t=>t.status==='مكتملة').length);
+      const sub=document.getElementById('homeStatCompletedScope');if(sub)sub.textContent='جميع المهام';
+    }else{
+      setText('homeStatCompleted',indicatorTasks.filter(completedThisMonth).length);
+    }
     setText('homeStatOpen',indicatorTasks.filter(t=>t.status!=='مكتملة').length);
     setText('homeStatOverdue',indicatorTasks.filter(t=>delayDays(t)>0).length);
 

@@ -332,7 +332,7 @@
               <h2 class="font-black text-lg">تفاصيل المهمة</h2>
               <div id="taskLockHint" class="hidden text-[10px] font-bold text-amber-600 mt-0.5"></div>
             </div>
-            <button type="button" onclick="closeDetailsKeepPosition()" class="text-slate-400 hover:text-slate-700 text-xl">×</button>
+            <button id="detailsCloseX" type="button" class="text-slate-400 hover:text-slate-700 text-xl" aria-label="إغلاق التفاصيل">×</button>
           </div>
 
           <div class="p-3 space-y-2 overflow-visible">
@@ -466,7 +466,7 @@
             </div>
 
 
-            <button type="button" onclick="closeDetailsKeepPosition()" class="w-full mb-2 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm flex items-center justify-center gap-2">
+            <button id="detailsCloseDone" type="button" class="w-full mb-2 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm flex items-center justify-center gap-2">
                 <span>✓</span><span>تم — إغلاق التفاصيل</span>
               </button>
               <button id="deleteSelectedButton" onclick="deleteSelectedTask()" class="hidden w-full border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl py-2.5 font-bold">🗑 حذف المهمة</button>
@@ -594,6 +594,7 @@ let unsubscribeNotifications=null;
 let managerDashboardCollapsed=false;
 let activityLogExpanded=false;
 let pendingAssigneeChange=null;
+let homeFilterValue='';
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -861,6 +862,29 @@ async function closeDetailsKeepPosition(){
   requestAnimationFrame(()=>{
     window.scrollTo({top:0,left:0,behavior:'smooth'});
   });
+}
+
+
+function applyHomeDashboardFilterFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const scope=String(params.get('scope')||'').toUpperCase();
+  homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
+  if(!homeFilterValue)return;
+
+  // Keep the existing task UI filters neutral; the URL scope applies separately.
+  const status=document.getElementById('statusFilter');
+  if(status)status.value='ALL';
+  document.querySelectorAll('.qf').forEach(b=>b.classList.toggle('active',b.dataset.filter==='ALL'));
+}
+
+function bindDetailsCloseButtons(){
+  const handler=async e=>{
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    await closeDetailsKeepPosition();
+  };
+  document.getElementById('detailsCloseX')?.addEventListener('click',handler);
+  document.getElementById('detailsCloseDone')?.addEventListener('click',handler);
 }
 
 function nextDisplayId(){
@@ -1243,6 +1267,8 @@ onAuthStateChanged(auth,async(user)=>{
 
     applyRoleUI();
     showApp(true);
+    bindDetailsCloseButtons();
+    applyHomeDashboardFilterFromUrl();
     renderManagerDashboard();
     subscribeVisibleTasks();
     subscribeNotifications();
@@ -2483,6 +2509,20 @@ function filteredTasks(){
       }
     }
     const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt);
+
+    // Filters coming from the home dashboard.
+    if(homeFilterValue==='OPEN' && t.status==='مكتملة')return false;
+    if(homeFilterValue==='COMPLETED' && t.status!=='مكتملة')return false;
+    if(homeFilterValue==='OVERDUE' && delay<=0)return false;
+    if(homeFilterValue==='APPROVAL'){
+      if(t.status!=='بانتظار الاعتماد')return false;
+      if(currentProfile?.role==='manager'){
+        const owner=users.find(u=>String(u.uid)===String(t._ownerUid));
+        if(String(owner?.managerUid||'')!==String(currentUser?.uid||''))return false;
+      }
+      if(currentProfile?.role==='employee')return false;
+    }
+
     if(status==='DELAYED'&&delay<=0)return false;
     if(status==='TODAY'&&!isToday(t.start)&&!isToday(t.end))return false;
     if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&String(t.status||'').trim()!==String(status).trim())return false;

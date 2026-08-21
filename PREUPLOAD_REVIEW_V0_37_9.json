@@ -1,0 +1,86 @@
+{
+  "version": "0.37.9",
+  "verdict": "PASS_PREUPLOAD_REVIEW",
+  "inventory": {
+    "files": 89,
+    "html": 21,
+    "js": 10
+  },
+  "broken_links": [],
+  "duplicate_ids": [],
+  "js_syntax_errors": [],
+  "handler_issues": [],
+  "firebase_config_order_issues": [],
+  "non_session_localstorage_writes": [],
+  "static_demo_hits": [],
+  "missing_rules": [],
+  "semantic_checks": {
+    "task_close_has_dom_ids": true,
+    "task_close_binds_listeners": true,
+    "task_close_binding_called": true,
+    "home_all_4_cards_have_scope": true,
+    "home_cards_bind_click": true,
+    "tasks_read_url_scope": true,
+    "tasks_support_4_url_scopes": true,
+    "admin_indicators_org_scope": true,
+    "admin_completed_all_not_month": true,
+    "workspace_has_notes": true,
+    "workspace_has_followups": true,
+    "followup_redirects_to_workspace": true,
+    "sidebar_has_single_workspace": true,
+    "team_uses_firebase_auth": true,
+    "team_manager_direct_only": true,
+    "team_admin_all_active": true,
+    "team_metrics_from_tasks": true,
+    "team_no_static_hierarchy": true,
+    "employee_profile_uses_target_uid": true,
+    "notifications_real_firebase": true,
+    "myday_real_firebase": true,
+    "search_real_firebase": true,
+    "workflow_waiting_approval": true,
+    "workflow_manager_approval": true,
+    "workflow_completed_locked": true,
+    "workflow_admin_reopen_only": true,
+    "workflow_reopen_audit": true,
+    "login_uses_firebase_profile": true
+  },
+  "old_version_labels": [
+    {
+      "file": "landing.html",
+      "version": "V0.37.8"
+    },
+    {
+      "file": "my-day/index.html",
+      "version": "V0.37.8"
+    },
+    {
+      "file": "profile/index.html",
+      "version": "V0.33"
+    },
+    {
+      "file": "approvals/index.html",
+      "version": "V0.37.8"
+    },
+    {
+      "file": "admin/users.html",
+      "version": "V0.37.8"
+    },
+    {
+      "file": "admin/index.html",
+      "version": "V0.37.8"
+    },
+    {
+      "file": "notifications/index.html",
+      "version": "V0.37.8"
+    }
+  ],
+  "nonlive_pages_without_under_construction_notice": [
+    "tasks/user-guide.html"
+  ],
+  "warnings": [
+    {
+      "type": "privacy_scope",
+      "detail": "Current Firebase Rules allow any authenticated user to read the users directory. UI scopes team pages, but this is not server-side privacy isolation."
+    }
+  ]
+}

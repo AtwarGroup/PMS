@@ -23,6 +23,16 @@
 .today-row:last-child{border-bottom:0}.today-row b{font-size:12px}.today-row span{font-size:10px;color:#74849b}
 .notice{display:none;margin-top:10px;background:#edf9f3;color:#187655;border-radius:10px;padding:9px;font-size:11px;font-weight:800}
 @media(max-width:900px){.ws-grid{grid-template-columns:1fr}}
+
+.follow-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.follow-add{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:9px 12px;font-family:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.follow-list{display:grid;gap:9px;max-height:390px;overflow:auto}
+.follow-item{border:1px solid #e4eaf2;border-radius:13px;padding:11px;background:#fff}
+.follow-top{display:flex;justify-content:space-between;gap:10px}.follow-title{font-weight:900;font-size:12px}.follow-meta{font-size:9px;color:#8794a7;margin-top:4px}
+.follow-note{font-size:10px;color:#68778c;line-height:1.7;margin-top:7px}.follow-actions{display:flex;gap:6px;margin-top:8px}.follow-actions button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:6px 9px;font-family:inherit;font-size:9px;font-weight:900;cursor:pointer}
+.follow-empty{font-size:11px;color:#7b8aa5;padding:18px;text-align:center;border:1px dashed #dce5ef;border-radius:12px}
+.follow-form{display:none;margin-top:10px;padding:12px;background:#f8fbff;border:1px solid #e0eaf5;border-radius:13px}.follow-form.show{display:block}.follow-form input,.follow-form textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:9px;padding:9px;font-family:inherit;margin-top:7px}.follow-form textarea{min-height:70px}
+
 </style>
 </head>
 <body>
@@ -31,14 +41,14 @@
 <section class="atwar-main">
 <atwar-header></atwar-header>
 <main class="atwar-content">
-<div class="ws-head"><div><h1>ملاحظاتي</h1><p>مساحة شخصية سريعة لتنظيم يومك دون تعقيد نظام المهام الرسمي.</p></div></div>
+<div class="ws-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد، محفوظة في حسابك.</p></div></div>
 
 <div class="ws-grid">
 <section class="ws-card">
 <h3><i data-lucide="sticky-note" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
 <textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل سريعة، فكرة، رقم متابعة أو شيء تريد تذكره..."></textarea>
-<div class="note-actions"><small>ملاحظة شخصية في الـPrototype</small><button onclick="saveNote()">حفظ الملاحظة</button></div>
-<div id="savedNotice" class="notice">تم حفظ الملاحظة على هذا الجهاز.</div>
+<div class="note-actions"><small>ملاحظة شخصية محفوظة في حسابك</small><button onclick="saveNote()">حفظ الملاحظة</button></div>
+<div id="savedNotice" class="notice">تم حفظ الملاحظة في حسابك.</div>
 </section>
 
 <section class="ws-card">
@@ -52,86 +62,83 @@
 </section>
 
 <section class="ws-card">
-<h3>اليوم</h3>
-<div class="today-row"><div><b>مراجعة المهام المفتوحة</b><br><span>6 مهام حالية</span></div><i data-lucide="chevron-left"></i></div>
-<div class="today-row" data-role-min="manager"><div><b>طلبات تحتاج اعتمادك</b><br><span>2 بانتظار القرار</span></div><i data-lucide="chevron-left"></i></div>
-<div class="today-row"><div><b>مراجعة مؤشرات الأداء</b><br><span>آخر تحديث متاح</span></div><i data-lucide="chevron-left"></i></div>
+<div class="follow-head"><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
+<div id="workspaceFollowForm" class="follow-form">
+  <input id="wfTitle" placeholder="عنوان المتابعة">
+  <input id="wfDate" type="date">
+  <textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
+  <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px">
+    <button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button>
+    <button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button>
+  </div>
+</div>
+<div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
 </section>
 
 <section class="ws-card">
-<h3>فكرة مساحة عملي</h3>
-<p style="font-size:12px;line-height:1.9;color:#607087;margin:0">هذه الصفحة ليست بديلاً عن المهام. هي مساحة شخصية خفيفة تجمع الملاحظات والوصول السريع وما يحتاج انتباه المستخدم خلال يومه.</p>
+<h3>عن مساحة عملي</h3>
+<p style="font-size:12px;line-height:1.9;color:#607087;margin:0">مساحة شخصية خفيفة للملاحظات والمتابعات التي لا تحتاج إلى إنشاء مهمة رسمية. جميع البيانات مرتبطة بحسابك وتظهر من أي جهاز بعد تسجيل الدخول.</p>
 </section>
 </div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.37.4</span><span>Firebase Sync</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.37.9</span><span>Firebase Sync</span></footer>
 </main></section></div>
 
 <script src="../assets/js/firebase-config.js"></script>
 <script type="module" id="workspaceFirebaseNotes">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const noteInput=document.getElementById('personalNote');
-const savedNotice=document.getElementById('savedNotice');
-let db=null;
-let currentUid='';
-let noteRef=null;
-let saving=false;
-
-function showNotice(text='تم الحفظ',kind='ok'){
-  if(!savedNotice)return;
-  savedNotice.textContent=text;
-  savedNotice.style.display='block';
-  savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';
-  savedNotice.style.color=kind==='error'?'#b42318':'#087443';
-  setTimeout(()=>savedNotice.style.display='none',2200);
-}
+import { getDatabase, ref, get, set, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app);
-db=getDatabase(app);
+const auth=getAuth(app),db=getDatabase(app);
+const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');
+let uid='',noteRef=null,followRef=null,saving=false,followUnsub=null,followData=[];
+
+function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function showNotice(text='تم الحفظ',kind='ok'){
+ if(!savedNotice)return;savedNotice.textContent=text;savedNotice.style.display='block';
+ savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';savedNotice.style.color=kind==='error'?'#b42318':'#087443';
+ setTimeout(()=>savedNotice.style.display='none',2200);
+}
+function renderFollowups(){
+ const host=document.getElementById('workspaceFollowList');if(!host)return;
+ const labels={soon:'متابعة',wait:'بانتظار رد',done:'مكتملة'};
+ host.innerHTML=followData.length?followData.map(x=>`<div class="follow-item">
+   <div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(x.date||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>
+   ${x.note?`<div class="follow-note">${esc(x.note)}</div>`:''}
+   <div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div>
+ </div>`).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';
+ host.querySelectorAll('[data-follow-done]').forEach(b=>b.addEventListener('click',async()=>update(ref(db,`followUpsByUser/${uid}/${b.dataset.followDone}`),{status:'done',updatedAt:Date.now()})));
+ host.querySelectorAll('[data-follow-delete]').forEach(b=>b.addEventListener('click',async()=>remove(ref(db,`followUpsByUser/${uid}/${b.dataset.followDelete}`))));
+}
 
 onAuthStateChanged(auth,async user=>{
-  if(!user){
-    location.href='../login.html';
-    return;
-  }
-  currentUid=user.uid;
-  noteRef=ref(db,`notesByUser/${currentUid}/quickNote`);
-  try{
-    const snap=await get(noteRef);
-    const value=snap.exists()?snap.val():null;
-    noteInput.value=typeof value==='string'?value:(value?.text||'');
-  }catch(e){
-    console.error('Personal note load:',e);
-    noteInput.value='';
-    showNotice('الملاحظات غير متاحة حالياً، حاول تحديث الصفحة بعد لحظات.','error');
-  }
+ if(!user){location.href='../login.html';return}
+ uid=user.uid;noteRef=ref(db,`notesByUser/${uid}/quickNote`);followRef=ref(db,`followUpsByUser/${uid}`);
+ try{const snap=await get(noteRef),v=snap.exists()?snap.val():null;noteInput.value=typeof v==='string'?v:(v?.text||'')}catch{noteInput.value='';showNotice('الملاحظات غير متاحة حالياً.','error')}
+ if(followUnsub)followUnsub();
+ followUnsub=onValue(followRef,s=>{const raw=s.exists()?s.val():{};followData=Object.entries(raw).map(([id,v])=>({id,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));renderFollowups()},e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'});
 });
 
 window.saveNote=async function(){
-  if(!currentUid||!noteRef||saving){
-    showNotice('انتظر اكتمال تسجيل الدخول ثم حاول مرة أخرى.','error');
-    return;
-  }
-  saving=true;
-  try{
-    await set(noteRef,{
-      text:String(noteInput.value||''),
-      updatedAt:Date.now()
-    });
-    showNotice('تم حفظ الملاحظة ومزامنتها بنجاح');
-  }catch(e){
-    console.error('Personal note save:',e);
-    showNotice('لم يتم حفظ الملاحظة الآن، حاول مرة أخرى بعد لحظات.','error');
-  }finally{
-    saving=false;
-  }
+ if(!uid||!noteRef||saving)return; saving=true;
+ try{await set(noteRef,{text:String(noteInput.value||''),updatedAt:Date.now()});showNotice('تم حفظ الملاحظة ومزامنتها بنجاح')}
+ catch(e){console.error(e);showNotice('لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.','error')}
+ finally{saving=false}
 };
 
-try{lucide.createIcons()}catch(e){}
+const form=document.getElementById('workspaceFollowForm');
+document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form?.classList.add('show'));
+document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));
+document.getElementById('wfSave')?.addEventListener('click',async()=>{
+ if(!followRef||!uid)return;
+ const title=document.getElementById('wfTitle').value.trim();if(!title)return;
+ const now=Date.now(),item=push(followRef);
+ await set(item,{title,date:document.getElementById('wfDate').value||'',note:document.getElementById('wfNote').value.trim(),status:'soon',createdAt:now,updatedAt:now});
+ document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');
+});
+try{lucide.createIcons()}catch{}
 </script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>

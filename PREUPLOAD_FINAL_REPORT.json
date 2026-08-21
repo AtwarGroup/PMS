@@ -1,0 +1,15 @@
+{
+  "version": "0.37.9",
+  "verdict": "READY_FOR_UPLOAD",
+  "old_version_labels": [],
+  "broken_links": [],
+  "syntax_errors": [],
+  "critical_checks": {
+    "details_close": true,
+    "home_clickable": true,
+    "workspace_merged": true,
+    "team_dynamic": true,
+    "workflow": true
+  },
+  "known_non_blocking_warning": "Firebase users root is readable by any authenticated user under current live rules; UI scopes access, but server-side privacy isolation for the users directory is not yet implemented."
+}
