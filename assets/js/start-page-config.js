@@ -1,7 +1,7 @@
 window.ATWAR_START_PAGE = {
-  employee: 'index.html',
-  manager: 'index.html',
-  admin: 'index.html'
+  employee: 'home.html',
+  manager: 'home.html',
+  admin: 'home.html'
 };
 
 window.ATWAR_START_LABEL = {

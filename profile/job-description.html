@@ -46,5 +46,72 @@ document.addEventListener('DOMContentLoaded',()=>{
 })();
 </script>
 
+<script id="profileCompletenessGuard">
+
+(async function(){
+  function getSession(){
+    try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
+  }
+
+  function hasRealEmploymentProfile(record){
+    if(!record || typeof record !== 'object') return false;
+    if(record.profileComplete === true || record.profileReady === true || record.jobProfileReady === true) return true;
+
+    const fields=[
+      record.department,record.departmentName,record.employeeCode,record.employeeId,
+      record.employeeNumber,record.managerUid,record.managerId,record.joinDate,
+      record.joiningDate,record.hireDate,record.workLocation,record.branch,
+      record.employmentType,record.contractType,record.jobDescription,
+      record.jobDescriptionId,record.kpi,record.kpis
+    ];
+    return fields.filter(v=>{
+      if(v===undefined||v===null)return false;
+      if(Array.isArray(v))return v.length>0;
+      if(typeof v==='object')return Object.keys(v).length>0;
+      return String(v).trim()!=='';
+    }).length>=2;
+  }
+
+  function showFallback(){
+    const main=document.querySelector('main.atwar-content') || document.querySelector('main');
+    if(!main)return;
+    main.innerHTML=`
+      <section style="min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:24px">
+        <div style="width:min(520px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 10px 30px rgba(20,45,80,.05)">
+          <div style="width:58px;height:58px;margin:0 auto 16px;border-radius:16px;background:#eef6ff;color:#1677ff;display:grid;place-items:center">
+            <i data-lucide="construction"></i>
+          </div>
+          <h2 style="margin:0;font-size:24px;font-weight:900;color:#14243a">الصفحة تحت الإنشاء</h2>
+          <p style="margin:10px auto 0;max-width:420px;font-size:11px;line-height:1.9;color:#7b8aa5">
+            لم تتم إضافة بيانات هذا الجزء من الملف الوظيفي حتى الآن.
+            سيظهر المحتوى فور استكمال البيانات واعتمادها في النظام.
+          </p>
+        </div>
+      </section>`;
+    try{lucide.createIcons()}catch(e){}
+  }
+
+  const session=getSession();
+  if(!session?.uid){ location.href='../login.html'; return; }
+
+  try{
+    const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+
+    const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+    const db=getDatabase(app);
+    const snap=await get(ref(db,`users/${session.uid}`));
+    const record=snap.exists()?snap.val():{};
+
+    if(!hasRealEmploymentProfile(record)){
+      showFallback();
+    }
+  }catch(e){
+    console.error(e);
+    showFallback();
+  }
+})();
+
+</script>
 </body>
 </html>

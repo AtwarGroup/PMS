@@ -1,127 +1,19 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ATWAR ONE – الرئيسية</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script>
-<script src="assets/js/shell-components.js"></script><link rel="stylesheet" href="assets/css/shared.css">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE</title>
+<meta http-equiv="refresh" content="0; url=landing.html">
+<script>
+  location.replace('landing.html');
+</script>
 <style>
-.dash-card,.home-card{background:#fff;border:1px solid #e6edf5;border-radius:18px;box-shadow:0 5px 14px rgba(20,45,80,.045)}
-.dash-card{padding:18px;display:flex;align-items:center;justify-content:space-between}
-.dash-num{font-size:28px;font-weight:900}.dash-card small,.home-item small,.mini-member small{display:block;color:#7b8aa5;margin-top:3px}
-.dash-ico{width:54px;height:54px;border-radius:50%;display:grid;place-items:center}.dash-ico.green{background:#e7f7f0;color:#139c68}.dash-ico.blue{background:#eaf2ff;color:#2f6fed}.dash-ico.red{background:#fff0ef;color:#df3f44}.dash-ico.purple{background:#f3edff;color:#7747d6}
-.home-head{padding:16px 18px;border-bottom:1px solid #edf2f7;display:flex;justify-content:space-between;align-items:center}.home-head h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}.home-head a,.home-link{color:#176fd3;font-size:12px;font-weight:900;text-decoration:none}
-.home-body{padding:12px 14px}.note-entry{display:flex;gap:8px;align-items:center;border:1px solid #e8dfc4;background:#fffdf4;border-radius:12px;padding:11px 12px;color:#7b6d44;margin-bottom:10px}
-.home-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid #edf2f7}.home-item:last-child{border-bottom:0}.home-link{display:block;padding:12px 16px;border-top:1px solid #edf2f7}
-.warn{color:#e58a13;font-size:22px}.danger{color:#df3f44;font-size:22px}.info{color:#2563eb;font-size:22px}.time{font-weight:900;color:#139c68}.event-date{background:#edf5ff;color:#2468c9;border-radius:11px;padding:8px 10px;text-align:center;font-weight:900}
-.team-mini-grid{padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.mini-member{border:1px solid #e6edf5;border-radius:14px;padding:13px}.mini-avatar{width:38px;height:38px;border-radius:50%;background:#e9eff8;display:grid;place-items:center;font-weight:900;margin-bottom:10px}.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:12px;font-size:9px;color:#7b8aa5;text-align:center}.mini-stats b{display:block;font-size:16px;color:#176fd3}
-@media(max-width:1100px){.team-mini-grid{grid-template-columns:repeat(2,1fr)}}
+html,body{margin:0;height:100%;font-family:Arial,sans-serif;background:#0b1d3a;color:#fff}
+body{display:grid;place-items:center}
 </style>
-</head><body>
-<div class="atwar-shell">
-  <atwar-sidebar active="home"></atwar-sidebar>
-  <section class="atwar-main">
-    <atwar-header></atwar-header>
-
-<main class="atwar-content">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <div><h1 style="font-size:28px;margin:0 0 5px;font-weight:900">أهلاً بك، <span data-greeting-name>المستخدم</span> 👋</h1><p style="margin:0;color:#7b8aa5;font-weight:700" data-user-title></p></div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div><div style="font-weight:800">الخميس 20 أغسطس 2026</div><div style="font-size:11px;color:#7b8aa5;margin-top:3px">17 صفر 1448 هـ</div></div>
-      <div style="width:48px;height:48px;border-radius:14px;background:#edf5ff;color:#2d6cdf;display:grid;place-items:center"><i data-lucide="calendar-days"></i></div>
-    </div>
-  </div>
-
-  <section style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
-    <div class="dash-card"><div><div class="dash-num">18</div><b>مهام مكتملة</b><small>هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
-    <div class="dash-card"><div><div class="dash-num">6</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
-    <div class="dash-card"><div><div class="dash-num">1</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
-    <div class="dash-card" data-role-min="manager" onclick="location.href='approvals/index.html'" style="cursor:pointer"><div><div class="dash-num">2</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
-  </section>
-
-  <section style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
-    <article class="home-card">
-      <div class="home-head"><h3 style="color:#5e34b8"><i data-lucide="notebook-pen"></i> ملاحظاتي</h3></div>
-      <div class="home-body">
-        <div class="note-entry"><i data-lucide="plus"></i><span>اكتب ملاحظة سريعة...</span></div>
-        <div class="home-item"><div><b>مراجعة عرض التأمين وتجديد البوليصة</b><small>قبل نهاية الأسبوع</small></div><i data-lucide="pin"></i></div>
-        <div class="home-item"><div><b>سؤال أكرم عن المطابقة مع المورد ABC</b><small>منذ ساعة</small></div><i data-lucide="pin"></i></div>
-      </div>
-      <a class="home-link" href="#">عرض جميع الملاحظات ‹</a>
-    </article>
-
-    <article class="home-card">
-      <div class="home-head"><h3 style="color:#d23b40"><i data-lucide="circle-alert"></i> يحتاج انتباهي</h3></div>
-      <div class="home-body">
-        <div class="home-item" data-role-min="manager"><div><b>طلبات بانتظار اعتمادك</b><small>تحتاج إلى اعتمادك</small></div><strong class="warn">2</strong></div>
-        <div class="home-item"><div><b>مهمة متأخرة</b><small>مراجعة كشف حساب الموردين</small></div><strong class="danger">1</strong></div>
-        <div class="home-item"><div><b>تنبيه مهم</b><small>موعد استحقاق تأمين السيارات بعد 5 أيام</small></div><strong class="info">1</strong></div>
-      </div>
-      <a class="home-link" href="tasks/index.html">عرض المهام ‹</a>
-    </article>
-
-    <article class="home-card">
-      <div class="home-head"><h3 style="color:#156fd3"><i data-lucide="calendar-check-2"></i> مهامي اليوم</h3></div>
-      <div class="home-body">
-        <div class="home-item"><div><b>مراجعة سندات الصرف</b><small>الحسابات العامة</small></div><span class="time">09:00</span></div>
-        <div class="home-item"><div><b>إعداد تحليل المصروفات</b><small>التحليل المالي</small></div><span class="time">11:00</span></div>
-        <div class="home-item"><div><b>متابعة الموردين الجدد</b><small>إدارة المشتريات</small></div><span class="time">14:00</span></div>
-      </div>
-      <a class="home-link" href="tasks/index.html">عرض جميع المهام ‹</a>
-    </article>
-  </section>
-
-  <section id="homeTeamEvents" style="display:grid;grid-template-columns:2fr 1.15fr;gap:16px">
-    <article class="home-card" data-role-min="manager">
-      <div class="home-head"><h3><i data-lucide="users"></i> فريقي</h3><a href="team/index.html">عرض الفريق بالكامل</a></div>
-      <div class="team-mini-grid">
-        <div class="mini-member"><div class="mini-avatar">ف</div><div><b>فارس باجبير</b><small>محاسب أول</small></div><div class="mini-stats"><span><b>6</b> مفتوحة</span><span><b>1</b> متأخرة</span><span><b>1</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">أ</div><div><b>أسامة عبده</b><small>محاسب</small></div><div class="mini-stats"><span><b>8</b> مفتوحة</span><span><b>0</b> متأخرة</span><span><b>1</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">أ</div><div><b>أمجد الشيخ</b><small>شؤون موظفين وقانونية</small></div><div class="mini-stats"><span><b>12</b> مفتوحة</span><span><b>1</b> متأخرة</span><span><b>2</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">ص</div><div><b>صالح باصرة</b><small>مشرف الشؤون الإدارية</small></div><div class="mini-stats"><span><b>17</b> مفتوحة</span><span><b>2</b> متأخرة</span><span><b>3</b> اعتماد</span></div></div>
-      </div>
-    </article>
-
-    <article class="home-card">
-      <div class="home-head"><h3><i data-lucide="calendar-range"></i> الفعاليات القادمة</h3></div>
-      <div class="home-body">
-        <div class="home-item"><div><b>اجتماع الإدارة المالية</b><small>10:00 ص • مناقشة التقارير الشهرية</small></div><span class="event-date">25<br><small>أغسطس</small></span></div>
-        <div class="home-item"><div><b>اجتماع تطوير الأعمال</b><small>02:00 م • مراجعة خطة العملاء الرئيسيين</small></div><span class="event-date">27<br><small>أغسطس</small></span></div>
-      </div>
-    </article>
-  </section>
-
-  
-  
-
-
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>Modular Prototype V0.21</span><span>بدون Firebase</span></footer>
-</main>
-
-  </section>
-</div>
-<script src="assets/js/shared.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
-  setTimeout(()=>{
-    const session=getAtwarDemoSession?.();
-    const grid=document.getElementById('homeTeamEvents');
-    if(grid && session?.role==='employee'){
-      grid.style.gridTemplateColumns='1fr';
-    }
-  },0);
-});
-</script>
-<script src="assets/js/roles-config.js"></script>
-<script src="assets/js/start-page-config.js"></script>
-<script src="assets/js/firebase-config.js"></script>
-<script src="assets/js/permissions.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
- const s=document.querySelector('[data-global-search]');
- if(s) s.addEventListener('keydown',e=>{
-   if(e.key==='Enter' && s.value.trim()) location.href='search/index.html?q='+encodeURIComponent(s.value.trim());
- });
-});
-</script>
-<script src="assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</head>
+<body>
+<div>جاري فتح ATWAR ONE...</div>
 </body>
 </html>

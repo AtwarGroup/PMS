@@ -1,9 +1,9 @@
 {
-  "version": "0.22",
+  "version": "0.35",
   "modules": [
     {
       "id": "home",
-      "path": "index.html",
+      "path": "home.html",
       "minRole": "employee",
       "status": "prototype",
       "navigation": "primary"

@@ -22,7 +22,7 @@
       this.innerHTML=`<aside class="atwar-sidebar">
         <div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
         <nav class="atwar-nav">
-          ${nav('home','index.html','home','الرئيسية')}
+          ${nav('home','home.html','home','الرئيسية')}
           ${nav('tasks','tasks/index.html','square-check-big','المهام')}
           ${nav('notes','workspace/index.html','notebook-pen','ملاحظاتي')}
           ${nav('follow','follow-up/index.html','clock-arrow-up','المتابعات')}

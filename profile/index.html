@@ -76,6 +76,46 @@
   .profile-links{grid-template-columns:1fr}
 }
 </style>
+
+<style id="profileFallbackStyle">
+.profile-under-construction{
+  min-height:calc(100vh - 112px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.profile-under-card{
+  width:min(520px,100%);
+  background:#fff;
+  border:1px solid #e5edf6;
+  border-radius:18px;
+  padding:34px 28px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(20,45,80,.05);
+}
+.profile-under-icon{
+  width:58px;height:58px;margin:0 auto 16px;
+  border-radius:16px;background:#eef6ff;color:#1677ff;
+  display:grid;place-items:center;
+}
+.profile-under-icon svg{width:26px;height:26px}
+.profile-under-card h2{
+  margin:0;font-size:24px;font-weight:900;color:#14243a
+}
+.profile-under-card p{
+  margin:10px auto 0;max-width:420px;
+  font-size:11px;line-height:1.9;color:#7b8aa5
+}
+.profile-under-user{
+  margin-top:18px;
+  display:inline-flex;align-items:center;gap:8px;
+  background:#f8fafc;border:1px solid #e5edf6;
+  border-radius:999px;padding:8px 12px;
+  font-size:10px;font-weight:900;color:#41536a
+}
+</style>
+
 </head>
 
 <body>
@@ -86,7 +126,23 @@
     <atwar-header></atwar-header>
 
     <main class="profile-page">
-      <div id="profileLoading" class="profile-loading">
+      
+<div id="profileUnderConstruction" class="profile-under-construction hidden">
+  <div class="profile-under-card">
+    <div class="profile-under-icon"><i data-lucide="construction"></i></div>
+    <h2>الصفحة تحت الإنشاء</h2>
+    <p>
+      لم تتم إضافة بيانات ملفك الوظيفي إلى النظام حتى الآن.
+      سيتم إظهار الملف الوظيفي والوصف الوظيفي ومؤشرات الأداء فور استكمال بياناتك واعتمادها.
+    </p>
+    <div class="profile-under-user">
+      <i data-lucide="user-round"></i>
+      <span id="profileUnderUser">المستخدم</span>
+    </div>
+  </div>
+</div>
+
+<div id="profileLoading" class="profile-loading">
         <div class="profile-loading-box">
           <div class="profile-spinner"></div>
           <div style="font-weight:900;font-size:12px">جاري تحميل ملفك الوظيفي...</div>
@@ -277,6 +333,58 @@ async function loadManagerName(managerUid){
   }
 }
 
+function hasRealEmploymentProfile(record){
+  if(!record || typeof record !== 'object') return false;
+
+  // Explicit flags win when they exist.
+  if(record.profileComplete === true || record.profileReady === true || record.jobProfileReady === true){
+    return true;
+  }
+
+  // Do not consider name/email/role/title alone as a completed job profile.
+  // At least two employment-specific fields must exist.
+  const fields = [
+    record.department,
+    record.departmentName,
+    record.employeeCode,
+    record.employeeId,
+    record.employeeNumber,
+    record.managerUid,
+    record.managerId,
+    record.joinDate,
+    record.joiningDate,
+    record.hireDate,
+    record.workLocation,
+    record.branch,
+    record.employmentType,
+    record.contractType,
+    record.jobDescription,
+    record.jobDescriptionId,
+    record.kpi,
+    record.kpis
+  ];
+
+  const meaningful = fields.filter(v=>{
+    if(v === undefined || v === null) return false;
+    if(Array.isArray(v)) return v.length > 0;
+    if(typeof v === 'object') return Object.keys(v).length > 0;
+    return String(v).trim() !== '';
+  }).length;
+
+  return meaningful >= 2;
+}
+
+function showUnderConstruction(session){
+  document.getElementById('profileLoading')?.classList.add('hidden');
+  document.getElementById('profileContent')?.classList.add('hidden');
+  document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
+
+  const underUser=document.getElementById('profileUnderUser');
+  if(underUser) underUser.textContent=session?.name || session?.email || 'المستخدم';
+
+  try{ lucide.createIcons(); }catch(e){}
+}
+
 async function renderProfile(){
   const session = getSession();
 
@@ -287,6 +395,15 @@ async function renderProfile(){
 
   try{
     const userRecord = await loadUserRecord(session.uid);
+
+    // IMPORTANT:
+    // If no actual employment profile has been created, do not show
+    // any default/static job profile.
+    if(!hasRealEmploymentProfile(userRecord)){
+      showUnderConstruction(session);
+      return;
+    }
+
     const merged = {...userRecord, ...session};
 
     const managerUid = pick(
@@ -322,8 +439,6 @@ async function renderProfile(){
 
     document.getElementById('systemRole').textContent = roleLabel(session.role);
     document.getElementById('accountStatus').textContent = active ? 'نشط' : 'غير نشط';
-
-    // Do not expose manager UID in normal UI.
     document.getElementById('managerUidDisplay').textContent = managerUid ? 'مرتبط بالمدير المباشر' : 'غير محدد';
 
     document.getElementById('joinDate').textContent = joinDate;
@@ -331,21 +446,13 @@ async function renderProfile(){
     document.getElementById('employmentType').textContent = employmentType;
 
     document.getElementById('profileLoading').classList.add('hidden');
+    document.getElementById('profileUnderConstruction').classList.add('hidden');
     document.getElementById('profileContent').classList.remove('hidden');
 
     try{ lucide.createIcons(); }catch(e){}
   }catch(error){
     console.error(error);
-    document.getElementById('profileLoading').innerHTML = `
-      <div class="profile-loading-box">
-        <div style="font-weight:900;color:#df3f44">تعذر تحميل الملف الوظيفي</div>
-        <div style="font-size:10px;color:#7b8aa5;margin-top:7px">
-          تعذر قراءة بيانات المستخدم من قاعدة البيانات.
-        </div>
-        <button onclick="location.reload()" style="margin-top:12px;border:0;background:#0b1d3a;color:white;padding:9px 13px;border-radius:10px;font-family:inherit;font-weight:900">
-          إعادة المحاولة
-        </button>
-      </div>`;
+    showUnderConstruction(session);
   }
 }
 

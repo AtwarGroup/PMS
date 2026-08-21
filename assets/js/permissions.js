@@ -93,7 +93,7 @@ function atwarGoToStart(){
   const s=getAtwarDemoSession();
   if(!s){ location.href=atwarDepth()+'login.html'; return; }
   const starts=window.ATWAR_START_PAGE||{};
-  const target=starts[s.role]||'index.html';
+  const target=starts[s.role]||'home.html';
   const depth=atwarDepth();
   location.href=depth+target;
 }

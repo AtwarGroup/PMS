@@ -1,0 +1,14 @@
+{
+  "version": "0.34",
+  "feature": "profile fallback when employee data is absent",
+  "checks": {
+    "under_construction_container": true,
+    "profile_completeness_check": true,
+    "no_default_profile_when_missing": true,
+    "firebase_profile_read": true,
+    "job_description_guard": true,
+    "kpi_guard": true
+  },
+  "broken_links": [],
+  "errors": []
+}
