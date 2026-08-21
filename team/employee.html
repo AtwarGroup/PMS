@@ -141,34 +141,12 @@
         <a href="../profile/kpi.html">نموذج KPI</a>
       </div>
 
-      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Modular Prototype V0.8</span><span>بدون Firebase</span></footer>
+      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>ATWAR ONE</span><span></span></footer>
     </main>
   </section>
 </div>
 
-<script>
-const params=new URLSearchParams(location.search);
-const name=params.get('name')||'الموظف';
-const roles={
-  'فارس باجبير':'محاسب أول',
-  'أسامة عبده':'محاسب',
-  'أمجد الشيخ':'شؤون موظفين وقانونية',
-  'صالح باصرة':'مشرف الشؤون الإدارية'
-};
-const title=roles[name]||'موظف';
-document.getElementById('employeeName').textContent=name;
-document.getElementById('employeeInitial').textContent=(name.trim()[0]||'م');
-document.getElementById('employeeTitle').textContent=title;
-document.getElementById('overviewTitle').textContent=title;
 
-function showEmployeeTab(tab,btn){
-  document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.emp-tabs button').forEach(x=>x.classList.remove('active'));
-  document.getElementById('tab-'+tab)?.classList.add('active');
-  btn?.classList.add('active');
-}
-lucide.createIcons();
-</script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
@@ -185,5 +163,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+
+<script type="module" id="employeeFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const uid=new URLSearchParams(location.search).get('uid'),n=document.getElementById('employeeName'),t=document.getElementById('employeeTitle'),i=document.getElementById('employeeInitial');
+if(!uid){if(n)n.textContent='الصفحة تحت الإنشاء';if(t)t.textContent='لم يتم تحديد موظف صالح.'}
+else try{
+ const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),db=getDatabase(app),snap=await get(ref(db,`users/${uid}`));
+ if(!snap.exists()){if(n)n.textContent='الصفحة تحت الإنشاء';if(t)t.textContent='لم تتم إضافة بيانات هذا الموظف.'}
+ else{const u=snap.val(),name=u.name||u.fullName||u.displayName||u.email||'المستخدم';if(n)n.textContent=name;if(t)t.textContent=u.title||u.jobTitle||u.position||'—';if(i)i.textContent=name.trim().charAt(0)||'م'}
+}catch(e){if(n)n.textContent='تعذر تحميل بيانات الموظف';if(t)t.textContent='حاول تحديث الصفحة.'}
+</script>
 </body>
 </html>

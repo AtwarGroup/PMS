@@ -456,9 +456,15 @@
               <div class="text-[11px] text-emerald-700 mb-3">الموظف أنهى المهمة وهي بانتظار اعتمادك.</div>
               <div class="grid grid-cols-2 gap-2">
                 <button type="button" onclick="approveSelectedTask()" class="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black">✓ اعتماد الإكمال</button>
-                <button type="button" onclick="reopenSelectedTask()" class="px-3 py-2.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-700 text-xs font-black">↩ إعادة فتح</button>
+                <button type="button" onclick="returnTaskForCorrection()" class="px-3 py-2.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-700 text-xs font-black">↩ إعادة للعمل</button>
               </div>
             </div>
+            <div id="adminReopenCompletedActions" class="hidden bg-violet-50 border border-violet-200 rounded-xl p-3 mb-3">
+              <div class="text-xs font-black text-violet-800 mb-1">مهمة مكتملة ومعتمدة</div>
+              <div class="text-[11px] text-violet-700 mb-3">إعادة فتح المهمة المكتملة متاحة لمدير النظام فقط، مع تسجيل السبب في سجل النشاط.</div>
+              <button type="button" onclick="adminReopenCompletedTask()" class="w-full px-3 py-2.5 rounded-xl bg-violet-700 hover:bg-violet-800 text-white text-xs font-black">↩ إعادة فتح المهمة</button>
+            </div>
+
 
             <button type="button" onclick="closeDetailsKeepPosition()" class="w-full mb-2 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm flex items-center justify-center gap-2">
                 <span>✓</span><span>تم — إغلاق التفاصيل</span>
@@ -987,37 +993,27 @@ function canDeleteTasks(){return currentProfile&&(currentProfile.role==='admin'|
 function canApproveTask(task){
   if(!task||!currentProfile||!currentUser)return false;
 
-  // منع الاعتماد الذاتي مهما كانت الصلاحية.
-  const taskOwnerUid=String(
-    task._ownerUid ||
-    task.assignUid ||
-    ''
-  );
-
+  const taskOwnerUid=String(task._ownerUid||task.assignUid||'');
   if(taskOwnerUid && taskOwnerUid===String(currentUser.uid||''))return false;
 
-  // محاولة تحديد صاحب المهمة بأكثر من طريقة لدعم المهام القديمة والمنقولة.
+  // مدير النظام يستطيع اعتماد أي مهمة ليست مهمته الشخصية.
+  if(currentProfile.role==='admin')return true;
+
+  // المدير يعتمد فقط مهام مرؤوسيه المباشرين.
+  if(currentProfile.role!=='manager')return false;
+
   let owner=null;
-
   if(taskOwnerUid){
-    owner=users.find(u=>String(u.uid||'')===taskOwnerUid) || null;
+    owner=users.find(u=>String(u.uid||'')===taskOwnerUid)||null;
   }
-
-  if(!owner && task.assignUid){
-    owner=users.find(u=>String(u.uid||'')===String(task.assignUid||'')) || null;
-  }
-
   if(!owner && task.assign){
     const targetName=String(task.assign||'').trim().toLowerCase();
     owner=users.find(u=>
       String(u.name||'').trim().toLowerCase()===targetName ||
       String(u.email||'').trim().toLowerCase()===targetName
-    ) || null;
+    )||null;
   }
-
-  if(!owner?.managerUid)return false;
-
-  return String(owner.managerUid)===String(currentUser.uid);
+  return !!owner?.managerUid && String(owner.managerUid)===String(currentUser.uid);
 }
 
 
@@ -1915,13 +1911,23 @@ async function updateTaskField(task,f,v){
     return;
   }
   if(f==='progress'){
-    v=normalizeProgress(v);task.progress=v;
-    if(v===100){task.status='مكتملة';if(!task.actualEnd)task.actualEnd=new Date().toISOString().slice(0,10)}
-    else if(task.status==='مكتملة')task.status='قيد التنفيذ';
+    v=normalizeProgress(v);
+    // الوصول إلى 100% لا يغلق المهمة؛ الإغلاق يمر حصراً عبر الاعتماد.
+    task.progress=v;
   }else if(f==='status'){
+    // منع أي تحويل يدوي إلى مكتملة أو إعادة فتح مكتملة من الحقل.
+    if(v==='مكتملة'){
+      showToast('لا يمكن تحويل المهمة إلى مكتملة يدويًا. يجب إرسالها للاعتماد ثم اعتماد المدير.','warning');
+      renderDetails();
+      return;
+    }
+    if(task.status==='مكتملة'){
+      showToast('المهمة المكتملة مقفلة. مدير النظام فقط يستطيع إعادة فتحها.','warning');
+      renderDetails();
+      return;
+    }
     task.status=v;
-    if(v==='مكتملة'){task.progress=100;if(!task.actualEnd)task.actualEnd=new Date().toISOString().slice(0,10)}
-    else if(task.progress===100)task.progress=0;
+    if(v!=='بانتظار الاعتماد' && task.progress===100)task.progress=95;
   }else task[f]=v;
   if(f==='progress'){
     appendActivity(task,'progress',`نسبة الإنجاز: ${normalizeProgress(task.progress)}%`);
@@ -1976,6 +1982,7 @@ async function startSelectedTask(){
 async function completeSelectedTask(){
   const task=selectedTask();
   if(!task)return;
+
   const checklist=normalizeSubtasks(task);
   if(checklist.length && checklist.some(x=>!x.done)){
     showToast('أكمل جميع المهام الفرعية قبل إرسال المهمة للاعتماد.','warning');
@@ -1985,27 +1992,42 @@ async function completeSelectedTask(){
     showToast('إنهاء المهمة متاح للمسؤول عن المهمة فقط.','error');
     return;
   }
+  if(task.status!=='قيد التنفيذ'){
+    showToast('يجب أن تكون المهمة قيد التنفيذ قبل إرسالها للاعتماد.','warning');
+    return;
+  }
 
-  const employee=users.find(u=>u.uid===currentUser.uid);
-  const hasManager=!!employee?.managerUid;
-
-  task.status=hasManager?'بانتظار الاعتماد':'مكتملة';
+  task.status='بانتظار الاعتماد';
   task.progress=100;
   task.submittedAt=Date.now();
-  if(hasManager){
-    appendActivity(task,'submitted','تم إرسال المهمة للمدير للاعتماد');
-  }else{
-    task.actualEnd=new Date().toISOString().slice(0,10);
-    task.completedAt=Date.now();
-    appendActivity(task,'completed','تم إكمال المهمة');
-  }
+  task.actualEnd='';
+  appendActivity(task,'submitted','تم إنهاء العمل وإرسال المهمة للاعتماد');
   task.updatedAt=Date.now();
 
   await saveTask(task);
-  await notifyManagerOfEmployeeAction(task,hasManager?'submitted':'completed');
+  await notifyManagerOfEmployeeAction(task,'submitted');
+  await notifyAdminsIfNoManager(task);
   renderDetails();
 }
 
+
+
+async function notifyAdminsIfNoManager(task){
+  if(!task||!currentUser?.uid)return;
+  const employee=users.find(u=>u.uid===currentUser.uid);
+  if(employee?.managerUid)return;
+
+  const admins=users.filter(u=>u.role==='admin' && u.uid!==currentUser.uid && u.active!==false);
+  for(const admin of admins){
+    await createNotification(admin.uid,{
+      type:'approval',
+      title:'مهمة بانتظار الاعتماد',
+      message:`المهمة "${task.title||'مهمة'}" بانتظار اعتماد مدير النظام لعدم وجود مدير مباشر للمسؤول عنها.`,
+      ownerUid:task._ownerUid,
+      taskKey:task._key
+    });
+  }
+}
 
 async function approveSelectedTask(){
   const task=selectedTask(); if(!task)return;
@@ -2035,40 +2057,103 @@ async function approveSelectedTask(){
   renderDetails();
 }
 
-async function reopenSelectedTask(){
+async function returnTaskForCorrection(){
   const task=selectedTask(); if(!task)return;
-  if(!canApproveTask(task)){
-    showToast('لا يمكن إعادة فتح/اعتماد المهمة بواسطة المسؤول عنها. الإجراء متاح للمدير المباشر أو مدير النظام.','warning');
+
+  if(task.status!=='بانتظار الاعتماد'){
+    showToast('هذه المهمة ليست بانتظار الاعتماد.','warning');
     return;
   }
-  if(task.status!=='بانتظار الاعتماد')return;
+  if(!canApproveTask(task)){
+    showToast('إعادة المهمة للعمل متاحة للمدير المباشر أو مدير النظام فقط.','warning');
+    return;
+  }
 
-  const note=await appPrompt('اكتب سبب إعادة فتح المهمة أو المطلوب من الموظف:','إعادة فتح المهمة','اكتب الملاحظة هنا...');
+  const note=await appPrompt('اكتب الملاحظة أو المطلوب تصحيحه قبل إعادة المهمة للموظف:','إعادة المهمة للعمل','اكتب الملاحظة هنا...');
   if(note===null)return;
-  if(!String(note).trim()){showToast('يرجى كتابة ملاحظة للموظف قبل إعادة فتح المهمة.','warning');return;}
+  if(!String(note).trim()){
+    showToast('يرجى كتابة ملاحظة قبل إعادة المهمة للعمل.','warning');
+    return;
+  }
 
   task.status='قيد التنفيذ';
   task.progress=Math.min(95,normalizeProgress(task.progress));
   task.managerNotes=String(note).trim();
-  task.reopenedAt=Date.now();
-  appendActivity(task,'reopened',`سبب إعادة الفتح: ${task.managerNotes}`);
+  task.returnedAt=Date.now();
+  task.returnedByUid=currentUser.uid;
+  task.returnedBy=currentProfile?.name||currentUser.email||'المدير';
+  appendActivity(task,'reopened',`أعيدت المهمة للعمل: ${task.managerNotes}`);
   task.updatedAt=Date.now();
   await saveTask(task);
 
   await createNotification(task._ownerUid,{
     type:'reopened',
-    title:'تمت إعادة فتح المهمة',
-    message:`أعاد ${currentProfile?.name||currentUser.email||'المدير'} فتح "${task.title||'مهمة'}": ${task.managerNotes}`,
+    title:'أعيدت المهمة للعمل',
+    message:`أعاد ${task.returnedBy} "${task.title||'مهمة'}" للعمل: ${task.managerNotes}`,
     ownerUid:task._ownerUid,
     taskKey:task._key
   });
   renderDetails();
 }
 
+// إعادة فتح مهمة مكتملة: مدير النظام فقط.
+async function adminReopenCompletedTask(){
+  const task=selectedTask(); if(!task)return;
+
+  if(currentProfile?.role!=='admin'){
+    showToast('إعادة فتح المهمة المكتملة متاحة لمدير النظام فقط.','error');
+    return;
+  }
+  if(task.status!=='مكتملة'){
+    showToast('يمكن إعادة فتح المهام المكتملة فقط من هذا الإجراء.','warning');
+    return;
+  }
+
+  const reason=await appPrompt('اكتب سبب إعادة فتح المهمة المكتملة:','إعادة فتح مهمة مكتملة','سبب إعادة الفتح...');
+  if(reason===null)return;
+  if(!String(reason).trim()){
+    showToast('سبب إعادة الفتح إلزامي.','warning');
+    return;
+  }
+
+  task.status='قيد التنفيذ';
+  task.progress=95;
+  task.reopenedAt=Date.now();
+  task.reopenedByUid=currentUser.uid;
+  task.reopenedBy=currentProfile?.name||currentUser.email||'مدير النظام';
+  task.reopenReason=String(reason).trim();
+
+  // الاحتفاظ ببيانات الاعتماد السابقة كسجل تاريخي، مع إزالة تاريخ الإغلاق الفعلي الحالي.
+  task.actualEnd='';
+  appendActivity(task,'reopened',`أعيد فتح المهمة المكتملة بواسطة مدير النظام. السبب: ${task.reopenReason}`);
+  task.updatedAt=Date.now();
+
+  await saveTask(task);
+
+  await createNotification(task._ownerUid,{
+    type:'reopened',
+    title:'أعيد فتح مهمة مكتملة',
+    message:`أعاد مدير النظام فتح "${task.title||'مهمة'}": ${task.reopenReason}`,
+    ownerUid:task._ownerUid,
+    taskKey:task._key
+  });
+
+  renderDetails();
+}
+
 async function updateSelectedField(f,v){await updateTaskField(selectedTask(),f,v)}
 async function toggleCompleteByKey(key){
   const task=tasks.find(t=>compositeKey(t)===key);if(!task)return;
-  await updateTaskField(task,'status',task.status==='مكتملة'?'قيد التنفيذ':'مكتملة');
+  if(task.status==='مكتملة'){
+    showToast('المهمة المكتملة مقفلة. إعادة فتحها متاحة لمدير النظام من تفاصيل المهمة فقط.','warning');
+    return;
+  }
+  if(String(task._ownerUid)!==String(currentUser?.uid||'')){
+    showToast('إنهاء المهمة متاح للمسؤول عنها فقط.','warning');
+    return;
+  }
+  selectedTaskKey=compositeKey(task);
+  if(task.status==='قيد التنفيذ')await completeSelectedTask();
 }
 
 function toggleMoreMenu(force){
@@ -2737,7 +2822,7 @@ function renderDetails(){
       lockHint.textContent='بانتظار اعتماد المدير — المهمة للقراءة فقط';
       lockHint.classList.remove('hidden');
     }else if(task.status==='مكتملة'){
-      lockHint.textContent='مكتملة ومعتمدة — للقراءة فقط';
+      lockHint.textContent=currentProfile?.role==='admin'?'مكتملة ومعتمدة — مقفلة، ويمكن لمدير النظام إعادة فتحها من الإجراء أدناه':'مكتملة ومعتمدة — مقفلة للقراءة فقط';
       lockHint.classList.remove('hidden');
     }else{
       lockHint.classList.add('hidden');
@@ -2747,7 +2832,7 @@ function renderDetails(){
   document.getElementById('detailTitle').value=task.title||'';
   document.getElementById('detailStatus').value=task.status||'قيد الانتظار';
   const statusSelect=document.getElementById('detailStatus');
-  statusSelect.disabled=currentProfile?.role==='employee';
+  statusSelect.disabled=currentProfile?.role==='employee' || task.status==='بانتظار الاعتماد' || task.status==='مكتملة';
   document.getElementById('detailPriority').value=task.priority||'normal';
   document.getElementById('detailStart').value=task.start||'';
   document.getElementById('detailEnd').value=task.end||'';
@@ -2776,6 +2861,11 @@ function renderDetails(){
   const approvalBox=document.getElementById('managerApprovalActions');
   const canApprove=canApproveTask(task);
   approvalBox.classList.toggle('hidden',!(canApprove&&task.status==='بانتظار الاعتماد'));
+
+  const adminReopenBox=document.getElementById('adminReopenCompletedActions');
+  if(adminReopenBox){
+    adminReopenBox.classList.toggle('hidden',!(currentProfile?.role==='admin' && task.status==='مكتملة'));
+  }
 
   document.getElementById('detailDesc').value=task.desc||'';
   document.getElementById('detailNotes').value=task.notes||'';

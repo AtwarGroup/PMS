@@ -42,26 +42,12 @@
 <atwar-header></atwar-header>
 
 <main class="atwar-content">
-<div class="a-head"><div><h1>إدارة المستخدمين</h1><p>الحسابات والأدوار والعلاقات الإدارية في مكان واحد.</p></div><div class="a-actions"><button onclick="openModal()">+ إضافة مستخدم</button></div></div>
-
-<section class="stats">
-<div class="stat"><b id="statTotal">0</b><span>إجمالي المستخدمين</span></div>
-<div class="stat"><b id="statManagers">0</b><span>مديرون</span></div>
-<div class="stat"><b id="statEmployees">0</b><span>موظفون</span></div>
-<div class="stat"><b id="statActive">0</b><span>حسابات نشطة</span></div>
-</section>
-
-<section class="toolbar">
-<input id="searchUser" placeholder="بحث بالاسم أو البريد..." oninput="renderUsers()">
-<select id="roleFilter" onchange="renderUsers()"><option value="ALL">كل الأدوار</option><option value="employee">موظف</option><option value="manager">مدير</option><option value="admin">مدير النظام</option></select>
-<select id="statusFilter" onchange="renderUsers()"><option value="ALL">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option></select>
-</section>
-
-<section class="table">
-<div class="row head"><div>المستخدم</div><div>الدور</div><div>الحالة</div><div>المدير المباشر</div><div>إجراء</div></div>
-<div id="userRows"></div>
-</section>
-
+<section style="min-height:420px;display:flex;align-items:center;justify-content:center">
+<div style="background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:32px;text-align:center;max-width:520px">
+<div style="font-size:22px;font-weight:900">الصفحة تحت الإنشاء</div>
+<div style="font-size:11px;color:#7b8aa5;margin-top:8px;line-height:1.8">سيتم ربط إدارة المستخدمين مباشرة ببيانات Firebase بعد اعتماد دورة إدارة الحسابات والصلاحيات.</div>
+</div></section>
+</main>
 <footer class="atwar-footer"><span>ATWAR ONE • Users & Permissions</span><span>Prototype V0.25</span><span>بدون Firebase</span></footer>
 </main></section></div>
 
@@ -82,48 +68,7 @@
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-const key='atwarAdminUsers';
-let editingId=null;
-let users=JSON.parse(localStorage.getItem(key)||'null')||[
- {id:1,name:'أحمد اليافعي',email:'ahmed@atwar.local',title:'الرئيس التنفيذي',role:'admin',status:'active',managerId:''},
- {id:2,name:'حمزة يوسف',email:'hamza@atwar.local',title:'المدير المالي',role:'manager',status:'active',managerId:1},
- {id:3,name:'أكرم يوسف',email:'—',title:'رئيس الحسابات',role:'manager',status:'active',managerId:2},
- {id:4,name:'فارس باجبير',email:'fares@atwar.local',title:'محاسب أول',role:'employee',status:'active',managerId:3},
- {id:5,name:'أسامة عبده',email:'osama@atwar.local',title:'محاسب',role:'employee',status:'active',managerId:3},
- {id:6,name:'محمد باسنبل',email:'—',title:'موظف',role:'employee',status:'active',managerId:2}
-];
-function persist(){localStorage.setItem(key,JSON.stringify(users))}
-function roleLabel(r){return r==='admin'?'مدير النظام':r==='manager'?'مدير':'موظف'}
-function managerName(id){return users.find(u=>u.id==id)?.name||'—'}
-function renderUsers(){
- const q=(document.getElementById('searchUser').value||'').trim().toLowerCase();
- const rf=document.getElementById('roleFilter').value,sf=document.getElementById('statusFilter').value;
- const rows=users.filter(u=>(!q||(u.name+' '+u.email).toLowerCase().includes(q))&&(rf==='ALL'||u.role===rf)&&(sf==='ALL'||u.status===sf));
- document.getElementById('userRows').innerHTML=rows.map(u=>`<div class="row"><div class="user"><div class="avatar">${u.name[0]||'م'}</div><div><div class="name">${u.name}</div><div class="mail">${u.email}<br>${u.title||''}</div></div></div><div><span class="badge ${u.role}">${roleLabel(u.role)}</span></div><div><span class="badge ${u.status}">${u.status==='active'?'نشط':'غير نشط'}</span></div><div style="font-size:11px;font-weight:800">${managerName(u.managerId)}</div><div><button class="edit-btn" onclick="editUser(${u.id})">تعديل</button></div></div>`).join('');
- document.getElementById('statTotal').textContent=users.length;
- document.getElementById('statManagers').textContent=users.filter(u=>u.role==='manager').length;
- document.getElementById('statEmployees').textContent=users.filter(u=>u.role==='employee').length;
- document.getElementById('statActive').textContent=users.filter(u=>u.status==='active').length;
- refreshManagers();
-}
-function refreshManagers(){
- const sel=document.getElementById('uManager'); const current=sel.value;
- sel.innerHTML='<option value="">بدون مدير مباشر</option>'+users.filter(u=>u.role==='manager'||u.role==='admin').map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
- sel.value=current;
-}
-function openModal(){editingId=null;['uName','uEmail','uTitle'].forEach(id=>document.getElementById(id).value='');document.getElementById('uRole').value='employee';document.getElementById('uStatus').value='active';refreshManagers();document.getElementById('uManager').value='';document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function editUser(id){const u=users.find(x=>x.id===id);if(!u)return;editingId=id;document.getElementById('uName').value=u.name;document.getElementById('uEmail').value=u.email;document.getElementById('uTitle').value=u.title||'';document.getElementById('uRole').value=u.role;document.getElementById('uStatus').value=u.status;refreshManagers();document.getElementById('uManager').value=u.managerId||'';document.getElementById('modal').classList.add('show')}
-function saveUser(){
- const name=document.getElementById('uName').value.trim(),email=document.getElementById('uEmail').value.trim();if(!name||!email)return;
- const val={name,email,title:document.getElementById('uTitle').value.trim(),role:document.getElementById('uRole').value,status:document.getElementById('uStatus').value,managerId:document.getElementById('uManager').value||''};
- if(editingId){users=users.map(u=>u.id===editingId?{...u,...val}:u)}else{users.push({id:Date.now(),...val})}
- persist();renderUsers();closeModal();
-}
-document.addEventListener('DOMContentLoaded',()=>{const q=document.querySelector('[data-global-search]');if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())})});
-renderUsers();lucide.createIcons();
-</script>
+
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>

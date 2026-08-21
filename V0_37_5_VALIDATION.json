@@ -1,0 +1,21 @@
+{
+  "version": "0.37.5",
+  "verdict": "READY_FOR_RULES_TEST",
+  "checks": {
+    "completion_goes_to_approval": true,
+    "no_hasManager_direct_complete": true,
+    "admin_reopen_function": true,
+    "admin_reopen_only": true,
+    "reopen_reason_required": true,
+    "reopen_audit_fields": true,
+    "completed_locked": true,
+    "manager_return_for_correction": true,
+    "admin_reopen_ui": true,
+    "no_direct_toggle_completed": true,
+    "rules_file": true,
+    "notes_still_firebase": true,
+    "followups_still_firebase": true
+  },
+  "broken_links": [],
+  "live_rules_changed": false
+}

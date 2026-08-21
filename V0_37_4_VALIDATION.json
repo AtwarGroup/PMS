@@ -1,0 +1,18 @@
+{
+  "version": "0.37.4",
+  "verdict": "READY",
+  "checks": {
+    "workspace_no_localstorage_note": true,
+    "workspace_firebase_path": true,
+    "workspace_save_to_db": true,
+    "followup_no_localstorage": true,
+    "followup_firebase_path": true,
+    "followup_push": true,
+    "followup_live_sync": true,
+    "no_seed_followups": true,
+    "rules_snippet_exists": true
+  },
+  "broken_links": [],
+  "live_rules_changed": false,
+  "live_database_changed": false
+}

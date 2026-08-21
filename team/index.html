@@ -32,12 +32,7 @@
   </section>
   <section class="team-list">
     <div class="team-toolbar"><div><h2 style="margin:0;font-size:20px">أعضاء الفريق</h2><p style="margin:4px 0 0;color:#7b8aa5;font-size:12px">اضغط على الموظف لعرض ملفه الوظيفي ومهامه ومؤشرات الأداء.</p></div><input style="width:320px;border:1px solid #e6edf5;border-radius:12px;padding:11px 14px;font-family:inherit" placeholder="بحث في أعضاء الفريق..."></div>
-    <div class="team-grid">
-      <a class="person" href="employee.html?name=فارس باجبير"><div class="person-head"><div class="person-avatar">ف</div><div><div class="person-name">فارس باجبير</div><div class="person-role">محاسب أول</div></div></div><div class="metrics"><div class="metric"><b style="color:#2563eb">6</b><span>مفتوحة</span></div><div class="metric"><b style="color:#dc2626">1</b><span>متأخرة</span></div><div class="metric"><b style="color:#d97706">1</b><span>اعتماد</span></div></div></a>
-      <a class="person" href="employee.html?name=أسامة عبده"><div class="person-head"><div class="person-avatar">أ</div><div><div class="person-name">أسامة عبده</div><div class="person-role">محاسب</div></div></div><div class="metrics"><div class="metric"><b style="color:#2563eb">8</b><span>مفتوحة</span></div><div class="metric"><b>0</b><span>متأخرة</span></div><div class="metric"><b style="color:#d97706">1</b><span>اعتماد</span></div></div></a>
-      <a class="person" href="employee.html?name=أمجد الشيخ"><div class="person-head"><div class="person-avatar">أ</div><div><div class="person-name">أمجد الشيخ</div><div class="person-role">شؤون موظفين وقانونية</div></div></div><div class="metrics"><div class="metric"><b style="color:#2563eb">12</b><span>مفتوحة</span></div><div class="metric"><b style="color:#dc2626">1</b><span>متأخرة</span></div><div class="metric"><b style="color:#d97706">2</b><span>اعتماد</span></div></div></a>
-      <a class="person" href="employee.html?name=صالح باصرة"><div class="person-head"><div class="person-avatar">ص</div><div><div class="person-name">صالح باصرة</div><div class="person-role">مشرف الشؤون الإدارية</div></div></div><div class="metrics"><div class="metric"><b style="color:#2563eb">17</b><span>مفتوحة</span></div><div class="metric"><b style="color:#dc2626">2</b><span>متأخرة</span></div><div class="metric"><b style="color:#d97706">3</b><span>اعتماد</span></div></div></a>
-    </div>
+    <div id="teamGrid" class="team-grid"></div>
   </section>
 
   <section class="team-bottom">
@@ -66,5 +61,20 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+
+<script type="module" id="teamFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+function s(){try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}}
+const me=s(),grid=document.getElementById('teamGrid');
+if(grid&&me?.uid){
+ try{
+  const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),db=getDatabase(app);
+  const snap=await get(ref(db,'users')),all=snap.exists()?Object.entries(snap.val()).map(([uid,v])=>({uid,...v})):[];
+  const members=me.role==='admin'?all.filter(u=>u.uid!==me.uid):all.filter(u=>u.managerUid===me.uid||u.managerUID===me.uid||u.managerId===me.uid);
+  grid.innerHTML=members.length?members.map(u=>`<a class="person" href="employee.html?uid=${encodeURIComponent(u.uid)}"><div class="person-head"><div class="person-avatar">${(u.name||u.email||'م').trim().charAt(0)}</div><div><div class="person-name">${u.name||u.email||'مستخدم'}</div><div class="person-role">${u.title||u.jobTitle||u.position||'—'}</div></div></div></a>`).join(''):'<div class="person"><div class="person-head"><div><div class="person-name">لا يوجد أعضاء فريق</div><div class="person-role">لا توجد بيانات مرتبطة بحسابك حالياً</div></div></div></div>';
+ }catch(e){grid.innerHTML='<div class="person"><div class="person-head"><div><div class="person-name">تعذر تحميل الفريق</div></div></div></div>'}
+}
+</script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+{
+  "version": "0.37.3",
+  "verdict": "READY",
+  "checks": {
+    "no_static_staff_runtime": true,
+    "no_broken_links": true,
+    "home_dynamic": true,
+    "team_dynamic": true,
+    "employee_dynamic": true,
+    "approvals_has_no_cards": true,
+    "admin_static_staff_absent": true
+  },
+  "remaining": [],
+  "broken": []
+}

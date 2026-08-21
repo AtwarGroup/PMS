@@ -32,7 +32,7 @@
 <main class="atwar-content">
 <div class="f-head"><div><h1>المتابعات</h1><p>للأمور التي تحتاج تذكيراً أو انتظار رد، ولا تستحق إنشاء مهمة كاملة.</p></div><button class="add-btn" onclick="openModal()">+ إضافة متابعة</button></div>
 <section id="followList" class="f-grid"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Follow-up</span><span>Prototype V0.21</span><span>بدون Firebase</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Follow-up</span><span>V0.37.4</span><span>Firebase Sync</span></footer>
 </main></section></div>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
@@ -46,26 +46,111 @@
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script>
-const s=getAtwarDemoSession?.()||{};
-const key='atwarFollowups_'+(s.email||'demo');
-let data=JSON.parse(localStorage.getItem(key)||'null')||[
- {id:1,title:'انتظار رد المورد على كشف الحساب',date:'2026-08-24',note:'تم إرسال المطابقة وننتظر تأكيد الفرق.',status:'wait'},
- {id:2,title:'متابعة إصدار الفاتورة',date:'2026-08-23',note:'التأكد من إصدار الفاتورة بعد استلام السداد.',status:'soon'}
-];
-function save(){localStorage.setItem(key,JSON.stringify(data))}
-function render(){
- const labels={wait:'بانتظار رد',soon:'متابعة قريبة',done:'مكتملة'};
- document.getElementById('followList').innerHTML=data.map(x=>`<article class="f-card"><div class="f-top"><div><div class="f-title">${x.title}</div><div class="f-meta">موعد المتابعة: ${x.date||'غير محدد'}</div></div><span class="pill ${x.status}">${labels[x.status]}</span></div><div class="f-note">${x.note||''}</div><div class="f-actions">${x.status!=='done'?`<button onclick="done(${x.id})">تمت المتابعة</button>`:''}<button onclick="removeF(${x.id})">حذف</button></div></article>`).join('');
- lucide.createIcons();
+<script type="module" id="followupsFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, set, update, remove, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+function getSession(){
+  try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
 }
-function openModal(){document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-function addFollow(){const t=document.getElementById('fTitle').value.trim();if(!t)return;data.unshift({id:Date.now(),title:t,date:document.getElementById('fDate').value,note:document.getElementById('fNote').value.trim(),status:'soon'});save();render();closeModal();document.getElementById('fTitle').value='';document.getElementById('fNote').value=''}
-function done(id){data=data.map(x=>x.id===id?{...x,status:'done'}:x);save();render()}
-function removeF(id){data=data.filter(x=>x.id!==id);save();render()}
-document.addEventListener('DOMContentLoaded',()=>{const q=document.querySelector('[data-global-search]');if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())})});
-render();lucide.createIcons();
+const session=getSession();
+let db=null;
+let followRef=null;
+let data=[];
+
+function safeText(v=''){
+  return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function render(){
+  const labels={wait:'بانتظار رد',soon:'متابعة قريبة',done:'مكتملة'};
+  const list=document.getElementById('followList');
+  if(!list)return;
+  if(!data.length){
+    list.innerHTML='<div style="background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:24px;text-align:center;color:#7b8aa5">لا توجد متابعات حالياً.</div>';
+  }else{
+    list.innerHTML=data.map(x=>`<article class="f-card">
+      <div class="f-top">
+        <div>
+          <div class="f-title">${safeText(x.title)}</div>
+          <div class="f-meta">موعد المتابعة: ${safeText(x.date||'غير محدد')}</div>
+        </div>
+        <span class="pill ${x.status||'soon'}">${labels[x.status]||'متابعة'}</span>
+      </div>
+      <div class="f-note">${safeText(x.note||'')}</div>
+      <div class="f-actions">
+        ${x.status!=='done'?`<button onclick="doneFollow('${x.id}')">تمت المتابعة</button>`:''}
+        <button onclick="removeFollow('${x.id}')">حذف</button>
+      </div>
+    </article>`).join('');
+  }
+  try{lucide.createIcons()}catch(e){}
+}
+
+async function initFollowups(){
+  if(!session?.uid){
+    location.href='../login.html';
+    return;
+  }
+  try{
+    const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+    db=getDatabase(app);
+    followRef=ref(db,`followUpsByUser/${session.uid}`);
+    onValue(followRef,snap=>{
+      const raw=snap.exists()?snap.val():{};
+      data=Object.entries(raw).map(([id,v])=>({id,...v}))
+        .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      render();
+    },err=>{
+      console.error('Follow-up listener failed',err);
+      const list=document.getElementById('followList');
+      if(list)list.innerHTML='<div style="padding:20px;text-align:center;color:#b42318">تعذر تحميل المتابعات.</div>';
+    });
+  }catch(e){
+    console.error('Unable to initialize follow-ups',e);
+  }
+}
+
+window.openModal=function(){document.getElementById('modal').classList.add('show')};
+window.closeModal=function(){document.getElementById('modal').classList.remove('show')};
+
+window.addFollow=async function(){
+  if(!followRef)return;
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title)return;
+  const itemRef=push(followRef);
+  await set(itemRef,{
+    title,
+    date:document.getElementById('fDate').value||'',
+    note:document.getElementById('fNote').value.trim(),
+    status:'soon',
+    createdAt:serverTimestamp(),
+    updatedAt:serverTimestamp()
+  });
+  document.getElementById('fTitle').value='';
+  document.getElementById('fDate').value='';
+  document.getElementById('fNote').value='';
+  window.closeModal();
+};
+
+window.doneFollow=async function(id){
+  if(!session?.uid||!id)return;
+  await update(ref(db,`followUpsByUser/${session.uid}/${id}`),{
+    status:'done',
+    updatedAt:serverTimestamp()
+  });
+};
+
+window.removeFollow=async function(id){
+  if(!session?.uid||!id)return;
+  await remove(ref(db,`followUpsByUser/${session.uid}/${id}`));
+};
+
+// Backward compatibility for any existing inline calls.
+window.done=window.doneFollow;
+window.removeF=window.removeFollow;
+
+document.addEventListener('DOMContentLoaded',initFollowups);
 </script>
 <script src="../assets/js/consolidation.js"></script>
 

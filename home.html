@@ -69,22 +69,9 @@
   <section id="homeTeamEvents" style="display:grid;grid-template-columns:2fr 1.15fr;gap:16px">
     <article class="home-card" data-role-min="manager">
       <div class="home-head"><h3><i data-lucide="users"></i> فريقي</h3><a href="team/index.html">عرض الفريق بالكامل</a></div>
-      <div class="team-mini-grid">
-        <div class="mini-member"><div class="mini-avatar">ف</div><div><b>فارس باجبير</b><small>محاسب أول</small></div><div class="mini-stats"><span><b>6</b> مفتوحة</span><span><b>1</b> متأخرة</span><span><b>1</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">أ</div><div><b>أسامة عبده</b><small>محاسب</small></div><div class="mini-stats"><span><b>8</b> مفتوحة</span><span><b>0</b> متأخرة</span><span><b>1</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">أ</div><div><b>أمجد الشيخ</b><small>شؤون موظفين وقانونية</small></div><div class="mini-stats"><span><b>12</b> مفتوحة</span><span><b>1</b> متأخرة</span><span><b>2</b> اعتماد</span></div></div>
-        <div class="mini-member"><div class="mini-avatar">ص</div><div><b>صالح باصرة</b><small>مشرف الشؤون الإدارية</small></div><div class="mini-stats"><span><b>17</b> مفتوحة</span><span><b>2</b> متأخرة</span><span><b>3</b> اعتماد</span></div></div>
-      </div>
-    </article>
-
-    <article class="home-card">
-      <div class="home-head"><h3><i data-lucide="calendar-range"></i> الفعاليات القادمة</h3></div>
-      <div class="home-body">
-        <div class="home-item"><div><b>اجتماع الإدارة المالية</b><small>10:00 ص • مناقشة التقارير الشهرية</small></div><span class="event-date">25<br><small>أغسطس</small></span></div>
-        <div class="home-item"><div><b>اجتماع تطوير الأعمال</b><small>02:00 م • مراجعة خطة العملاء الرئيسيين</small></div><span class="event-date">27<br><small>أغسطس</small></span></div>
-      </div>
-    </article>
-  </section>
+      <div id="homeTeamGrid" class="team-mini-grid">
+<div class="mini-member"><div><b>جاري تحميل الفريق...</b><small>يتم قراءة بيانات المستخدمين</small></div></div>
+</div></section>
 
   
   
@@ -123,5 +110,20 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+
+<script type="module" id="homeTeamFirebaseBinding">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+function s(){try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}}
+const me=s(),host=document.getElementById('homeTeamGrid');
+if(host&&me?.uid){
+ try{
+  const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),db=getDatabase(app);
+  const snap=await get(ref(db,'users')),all=snap.exists()?Object.entries(snap.val()).map(([uid,v])=>({uid,...v})):[];
+  const team=me.role==='admin'?all.filter(u=>u.uid!==me.uid):all.filter(u=>u.managerUid===me.uid||u.managerUID===me.uid||u.managerId===me.uid);
+  host.innerHTML=team.length?team.slice(0,4).map(u=>`<div class="mini-member"><div class="mini-avatar">${(u.name||u.email||'م').trim().charAt(0)}</div><div><b>${u.name||u.email||'مستخدم'}</b><small>${u.title||u.jobTitle||u.position||'—'}</small></div></div>`).join(''):'<div class="mini-member"><div><b>لا يوجد فريق مباشر</b><small>لا توجد بيانات مرتبطة بحسابك حالياً</small></div></div>';
+ }catch(e){host.innerHTML='<div class="mini-member"><div><b>تعذر تحميل الفريق</b><small>حاول تحديث الصفحة</small></div></div>'}
+}
+</script>
 </body>
 </html>

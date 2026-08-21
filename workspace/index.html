@@ -64,21 +64,72 @@
 </section>
 </div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Prototype V0.21</span><span>بدون Firebase</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.37.4</span><span>Firebase Sync</span></footer>
 </main></section></div>
 
-<script>
-function noteKey(){
- const s=getAtwarDemoSession?.();
- return 'atwarPersonalNote_'+(s?.email||'demo');
+<script type="module" id="workspaceFirebaseNotes">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+function getSession(){
+  try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
 }
-function loadNote(){document.getElementById('personalNote').value=localStorage.getItem(noteKey())||'';}
-function saveNote(){
- localStorage.setItem(noteKey(),document.getElementById('personalNote').value);
- const n=document.getElementById('savedNotice'); n.style.display='block'; setTimeout(()=>n.style.display='none',1800);
+const session=getSession();
+const noteInput=document.getElementById('personalNote');
+const savedNotice=document.getElementById('savedNotice');
+
+let db=null;
+let noteRef=null;
+let saving=false;
+
+function showNotice(text='تم الحفظ'){
+  if(!savedNotice)return;
+  savedNotice.textContent=text;
+  savedNotice.style.display='block';
+  setTimeout(()=>savedNotice.style.display='none',1800);
 }
-document.addEventListener('DOMContentLoaded',()=>setTimeout(loadNote,0));
-lucide.createIcons();
+
+async function initPersonalNote(){
+  if(!session?.uid){
+    location.href='../login.html';
+    return;
+  }
+  try{
+    const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+    db=getDatabase(app);
+    noteRef=ref(db,`notesByUser/${session.uid}/quickNote`);
+    const snap=await get(noteRef);
+    if(snap.exists()){
+      const value=snap.val();
+      noteInput.value=typeof value==='string'?value:(value?.text||'');
+    }else{
+      noteInput.value='';
+    }
+  }catch(e){
+    console.error('Unable to load personal note',e);
+    showNotice('تعذر تحميل الملاحظة');
+  }
+}
+
+window.saveNote=async function(){
+  if(!noteRef||saving)return;
+  saving=true;
+  try{
+    await set(noteRef,{
+      text:noteInput.value,
+      updatedAt:serverTimestamp()
+    });
+    showNotice('تم الحفظ في قاعدة البيانات');
+  }catch(e){
+    console.error('Unable to save personal note',e);
+    showNotice('تعذر الحفظ');
+  }finally{
+    saving=false;
+  }
+};
+
+document.addEventListener('DOMContentLoaded',initPersonalNote);
+try{lucide.createIcons()}catch(e){}
 </script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
