@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "target": "Firebase Realtime Database free-tier viability",
+  "principles": {
+    "load_only_needed_user_scope": true,
+    "notification_live_window": 50,
+    "no_root_database_listeners": true,
+    "no_runtime_full_database_cleanup": true,
+    "archive_or_cleanup_test_data_offline": true,
+    "do_not_duplicate_tasks_across_paths": true,
+    "keep_legacy_paths_read_only_until_migration_decision": true
+  },
+  "data_paths": {
+    "users": "active",
+    "tasksByUser": "primary production task store",
+    "createdTaskIndex": "secondary index for creator visibility",
+    "notificationsByUser": "live notifications, UI reads latest 50 only",
+    "financial_manager_tasks": "legacy - preserve, do not expand",
+    "tasks": "legacy - preserve until migration decision"
+  }
+}

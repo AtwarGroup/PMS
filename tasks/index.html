@@ -555,7 +555,7 @@
 -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, update, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, limitToLast, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -1197,14 +1197,31 @@ onAuthStateChanged(auth,async(user)=>{
       return;
     }
 
-    const usersSnap=await withTimeout(
-      get(ref(db,'users')),
-      8000
-    );
-
-    users=usersSnap.exists()
-      ? Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v}))
-      : [];
+    // Free-tier optimization:
+    // employee -> self only
+    // manager  -> self + direct team only (managerUid equals current manager uid)
+    // admin    -> all users, because admin tools genuinely require organization-wide scope
+    if(currentProfile.role==='employee'){
+      users=[currentProfile];
+    }else if(currentProfile.role==='manager'){
+      const teamQuery=query(
+        ref(db,'users'),
+        orderByChild('managerUid'),
+        equalTo(user.uid)
+      );
+      const teamSnap=await withTimeout(get(teamQuery),8000);
+      users=[currentProfile];
+      if(teamSnap.exists()){
+        for(const [uid,v] of Object.entries(teamSnap.val())){
+          if(uid!==user.uid)users.push({uid,...v});
+        }
+      }
+    }else{
+      const usersSnap=await withTimeout(get(ref(db,'users')),8000);
+      users=usersSnap.exists()
+        ? Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v}))
+        : [currentProfile];
+    }
 
     const me=users.find(u=>u.uid===user.uid);
     if(me)currentProfile=me;
@@ -1349,7 +1366,12 @@ function notificationPath(uid){return `notificationsByUser/${uid}`}
 function subscribeNotifications(){
   if(unsubscribeNotifications){try{unsubscribeNotifications()}catch{} unsubscribeNotifications=null;}
   if(!currentUser?.uid)return;
-  unsubscribeNotifications=onValue(ref(db,notificationPath(currentUser.uid)),snapshot=>{
+  const recentNotificationsQuery=query(
+    ref(db,notificationPath(currentUser.uid)),
+    orderByChild('createdAt'),
+    limitToLast(50)
+  );
+  unsubscribeNotifications=onValue(recentNotificationsQuery,snapshot=>{
     notifications=snapshot.exists()
       ?Object.entries(snapshot.val()).map(([key,v])=>({_key:key,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0))
       :[];

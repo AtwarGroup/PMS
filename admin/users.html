@@ -88,10 +88,10 @@ let editingId=null;
 let users=JSON.parse(localStorage.getItem(key)||'null')||[
  {id:1,name:'أحمد اليافعي',email:'ahmed@atwar.local',title:'الرئيس التنفيذي',role:'admin',status:'active',managerId:''},
  {id:2,name:'حمزة يوسف',email:'hamza@atwar.local',title:'المدير المالي',role:'manager',status:'active',managerId:1},
- {id:3,name:'أكرم يوسف',email:'manager@atwar.local',title:'رئيس الحسابات',role:'manager',status:'active',managerId:2},
+ {id:3,name:'أكرم يوسف',email:'—',title:'رئيس الحسابات',role:'manager',status:'active',managerId:2},
  {id:4,name:'فارس باجبير',email:'fares@atwar.local',title:'محاسب أول',role:'employee',status:'active',managerId:3},
  {id:5,name:'أسامة عبده',email:'osama@atwar.local',title:'محاسب',role:'employee',status:'active',managerId:3},
- {id:6,name:'محمد باسنبل',email:'employee@atwar.local',title:'موظف',role:'employee',status:'active',managerId:2}
+ {id:6,name:'محمد باسنبل',email:'—',title:'موظف',role:'employee',status:'active',managerId:2}
 ];
 function persist(){localStorage.setItem(key,JSON.stringify(users))}
 function roleLabel(r){return r==='admin'?'مدير النظام':r==='manager'?'مدير':'موظف'}

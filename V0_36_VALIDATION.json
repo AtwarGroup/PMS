@@ -1,0 +1,17 @@
+{
+  "version": "0.36",
+  "focus": "Firebase free-tier stabilization",
+  "removed_test_notifications_in_clean_candidate": 36,
+  "live_notification_window": 50,
+  "broken_local_links": 0,
+  "checks": {
+    "notification_query_is_limited": true,
+    "notification_query_ordered": true,
+    "clean_candidate_created": true,
+    "backup_source_untouched": true,
+    "proposed_rules_created": true,
+    "free_tier_policy_created": true
+  },
+  "rules_status": "PROPOSED_REVIEW_ONLY",
+  "live_database_mutated": false
+}
