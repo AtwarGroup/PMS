@@ -2141,6 +2141,13 @@ async function adminReopenCompletedTask(){
   renderDetails();
 }
 
+
+// Inline UI handlers used from HTML onclick attributes.
+// Module-scoped functions must be exported explicitly to window.
+window.adminReopenCompletedTask=adminReopenCompletedTask;
+window.returnTaskForCorrection=returnTaskForCorrection;
+window.approveSelectedTask=approveSelectedTask;
+
 async function updateSelectedField(f,v){await updateTaskField(selectedTask(),f,v)}
 async function toggleCompleteByKey(key){
   const task=tasks.find(t=>compositeKey(t)===key);if(!task)return;

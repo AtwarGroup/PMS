@@ -28,39 +28,33 @@
   </div>
 
   <section style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
-    <div class="dash-card"><div><div class="dash-num">18</div><b>مهام مكتملة</b><small>هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
-    <div class="dash-card"><div><div class="dash-num">6</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
-    <div class="dash-card"><div><div class="dash-num">1</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
-    <div class="dash-card" data-role-min="manager" onclick="location.href='approvals/index.html'" style="cursor:pointer"><div><div class="dash-num">2</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
+    <div class="dash-card"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small>هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
+    <div class="dash-card"><div><div id="homeStatOpen" class="dash-num">—</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
+    <div class="dash-card"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
+    <div class="dash-card" data-role-min="manager" onclick="location.href='tasks/index.html'" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
   </section>
 
   <section style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
     <article class="home-card">
       <div class="home-head"><h3 style="color:#5e34b8"><i data-lucide="notebook-pen"></i> ملاحظاتي</h3></div>
-      <div class="home-body">
-        <div class="note-entry"><i data-lucide="plus"></i><span>اكتب ملاحظة سريعة...</span></div>
-        <div class="home-item"><div><b>مراجعة عرض التأمين وتجديد البوليصة</b><small>قبل نهاية الأسبوع</small></div><i data-lucide="pin"></i></div>
-        <div class="home-item"><div><b>سؤال أكرم عن المطابقة مع المورد ABC</b><small>منذ ساعة</small></div><i data-lucide="pin"></i></div>
+      <div id="homeNotesBody" class="home-body">
+        <div class="home-item"><div><b>جاري تحميل ملاحظاتك...</b><small>من قاعدة البيانات</small></div></div>
       </div>
-      <a class="home-link" href="#">عرض جميع الملاحظات ‹</a>
+      <a class="home-link" href="workspace/index.html">فتح ملاحظاتي ‹</a>
     </article>
 
     <article class="home-card">
       <div class="home-head"><h3 style="color:#d23b40"><i data-lucide="circle-alert"></i> يحتاج انتباهي</h3></div>
-      <div class="home-body">
-        <div class="home-item" data-role-min="manager"><div><b>طلبات بانتظار اعتمادك</b><small>تحتاج إلى اعتمادك</small></div><strong class="warn">2</strong></div>
-        <div class="home-item"><div><b>مهمة متأخرة</b><small>مراجعة كشف حساب الموردين</small></div><strong class="danger">1</strong></div>
-        <div class="home-item"><div><b>تنبيه مهم</b><small>موعد استحقاق تأمين السيارات بعد 5 أيام</small></div><strong class="info">1</strong></div>
+      <div id="homeAttentionBody" class="home-body">
+        <div class="home-item"><div><b>جاري فحص المهام...</b><small>حسب صلاحيات حسابك</small></div></div>
       </div>
       <a class="home-link" href="tasks/index.html">عرض المهام ‹</a>
     </article>
 
     <article class="home-card">
       <div class="home-head"><h3 style="color:#156fd3"><i data-lucide="calendar-check-2"></i> مهامي اليوم</h3></div>
-      <div class="home-body">
-        <div class="home-item"><div><b>مراجعة سندات الصرف</b><small>الحسابات العامة</small></div><span class="time">09:00</span></div>
-        <div class="home-item"><div><b>إعداد تحليل المصروفات</b><small>التحليل المالي</small></div><span class="time">11:00</span></div>
-        <div class="home-item"><div><b>متابعة الموردين الجدد</b><small>إدارة المشتريات</small></div><span class="time">14:00</span></div>
+      <div id="homeTodayBody" class="home-body">
+        <div class="home-item"><div><b>جاري تحميل مهامك...</b><small>المهام الخاصة بحسابك</small></div></div>
       </div>
       <a class="home-link" href="tasks/index.html">عرض جميع المهام ‹</a>
     </article>
@@ -77,7 +71,7 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>Modular Prototype V0.21</span><span>بدون Firebase</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.37.6</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -111,19 +105,150 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
 
-<script type="module" id="homeTeamFirebaseBinding">
+
+
+<script type="module" id="homeFirebaseDashboard">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-function s(){try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}}
-const me=s(),host=document.getElementById('homeTeamGrid');
-if(host&&me?.uid){
- try{
-  const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),db=getDatabase(app);
-  const snap=await get(ref(db,'users')),all=snap.exists()?Object.entries(snap.val()).map(([uid,v])=>({uid,...v})):[];
-  const team=me.role==='admin'?all.filter(u=>u.uid!==me.uid):all.filter(u=>u.managerUid===me.uid||u.managerUID===me.uid||u.managerId===me.uid);
-  host.innerHTML=team.length?team.slice(0,4).map(u=>`<div class="mini-member"><div class="mini-avatar">${(u.name||u.email||'م').trim().charAt(0)}</div><div><b>${u.name||u.email||'مستخدم'}</b><small>${u.title||u.jobTitle||u.position||'—'}</small></div></div>`).join(''):'<div class="mini-member"><div><b>لا يوجد فريق مباشر</b><small>لا توجد بيانات مرتبطة بحسابك حالياً</small></div></div>';
- }catch(e){host.innerHTML='<div class="mini-member"><div><b>تعذر تحميل الفريق</b><small>حاول تحديث الصفحة</small></div></div>'}
+
+function getSession(){
+  try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
+}
+function esc(v=''){
+  return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function isoToday(){return new Date().toISOString().slice(0,10)}
+function isCompleted(t){return t?.status==='مكتملة'}
+function isOpen(t){return !isCompleted(t)}
+function delayDays(end,status){
+  if(!end||status==='مكتملة'||status==='بانتظار الاعتماد')return 0;
+  const e=new Date(end+'T23:59:59'), now=new Date();
+  return now>e?Math.max(1,Math.floor((now-e)/86400000)+1):0;
+}
+function completedThisMonth(t){
+  if(t?.status!=='مكتملة')return false;
+  const stamp=Number(t.approvedAt||t.completedAt||0);
+  if(stamp){
+    const d=new Date(stamp),n=new Date();
+    return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
+  }
+  if(t.actualEnd){
+    const d=new Date(t.actualEnd+'T00:00:00'),n=new Date();
+    return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
+  }
+  return false;
+}
+
+const me=getSession();
+if(!me?.uid){
+  location.href='login.html';
+}else{
+  try{
+    const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+    const db=getDatabase(app);
+
+    // Users are a small shared directory and are readable to authenticated users.
+    const usersSnap=await get(ref(db,'users'));
+    const users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v})):[];
+    const myProfile=users.find(u=>u.uid===me.uid)||me;
+
+    const directTeam=users.filter(u=>u.managerUid===me.uid||u.managerUID===me.uid||u.managerId===me.uid);
+    const visibleOwners=myProfile.role==='admin'
+      ? users.map(u=>u.uid)
+      : myProfile.role==='manager'
+        ? [me.uid,...directTeam.map(u=>u.uid)]
+        : [me.uid];
+
+    // Read only task buckets that current role can legitimately access.
+    const taskBuckets=await Promise.all(
+      [...new Set(visibleOwners)].map(async uid=>{
+        try{
+          const snap=await get(ref(db,`tasksByUser/${uid}`));
+          return snap.exists()?Object.entries(snap.val()).map(([key,v])=>({_key:key,_ownerUid:uid,...v})):[];
+        }catch{return []}
+      })
+    );
+    const visibleTasks=taskBuckets.flat();
+    const myTasks=visibleTasks.filter(t=>t._ownerUid===me.uid);
+
+    // Top stats are personal, except approval count which represents action required from this account.
+    document.getElementById('homeStatCompleted').textContent=myTasks.filter(completedThisMonth).length;
+    document.getElementById('homeStatOpen').textContent=myTasks.filter(isOpen).length;
+    document.getElementById('homeStatOverdue').textContent=myTasks.filter(t=>delayDays(t.end,t.status)>0).length;
+
+    const approvalTasks=visibleTasks.filter(t=>{
+      if(t.status!=='بانتظار الاعتماد'||t._ownerUid===me.uid)return false;
+      if(myProfile.role==='admin')return true;
+      const owner=users.find(u=>u.uid===t._ownerUid);
+      return myProfile.role==='manager' && owner?.managerUid===me.uid;
+    });
+    const approvalStat=document.getElementById('homeStatApproval');
+    if(approvalStat)approvalStat.textContent=approvalTasks.length;
+
+    // My notes: only current user's Firebase note.
+    const noteHost=document.getElementById('homeNotesBody');
+    try{
+      const noteSnap=await get(ref(db,`notesByUser/${me.uid}/quickNote`));
+      const raw=noteSnap.exists()?noteSnap.val():null;
+      const text=typeof raw==='string'?raw:(raw?.text||'');
+      noteHost.innerHTML=text.trim()
+        ? `<div class="home-item"><div><b>${esc(text.length>90?text.slice(0,90)+'…':text)}</b><small>محفوظة في ملاحظاتي</small></div><i data-lucide="pin"></i></div>`
+        : '<div class="home-item"><div><b>لا توجد ملاحظات محفوظة</b><small>أضف ملاحظة من صفحة ملاحظاتي</small></div></div>';
+    }catch{
+      noteHost.innerHTML='<div class="home-item"><div><b>تعذر تحميل الملاحظات</b><small>تحقق من صلاحيات Firebase</small></div></div>';
+    }
+
+    // My tasks today: only tasks assigned to the logged-in user.
+    const today=isoToday();
+    const todayTasks=myTasks
+      .filter(t=>t.status!=='مكتملة' && (t.start===today || t.end===today))
+      .slice(0,4);
+    const todayHost=document.getElementById('homeTodayBody');
+    todayHost.innerHTML=todayTasks.length
+      ? todayTasks.map(t=>`<div class="home-item"><div><b>${esc(t.title||'مهمة')}</b><small>${esc(t.status||'')}</small></div><span class="time">${t.end===today?'اليوم':'اليوم'}</span></div>`).join('')
+      : '<div class="home-item"><div><b>لا توجد مهام مستحقة اليوم</b><small>يعرض هذا القسم مهام حسابك فقط</small></div></div>';
+
+    // Attention: actual role-specific items only.
+    const attention=[];
+    if(approvalTasks.length){
+      attention.push(`<div class="home-item"><div><b>طلبات بانتظار اعتمادك</b><small>تحتاج إلى إجراء منك</small></div><strong class="warn">${approvalTasks.length}</strong></div>`);
+    }
+    const overdueMine=myTasks.filter(t=>delayDays(t.end,t.status)>0);
+    if(overdueMine.length){
+      attention.push(`<div class="home-item"><div><b>مهامك المتأخرة</b><small>تحتاج متابعة</small></div><strong class="danger">${overdueMine.length}</strong></div>`);
+    }
+    if(myProfile.role==='manager'||myProfile.role==='admin'){
+      const overdueTeam=visibleTasks.filter(t=>t._ownerUid!==me.uid && delayDays(t.end,t.status)>0);
+      if(overdueTeam.length){
+        attention.push(`<div class="home-item"><div><b>مهام متأخرة لدى الفريق</b><small>حسب نطاق صلاحيتك</small></div><strong class="danger">${overdueTeam.length}</strong></div>`);
+      }
+    }
+    document.getElementById('homeAttentionBody').innerHTML=attention.length
+      ? attention.join('')
+      : '<div class="home-item"><div><b>لا يوجد ما يحتاج انتباهك الآن</b><small>لا توجد عناصر فعلية تتطلب إجراء</small></div></div>';
+
+    // Team is also dynamic and role scoped.
+    const host=document.getElementById('homeTeamGrid');
+    if(host){
+      const team=myProfile.role==='admin'?directTeam:directTeam;
+      host.innerHTML=team.length
+        ? team.slice(0,4).map(u=>`<div class="mini-member"><div class="mini-avatar">${esc((u.name||u.email||'م').trim().charAt(0))}</div><div><b>${esc(u.name||u.email||'مستخدم')}</b><small>${esc(u.title||u.jobTitle||u.position||'—')}</small></div></div>`).join('')
+        : '<div class="mini-member"><div><b>لا يوجد فريق مباشر</b><small>لا توجد حسابات مرتبطة بك كمدير مباشر</small></div></div>';
+    }
+
+    try{lucide.createIcons()}catch(e){}
+  }catch(e){
+    console.error('Home dashboard Firebase error',e);
+    ['homeStatCompleted','homeStatOpen','homeStatOverdue','homeStatApproval'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.textContent='—';
+    });
+    const err='<div class="home-item"><div><b>تعذر تحميل البيانات</b><small>تحقق من الاتصال ثم أعد المحاولة</small></div></div>';
+    ['homeNotesBody','homeAttentionBody','homeTodayBody'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.innerHTML=err;
+    });
+  }
 }
 </script>
+
 </body>
 </html>
