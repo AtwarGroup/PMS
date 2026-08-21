@@ -1,0 +1,114 @@
+{
+  "version": "0.22",
+  "modules": [
+    {
+      "id": "home",
+      "path": "index.html",
+      "minRole": "employee",
+      "status": "prototype",
+      "navigation": "primary"
+    },
+    {
+      "id": "tasks",
+      "path": "tasks/index.html",
+      "minRole": "employee",
+      "status": "locked-original",
+      "navigation": "primary",
+      "locked": true
+    },
+    {
+      "id": "team",
+      "path": "team/index.html",
+      "minRole": "manager",
+      "status": "professional-prototype",
+      "navigation": "primary"
+    },
+    {
+      "id": "profile",
+      "path": "profile/index.html",
+      "minRole": "employee",
+      "status": "professional-baseline",
+      "navigation": "primary"
+    },
+    {
+      "id": "job-description",
+      "path": "profile/job-description.html",
+      "minRole": "employee",
+      "status": "prototype"
+    },
+    {
+      "id": "kpi",
+      "path": "profile/kpi.html",
+      "minRole": "employee",
+      "status": "prototype"
+    },
+    {
+      "id": "approvals",
+      "path": "approvals/index.html",
+      "minRole": "manager",
+      "status": "deprecated-v0.21",
+      "navigation": "hidden"
+    },
+    {
+      "id": "workspace",
+      "path": "workspace/index.html",
+      "minRole": "employee",
+      "status": "prototype",
+      "navigation": "primary",
+      "label": "ملاحظاتي"
+    },
+    {
+      "id": "notifications",
+      "path": "notifications/index.html",
+      "minRole": "employee",
+      "status": "prototype",
+      "navigation": "supporting"
+    },
+    {
+      "id": "search",
+      "path": "search/index.html",
+      "minRole": "employee",
+      "status": "prototype",
+      "navigation": "supporting"
+    },
+    {
+      "id": "organization",
+      "path": "organization/index.html",
+      "minRole": "employee",
+      "status": "deprecated-v0.21",
+      "navigation": "hidden"
+    },
+    {
+      "id": "follow-up",
+      "path": "follow-up/index.html",
+      "minRole": "employee",
+      "status": "prototype",
+      "navigation": "primary"
+    },
+    {
+      "id": "my-day",
+      "path": "my-day/index.html",
+      "minRole": "employee",
+      "status": "deprecated-v0.21",
+      "navigation": "hidden"
+    },
+    {
+      "id": "admin",
+      "path": "admin/index.html",
+      "minRole": "admin",
+      "status": "prototype"
+    },
+    {
+      "id": "users",
+      "path": "admin/users.html",
+      "minRole": "admin",
+      "status": "prototype"
+    },
+    {
+      "id": "roles",
+      "path": "admin/roles.html",
+      "minRole": "admin",
+      "status": "prototype"
+    }
+  ]
+}

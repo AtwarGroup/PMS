@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – إدارة المستخدمين</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.a-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.a-head h1{font-size:30px;margin:0}.a-head p{font-size:12px;color:#7b8aa5;margin:5px 0 0}
+.a-actions{display:flex;gap:8px}
+.a-actions button{border:0;background:#0b1d3a;color:#fff;border-radius:12px;padding:11px 15px;font-family:inherit;font-weight:900;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:15px}
+.stat b{font-size:24px;display:block}.stat span{font-size:10px;color:#7b8aa5}
+.toolbar{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:13px;display:flex;gap:10px;margin-bottom:12px}
+.toolbar input,.toolbar select{border:1px solid #dfe7f1;border-radius:11px;padding:10px 12px;font-family:inherit}
+.toolbar input{flex:1}
+.table{background:#fff;border:1px solid #e5edf6;border-radius:18px;overflow:hidden}
+.row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr .7fr;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid #edf2f7}
+.row:last-child{border:0}.row.head{background:#f8fafc;font-size:10px;font-weight:900;color:#738196}
+.user{display:flex;align-items:center;gap:10px}.avatar{width:38px;height:38px;border-radius:12px;background:#edf4ff;color:#176fd3;display:grid;place-items:center;font-weight:900}
+.name{font-size:12px;font-weight:900}.mail{font-size:9px;color:#8895a6;margin-top:3px}
+.badge{font-size:9px;font-weight:900;padding:6px 8px;border-radius:999px;display:inline-block}
+.employee{background:#f1f5f9;color:#475569}.manager{background:#eef6ff;color:#176fd3}.admin{background:#f3edff;color:#7846d1}
+.active{background:#edf9f3;color:#17805d}.inactive{background:#fff0f0;color:#c73b42}
+.edit-btn{border:1px solid #dce6f1;background:#fff;border-radius:9px;padding:7px 9px;font-family:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.modal{display:none;position:fixed;inset:0;background:rgba(8,20,38,.48);z-index:1000;place-items:center;padding:20px}
+.modal.show{display:grid}.box{width:min(580px,100%);background:#fff;border-radius:20px;padding:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-bottom:11px}.field label{display:block;font-size:10px;font-weight:900;margin-bottom:5px}.field input,.field select{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:10px;padding:10px;font-family:inherit}
+.box-actions{display:flex;justify-content:flex-end;gap:8px}.box-actions button{border:0;border-radius:9px;padding:9px 12px;font-family:inherit;font-weight:900;cursor:pointer}.save{background:#0b1d3a;color:#fff}.cancel{background:#eef2f7;color:#52647a}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}.row.head{display:none}.toolbar{flex-direction:column}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-min-role="admin">
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+<a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+<a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+<a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a href="../approvals/index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+<a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+<a class="active" href="users.html"><i data-lucide="users-cog"></i><span>إدارة المستخدمين</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div></aside>
+
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث في النظام..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
+</header>
+
+<main class="atwar-content">
+<div class="a-head"><div><h1>إدارة المستخدمين</h1><p>الحسابات والأدوار والعلاقات الإدارية في مكان واحد.</p></div><div class="a-actions"><button onclick="openModal()">+ إضافة مستخدم</button></div></div>
+
+<section class="stats">
+<div class="stat"><b id="statTotal">0</b><span>إجمالي المستخدمين</span></div>
+<div class="stat"><b id="statManagers">0</b><span>مديرون</span></div>
+<div class="stat"><b id="statEmployees">0</b><span>موظفون</span></div>
+<div class="stat"><b id="statActive">0</b><span>حسابات نشطة</span></div>
+</section>
+
+<section class="toolbar">
+<input id="searchUser" placeholder="بحث بالاسم أو البريد..." oninput="renderUsers()">
+<select id="roleFilter" onchange="renderUsers()"><option value="ALL">كل الأدوار</option><option value="employee">موظف</option><option value="manager">مدير</option><option value="admin">مدير النظام</option></select>
+<select id="statusFilter" onchange="renderUsers()"><option value="ALL">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option></select>
+</section>
+
+<section class="table">
+<div class="row head"><div>المستخدم</div><div>الدور</div><div>الحالة</div><div>المدير المباشر</div><div>إجراء</div></div>
+<div id="userRows"></div>
+</section>
+
+<footer class="atwar-footer"><span>ATWAR ONE • Users & Permissions</span><span>Prototype V0.18</span><span>بدون Firebase</span></footer>
+</main></section></div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
+<h3 style="margin-top:0">بيانات المستخدم</h3>
+<div class="grid2">
+<div class="field"><label>الاسم</label><input id="uName"></div>
+<div class="field"><label>البريد الإلكتروني</label><input id="uEmail" type="email"></div>
+<div class="field"><label>المسمى الوظيفي</label><input id="uTitle"></div>
+<div class="field"><label>الدور</label><select id="uRole"><option value="employee">موظف</option><option value="manager">مدير</option><option value="admin">مدير النظام</option></select></div>
+<div class="field"><label>المدير المباشر</label><select id="uManager"></select></div>
+<div class="field"><label>الحالة</label><select id="uStatus"><option value="active">نشط</option><option value="inactive">غير نشط</option></select></div>
+</div>
+<div class="box-actions"><button class="cancel" onclick="closeModal()">إلغاء</button><button class="save" onclick="saveUser()">حفظ</button></div>
+</div></div>
+
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+const key='atwarAdminUsers';
+let editingId=null;
+let users=JSON.parse(localStorage.getItem(key)||'null')||[
+ {id:1,name:'أحمد اليافعي',email:'ahmed@atwar.local',title:'الرئيس التنفيذي',role:'admin',status:'active',managerId:''},
+ {id:2,name:'حمزة يوسف',email:'hamza@atwar.local',title:'المدير المالي',role:'manager',status:'active',managerId:1},
+ {id:3,name:'أكرم يوسف',email:'manager@atwar.local',title:'رئيس الحسابات',role:'manager',status:'active',managerId:2},
+ {id:4,name:'فارس باجبير',email:'fares@atwar.local',title:'محاسب أول',role:'employee',status:'active',managerId:3},
+ {id:5,name:'أسامة عبده',email:'osama@atwar.local',title:'محاسب',role:'employee',status:'active',managerId:3},
+ {id:6,name:'محمد باسنبل',email:'employee@atwar.local',title:'موظف',role:'employee',status:'active',managerId:2}
+];
+function persist(){localStorage.setItem(key,JSON.stringify(users))}
+function roleLabel(r){return r==='admin'?'مدير النظام':r==='manager'?'مدير':'موظف'}
+function managerName(id){return users.find(u=>u.id==id)?.name||'—'}
+function renderUsers(){
+ const q=(document.getElementById('searchUser').value||'').trim().toLowerCase();
+ const rf=document.getElementById('roleFilter').value,sf=document.getElementById('statusFilter').value;
+ const rows=users.filter(u=>(!q||(u.name+' '+u.email).toLowerCase().includes(q))&&(rf==='ALL'||u.role===rf)&&(sf==='ALL'||u.status===sf));
+ document.getElementById('userRows').innerHTML=rows.map(u=>`<div class="row"><div class="user"><div class="avatar">${u.name[0]||'م'}</div><div><div class="name">${u.name}</div><div class="mail">${u.email}<br>${u.title||''}</div></div></div><div><span class="badge ${u.role}">${roleLabel(u.role)}</span></div><div><span class="badge ${u.status}">${u.status==='active'?'نشط':'غير نشط'}</span></div><div style="font-size:11px;font-weight:800">${managerName(u.managerId)}</div><div><button class="edit-btn" onclick="editUser(${u.id})">تعديل</button></div></div>`).join('');
+ document.getElementById('statTotal').textContent=users.length;
+ document.getElementById('statManagers').textContent=users.filter(u=>u.role==='manager').length;
+ document.getElementById('statEmployees').textContent=users.filter(u=>u.role==='employee').length;
+ document.getElementById('statActive').textContent=users.filter(u=>u.status==='active').length;
+ refreshManagers();
+}
+function refreshManagers(){
+ const sel=document.getElementById('uManager'); const current=sel.value;
+ sel.innerHTML='<option value="">بدون مدير مباشر</option>'+users.filter(u=>u.role==='manager'||u.role==='admin').map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+ sel.value=current;
+}
+function openModal(){editingId=null;['uName','uEmail','uTitle'].forEach(id=>document.getElementById(id).value='');document.getElementById('uRole').value='employee';document.getElementById('uStatus').value='active';refreshManagers();document.getElementById('uManager').value='';document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function editUser(id){const u=users.find(x=>x.id===id);if(!u)return;editingId=id;document.getElementById('uName').value=u.name;document.getElementById('uEmail').value=u.email;document.getElementById('uTitle').value=u.title||'';document.getElementById('uRole').value=u.role;document.getElementById('uStatus').value=u.status;refreshManagers();document.getElementById('uManager').value=u.managerId||'';document.getElementById('modal').classList.add('show')}
+function saveUser(){
+ const name=document.getElementById('uName').value.trim(),email=document.getElementById('uEmail').value.trim();if(!name||!email)return;
+ const val={name,email,title:document.getElementById('uTitle').value.trim(),role:document.getElementById('uRole').value,status:document.getElementById('uStatus').value,managerId:document.getElementById('uManager').value||''};
+ if(editingId){users=users.map(u=>u.id===editingId?{...u,...val}:u)}else{users.push({id:Date.now(),...val})}
+ persist();renderUsers();closeModal();
+}
+document.addEventListener('DOMContentLoaded',()=>{const q=document.querySelector('[data-global-search]');if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())})});
+renderUsers();lucide.createIcons();
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

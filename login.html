@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تسجيل الدخول | نظام أطوار</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:'Tajawal',sans-serif;background:#f4f7fb;min-height:100vh;color:#17233a}
+.page{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr}
+.visual{background:linear-gradient(135deg,#07182f,#0c274a 55%,#0d3562);color:#fff;padding:54px;display:flex;flex-direction:column;justify-content:center}
+.visual h1{font-size:42px;margin:0 0 16px}.visual p{color:#c4d1e2;line-height:1.9;max-width:600px}
+.login-wrap{display:grid;place-items:center;padding:30px}
+.card{width:min(440px,100%);background:#fff;border:1px solid #e3eaf3;border-radius:28px;padding:30px;box-shadow:0 22px 55px rgba(18,40,74,.1)}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:26px}.logo-mark{width:6px;height:46px;background:#1686f7;border-radius:20px}
+.logo h2{margin:0;font-size:25px}.logo p{margin:4px 0 0;color:#7c8aa1;font-size:12px}
+label{display:block;font-weight:800;font-size:13px;margin:14px 0 7px}
+input,select{width:100%;border:1px solid #dfe7f1;border-radius:13px;padding:13px 14px;font-family:inherit;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#6fb0ff;box-shadow:0 0 0 3px #e7f2ff}
+button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-radius:13px;padding:14px;font-family:inherit;font-weight:900;font-size:15px;cursor:pointer}
+.demo{margin-top:18px;background:#f7f9fc;border:1px solid #e5ebf3;border-radius:14px;padding:13px;font-size:11px;color:#68768d;line-height:1.8}
+.error{display:none;margin-top:12px;background:#fff0f0;color:#c93c42;border:1px solid #ffd1d1;border-radius:12px;padding:10px;font-size:12px;font-weight:800}
+.back{display:inline-flex;margin-top:18px;color:#367cd3;text-decoration:none;font-size:12px;font-weight:800}
+@media(max-width:900px){.page{grid-template-columns:1fr}.visual{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+<section class="visual">
+  <div style="width:70px;height:70px;border-radius:22px;background:linear-gradient(135deg,#1476e8,#25a8ff);display:grid;place-items:center;margin-bottom:24px"><i data-lucide="building-2" style="width:34px;height:34px"></i></div>
+  <h1>نظام أطوار</h1>
+  <p>سجّل الدخول بحسابك المؤسسي. بعد التحقق من المستخدم سيتم عرض الواجهة والوظائف المناسبة حسب دورك وصلاحياتك.</p>
+</section>
+
+<section class="login-wrap">
+  <div class="card">
+    <div class="logo"><div class="logo-mark"></div><div><h2>تسجيل الدخول</h2><p>ATWAR ONE • نظام أطوار</p></div></div>
+
+    <label>البريد الإلكتروني</label>
+    <input id="email" type="email" placeholder="name@tiradorstores.com">
+
+    <label>كلمة المرور</label>
+    <input id="password" type="password" placeholder="••••••••">
+<button onclick="loginDemo()">دخول</button>
+    <div id="error" class="error">يرجى إدخال البريد الإلكتروني وكلمة المرور.</div>
+
+    <div class="demo">
+      <b>حسابات الاختبار:</b><br>
+      موظف: employee@atwar.local &nbsp; / &nbsp; 123456<br>
+      مدير: manager@atwar.local &nbsp; / &nbsp; 123456<br>
+      مدير النظام: admin@atwar.local &nbsp; / &nbsp; 123456<br><br>
+      في النسخة النهائية سيتم استبدال هذه الحسابات بـ Firebase Authentication وملف المستخدم الحقيقي.
+    </div>
+
+    <div style="margin-top:12px;font-size:11px;color:#7b8aa5;line-height:1.7">بعد تسجيل الدخول سيتم توجيهك تلقائياً إلى الصفحة الأنسب لدورك.</div>
+<a href="landing.html" class="back">← العودة إلى صفحة البداية</a>
+  </div>
+</section>
+</div>
+<script src="assets/js/roles-config.js"></script>
+<script src="assets/js/start-page-config.js"></script>
+<script>
+function loginDemo(){
+  const email=document.getElementById('email').value.trim().toLowerCase();
+  const password=document.getElementById('password').value.trim();
+  const account=(window.ATWAR_DEMO_ACCOUNTS||{})[email];
+  if(!account || account.password!==password){
+    const error=document.getElementById('error');
+    error.textContent='بيانات الدخول غير صحيحة.';
+    error.style.display='block';
+    return;
+  }
+
+  localStorage.setItem('atwarDemoSession',JSON.stringify({
+    email,
+    role:account.role,
+    name:account.name,
+    title:account.title,
+    permissions:account.permissions
+  }));
+
+  location.href=(window.ATWAR_START_PAGE||{})[account.role]||'index.html';
+}
+lucide.createIcons();
+</script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body>
+</html>

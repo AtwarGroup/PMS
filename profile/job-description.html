@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الوصف الوظيفي</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script><link rel="stylesheet" href="../assets/css/shared.css"><style>.box{background:#fff;border:1px solid #e6edf5;border-radius:20px;padding:22px;margin-bottom:16px;box-shadow:0 5px 14px rgba(20,45,80,.045)}.box h3{margin-top:0}.duty{padding:14px;border-right:4px solid #1677ff;background:#f8fbff;border-radius:12px;margin:10px 0;line-height:1.8}</style></head><body>
+<div class="atwar-shell">
+  <aside class="atwar-sidebar">
+    <div class="atwar-brand">
+      <h1>ATWAR ONE</h1>
+      <p>نظام إدارة الأداء المؤسسي</p>
+    </div>
+    <nav class="atwar-nav">
+      <a class="" href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+      <a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+      <a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+      <a class="" href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+      <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+      <a class="" data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+      <a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+      <a class="active" href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+      <a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+    </nav>
+    <div class="atwar-spacer"></div>
+    <div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none">
+      <i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span>
+    </a>
+      <a class="atwar-side-link" data-role-min="admin" href="../admin/index.html" style="text-decoration:none"><i data-lucide="settings"></i><span>إدارة النظام</span></a>
+      <div class="atwar-side-link"><i data-lucide="circle-help"></i><span>الدعم والمساعدة</span></div>
+      <div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+    </div>
+  </aside>
+  <section class="atwar-main">
+    <header class="atwar-topbar">
+      <div class="atwar-top-brand">
+        <div class="atwar-brand-mark"></div>
+        <div class="atwar-org-title">
+          <h2>نظام إدارة الأداء المؤسسي</h2>
+          <p>مؤسسة أطوار للتجارة</p>
+        </div>
+        <div class="atwar-pm-label">Performance Management<br>System</div>
+      </div>
+      <div class="atwar-top-actions">
+        <div class="atwar-search">
+          <i data-lucide="search"></i>
+          <input data-global-search type="text" placeholder="ابحث في المهام، الموظفين، المستندات...">
+        </div>
+        <a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a>
+        <div class="atwar-user">
+          <div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div>
+          <div class="atwar-avatar">أ</div>
+        </div>
+      </div>
+    </header>
+<main class="atwar-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div><h1 style="margin:0;font-size:28px">الوصف الوظيفي</h1><p style="color:#7b8aa5;font-weight:700">رئيس الحسابات</p></div><a href="index.html" style="text-decoration:none;color:#1677ff;font-weight:900">← العودة للملف الوظيفي</a></div><section class="box"><h3>الهدف من الوظيفة</h3><p style="line-height:1.9;color:#55657c">الإشراف على العمليات المحاسبية اليومية وضمان دقة التسجيلات والتسويات والمطابقات ومتابعة التزام الفريق بالإجراءات والسياسات المالية المعتمدة.</p></section><section class="box"><h3>المسؤوليات الرئيسية</h3><div class="duty">مراجعة القيود اليومية والتسويات المحاسبية.</div><div class="duty">متابعة المطابقات البنكية ومطابقات الموردين والعملاء.</div><div class="duty">الإشراف على إقفال الفترات المالية الشهرية.</div><div class="duty">متابعة أداء فريق الحسابات وتوزيع الأعمال.</div></section></main>
+  </section>
+</div>
+<script src="../assets/js/shared.js"></script>
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const s=document.querySelector('[data-global-search]');
+ if(s) s.addEventListener('keydown',e=>{
+   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
+ });
+});
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body>
+</html>

@@ -1,0 +1,87 @@
+
+:root{
+  --navy:#0b1d3a;
+  --navy2:#10274b;
+  --blue:#1677ff;
+  --bg:#f5f8fc;
+  --card:#ffffff;
+  --line:#e6edf5;
+  --text:#15233b;
+  --muted:#7b8aa5;
+  --green:#139c68;
+  --red:#df3f44;
+  --orange:#e58a13;
+  --purple:#7747d6;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+body{min-height:100vh}
+.atwar-shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.atwar-sidebar{
+  background:linear-gradient(180deg,#0c2342,#0b1d3a 60%,#0a1a33);
+  color:#fff;padding:20px 18px;display:flex;flex-direction:column;gap:14px;
+  position:sticky;top:0;height:100vh
+}
+.atwar-brand{padding:8px 10px 22px;border-bottom:1px solid rgba(255,255,255,.08)}
+.atwar-brand h1{margin:0;font-size:23px;font-weight:900}
+.atwar-brand p{margin:5px 0 0;color:#cbd7e8;font-size:12px}
+.atwar-nav{display:flex;flex-direction:column;gap:7px}
+.atwar-nav a{
+  display:flex;align-items:center;gap:12px;text-decoration:none;color:#e9f0f8;
+  padding:13px 14px;border-radius:12px;font-weight:800
+}
+.atwar-nav a:hover{background:rgba(255,255,255,.07)}
+.atwar-nav a.active{
+  background:linear-gradient(135deg,#1567d8,#2188ff);
+  box-shadow:0 8px 20px rgba(22,119,255,.22)
+}
+.atwar-nav i{width:20px;height:20px}
+.atwar-spacer{flex:1}
+.atwar-side-section{border-top:1px solid rgba(255,255,255,.09);padding-top:14px}
+.atwar-side-link{display:flex;align-items:center;gap:10px;padding:11px 12px;color:#dbe5f2;font-size:13px;font-weight:700}
+.atwar-side-link.logout{color:#ff7474}
+.atwar-main{min-width:0}
+.atwar-topbar{
+  height:96px;background:linear-gradient(90deg,#0b1d3a,#0a2342);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;padding:0 30px;gap:20px
+}
+.atwar-top-brand{display:flex;align-items:center;gap:18px}
+.atwar-brand-mark{width:6px;height:52px;border-radius:20px;background:#15a8ff}
+.atwar-org-title h2{margin:0;font-size:23px;font-weight:900}
+.atwar-org-title p{margin:4px 0 0;color:#d3deeb;font-size:13px}
+.atwar-pm-label{color:#19a7ff;font-weight:800;font-style:italic;font-size:12px;line-height:1.3}
+.atwar-top-actions{display:flex;align-items:center;gap:14px}
+.atwar-search{width:340px;position:relative}
+.atwar-search input{
+  width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);color:#fff;
+  padding:12px 42px 12px 14px;border-radius:12px;font-family:inherit
+}
+.atwar-search input::placeholder{color:#aebbd0}
+.atwar-search i{position:absolute;right:14px;top:12px;width:18px}
+.atwar-bell{position:relative;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.07)}
+.atwar-badge{position:absolute;top:-3px;left:-3px;background:#ef4444;color:#fff;border-radius:20px;min-width:20px;height:20px;display:grid;place-items:center;font-size:10px;font-weight:900}
+.atwar-user{display:flex;align-items:center;gap:10px}
+.atwar-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#eef4fb;color:#0b1d3a;font-weight:900;border:3px solid rgba(255,255,255,.3)}
+.atwar-user-name{font-weight:900;font-size:15px}
+.atwar-user-role{font-size:11px;color:#c9d5e5;margin-top:2px}
+.atwar-content{padding:26px 28px 18px;max-width:1600px;margin:auto}
+.atwar-footer{margin-top:18px;color:#7d8aa0;font-size:11px;display:flex;justify-content:space-between;padding:12px 4px}
+@media(max-width:1200px){
+  .atwar-shell{grid-template-columns:88px 1fr}
+  .atwar-sidebar .atwar-brand h1,.atwar-sidebar .atwar-brand p,.atwar-nav span,.atwar-side-link span{display:none}
+  .atwar-sidebar{padding:18px 12px}.atwar-nav a,.atwar-side-link{justify-content:center}
+}
+@media(max-width:850px){
+  .atwar-search{display:none}.atwar-topbar{padding:0 16px}.atwar-content{padding:18px 14px}
+}
+
+.atwar-copyright{
+  width:100%;
+  box-sizing:border-box;
+  text-align:center;
+  padding:8px 12px 10px;
+  font-size:10px;
+  font-weight:600;
+  color:#8a98aa;
+  line-height:1.5;
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.23-pre-deploy",
+  "status": "PASS",
+  "tasks_locked_byte_identical": true,
+  "tasks_sha256": "4492d76579d09ac647b5bc234d349097bc9fad604782a2ee57666e4e938a4aec",
+  "missing_required_files": [],
+  "broken_local_links": [],
+  "portal_checks": {
+    "نظام أطوار": true,
+    "ZenHR": true,
+    "Odoo": true
+  },
+  "home_nav_checks": {
+    "الرئيسية": true,
+    "المهام": true,
+    "ملاحظاتي": true,
+    "المتابعات": true,
+    "الفريق": true,
+    "ملفي الوظيفي": true
+  },
+  "home_removed_sections": {
+    "ملاحظاتي السريعة": true,
+    "أدوات العمل": true
+  }
+}

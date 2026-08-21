@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – ملاحظاتي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.ws-head h1{font-size:30px;margin:0}.ws-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
+.ws-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
+.ws-card{background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:18px;box-shadow:0 5px 16px rgba(20,45,80,.04)}
+.ws-card h3{margin:0 0 14px;font-size:16px}
+.note-input{width:100%;min-height:145px;border:1px solid #e2e8f0;border-radius:15px;padding:14px;font-family:inherit;font-size:13px;resize:vertical;outline:none;background:#fffdf4}
+.note-actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.note-actions small{color:#8a96a8}.note-actions button{border:0;background:#0b1d3a;color:#fff;padding:9px 13px;border-radius:10px;font-family:inherit;font-weight:900;cursor:pointer}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick a{text-decoration:none;background:#f7faff;border:1px solid #e1ebf7;border-radius:14px;padding:15px;color:#263a55}
+.quick b{display:block;font-size:13px;margin-top:8px}.quick small{color:#7a899e;font-size:10px}
+.today-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf2f7}
+.today-row:last-child{border-bottom:0}.today-row b{font-size:12px}.today-row span{font-size:10px;color:#74849b}
+.notice{display:none;margin-top:10px;background:#edf9f3;color:#187655;border-radius:10px;padding:9px;font-size:11px;font-weight:800}
+@media(max-width:900px){.ws-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+<a class="active" href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>ملاحظاتي</span></a>
+<a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<a class="atwar-side-link" data-role-min="admin" href="../admin/index.html" style="text-decoration:none"><i data-lucide="settings"></i><span>إدارة النظام</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div>
+</aside>
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
+</header>
+<main class="atwar-content">
+<div class="ws-head"><div><h1>ملاحظاتي</h1><p>مساحة شخصية سريعة لتنظيم يومك دون تعقيد نظام المهام الرسمي.</p></div></div>
+
+<div class="ws-grid">
+<section class="ws-card">
+<h3><i data-lucide="sticky-note" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
+<textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل سريعة، فكرة، رقم متابعة أو شيء تريد تذكره..."></textarea>
+<div class="note-actions"><small>ملاحظة شخصية في الـPrototype</small><button onclick="saveNote()">حفظ الملاحظة</button></div>
+<div id="savedNotice" class="notice">تم حفظ الملاحظة على هذا الجهاز.</div>
+</section>
+
+<section class="ws-card">
+<h3>وصول سريع</h3>
+<div class="quick">
+<a href="../tasks/index.html"><i data-lucide="list-checks"></i><b>مهامي</b><small>فتح قائمة المهام</small></a>
+<a href="../profile/index.html"><i data-lucide="contact"></i><b>ملفي الوظيفي</b><small>بياناتي الوظيفية</small></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><b>فريقي</b><small>متابعة الفريق</small></a>
+<a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><b>اعتماداتي</b><small>ما يحتاج قرارك</small></a>
+</div>
+</section>
+
+<section class="ws-card">
+<h3>اليوم</h3>
+<div class="today-row"><div><b>مراجعة المهام المفتوحة</b><br><span>6 مهام حالية</span></div><i data-lucide="chevron-left"></i></div>
+<div class="today-row" data-role-min="manager"><div><b>طلبات تحتاج اعتمادك</b><br><span>2 بانتظار القرار</span></div><i data-lucide="chevron-left"></i></div>
+<div class="today-row"><div><b>مراجعة مؤشرات الأداء</b><br><span>آخر تحديث متاح</span></div><i data-lucide="chevron-left"></i></div>
+</section>
+
+<section class="ws-card">
+<h3>فكرة مساحة عملي</h3>
+<p style="font-size:12px;line-height:1.9;color:#607087;margin:0">هذه الصفحة ليست بديلاً عن المهام. هي مساحة شخصية خفيفة تجمع الملاحظات والوصول السريع وما يحتاج انتباه المستخدم خلال يومه.</p>
+</section>
+</div>
+
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Prototype V0.21</span><span>بدون Firebase</span></footer>
+</main></section></div>
+
+<script>
+function noteKey(){
+ const s=getAtwarDemoSession?.();
+ return 'atwarPersonalNote_'+(s?.email||'demo');
+}
+function loadNote(){document.getElementById('personalNote').value=localStorage.getItem(noteKey())||'';}
+function saveNote(){
+ localStorage.setItem(noteKey(),document.getElementById('personalNote').value);
+ const n=document.getElementById('savedNotice'); n.style.display='block'; setTimeout(()=>n.style.display='none',1800);
+}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(loadNote,0));
+lucide.createIcons();
+</script>
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const s=document.querySelector('[data-global-search]');
+ if(s) s.addEventListener('keydown',e=>{
+   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
+ });
+});
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

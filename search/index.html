@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – البحث</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.search-hero{max-width:850px;margin:12px auto 28px;text-align:center}
+.search-hero h1{font-size:30px;margin:0 0 7px}.search-hero p{font-size:12px;color:#7b8aa5}
+.big-search{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dfe8f2;border-radius:18px;padding:5px 15px;margin-top:18px;box-shadow:0 8px 25px rgba(20,45,80,.06)}
+.big-search input{border:0;outline:0;width:100%;padding:14px 5px;font-family:inherit;font-size:14px}
+.result{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:16px;margin-bottom:10px;display:flex;gap:13px;align-items:center;text-decoration:none;color:inherit}
+.result:hover{border-color:#bfd9f8}.r-icon{width:42px;height:42px;border-radius:13px;background:#eef6ff;color:#1677ff;display:grid;place-items:center;flex:none}
+.r-title{font-weight:900;font-size:14px}.r-meta{font-size:10px;color:#8a97a8;margin-top:4px}.empty{text-align:center;padding:50px;color:#8b98aa}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+      <a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+<a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+      <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+      <a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div></aside>
+
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions">
+<div class="atwar-search"><i data-lucide="search"></i><input id="topSearch" placeholder="ابحث في النظام..."></div>
+<a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a>
+<div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div>
+</div></header>
+
+<main class="atwar-content">
+<section class="search-hero">
+<h1>البحث في ATWAR ONE</h1>
+<p>ابحث عن مهمة، موظف، وصف وظيفي، مؤشر أداء أو صفحة داخل النظام.</p>
+<div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
+</section>
+<section id="results"></section>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>Prototype V0.12</span><span>بدون Firebase</span></footer>
+</main></section></div>
+
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+const items=[
+ {title:'مهامي',meta:'المهام • قائمة المهام',icon:'square-check-big',href:'../tasks/index.html',min:'employee',keys:'مهمة مهام task'},
+ {title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',min:'employee',keys:'وظيفة ملف وصف وظيفي'},
+ {title:'مؤشرات الأداء',meta:'KPI • الملف الوظيفي',icon:'chart-no-axes-combined',href:'../profile/kpi.html',min:'employee',keys:'مؤشر مؤشرات أداء kpi'},
+ {title:'ملاحظاتي',meta:'ملاحظات شخصية',icon:'notebook-pen',href:'../workspace/index.html',min:'employee',keys:'ملاحظات sticky note عملي'},
+ {title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',min:'manager',keys:'فريق موظفين موظف'},
+ {title:'فارس باجبير',meta:'الفريق • محاسب أول',icon:'user',href:'../team/employee.html?name=فارس%20باجبير',min:'manager',keys:'فارس باجبير محاسب'},
+ {title:'أسامة عبده',meta:'الفريق • محاسب',icon:'user',href:'../team/employee.html?name=أسامة%20عبده',min:'manager',keys:'اسامة أسامة عبده محاسب'}
+];
+const rank={employee:1,manager:2,admin:3};
+const session=getAtwarDemoSession?.()||{role:'employee'};
+function render(q=''){
+ q=q.trim().toLowerCase();
+ const allowed=items.filter(x=>rank[session.role]>=rank[x.min]);
+ const rows=q?allowed.filter(x=>(x.title+' '+x.meta+' '+x.keys).toLowerCase().includes(q)):[];
+ document.getElementById('results').innerHTML=!q
+ ?'<div class="empty">ابدأ بكتابة كلمة البحث.</div>'
+ :rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${x.title}</div><div class="r-meta">${x.meta}</div></div></a>`).join('')
+ :'<div class="empty">لم يتم العثور على نتائج مطابقة.</div>';
+ lucide.createIcons();
+}
+const input=document.getElementById('query');
+input.addEventListener('input',e=>render(e.target.value));
+document.getElementById('topSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){input.value=e.target.value;render(e.target.value);input.focus()}});
+const q=new URLSearchParams(location.search).get('q')||''; input.value=q; render(q);
+lucide.createIcons();
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

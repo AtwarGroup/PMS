@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATWAR ONE – ملفي الوظيفي</title>
+    
+    <!-- خط تجوال ليعطي مظهراً احترافياً للغة العربية -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- ExcelJS & FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background-color: white !important;
+            }
+            @page {
+                size: A4 landscape;
+                margin: 1.5cm;
+            }
+            ::-webkit-scrollbar { display: none; }
+        }
+        /* إخفاء شريط التمرير في شريط التنقل العلوي */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] print:bg-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const App = () => {
+          const [activeTab, setActiveTab] = useState('dashboard');
+          const [selectedReport, setSelectedReport] = useState(null);
+          const [isExporting, setIsExporting] = useState(false);
+          const reportViewRef = useRef(null);
+
+          useEffect(() => {
+            if (selectedReport && activeTab === 'reports' && reportViewRef.current) {
+              setTimeout(() => {
+                const offset = 120;
+                const bodyRect = document.body.getBoundingClientRect().top;
+                const elementRect = reportViewRef.current.getBoundingClientRect().top;
+                const elementPosition = elementRect - bodyRect;
+                
+                window.scrollTo({
+                  top: elementPosition - offset,
+                  behavior: "smooth"
+                });
+              }, 100);
+            }
+          }, [selectedReport, activeTab]);
+
+          const handleExportToExcel = async (report) => {
+            if (!report) return;
+            setIsExporting(true);
+            
+            try {
+              const workbook = new ExcelJS.Workbook();
+              workbook.creator = "الإدارة المالية";
+              
+              const worksheet = workbook.addWorksheet(report.name, {
+                  views: [{ rightToLeft: true }]
+              });
+
+              const columns = [{ header: '#', key: 'id', width: 8 }];
+              report.fields.forEach((field, index) => {
+                  columns.push({ header: field, key: `col_${index}`, width: 28 });
+              });
+              worksheet.columns = columns;
+
+              const headerRow = worksheet.getRow(1);
+              headerRow.height = 35;
+              headerRow.eachCell((cell) => {
+                  cell.fill = {
+                      type: 'pattern',
+                      pattern: 'solid',
+                      fgColor: { argb: 'FFE0F2FE' }
+                  };
+                  cell.font = {
+                      name: 'Arial',
+                      size: 11,
+                      bold: true,
+                      color: { argb: 'FF0369A1' }
+                  };
+                  cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                  cell.border = {
+                      top: { style: 'thin', color: { argb: 'FFBAE6FD' } },
+                      left: { style: 'thin', color: { argb: 'FFBAE6FD' } },
+                      bottom: { style: 'thin', color: { argb: 'FFBAE6FD' } },
+                      right: { style: 'thin', color: { argb: 'FFBAE6FD' } }
+                  };
+              });
+
+              [1, 2, 3, 4, 5].forEach(num => {
+                  const rowData = { id: num };
+                  report.fields.forEach((_, index) => {
+                      rowData[`col_${index}`] = '-';
+                  });
+                  const row = worksheet.addRow(rowData);
+                  row.height = 28;
+                  
+                  row.eachCell((cell, colNumber) => {
+                      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                      if (colNumber === 1) {
+                        cell.font = { bold: true, color: { argb: 'FF64748B' }};
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' }};
+                      }
+                      cell.border = {
+                          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+                      };
+                  });
+              });
+
+              const buffer = await workbook.xlsx.writeBuffer();
+              const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              saveAs(blob, `${report.name}.xlsx`);
+              
+            } catch (error) {
+              console.error("خطأ أثناء التصدير: ", error);
+              alert("حدث خطأ أثناء تصدير الملف.");
+            } finally {
+              setIsExporting(false);
+            }
+          };
+
+          const Icon = ({ name, className }) => {
+            const spanRef = useRef(null);
+            useEffect(() => {
+              if (spanRef.current) {
+                spanRef.current.innerHTML = `<i data-lucide="${name}" class="${className || ''}"></i>`;
+                lucide.createIcons({ root: spanRef.current });
+              }
+            }, [name, className]);
+            return <span ref={spanRef} style={{ display: 'contents' }}></span>;
+          };
+
+          const employeeName = "حمزة يوسف عبدالله المزهري"; 
+          const employeeId = "1196";
+          const jobTitle = "المدير المالي";
+          
+          const hierarchyInfo = {
+            dependency: "الإدارة المالية",
+            supervisor: "الرئيس التنفيذي"
+          };
+
+          const jobDescriptionExact = "قيادة الإدارة المالية للمؤسسة بما يضمن سلامة المركز المالي، وتعزيز الرقابة الداخلية، وإدارة الموارد المالية بكفاءة، وتوفير معلومات مالية دقيقة وفي الوقت المناسب لدعم اتخاذ القرار، وضمان الالتزام بالأنظمة واللوائح والسياسات المعتمدة، وتحقيق الاستدامة المالية للمؤسسة.";
+
+          const jobData = [
+            {
+              id: 'daily',
+              frequency: 'متابعة جارية',
+              tag: 'قيادة وإشراف',
+              duty: 'الإشراف على التدفقات النقدية وضمان توفر السيولة التشغيلية، قيادة وتوجيه فريق الإدارة المالية، والتأكد من سلامة الدورة المستندية والالتزام بالأنظمة والصلاحيات المعتمدة.',
+              reports: ['موقف السيولة النقدية (Cash Position)', 'ملخص القيود والحركات اليومية'],
+              kpis: ['ضمان توفر السيولة التشغيلية دون عجز، دقة واعتماد العمليات المحاسبية.'],
+              color: 'sky'
+            },
+            {
+              id: 'weekly',
+              frequency: 'تنسيق ورقابة',
+              tag: 'رقابة',
+              duty: 'متابعة إدارة الذمم المدينة والدائنة وتحسين دورة التحصيل والسداد، المطابقة الدورية للحسابات البنكية والصناديق، ومتابعة معالجة الفروقات والملاحظات.',
+              reports: ['تقرير المطابقات البنكية والصناديق', 'تقرير أعمار الديون والتحصيل'],
+              kpis: ['نسبة مطابقة الصناديق والحسابات البنكية (100%)، تحسين أيام دوران الذمم.'],
+              color: 'blue'
+            },
+            {
+              id: 'monthly',
+              frequency: 'إغلاق وتحليل',
+              tag: 'تحليل',
+              duty: 'إدارة الإقفال المالي الشهري، مراجعة واعتماد القوائم والتقارير المالية، تحليل الأداء والموازنة، والإشراف على نتائج الرقابة والامتثال النظامي.',
+              reports: ['التقرير التنفيذي المالي', 'تقرير الأداء المالي الشهري', 'تقرير الرقابة الداخلية والامتثال', 'تقرير متابعة الملاحظات المالية'],
+              kpis: ['الالتزام بالإقفال وإصدار التقارير (100%)، إغلاق الملاحظات الرقابية (≥90%).'],
+              color: 'indigo'
+            },
+            {
+              id: 'yearly',
+              frequency: 'تخطيط استراتيجي',
+              tag: 'تطوير',
+              duty: 'إعداد الموازنة السنوية، الإشراف على القوائم الختامية والإقرارات الزكوية، التنسيق مع المراجعين، تطوير السياسات المالية، وتقييم وتطوير أداء الفريق.',
+              reports: ['القوائم المالية السنوية المدققة', 'تقرير الموازنة السنوية', 'تقرير الجرد والتسويات'],
+              kpis: ['دقة البيانات المالية (صفر أخطاء)، تنفيذ خطة الجرد السنوية (100%).'],
+              color: 'emerald'
+            }
+          ];
+
+          const reportModels = {
+            'daily': [
+              { name: 'موقف السيولة النقدية (Cash Position)', fields: ['البنك/الصندوق', 'رصيد بداية اليوم', 'المقبوضات', 'المدفوعات', 'رصيد نهاية اليوم', 'الالتزامات المستحقة غداً'] },
+              { name: 'ملخص القيود والحركات اليومية', fields: ['رقم القيد', 'نوع الحركة', 'المبلغ', 'الحساب المدين', 'الحساب الدائن', 'المدخل', 'حالة الاعتماد'] }
+            ],
+            'weekly': [
+              { name: 'تقرير المطابقات البنكية والصناديق', fields: ['البنك/الصندوق', 'الرصيد الدفتري', 'رصيد الكشف', 'الفروقات', 'القيود المعلقة', 'سبب الانحراف', 'الاعتماد'] },
+              { name: 'تقرير أعمار الديون والتحصيل', fields: ['اسم العميل/الجهة', 'الرصيد الإجمالي', 'متأخر 0-30 يوم', 'متأخر 31-60 يوم', 'أكثر من 90 يوم', 'إجراءات التحصيل'] }
+            ],
+            'monthly': [
+              { name: 'التقرير التنفيذي المالي (Dashboard)', fields: ['المؤشر المالي', 'المستهدف الشهري', 'الفعلي المحقق', 'نسبة الانحراف %', 'التباين YTD', 'توصيات الإدارة'] },
+              { name: 'تقرير الأداء المالي الشهري', fields: ['بند الإيرادات/المصروفات', 'الموازنة المعتمدة', 'المنصرف/المحقق', 'نسبة الاستهلاك %', 'المتبقي من الموازنة', 'تبرير التجاوز'] },
+              { name: 'تقرير الرقابة الداخلية والامتثال', fields: ['مجال الرقابة', 'تاريخ الفحص', 'الملاحظات المرصودة', 'مستوى المخاطرة', 'الإجراء التصحيحي', 'حالة الامتثال النظامي'] },
+              { name: 'تقرير متابعة الملاحظات المالية', fields: ['رقم الملاحظة', 'مصدر الملاحظة', 'الوصف', 'الإدارة المسؤولة', 'المدة الزمنية للإغلاق', 'حالة التنفيذ'] }
+            ],
+            'yearly': [
+              { name: 'القوائم المالية السنوية المدققة', fields: ['القائمة (مركز مالي/دخل/تدفقات)', 'السنة الحالية', 'السنة السابقة', 'نسبة النمو/التراجع %', 'الإيضاحات', 'رأي المراجع الخارجي'] },
+              { name: 'تقرير الموازنة السنوية', fields: ['القسم/الإدارة', 'الموازنة المطلوبة', 'الاعتماد النهائي', 'المشاريع الرأسمالية', 'المصروفات التشغيلية', 'التدفق المخطط'] },
+              { name: 'تقرير الجرد والتسويات (ربع/سنوي)', fields: ['الموقع/الفرع', 'تاريخ الجرد', 'إجمالي القيمة الدفترية', 'إجمالي القيمة الفعلية', 'قيمة العجز/الزيادة', 'التسوية المحاسبية'] }
+            ]
+          };
+
+          const scorecardKPIs = [
+            {
+              id: 1,
+              title: "الالتزام بإصدار التقارير المالية في موعدها",
+              unit: "نسبة مئوية %",
+              plan: "تقديم التقارير الدورية (التنفيذية، الأداء، الامتثال) للإدارة العليا وفق الجدول الزمني المعتمد",
+              scale: ["< 85%", "85% - 94%", "95% - 99%", "100% (المستهدف)", "تسليم مبكر مع جودة عالية"],
+              weight: "20%",
+              targetVal: "100%",
+              source: "سجل تسليم التقارير / الإدارة العليا",
+              dept: "الإدارة المالية"
+            },
+            {
+              id: 2,
+              title: "الالتزام بالإقفال المالي الشهري",
+              unit: "نسبة مئوية %",
+              plan: "إغلاق الفترات المحاسبية الشهرية في نظام ERP بلا تأخير مع الترحيل والمطابقة التامة",
+              scale: ["< 85%", "85% - 94%", "95% - 99%", "100% (المستهدف)", "إقفال ذكي / مبكر"],
+              weight: "20%",
+              targetVal: "100%",
+              source: "تقارير الإقفال من نظام ERP",
+              dept: "الإدارة المالية"
+            },
+            {
+              id: 3,
+              title: "تنفيذ خطة الجرد السنوية والدورية",
+              unit: "نسبة الإنجاز %",
+              plan: "الإشراف على جرد المستودعات والمعارض والأصول ومعالجة الفروقات الناتجة واعتمادها",
+              scale: ["< 80%", "80% - 89%", "90% - 99%", "100% (المستهدف)", "إنجاز وتصفية مبكرة"],
+              weight: "15%",
+              targetVal: "100%",
+              source: "محاضر وتقارير الجرد المعتمدة",
+              dept: "الإدارة المالية / المخزون"
+            },
+            {
+              id: 4,
+              title: "نسبة مطابقة الصناديق والحسابات البنكية",
+              unit: "نسبة مئوية %",
+              plan: "إنجاز المطابقات البنكية وصناديق العهد والمبيعات بانتظام واعتماد التسويات فوراً",
+              scale: ["< 85%", "85% - 90%", "91% - 99%", "100% (المستهدف)", "مطابقة آلية يومية"],
+              weight: "15%",
+              targetVal: "100%",
+              source: "تقارير المطابقة والتسويات",
+              dept: "الحسابات والخزينة"
+            },
+            {
+              id: 5,
+              title: "نسبة إغلاق الملاحظات المالية والرقابية",
+              unit: "نسبة مئوية %",
+              plan: "متابعة ملاحظات المراجعين الداخليين والخارجيين وإغلاقها بتطبيق الإجراءات التصحيحية",
+              scale: ["< 70%", "70% - 79%", "80% - 89%", "90% - 100% (المستهدف)", "إغلاق استباقي شامل"],
+              weight: "15%",
+              targetVal: "≥ 90%",
+              source: "تقرير متابعة الملاحظات / المراجعة",
+              dept: "الإدارة المالية"
+            },
+            {
+              id: 6,
+              title: "دقة البيانات المالية",
+              unit: "عدد الأخطاء",
+              plan: "التأكد من خلو القوائم والتقارير المالية والضريبية من الأخطاء الجوهرية قبل الاعتماد",
+              scale: ["أخطاء متكررة", "خطأين", "خطأ واحد", "صفر أخطاء (المستهدف)", "جودة استثنائية 100%"],
+              weight: "15%",
+              targetVal: "صفر أخطاء",
+              source: "المراجع الخارجي / الزكاة والدخل",
+              dept: "الإدارة المالية"
+            }
+          ];
+
+          const authorities = [
+            { item: "اعتماد القيود اليومية وفق الصلاحيات المالية", level: "اعتماد مباشر" },
+            { item: "اعتماد التسويات المحاسبية والمطابقات البنكية", level: "اعتماد مباشر" },
+            { item: "اعتماد التقارير المالية والإقفال الشهري", level: "اعتماد مباشر" },
+            { item: "مراجعة واعتماد نتائج الجرد الدوري والسنوي", level: "اعتماد مباشر" },
+            { item: "تقييم أداء موظفي الإدارة المالية وتوزيع المهام", level: "تنفيذ واعتماد مباشر" },
+            { item: "تطوير واعتماد السياسات والإجراءات المالية", level: "توصية ورفع للاعتماد" },
+            { item: "إعداد الموازنة السنوية وتحديد الانحرافات", level: "توصية ورفع للاعتماد" },
+            { item: "تحديث واعتماد الهيكل التنظيمي للإدارة المالية", level: "توصية ورفع للاعتماد" }
+          ];
+
+          const proposals = [
+            {
+              title: "التحول نحو أتمتة التقارير واللوحات المالية (Financial BI Automation)",
+              desc: "ربط نظام ERP بأدوات ذكاء الأعمال (مثل Power BI) لتوليد تقارير مالية وتدفقات نقدية لحظية تدعم اتخاذ القرارات السريعة وتوفر رؤية واضحة للإدارة العليا.",
+              icon: "bar-chart-3"
+            },
+            {
+              title: "التحول نحو الموازنة الصفرية (Zero-Based Budgeting)",
+              desc: "تطبيق منهجية الموازنة الصفرية لضبط المصروفات التشغيلية بفعالية، وضمان توجيه الموارد المالية للمبادرات والأنشطة ذات العائد الاستثماري الأعلى.",
+              icon: "scale"
+            },
+            {
+              title: "تطوير إطار استباقي لإدارة المخاطر (Proactive Risk Management)",
+              desc: "بناء أنظمة إنذار مبكر لرصد تقلبات السوق، وتقييم الجدارة الائتمانية للعملاء لتقليل التعرض للديون المعدومة وتحسين جودة الأصول.",
+              icon: "shield-alert"
+            },
+            {
+              title: "رقمنة الدورة المستندية والاعتمادات (Digital Workflow & Approvals)",
+              desc: "أتمتة كاملة للاعتمادات المالية وإدارة النفقات اليومية لتقليل الأخطاء البشرية، وتسريع دورة العمل، وضمان إغلاق مالي شهري سريع ودقيق.",
+              icon: "workflow"
+            }
+          ];
+
+          return (
+            <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 print:bg-white" dir="rtl">
+              
+              {/* Header */}
+              <header className="bg-slate-900/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-50 shadow-2xl overflow-hidden print:hidden">
+                <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-l from-sky-600/10 via-transparent to-transparent pointer-events-none"></div>
+                
+                {/* --- شريط التنقل العلوي (Breadcrumbs) --- */}
+                <div className="w-full bg-slate-950/40 border-b border-white/5 relative z-10">
+                  <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-2.5 flex justify-between items-center">
+                    <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
+                       
+                       <a 
+                         href="../index.html" 
+                         title="الصفحة الرئيسية" 
+                         className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold"
+                       >
+                          <Icon name="home" className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">الرئيسية</span>
+                       </a>
+                       
+                       <Icon name="chevron-left" className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                                            <span className="text-slate-200 text-[11px] sm:text-xs font-bold truncate">{jobTitle}</span>                    </div>
+                  </div>
+                </div>
+                {/* --------------------------------- */}
+
+                <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-5">
+                  <div className="flex flex-col xl:flex-row justify-between items-center gap-6 relative z-10">
+                    <div className="flex items-center gap-6">
+                       <div className="relative hidden sm:block">
+                          <div className="h-14 w-1.5 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.6)]"></div>
+                       </div>
+                       <div>
+                          <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                            {jobTitle}
+                          </h1>
+                          <div className="flex items-center gap-3 mt-1.5 text-slate-400">
+                            <Icon name="building-2" className="w-4 h-4 text-sky-400" />
+                            <div className="flex items-center gap-3">
+                              
+                              <p className="font-bold text-xs uppercase tracking-[0.2em] text-slate-300">مؤسسة أطوار للتجارة</p>
+                            </div>
+                            <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+                            <span className="text-[10px] font-black italic text-sky-400">Financial Control Center</span>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                       <div className="flex bg-white/5 rounded-2xl p-1.5 border border-white/10 backdrop-blur-sm">
+                          <div className="flex items-center gap-3 px-5 py-2 border-l border-white/5">
+                             <Icon name="badge-check" className="w-4 h-4 text-sky-400" />
+                             <div className="flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-black uppercase">الموظف ({employeeId})</span>
+                                <span className="text-xs text-white font-bold">{employeeName}</span>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-3 px-5 py-2 bg-white/5 rounded-xl border border-white/5 shadow-inner">
+                             <Icon name="landmark" className="w-4 h-4 text-sky-400" />
+                             <div className="flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-black uppercase">الإدارة التابعة</span>
+                                <span className="text-xs text-white font-bold">{hierarchyInfo.dependency}</span>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-3 px-5 py-2">
+                             <Icon name="user-check" className="w-4 h-4 text-emerald-400" />
+                             <div className="flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-black uppercase">الرئيس المباشر</span>
+                                <span className="text-xs text-white font-bold">{hierarchyInfo.supervisor}</span>
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div className="bg-gradient-to-l from-sky-600 to-blue-700 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg shadow-sky-600/20 border border-sky-400/30">
+                          <div className="flex flex-col text-right">
+                            <span className="text-[9px] font-black text-sky-200 uppercase tracking-widest leading-none">Code</span>
+                            <span className="text-sm font-black text-white leading-tight italic">FIN-MGR-001</span>
+                          </div>
+                          <Icon name="pie-chart" className="w-5 h-5 text-white" />
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </header>
+
+              <main className="max-w-[1600px] mx-auto px-6 lg:px-10 py-10 print:p-0">
+                
+                {/* Welcome Banner */}
+                <div className="bg-white rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-slate-200 overflow-hidden mb-12 relative group print:hidden">
+                  <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-sky-50/80 to-transparent pointer-events-none"></div>
+                  <div className="p-10 lg:p-12 relative z-10">
+                    <div className="max-w-6xl mx-auto">
+                      
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 bg-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-500">
+                          <Icon name="calculator" className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                           <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">
+                             منظومة إدارة أداء الإدارة المالية
+                           </h3>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                        <div className="lg:col-span-7 flex flex-col justify-center">
+                          <p className="text-slate-700 leading-relaxed font-bold text-base md:text-lg tracking-tight border-r-4 border-sky-600 pr-6 py-1 bg-gradient-to-l from-sky-50/50 to-transparent rounded-l-2xl">
+                            <span className="text-sky-700 font-black">هدف الوظيفة الرئيسي:</span> {jobDescriptionExact}
+                          </p>
+                        </div>
+                        
+                        <div className="lg:col-span-5">
+                           <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden h-full flex flex-col justify-center">
+                              <Icon name="zap" className="absolute -bottom-6 -left-6 w-32 h-32 text-sky-500/10" />
+                              <div className="flex items-start gap-4 relative z-10">
+                                <div className="mt-1 p-2 bg-sky-600 rounded-xl shadow-lg flex-shrink-0"><Icon name="shield-check" className="w-5 h-5 text-white" /></div>
+                                <p className="text-sky-50 text-xs leading-relaxed font-medium">
+                                  <span className="font-bold text-sky-300">دليل التميز المالي والرقابي: </span> 
+                                  صُممت هذه المنظومة لتوضيح المهام القيادية الدورية، مؤشرات KPI بالأوزان النسبية، ونماذج التقارير المالية لضمان أعلى مستويات الشفافية وتحقيق الاستدامة للمؤسسة.
+                                </p>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-4 md:gap-8 mb-10 border-b border-slate-200 print:hidden">
+                  <button 
+                    onClick={() => setActiveTab('dashboard')}
+                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'dashboard' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
+                  >
+                    <Icon name="layout-dashboard" className="w-5 h-5" />
+                    منظومة المهام الدورية
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('scorecard')}
+                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'scorecard' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
+                  >
+                    <Icon name="target" className="w-5 h-5" />
+                    بطاقة الأداء ومؤشرات KPI
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('reports')}
+                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'reports' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
+                  >
+                    <Icon name="file-spreadsheet" className="w-5 h-5" />
+                    دليل النماذج وتصدير Excel
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('authorities')}
+                    className={`pb-4 px-4 flex items-center gap-2.5 font-black text-sm transition-all relative ${activeTab === 'authorities' ? 'text-sky-600 border-b-4 border-sky-600' : 'text-slate-400 hover:text-slate-700'}`}
+                  >
+                    <Icon name="award" className="w-5 h-5" />
+                    الصلاحيات والمواصفات
+                  </button>
+
+                </div>
+
+                {/* Tab 1: Dashboard Tasks */}
+                {activeTab === 'dashboard' && (
+                  <div className="animate-in fade-in duration-500">
+                    <div className="bg-white rounded-[3rem] shadow-lg border border-slate-200 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-right border-collapse min-w-[1000px]">
+                          <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-200">
+                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest w-32">التوقيت</th>
+                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest w-1/4">المسؤولية الإجرائية</th>
+                              <th className="px-8 py-6 text-base text-center font-black text-sky-700 uppercase tracking-widest border-x border-slate-200 bg-sky-50/50">مخرجات العمل (التقارير)</th>
+                              <th className="px-8 py-6 text-base text-center font-black text-slate-600 uppercase tracking-widest">معايير القياس (KPI)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {jobData.map((row) => (
+                              <tr key={row.id} className="hover:bg-sky-50/10 transition-all duration-300 group">
+                                <td className="px-8 py-10 align-top text-center">
+                                  <div className={`relative w-24 h-24 rounded-[2rem] flex flex-col items-center justify-center p-3 shadow-xl border border-white/50 mx-auto transition-transform group-hover:scale-105 bg-gradient-to-br ${
+                                    row.id === 'daily' ? 'from-sky-500 to-sky-600 text-white shadow-sky-500/20' :
+                                    row.id === 'weekly' ? 'from-blue-600 to-blue-700 text-white shadow-blue-500/20' :
+                                    row.id === 'monthly' ? 'from-indigo-600 to-indigo-700 text-white shadow-indigo-500/20' :
+                                    'from-emerald-600 to-emerald-700 text-white shadow-emerald-500/20'
+                                  }`}>
+                                    <span className="text-[10px] font-black uppercase opacity-80 leading-none mb-1">{row.tag}</span>
+                                    <span className="text-xs font-black leading-tight">{row.frequency}</span>
+                                  </div>
+                                </td>
+                                <td className="px-8 py-10 align-top">
+                                  <h4 className="text-slate-800 font-black text-lg mb-3 group-hover:text-sky-600 transition-colors">
+                                     {row.duty}
+                                  </h4>
+                                </td>
+                                <td className="px-8 py-10 align-top bg-sky-50/10 border-x border-slate-100">
+                                  <div className="grid grid-cols-1 gap-3">
+                                    {row.reports.map((report, idx) => (
+                                      <button 
+                                        key={idx}
+                                        onClick={() => {
+                                          setActiveTab('reports'); 
+                                          const found = Object.values(reportModels).flat().find(m => m.name === report);
+                                          if (found) setSelectedReport(found);
+                                        }}
+                                        className="flex items-center gap-3 text-sky-700 font-bold text-sm w-fit bg-white px-4 py-2.5 rounded-xl border border-sky-100 shadow-sm hover:bg-sky-600 hover:text-white transition-all duration-300 group/link"
+                                      >
+                                         <Icon name="file-text" className="w-4 h-4 text-sky-500 group-hover/link:text-white" />
+                                         <span>{report}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="px-8 py-10 align-top">
+                                  <ul className="space-y-3">
+                                    {row.kpis.map((kpi, idx) => (
+                                      <li key={idx} className="flex items-start gap-3">
+                                        <Icon name="check-circle-2" className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                        <p className="text-slate-700 text-sm font-bold leading-relaxed border-r-2 border-slate-200 pr-3">
+                                          {kpi}
+                                        </p>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: KPI Scorecard */}
+                {activeTab === 'scorecard' && (
+                  <div className="animate-in fade-in duration-500 space-y-8">
+                    <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+                       <div>
+                          <span className="text-sky-400 text-xs font-black uppercase tracking-widest">Balanced Scorecard Framework</span>
+                          <h3 className="text-2xl font-black mt-1">بطاقة تقييم أداء المدير المالي</h3>
+                          <p className="text-slate-400 text-xs mt-1">مصممة وفق الممارسات المعتمدة وسجل مؤشرات قياس الأداء المالي</p>
+                       </div>
+                       <div className="flex gap-4">
+                          <div className="bg-white/10 px-5 py-3 rounded-2xl text-center border border-white/10">
+                             <span className="text-[10px] text-slate-300 block font-bold">إجمالي وزن الأهداف</span>
+                             <span className="text-xl font-black text-sky-400">100%</span>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="bg-white rounded-[3rem] shadow-lg border border-slate-200 overflow-hidden">
+                       <div className="overflow-x-auto">
+                          <table className="w-full text-right text-xs">
+                             <thead>
+                                <tr className="bg-slate-100 text-slate-700 font-black border-b border-slate-200">
+                                   <th className="p-4 text-center">#</th>
+                                   <th className="p-4 w-1/5">المستهدف (KPI)</th>
+                                   <th className="p-4">وحدة التقييم</th>
+                                   <th className="p-4 w-1/4">الهدف والتطوير الإجرائي</th>
+                                   <th className="p-4 text-center">سلم التقييم (1 - 5)</th>
+                                   <th className="p-4 text-center">الوزن %</th>
+                                   <th className="p-4 text-center">المستهدف</th>
+                                   <th className="p-4">المصدر</th>
+                                </tr>
+                             </thead>
+                             <tbody className="divide-y divide-slate-100 font-bold">
+                                {scorecardKPIs.map((kpi) => (
+                                   <tr key={kpi.id} className="hover:bg-sky-50/20 transition-colors">
+                                      <td className="p-4 text-center font-black text-slate-400 bg-slate-50">{kpi.id}</td>
+                                      <td className="p-4 text-slate-900 font-black text-sm">{kpi.title}</td>
+                                      <td className="p-4 text-slate-500">{kpi.unit}</td>
+                                      <td className="p-4 text-slate-600 leading-relaxed">{kpi.plan}</td>
+                                      <td className="p-4">
+                                         <div className="grid grid-cols-5 gap-1 text-[9px] text-center">
+                                            {kpi.scale.map((lvl, idx) => (
+                                               <div key={idx} className={`p-1.5 rounded font-black flex items-center justify-center ${idx === 3 ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-slate-100 text-slate-600'}`}>
+                                                  {lvl}
+                                               </div>
+                                            ))}
+                                         </div>
+                                      </td>
+                                      <td className="p-4 text-center font-black text-sky-600 text-sm">{kpi.weight}</td>
+                                      <td className="p-4 text-center font-black text-emerald-600">{kpi.targetVal}</td>
+                                      <td className="p-4 text-slate-500 text-[11px]">{kpi.source}</td>
+                                   </tr>
+                                ))}
+                             </tbody>
+                          </table>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3: Reports Directory & Excel Export */}
+                {activeTab === 'reports' && (
+                  <div className="animate-in fade-in duration-500">
+                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                      <div className="xl:col-span-1">
+                        <div className="bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-xl sticky top-28 border border-slate-800">
+                           <h3 className="flex items-center gap-3 text-lg font-black mb-6 border-b border-white/10 pb-4 text-sky-400">
+                              <Icon name="filter" className="w-5 h-5" />
+                              دليل النماذج
+                           </h3>
+                           {['daily', 'weekly', 'monthly', 'yearly'].map((freq) => (
+                              <div key={freq} className="mb-6 last:mb-0">
+                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                                    {freq === 'daily' ? 'التقارير الجارية' : freq === 'weekly' ? 'التقارير الأسبوعية' : freq === 'monthly' ? 'التقارير الشهرية' : 'التقارير السنوية'}
+                                 </p>
+                                 <div className="space-y-1.5 pr-3 border-r border-slate-800">
+                                    {reportModels[freq].map((rep) => (
+                                       <button 
+                                        key={rep.name}
+                                        onClick={() => setSelectedReport(rep)}
+                                        className={`w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${selectedReport?.name === rep.name ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                       >
+                                          <span className="truncate">{rep.name}</span>
+                                          <Icon name="chevron-left" className="w-3.5 h-3.5 flex-shrink-0" />
+                                       </button>
+                                    ))}
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                      </div>
+
+                      <div className="xl:col-span-3" ref={reportViewRef}>
+                        {selectedReport ? (
+                          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl p-8 md:p-12 animate-in zoom-in-95 duration-300">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-100 gap-6">
+                               <div>
+                                  <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Financial Data Schema</span>
+                                  <h3 className="text-2xl md:text-3xl font-black text-slate-900 mt-1">{selectedReport.name}</h3>
+                               </div>
+                               
+                               <button 
+                                  onClick={() => handleExportToExcel(selectedReport)}
+                                  disabled={isExporting}
+                                  className={`bg-emerald-50 text-emerald-800 px-6 py-3.5 rounded-2xl flex items-center gap-3 border border-emerald-200 shadow-sm transition-all group ${isExporting ? 'opacity-70 cursor-wait' : 'hover:bg-emerald-100 hover:shadow-md'}`}
+                               >
+                                  <Icon name={isExporting ? "loader-2" : "download"} className={`w-5 h-5 text-emerald-600 ${isExporting ? 'animate-spin' : ''}`} />
+                                  <span className="text-sm font-black">{isExporting ? 'جاري إنشاء Excel...' : 'تصدير نموذج Excel'}</span>
+                               </button>
+                            </div>
+
+                            <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-inner bg-slate-50/50 p-4">
+                               <table className="w-full text-right text-xs font-mono">
+                                  <thead>
+                                     <tr className="bg-sky-100/70 text-sky-900 font-black border-b border-sky-200">
+                                        <th className="p-3 text-center w-12 border-l border-sky-200">#</th>
+                                        {selectedReport.fields.map((field, idx) => (
+                                           <th key={idx} className="p-3 border-l border-sky-200 whitespace-nowrap">{field}</th>
+                                        ))}
+                                     </tr>
+                                  </thead>
+                                  <tbody>
+                                     {[1, 2, 3].map((row) => (
+                                        <tr key={row} className="border-b border-slate-200 bg-white">
+                                           <td className="p-3 text-center text-slate-400 font-bold bg-slate-100/50 border-l border-slate-200">{row}</td>
+                                           {selectedReport.fields.map((_, idx) => (
+                                              <td key={idx} className="p-3 border-l border-slate-200 text-slate-300 text-center">-</td>
+                                           ))}
+                                        </tr>
+                                     ))}
+                                  </tbody>
+                               </table>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-300 h-[450px] flex flex-col items-center justify-center text-slate-400 gap-4">
+                             <Icon name="file-search" className="w-16 h-16 text-sky-300" />
+                             <p className="text-xl font-black text-slate-600">اختر تقريراً من القائمة للفتحه وتصديره</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 4: Authorities & Qualifications */}
+                {activeTab === 'authorities' && (
+                  <div className="animate-in fade-in duration-500 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                     <div className="lg:col-span-7 bg-white p-8 rounded-[3rem] shadow-lg border border-slate-200">
+                        <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                           <Icon name="shield-check" className="w-6 h-6 text-sky-600" />
+                           مصفوفة الصلاحيات المعتمدة
+                        </h3>
+                        <div className="space-y-3">
+                           {authorities.map((auth, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-sky-50/30 transition-colors">
+                                 <span className="text-sm font-bold text-slate-800">{auth.item}</span>
+                                 <span className="text-xs font-black bg-sky-100 text-sky-800 px-3 py-1.5 rounded-xl">{auth.level}</span>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+
+                     <div className="lg:col-span-5 bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl flex flex-col justify-between">
+                        <div>
+                           <h3 className="text-xl font-black text-sky-400 mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
+                              <Icon name="user-check" className="w-6 h-6 text-sky-400" />
+                              مواصفات شاغل الوظيفة
+                           </h3>
+                           <div className="space-y-6 text-sm font-bold">
+                              <div>
+                                 <span className="text-slate-400 text-xs block mb-1">المؤهل العلمي</span>
+                                 <p className="text-white">بكالوريوس في المحاسبة أو المالية</p>
+                              </div>
+                              <div>
+                                 <span className="text-slate-400 text-xs block mb-1">الخبرة العملية</span>
+                                 <p className="text-white">خبرة لا تقل عن 10 سنوات في الإدارة المالية، منها 5 سنوات في منصب قيادي</p>
+                              </div>
+                              <div>
+                                 <span className="text-slate-400 text-xs block mb-1">المهارات والتدريب</span>
+                                 <ul className="grid grid-cols-2 gap-2 text-xs text-slate-300 mt-2">
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> القيادة والإدارة</li>
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> التخطيط المالي والموازنات</li>
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> إعداد القوائم المالية</li>
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> الرقابة الداخلية</li>
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> إدارة المخاطر والسيولة</li>
+                                    <li className="flex items-center gap-2"><Icon name="check" className="w-3.5 h-3.5 text-sky-400" /> أنظمة تخطيط الموارد ERP</li>
+                                 </ul>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                )}
+
+                {/* Tab 5: Strategic Proposals */}
+                {activeTab === 'proposals' && (
+                  <div className="animate-in fade-in duration-500">
+                    <div className="mb-8">
+                       <h3 className="text-2xl font-black text-slate-900">المقترحات والتطويرات الاستراتيجية الموصى بها</h3>
+                       <p className="text-slate-500 font-bold text-sm">مبادرات قيمة مضافة لرفع كفاءة الإدارة المالية وتعظيم الأرباح للمؤسسة</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       {proposals.map((prop, idx) => (
+                          <div key={idx} className="bg-white p-8 rounded-[3rem] shadow-lg border border-slate-200 hover:border-sky-300 transition-all group">
+                             <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+                                <Icon name={prop.icon} className="w-6 h-6" />
+                             </div>
+                             <h4 className="text-lg font-black text-slate-900 mb-3">{prop.title}</h4>
+                             <p className="text-slate-600 font-bold text-sm leading-relaxed">{prop.desc}</p>
+                          </div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+
+              </main>
+
+              <footer className="py-12 text-center border-t border-slate-200 mt-12 bg-white print:hidden">
+                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال</p>
+              </footer>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body>
+</html>

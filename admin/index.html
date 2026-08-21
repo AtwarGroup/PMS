@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.admin-card{background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:20px;text-decoration:none;color:inherit}
+.admin-card:hover{border-color:#bad7f7;transform:translateY(-1px)}
+.admin-card i{color:#1677ff}.admin-card h3{font-size:15px;margin:14px 0 6px}.admin-card p{font-size:10px;line-height:1.8;color:#7b8aa5;margin:0}
+@media(max-width:850px){.admin-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-min-role="admin">
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+<a href="users.html"><i data-lucide="users-cog"></i><span>إدارة المستخدمين</span></a>
+</nav>
+<div class="atwar-spacer"></div><div class="atwar-side-section"><a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a><div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div></div>
+</aside>
+<section class="atwar-main"><header class="atwar-topbar"><div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>إدارة النظام</h2><p>ATWAR ONE</p></div></div><div class="atwar-top-actions"><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div></header>
+<main class="atwar-content"><h1 style="font-size:30px;margin:0 0 5px">إدارة النظام</h1><p style="font-size:12px;color:#7b8aa5;margin:0 0 18px">إعدادات الإدارة والصلاحيات، بدون خلطها مع واجهة الموظف اليومية.</p>
+<section class="admin-grid">
+<a class="admin-card" href="users.html"><i data-lucide="users-cog"></i><h3>المستخدمون والصلاحيات</h3><p>إدارة الحسابات والأدوار والمدير المباشر وحالة المستخدم.</p></a>
+<a class="admin-card" href="roles.html"><i data-lucide="key-round"></i><h3>الأدوار والصلاحيات</h3><p>تحديد الوصول إلى الوحدات ونطاق العرض الافتراضي لكل دور.</p></a>
+<div class="admin-card"><i data-lucide="activity"></i><h3>سجل النظام</h3><p>سيتم تخصيصه للأحداث الإدارية المهمة والتغييرات على النظام.</p></div>
+</section>
+<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>Prototype V0.18</span><span>بدون Firebase</span></footer>
+</main></section></div>
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/permissions.js"></script><script>lucide.createIcons();</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – الإشعارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.n-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.n-head h1{margin:0;font-size:30px}.n-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
+.n-actions{display:flex;gap:8px}.n-actions button{border:1px solid #dfe7f1;background:#fff;border-radius:11px;padding:9px 12px;font-family:inherit;font-weight:900;color:#5f7086;cursor:pointer}.n-actions button.active{background:#0b1d3a;color:#fff}
+.n-card{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:16px;margin-bottom:10px;display:grid;grid-template-columns:auto 1fr auto;gap:13px;align-items:center;box-shadow:0 4px 12px rgba(20,45,80,.03)}
+.n-card.unread{border-right:4px solid #1677ff;background:#fbfdff}
+.n-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center}
+.n-icon.task{background:#eaf2ff;color:#2563eb}.n-icon.approval{background:#fff5e6;color:#c06d00}.n-icon.system{background:#edf9f3;color:#15805a}.n-icon.alert{background:#fff0f0;color:#d33c43}
+.n-title{font-weight:900;font-size:14px}.n-text{font-size:11px;color:#66778d;margin-top:4px;line-height:1.7}.n-time{font-size:10px;color:#8c99aa;white-space:nowrap}
+.n-empty{display:none;background:#fff;border:1px dashed #dbe5ef;border-radius:18px;padding:50px;text-align:center;color:#8b98aa}
+@media(max-width:760px){.n-head{flex-direction:column;align-items:start;gap:12px}.n-card{grid-template-columns:auto 1fr}.n-time{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+      <a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+<a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+      <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+      <a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<a class="atwar-side-link" data-role-min="admin" href="../admin/index.html" style="text-decoration:none"><i data-lucide="settings"></i><span>إدارة النظام</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div></aside>
+
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions">
+<div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث..."></div>
+<a href="index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge" id="topBadge">5</span></a>
+<div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div>
+</div>
+</header>
+
+<main class="atwar-content">
+<div class="n-head">
+<div><h1>الإشعارات</h1><p>كل ما يحتاج انتباهك في مكان واحد.</p></div>
+<div class="n-actions">
+<button class="active" onclick="setNotifFilter('all',this)">الكل</button>
+<button onclick="setNotifFilter('unread',this)">غير المقروءة</button>
+<button onclick="markAllRead()">تحديد الكل كمقروء</button>
+</div>
+</div>
+
+<section id="notifList"></section>
+<div id="notifEmpty" class="n-empty">لا توجد إشعارات في هذا التصنيف.</div>
+
+<footer class="atwar-footer"><span>ATWAR ONE • Notifications</span><span>Prototype V0.11</span><span>بدون Firebase</span></footer>
+</main>
+</section>
+</div>
+
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+const session=getAtwarDemoSession?.()||{role:'employee'};
+const baseNotifications=[
+ {id:1,type:'task',title:'تم تحديث مهمة',text:'تم تعديل موعد مهمة مراجعة سندات الصرف.',time:'منذ 10 دقائق',read:false,minRole:'employee',href:'../tasks/index.html'},
+ {id:2,type:'alert',title:'مهمة متأخرة',text:'يوجد لديك مهمة تجاوزت تاريخ الاستحقاق.',time:'منذ ساعة',read:false,minRole:'employee',href:'../tasks/index.html'},
+ {id:3,type:'system',title:'تحديث الملف الوظيفي',text:'تم تحديث بيانات في ملفك الوظيفي.',time:'اليوم',read:true,minRole:'employee',href:'../profile/index.html'},
+ {id:4,type:'approval',title:'طلب بانتظار اعتمادك',text:'تم إرسال مهمة رفع مطالبات الحوادث لاعتمادك.',time:'منذ 20 دقيقة',read:false,minRole:'manager',href:'../approvals/index.html'},
+ {id:5,type:'approval',title:'طلب بانتظار اعتمادك',text:'تسوية حساب مورد تحتاج قرارك.',time:'أمس',read:false,minRole:'manager',href:'../approvals/index.html'}
+];
+
+const rank={employee:1,manager:2,admin:3};
+let notifications=JSON.parse(localStorage.getItem('atwarDemoNotifications_'+(session.email||session.role))||'null') ||
+  baseNotifications.filter(n=>rank[session.role]>=rank[n.minRole]);
+
+let filter='all';
+function save(){localStorage.setItem('atwarDemoNotifications_'+(session.email||session.role),JSON.stringify(notifications))}
+function iconFor(t){return t==='task'?'square-check-big':t==='approval'?'badge-check':t==='alert'?'triangle-alert':'info'}
+function render(){
+  const list=document.getElementById('notifList');
+  const rows=notifications.filter(n=>filter==='all'||!n.read);
+  list.innerHTML=rows.map(n=>`
+    <article class="n-card ${n.read?'':'unread'}" onclick="openNotif(${n.id})" style="cursor:pointer">
+      <div class="n-icon ${n.type}"><i data-lucide="${iconFor(n.type)}"></i></div>
+      <div><div class="n-title">${n.title}</div><div class="n-text">${n.text}</div></div>
+      <div class="n-time">${n.time}</div>
+    </article>`).join('');
+  document.getElementById('notifEmpty').style.display=rows.length?'none':'block';
+  const unread=notifications.filter(n=>!n.read).length;
+  const badge=document.getElementById('topBadge');
+  badge.textContent=unread;
+  badge.style.display=unread?'grid':'none';
+  lucide.createIcons();
+}
+function setNotifFilter(v,btn){filter=v;document.querySelectorAll('.n-actions button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
+function markAllRead(){notifications=notifications.map(n=>({...n,read:true}));save();render()}
+function openNotif(id){
+  const n=notifications.find(x=>x.id===id); if(!n)return;
+  n.read=true;save();
+  location.href=n.href;
+}
+render();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const s=document.querySelector('[data-global-search]');
+ if(s) s.addEventListener('keydown',e=>{
+   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
+ });
+});
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

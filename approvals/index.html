@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – الاعتمادات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.approval-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.approval-head h1{margin:0;font-size:29px}.approval-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
+.filters{display:flex;gap:8px}.filters button{border:1px solid #e0e8f2;background:#fff;border-radius:11px;padding:9px 12px;font-family:inherit;font-weight:900;color:#63738a}
+.filters button.active{background:#0b1d3a;color:#fff}
+.approval-card{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:18px;margin-bottom:12px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+.a-title{font-weight:900;font-size:15px}.a-meta{font-size:11px;color:#7d8ba0;margin-top:5px}.a-note{font-size:12px;color:#516177;margin-top:10px}
+.a-actions{display:flex;gap:8px}.a-actions button{border:0;border-radius:10px;padding:9px 13px;font-family:inherit;font-weight:900;cursor:pointer}
+.approve{background:#eaf8f1;color:#16835c}.open{background:#edf5ff;color:#176ed0}
+.badge{display:inline-block;background:#fff5e6;color:#b76c00;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;margin-right:7px}
+@media(max-width:800px){.approval-head{align-items:start;flex-direction:column;gap:12px}.approval-card{grid-template-columns:1fr}.a-actions{justify-content:flex-start}}
+</style>
+</head>
+<body data-min-role="manager">
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+      <a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+      <a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+      <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a class="active" href="index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+      <a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<a class="atwar-side-link" data-role-min="admin" href="../admin/index.html" style="text-decoration:none"><i data-lucide="settings"></i><span>إدارة النظام</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div></aside>
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
+</header>
+<main class="atwar-content">
+<div class="approval-head"><div><h1>الاعتمادات</h1><p>الطلبات التي تحتاج قرارك تظهر هنا مباشرة، والأحدث في الأعلى.</p></div><div class="filters"><button class="active">بانتظار اعتمادي</button><button>تمت معالجتها</button></div></div>
+
+<div class="approval-card">
+<div><div class="a-title">رفع مطالبات الحوادث <span class="badge">بانتظار الاعتماد</span></div><div class="a-meta">صالح باصرة • اليوم</div><div class="a-note">المهمة مكتملة بنسبة 100% وتم إرسالها للاعتماد.</div></div>
+<div class="a-actions"><button class="open" onclick="location.href='../tasks/index.html'">فتح المهمة</button><button class="approve">اعتماد</button></div>
+</div>
+
+<div class="approval-card">
+<div><div class="a-title">مراجعة تسوية حساب مورد <span class="badge">بانتظار الاعتماد</span></div><div class="a-meta">فارس باجبير • أمس</div><div class="a-note">تم إرفاق المطابقة والملاحظات النهائية للمراجعة.</div></div>
+<div class="a-actions"><button class="open" onclick="location.href='../tasks/index.html'">فتح المهمة</button><button class="approve">اعتماد</button></div>
+</div>
+
+<footer class="atwar-footer"><span>ATWAR ONE • Approvals Module</span><span>Prototype V0.9</span><span>بدون Firebase</span></footer>
+</main></section></div>
+<script>lucide.createIcons();</script>
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const s=document.querySelector('[data-global-search]');
+ if(s) s.addEventListener('keydown',e=>{
+   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
+ });
+});
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

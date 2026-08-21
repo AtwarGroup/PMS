@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – يومي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.day-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.day-head h1{font-size:30px;margin:0}.day-head p{font-size:12px;color:#7b8aa5;margin:5px 0 0}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sum{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:15px}
+.sum b{display:block;font-size:24px}.sum span{font-size:10px;color:#7b8aa5}
+.day-grid{display:grid;grid-template-columns:1.25fr .85fr;gap:16px}
+.card{background:#fff;border:1px solid #e5edf6;border-radius:19px;padding:18px}
+.card h3{margin:0 0 14px;font-size:16px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7}
+.item:last-child{border-bottom:0}.item b{font-size:12px}.item small{display:block;color:#8290a3;margin-top:4px;font-size:10px}
+.tag{font-size:9px;font-weight:900;padding:6px 8px;border-radius:999px;white-space:nowrap}
+.task{background:#eef6ff;color:#176fd3}.follow{background:#fff5e6;color:#b66b00}.approval{background:#edf9f3;color:#16805b}.late{background:#fff0f0;color:#c83c43}
+.note{background:#fffdf4;border:1px solid #f0e5b8;border-radius:15px;padding:14px;font-size:12px;line-height:1.8;color:#5f6570;min-height:90px}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.quick a{text-decoration:none;background:#f8fbff;border:1px solid #e2ebf5;border-radius:12px;padding:12px;color:#31445d;font-size:11px;font-weight:900}
+@media(max-width:900px){.summary{grid-template-columns:repeat(2,1fr)}.day-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+<a class="active" href="index.html"><i data-lucide="sun"></i><span>يومي</span></a>
+<a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+<a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+<a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div><a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a><div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div></div>
+</aside>
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث في النظام..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
+</header>
+<main class="atwar-content">
+<div class="day-head"><div><h1>يومي</h1><p>ما يحتاج انتباهك اليوم، بدون أن تبحث بين الصفحات.</p></div></div>
+
+<section class="summary">
+<div class="sum"><b>3</b><span>مهام اليوم</span></div>
+<div class="sum"><b style="color:#c83c43">1</b><span>مهمة متأخرة</span></div>
+<div class="sum"><b>2</b><span>متابعات قريبة</span></div>
+<div class="sum" data-role-min="manager"><b>2</b><span>بانتظار اعتمادي</span></div>
+</section>
+
+<div class="day-grid">
+<section class="card">
+<h3>الأولوية اليوم</h3>
+<div class="item"><div><b>معالجة فرق كشف الحساب</b><small>متأخرة يومين • مهمة</small></div><span class="tag late">متأخرة</span></div>
+<div class="item"><div><b>مراجعة سندات الصرف</b><small>استحقاق اليوم • مهمة</small></div><span class="tag task">مهمة</span></div>
+<div class="item"><div><b>انتظار رد المورد على كشف الحساب</b><small>موعد المتابعة اليوم</small></div><span class="tag follow">متابعة</span></div>
+<div class="item" data-role-min="manager"><div><b>رفع مطالبات الحوادث</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>
+</section>
+
+<section>
+<div class="card">
+<h3>ملاحظتي</h3>
+<div id="dayNote" class="note">لا توجد ملاحظة محفوظة.</div>
+<div class="quick">
+<a href="../workspace/index.html">فتح مساحة عملي</a>
+<a href="../tasks/index.html">فتح مهامي</a>
+<a href="../follow-up/index.html">فتح المتابعات</a>
+<a data-role-min="manager" href="../approvals/index.html">فتح الاعتمادات</a>
+</div>
+</div>
+</section>
+</div>
+
+<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>Prototype V0.16</span><span>بدون Firebase</span></footer>
+</main></section></div>
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ setTimeout(()=>{
+  const s=getAtwarDemoSession?.()||{};
+  const note=localStorage.getItem('atwarPersonalNote_'+(s.email||'demo'));
+  if(note) document.getElementById('dayNote').textContent=note;
+ },0);
+ const q=document.querySelector('[data-global-search]');
+ if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())});
+});
+lucide.createIcons();
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>

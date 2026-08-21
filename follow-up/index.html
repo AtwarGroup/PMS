@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – المتابعات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.f-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.f-head h1{font-size:30px;margin:0}.f-head p{font-size:12px;color:#7b8aa5;margin:5px 0 0}
+.add-btn{border:0;background:#0b1d3a;color:#fff;border-radius:12px;padding:11px 15px;font-family:inherit;font-weight:900;cursor:pointer}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f-card{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:17px}
+.f-top{display:flex;justify-content:space-between;gap:10px}.f-title{font-size:14px;font-weight:900}.f-meta{font-size:10px;color:#8391a4;margin-top:5px}
+.f-note{font-size:11px;color:#607086;line-height:1.8;margin-top:12px}.pill{font-size:9px;font-weight:900;padding:6px 8px;border-radius:999px;height:max-content}
+.wait{background:#fff5e6;color:#b66b00}.soon{background:#eef6ff;color:#176fd3}.done{background:#edf9f3;color:#16805b}
+.f-actions{display:flex;gap:7px;margin-top:13px}.f-actions button{border:1px solid #dfe7f1;background:#fff;border-radius:9px;padding:7px 10px;font-family:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.modal{display:none;position:fixed;inset:0;background:rgba(8,20,38,.48);z-index:1000;place-items:center;padding:20px}
+.modal.show{display:grid}.box{width:min(520px,100%);background:#fff;border-radius:20px;padding:20px}
+.box h3{margin:0 0 15px}.field{margin-bottom:11px}.field label{display:block;font-size:10px;font-weight:900;margin-bottom:5px}.field input,.field textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:10px;padding:10px;font-family:inherit}.field textarea{min-height:90px}
+.box-actions{display:flex;justify-content:flex-end;gap:8px}.box-actions button{border:0;border-radius:9px;padding:9px 12px;font-family:inherit;font-weight:900;cursor:pointer}.save{background:#0b1d3a;color:#fff}.cancel{background:#eef2f7;color:#52647a}
+@media(max-width:800px){.f-grid{grid-template-columns:1fr}.f-head{align-items:start;flex-direction:column;gap:12px}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<aside class="atwar-sidebar">
+<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
+<nav class="atwar-nav">
+<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+<a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>ملاحظاتي</span></a>
+<a class="active" href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+</nav>
+<div class="atwar-spacer"></div>
+<div class="atwar-side-section">
+      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
+        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
+      </div>
+<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
+</div></aside>
+<section class="atwar-main">
+<header class="atwar-topbar">
+<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
+<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث في النظام..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
+</header>
+<main class="atwar-content">
+<div class="f-head"><div><h1>المتابعات</h1><p>للأمور التي تحتاج تذكيراً أو انتظار رد، ولا تستحق إنشاء مهمة كاملة.</p></div><button class="add-btn" onclick="openModal()">+ إضافة متابعة</button></div>
+<section id="followList" class="f-grid"></section>
+<footer class="atwar-footer"><span>ATWAR ONE • Follow-up</span><span>Prototype V0.21</span><span>بدون Firebase</span></footer>
+</main></section></div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
+<h3>إضافة متابعة</h3>
+<div class="field"><label>عنوان المتابعة</label><input id="fTitle" placeholder="مثال: انتظار رد المورد"></div>
+<div class="field"><label>تاريخ المتابعة</label><input id="fDate" type="date"></div>
+<div class="field"><label>ملاحظة</label><textarea id="fNote" placeholder="ما الذي تنتظره أو تريد تذكره؟"></textarea></div>
+<div class="box-actions"><button class="cancel" onclick="closeModal()">إلغاء</button><button class="save" onclick="addFollow()">حفظ</button></div>
+</div></div>
+
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script>
+const s=getAtwarDemoSession?.()||{};
+const key='atwarFollowups_'+(s.email||'demo');
+let data=JSON.parse(localStorage.getItem(key)||'null')||[
+ {id:1,title:'انتظار رد المورد على كشف الحساب',date:'2026-08-24',note:'تم إرسال المطابقة وننتظر تأكيد الفرق.',status:'wait'},
+ {id:2,title:'متابعة إصدار الفاتورة',date:'2026-08-23',note:'التأكد من إصدار الفاتورة بعد استلام السداد.',status:'soon'}
+];
+function save(){localStorage.setItem(key,JSON.stringify(data))}
+function render(){
+ const labels={wait:'بانتظار رد',soon:'متابعة قريبة',done:'مكتملة'};
+ document.getElementById('followList').innerHTML=data.map(x=>`<article class="f-card"><div class="f-top"><div><div class="f-title">${x.title}</div><div class="f-meta">موعد المتابعة: ${x.date||'غير محدد'}</div></div><span class="pill ${x.status}">${labels[x.status]}</span></div><div class="f-note">${x.note||''}</div><div class="f-actions">${x.status!=='done'?`<button onclick="done(${x.id})">تمت المتابعة</button>`:''}<button onclick="removeF(${x.id})">حذف</button></div></article>`).join('');
+ lucide.createIcons();
+}
+function openModal(){document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function addFollow(){const t=document.getElementById('fTitle').value.trim();if(!t)return;data.unshift({id:Date.now(),title:t,date:document.getElementById('fDate').value,note:document.getElementById('fNote').value.trim(),status:'soon'});save();render();closeModal();document.getElementById('fTitle').value='';document.getElementById('fNote').value=''}
+function done(id){data=data.map(x=>x.id===id?{...x,status:'done'}:x);save();render()}
+function removeF(id){data=data.filter(x=>x.id!==id);save();render()}
+document.addEventListener('DOMContentLoaded',()=>{const q=document.querySelector('[data-global-search]');if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())})});
+render();lucide.createIcons();
+</script>
+<script src="../assets/js/consolidation.js"></script>
+
+<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+</body></html>
