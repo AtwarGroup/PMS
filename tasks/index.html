@@ -172,9 +172,64 @@
     }
 
 </style>
+
+<style id="atwarTasksShellStyle">
+:root{--atwar-shell-sidebar:142px;--atwar-shell-navy:#0b1d3a;--atwar-shell-blue:#1677ff}
+body{padding-right:var(--atwar-shell-sidebar)!important}
+#atwarTasksShellSidebar{
+  position:fixed;top:0;right:0;bottom:0;width:var(--atwar-shell-sidebar);z-index:99999;
+  background:var(--atwar-shell-navy);color:#fff;display:flex;flex-direction:column;
+  font-family:'Tajawal',sans-serif;box-shadow:-2px 0 10px rgba(15,23,42,.08)
+}
+#atwarTasksShellSidebar *{box-sizing:border-box}
+.atw-ts-brand{padding:17px 12px 15px;border-bottom:1px solid rgba(255,255,255,.08)}
+.atw-ts-brand h1{margin:0;font-size:14px;font-weight:900;letter-spacing:.2px}
+.atw-ts-brand p{margin:5px 0 0;color:#a9bdd8;font-size:8px;line-height:1.5}
+.atw-ts-nav{display:flex;flex-direction:column;gap:5px;padding:12px 8px}
+.atw-ts-nav a{
+  min-height:36px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:10px;
+  color:#dce8f7;text-decoration:none;font-size:9.5px;font-weight:900;white-space:nowrap
+}
+.atw-ts-nav a:hover{background:rgba(255,255,255,.07);color:#fff}
+.atw-ts-nav a.active{background:linear-gradient(135deg,#1167dd,#228cff);color:#fff}
+.atw-ts-nav svg{width:16px;height:16px;flex:none}
+.atw-ts-spacer{flex:1}
+.atw-ts-bottom{padding:10px 8px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.atw-ts-bottom a{
+  display:flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;color:#cbd9ea;
+  border-radius:10px;text-decoration:none;font-size:9px;font-weight:800
+}
+.atw-ts-bottom a:hover{background:rgba(255,255,255,.07);color:#fff}
+@media(max-width:900px){
+  :root{--atwar-shell-sidebar:0px}
+  body{padding-right:0!important}
+  #atwarTasksShellSidebar{display:none}
+}
+</style>
+
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen">
+
+<aside id="atwarTasksShellSidebar" aria-label="ATWAR ONE Navigation">
+  <div class="atw-ts-brand">
+    <h1>ATWAR ONE</h1>
+    <p>نظام إدارة الأداء المؤسسي</p>
+  </div>
+  <nav class="atw-ts-nav">
+    <a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
+    <a class="active" href="index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
+    <a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>ملاحظاتي</span></a>
+    <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
+    <a id="atwarTasksTeamLink" href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
+    <a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
+  </nav>
+  <div class="atw-ts-spacer"></div>
+  <div class="atw-ts-bottom">
+    <a href="../landing.html"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+  </div>
+</aside>
+
 
 <!-- Session loading -->
 <section id="authLoadingScreen" class="min-h-screen flex items-center justify-center p-5 bg-slate-100">
@@ -2922,5 +2977,18 @@ Object.assign(window,{
   deleteSubtask,
   toggleActivityLog});
 </script>
+
+<script id="atwarTasksShellScript">
+(function(){
+  try{
+    const raw=localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession');
+    const session=raw?JSON.parse(raw):null;
+    const team=document.getElementById('atwarTasksTeamLink');
+    if(team && session && session.role==='employee') team.style.display='none';
+  }catch(e){}
+  try{ if(window.lucide) lucide.createIcons(); }catch(e){}
+})();
+</script>
+
 </body>
 </html>

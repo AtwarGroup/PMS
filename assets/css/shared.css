@@ -85,3 +85,53 @@ body{min-height:100vh}
   color:#8a98aa;
   line-height:1.5;
 }
+
+
+/* =========================================================
+   ATWAR ONE V0.27 — COMPACT PROFESSIONAL UI STANDARD
+   Inspired by enterprise work-management density.
+   Visual-only layer: no workflow/business logic changes.
+   ========================================================= */
+:root{
+  --atwar-ui-density: .92;
+}
+
+/* Shared shell/navigation density */
+.atwar-side,
+.sidebar,
+.app-sidebar{
+  font-size: 13px;
+}
+.atwar-side a,
+.sidebar a,
+.app-sidebar a{
+  min-height: 38px;
+}
+
+/* Main content typography */
+main, .main, .content, .page-content{
+  font-size: 13px;
+}
+h1{font-size:clamp(24px,2.1vw,34px)}
+h2{font-size:20px}
+h3{font-size:16px}
+small,.muted,.sub,.subtitle{font-size:11px}
+
+/* Cards and controls: compact without changing structure */
+.card,.panel,.box,.tile,.stat,.kpi-card{
+  border-radius:14px;
+}
+button,.btn,input,select,textarea{
+  font-size:12px;
+}
+input,select,button,.btn{
+  min-height:36px;
+}
+
+/* Desktop workspace should prioritize information density */
+@media (min-width: 1000px){
+  .card,.panel,.box,.tile,.stat,.kpi-card{
+    padding-top:14px;
+    padding-bottom:14px;
+  }
+}
