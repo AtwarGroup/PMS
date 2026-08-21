@@ -4,7 +4,16 @@
   <atwar-sidebar active="profile"></atwar-sidebar>
   <section class="atwar-main">
     <atwar-header></atwar-header>
-<main class="atwar-content"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div><h1 style="margin:0;font-size:28px">الوصف الوظيفي</h1><p style="color:#7b8aa5;font-weight:700">رئيس الحسابات</p></div><a href="index.html" style="text-decoration:none;color:#1677ff;font-weight:900">← العودة للملف الوظيفي</a></div><section class="box"><h3>الهدف من الوظيفة</h3><p style="line-height:1.9;color:#55657c">الإشراف على العمليات المحاسبية اليومية وضمان دقة التسجيلات والتسويات والمطابقات ومتابعة التزام الفريق بالإجراءات والسياسات المالية المعتمدة.</p></section><section class="box"><h3>المسؤوليات الرئيسية</h3><div class="duty">مراجعة القيود اليومية والتسويات المحاسبية.</div><div class="duty">متابعة المطابقات البنكية ومطابقات الموردين والعملاء.</div><div class="duty">الإشراف على إقفال الفترات المالية الشهرية.</div><div class="duty">متابعة أداء فريق الحسابات وتوزيع الأعمال.</div></section></main>
+<main class="atwar-content">
+
+<section style="background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+  <div>
+    <div id="jdUserName" style="font-size:16px;font-weight:900;color:#14243a">المستخدم</div>
+    <div id="jdUserTitle" style="font-size:10px;color:#7b8aa5;margin-top:3px">—</div>
+  </div>
+  <div style="font-size:9px;color:#7b8aa5">الوصف الوظيفي الخاص بالمستخدم المسجل دخوله</div>
+</section>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><div><h1 style="margin:0;font-size:28px">الوصف الوظيفي</h1><p style="color:#7b8aa5;font-weight:700">رئيس الحسابات</p></div><a href="index.html" style="text-decoration:none;color:#1677ff;font-weight:900">← العودة للملف الوظيفي</a></div><section class="box"><h3>الهدف من الوظيفة</h3><p style="line-height:1.9;color:#55657c">الإشراف على العمليات المحاسبية اليومية وضمان دقة التسجيلات والتسويات والمطابقات ومتابعة التزام الفريق بالإجراءات والسياسات المالية المعتمدة.</p></section><section class="box"><h3>المسؤوليات الرئيسية</h3><div class="duty">مراجعة القيود اليومية والتسويات المحاسبية.</div><div class="duty">متابعة المطابقات البنكية ومطابقات الموردين والعملاء.</div><div class="duty">الإشراف على إقفال الفترات المالية الشهرية.</div><div class="duty">متابعة أداء فريق الحسابات وتوزيع الأعمال.</div></section></main>
   </section>
 </div>
 <script src="../assets/js/shared.js"></script>
@@ -23,5 +32,19 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="../assets/js/consolidation.js"></script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
+
+<script id="jobDescriptionSessionBinding">
+(function(){
+  try{
+    const s=JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null');
+    if(!s)return;
+    const n=document.getElementById('jdUserName');
+    const t=document.getElementById('jdUserTitle');
+    if(n)n.textContent=s.name||s.email||'المستخدم';
+    if(t)t.textContent=s.title||s.jobTitle||s.position||'—';
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>

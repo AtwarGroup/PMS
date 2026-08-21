@@ -1,0 +1,16 @@
+{
+  "version": "0.33",
+  "feature": "dynamic authenticated profile",
+  "checks": {
+    "reads_atwarSession": true,
+    "reads_firebase_user": true,
+    "loads_manager": true,
+    "dynamic_name": true,
+    "dynamic_title": true,
+    "dynamic_department": true,
+    "dynamic_manager": true,
+    "shared_shell": true
+  },
+  "broken_links": [],
+  "errors": []
+}
