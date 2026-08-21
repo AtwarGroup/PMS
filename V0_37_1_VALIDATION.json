@@ -1,0 +1,15 @@
+{
+  "version": "0.37.1",
+  "verdict": "READY",
+  "checks": {
+    "no_equalTo": true,
+    "no_managerUid_query": true,
+    "manager_local_filter": true,
+    "notifications_last_50": true,
+    "task_core": true
+  },
+  "broken_links": [],
+  "live_rules_change_required": false,
+  "live_database_change_required": false,
+  "errors": []
+}

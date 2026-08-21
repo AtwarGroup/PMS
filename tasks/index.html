@@ -555,7 +555,7 @@
 -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, limitToLast, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -1197,30 +1197,30 @@ onAuthStateChanged(auth,async(user)=>{
       return;
     }
 
-    // Free-tier optimization:
+    // Stability-first / Free-tier friendly:
     // employee -> self only
-    // manager  -> self + direct team only (managerUid equals current manager uid)
-    // admin    -> all users, because admin tools genuinely require organization-wide scope
+    // manager  -> one small users read, then filter direct team locally.
+    // admin    -> all users when organization-wide scope is needed.
+    //
+    // This avoids requiring an indexed managerUid query in the current live Rules.
     if(currentProfile.role==='employee'){
       users=[currentProfile];
-    }else if(currentProfile.role==='manager'){
-      const teamQuery=query(
-        ref(db,'users'),
-        orderByChild('managerUid'),
-        equalTo(user.uid)
-      );
-      const teamSnap=await withTimeout(get(teamQuery),8000);
-      users=[currentProfile];
-      if(teamSnap.exists()){
-        for(const [uid,v] of Object.entries(teamSnap.val())){
-          if(uid!==user.uid)users.push({uid,...v});
-        }
-      }
     }else{
       const usersSnap=await withTimeout(get(ref(db,'users')),8000);
-      users=usersSnap.exists()
+      const allUsers=usersSnap.exists()
         ? Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v}))
         : [currentProfile];
+
+      if(currentProfile.role==='manager'){
+        users=allUsers.filter(u=>
+          u.uid===user.uid ||
+          u.managerUid===user.uid ||
+          u.managerUID===user.uid ||
+          u.managerId===user.uid
+        );
+      }else{
+        users=allUsers;
+      }
     }
 
     const me=users.find(u=>u.uid===user.uid);
