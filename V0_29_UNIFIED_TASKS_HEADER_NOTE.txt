@@ -1,0 +1,23 @@
+ATWAR ONE V0.29 — UNIFIED TASKS HEADER
+=======================================
+
+تم توحيد صفحة المهام مع بقية النظام بصرياً:
+
+1. نفس هيدر ATWAR ONE.
+2. تصحيح تناسق أيقونة البحث.
+3. أدوات المهام في الهيدر:
+   - إضافة مهمة
+   - جرس التنبيهات
+   - رفع Excel
+   - تنزيل Excel
+   - دليل المستخدم
+4. القائمة الجانبية:
+   - بوابة الأنظمة
+   - تسجيل الخروج
+5. صفحة المهام تستخدم نفس أبعاد وألوان القائمة الجانبية لبقية الصفحات.
+
+تم الحفاظ على IDs وCallbacks التشغيلية:
+addTaskButton / notificationButton / notificationPanel / notificationBadge /
+usersButton / saveStatus / currentUserBadge / importFile / importLabel
+
+لم يتم تغيير Firebase أو منطق المهام أو بيانات المهام أو Workflow.

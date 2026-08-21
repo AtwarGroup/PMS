@@ -6,6 +6,7 @@
   <title>ATWAR ONE – Tasks V1.3.16</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -174,42 +175,159 @@
 </style>
 
 <style id="atwarTasksShellStyle">
-:root{--atwar-shell-sidebar:142px;--atwar-shell-navy:#0b1d3a;--atwar-shell-blue:#1677ff}
+:root{
+  --atwar-shell-sidebar:var(--atwar-sidebar-width,160px);
+  --atwar-shell-navy:#0b1d3a;
+  --atwar-shell-blue:#1677ff;
+}
 body{padding-right:var(--atwar-shell-sidebar)!important}
 #atwarTasksShellSidebar{
   position:fixed;top:0;right:0;bottom:0;width:var(--atwar-shell-sidebar);z-index:99999;
-  background:var(--atwar-shell-navy);color:#fff;display:flex;flex-direction:column;
-  font-family:'Tajawal',sans-serif;box-shadow:-2px 0 10px rgba(15,23,42,.08)
+  background:linear-gradient(180deg,#0c2342,#0b1d3a 60%,#0a1a33);
+  color:#fff;display:flex;flex-direction:column;
+  padding:14px 10px;gap:10px;
+  font-family:'Tajawal',sans-serif;
+  box-shadow:-2px 0 10px rgba(15,23,42,.08)
 }
 #atwarTasksShellSidebar *{box-sizing:border-box}
-.atw-ts-brand{padding:17px 12px 15px;border-bottom:1px solid rgba(255,255,255,.08)}
-.atw-ts-brand h1{margin:0;font-size:14px;font-weight:900;letter-spacing:.2px}
-.atw-ts-brand p{margin:5px 0 0;color:#a9bdd8;font-size:8px;line-height:1.5}
-.atw-ts-nav{display:flex;flex-direction:column;gap:5px;padding:12px 8px}
+.atw-ts-brand{
+  padding:6px 8px 14px;
+  border-bottom:1px solid rgba(255,255,255,.08)
+}
+.atw-ts-brand h1{
+  margin:0;font-size:15px;font-weight:900;line-height:1.2
+}
+.atw-ts-brand p{
+  margin:5px 0 0;color:#cbd7e8;font-size:9px;line-height:1.45
+}
+.atw-ts-nav{
+  display:flex;flex-direction:column;gap:5px;padding:0
+}
 .atw-ts-nav a{
-  min-height:36px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:10px;
-  color:#dce8f7;text-decoration:none;font-size:9.5px;font-weight:900;white-space:nowrap
+  min-height:36px;display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:10px;
+  color:#e9f0f8;text-decoration:none;font-size:10px;font-weight:900;
+  white-space:nowrap
 }
 .atw-ts-nav a:hover{background:rgba(255,255,255,.07);color:#fff}
-.atw-ts-nav a.active{background:linear-gradient(135deg,#1167dd,#228cff);color:#fff}
+.atw-ts-nav a.active{
+  background:linear-gradient(135deg,#1567d8,#2188ff);
+  color:#fff;box-shadow:0 8px 20px rgba(22,119,255,.22)
+}
 .atw-ts-nav svg{width:16px;height:16px;flex:none}
 .atw-ts-spacer{flex:1}
-.atw-ts-bottom{padding:10px 8px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.atw-ts-bottom{
+  padding-top:10px;border-top:1px solid rgba(255,255,255,.09)
+}
 .atw-ts-bottom a{
-  display:flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;color:#cbd9ea;
-  border-radius:10px;text-decoration:none;font-size:9px;font-weight:800
+  display:flex;align-items:center;gap:8px;min-height:34px;
+  padding:8px 9px;color:#dbe5f2;border-radius:10px;
+  text-decoration:none;font-size:9.5px;font-weight:800
 }
 .atw-ts-bottom a:hover{background:rgba(255,255,255,.07);color:#fff}
-@media(max-width:900px){
+@media(max-width:1100px){
+  :root{--atwar-shell-sidebar:68px}
+  #atwarTasksShellSidebar{padding:14px 8px}
+  .atw-ts-brand h1,.atw-ts-brand p,.atw-ts-nav span,.atw-ts-bottom span{display:none}
+  .atw-ts-nav a,.atw-ts-bottom a{justify-content:center}
+}
+@media(max-width:760px){
   :root{--atwar-shell-sidebar:0px}
   body{padding-right:0!important}
   #atwarTasksShellSidebar{display:none}
 }
 </style>
 
+
+<style id="atwarTasksUnifiedHeaderStyle">
+#appShell > header.atwar-task-unified-header{
+  background:var(--atwar-navy,#0b1d3a)!important;
+  color:#fff!important;
+  height:72px!important;
+  min-height:72px!important;
+  padding:0 20px!important;
+  position:sticky!important;
+  top:0!important;
+  z-index:40!important;
+  box-shadow:none!important;
+}
+.atw-task-header-inner{
+  height:100%;width:100%;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  max-width:none!important;margin:0!important;padding:0!important;
+}
+.atw-task-brand{
+  display:flex;align-items:center;gap:12px;min-width:max-content;
+}
+.atw-task-brand-mark{width:4px;height:38px;background:#22a0ff;border-radius:999px}
+.atw-task-brand-text h2{margin:0;font-size:17px;font-weight:900;line-height:1.15}
+.atw-task-brand-text p{margin:5px 0 0;font-size:9px;color:#d7e4f3}
+.atw-task-pm{font-size:8px;line-height:1.35;color:#21a4ff;font-style:italic;font-weight:800}
+.atw-task-tools{
+  display:flex;align-items:center;gap:7px;min-width:0;
+}
+.atw-task-search{
+  width:250px;height:36px;display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:0 11px;color:#dbe8f7;
+}
+.atw-task-search svg{width:16px;height:16px;flex:none}
+.atw-task-search input{
+  width:100%;border:0!important;background:transparent!important;color:#fff!important;
+  padding:0!important;min-height:auto!important;font-family:'Tajawal',sans-serif;font-size:10px!important;
+}
+.atw-task-search input::placeholder{color:#91a5bd}
+.atw-task-icon-btn{
+  width:36px;height:36px;border:0;border-radius:10px;
+  background:rgba(255,255,255,.08);color:#fff;
+  display:grid;place-items:center;cursor:pointer;position:relative;
+}
+.atw-task-icon-btn:hover{background:rgba(255,255,255,.14)}
+.atw-task-icon-btn svg{width:16px;height:16px}
+.atw-task-add{
+  min-height:36px;border:0;border-radius:10px;padding:0 13px;
+  display:flex;align-items:center;gap:7px;background:var(--atwar-blue,#1677ff);color:#fff;
+  font-family:'Tajawal',sans-serif;font-size:10px;font-weight:900;cursor:pointer;
+}
+.atw-task-add:hover{background:#0f68e7}
+.atw-task-add svg{width:15px;height:15px}
+.atw-task-user{
+  display:flex;align-items:center;gap:7px;padding-right:4px;
+}
+#currentUserBadge.atw-task-user-badge{
+  background:transparent!important;padding:0!important;border-radius:0!important;
+  font-size:10px!important;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#saveStatus.atw-task-save-status{
+  font-size:9px!important;padding:6px 8px!important;border-radius:8px!important;
+  background:rgba(255,255,255,.07)!important;
+}
+#notificationBadge{
+  position:absolute!important;top:-5px!important;right:-5px!important;
+}
+.atw-ts-logout{
+  width:100%;display:flex;align-items:center;gap:8px;min-height:34px;padding:8px 9px;
+  border:0;background:transparent;color:#ff7777;border-radius:10px;text-align:right;
+  font-family:'Tajawal',sans-serif;font-size:9.5px;font-weight:900;cursor:pointer;
+}
+.atw-ts-logout:hover{background:rgba(255,255,255,.07)}
+.atw-ts-logout svg{width:16px;height:16px}
+@media(max-width:1200px){
+  .atw-task-search{width:190px}
+  .atw-task-save-status{display:none}
+}
+@media(max-width:1000px){
+  .atw-task-pm{display:none}
+  .atw-task-search{display:none}
+  .atw-task-user{display:none}
+}
+</style>
+
+<link rel="stylesheet" href="../assets/css/shared.css">
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen">
+
 
 <aside id="atwarTasksShellSidebar" aria-label="ATWAR ONE Navigation">
   <div class="atw-ts-brand">
@@ -227,8 +345,12 @@ body{padding-right:var(--atwar-shell-sidebar)!important}
   <div class="atw-ts-spacer"></div>
   <div class="atw-ts-bottom">
     <a href="../landing.html"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
+    <button type="button" id="atwarTasksLogout" onclick="logoutUser()" class="atw-ts-logout">
+      <i data-lucide="log-out"></i><span>تسجيل خروج</span>
+    </button>
   </div>
 </aside>
+
 
 
 <!-- Session loading -->
@@ -268,58 +390,68 @@ body{padding-right:var(--atwar-shell-sidebar)!important}
 
 <!-- App -->
 <div id="appShell" class="hidden min-h-screen flex-col">
-  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-40">
-    <div class="max-w-[1600px] mx-auto px-4 py-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between">
-      <div class="flex items-center gap-3 self-stretch lg:self-auto">
-        <div class="w-3 h-10 bg-blue-500 rounded-full"></div>
-        <div>
-          <h1 class="text-xl font-black">ATWAR ONE – Tasks</h1>
-          <p id="pageSubtitle" class="text-[11px] text-blue-200">المهام </p>
+  
+<header class="atwar-task-unified-header">
+  <div class="atw-task-header-inner">
+    <div class="atw-task-brand">
+      <div class="atw-task-brand-mark"></div>
+      <div class="atw-task-brand-text">
+        <h2>نظام إدارة الأداء المؤسسي</h2>
+        <p>مؤسسة أطوار للتجارة</p>
+      </div>
+      <div class="atw-task-pm">Performance Management<br>System</div>
+    </div>
+
+    <div class="atw-task-tools">
+      <div class="atw-task-search">
+        <i data-lucide="search"></i>
+        <input id="taskHeaderSearch" type="text" placeholder="البحث في المهام..." aria-label="البحث في المهام">
+      </div>
+
+      <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="atw-task-add">
+        <i data-lucide="plus"></i><span>إضافة مهمة</span>
+      </button>
+
+      <div class="relative">
+        <button id="notificationButton" type="button" onclick="toggleNotifications()" class="atw-task-icon-btn" title="الإشعارات" aria-label="الإشعارات">
+          <i data-lucide="bell"></i>
+          <span id="notificationBadge" class="hidden min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center">0</span>
+        </button>
+        <div id="notificationPanel" class="hidden absolute left-0 mt-2 w-[340px] max-w-[90vw] bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-[70]">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <b class="text-sm">الإشعارات</b>
+            <button onclick="markAllNotificationsRead()" class="text-[11px] font-bold text-blue-600">تحديد الكل كمقروء</button>
+          </div>
+          <div id="notificationList" class="max-h-[360px] overflow-auto"></div>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <span id="currentUserBadge" class="text-xs font-bold px-3 py-2 rounded-xl bg-white/10"></span>
-        <span id="saveStatus" class="text-xs font-bold px-3 py-2 rounded-xl bg-white/10 text-emerald-300">☁️ تم الحفظ</span>
-        <a href="user-guide.html" target="_blank" rel="noopener noreferrer" class="bg-white/10 hover:bg-white/15 text-white text-base font-bold w-10 h-10 rounded-xl flex items-center justify-center" title="دليل المستخدم" aria-label="دليل المستخدم">📘</a>
-        <div class="relative">
-          <button id="notificationButton" type="button" onclick="toggleNotifications()" class="relative bg-white/10 hover:bg-white/15 text-white text-base font-bold w-10 h-10 rounded-xl" title="الإشعارات">🔔
-            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center">0</span>
-          </button>
-          <div id="notificationPanel" class="hidden absolute left-0 mt-2 w-[340px] max-w-[90vw] bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-[70]">
-            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-              <b class="text-sm">الإشعارات</b>
-              <button onclick="markAllNotificationsRead()" class="text-[11px] font-bold text-blue-600">تحديد الكل كمقروء</button>
-            </div>
-            <div id="notificationList" class="max-h-[360px] overflow-auto"></div>
-          </div>
-        </div>
-        <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm">👥 المستخدمون</button>
-        <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md">＋ إضافة مهمة</button>
-        <div class="relative">
-          <button type="button" onclick="toggleMoreMenu()" class="bg-white/10 hover:bg-white/15 text-white text-lg font-black px-3 py-1.5 rounded-xl" title="المزيد">⋯</button>
-          <div id="moreMenu" class="hidden absolute left-0 mt-2 w-44 bg-white text-slate-700 rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
-            <a href="user-guide.html" target="_blank" rel="noopener noreferrer" onclick="toggleMoreMenu(false)" class="block w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50">📘 دليل المستخدم</a>
-            <button onclick="exportToExcel();toggleMoreMenu(false)" class="w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50">⬇ تصدير Excel</button>
-            <label id="importLabel" for="importFile" class="block w-full text-right px-4 py-3 text-xs font-bold hover:bg-slate-50 cursor-pointer">⬆ رفع Excel</label>
-          </div>
-       </div>
 
-<input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
+      <label id="importLabel" for="importFile" class="atw-task-icon-btn" title="رفع Excel" aria-label="رفع Excel">
+        <i data-lucide="upload"></i>
+      </label>
 
-<a
-  href="../"
-  class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2"
-  title="العودة إلى نظام إدارة الأداء المؤسسي"
->
-  <span>🏠</span>
-  <span>PMS</span>
-</a>
+      <button type="button" onclick="exportToExcel()" class="atw-task-icon-btn" title="تنزيل Excel" aria-label="تنزيل Excel">
+        <i data-lucide="download"></i>
+      </button>
 
-<button onclick="logoutUser()" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl">تسجيل خروج</button>
+      <a href="user-guide.html" target="_blank" rel="noopener noreferrer" class="atw-task-icon-btn" title="دليل المستخدم" aria-label="دليل المستخدم">
+        <i data-lucide="book-open"></i>
+      </a>
 
-</div>
+      <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden atw-task-icon-btn" title="المستخدمون">
+        <i data-lucide="users"></i>
+      </button>
+
+      <div class="atw-task-user">
+        <span id="saveStatus" class="atw-task-save-status">☁️ تم الحفظ</span>
+        <span id="currentUserBadge" class="atw-task-user-badge"></span>
+      </div>
+
+      <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
     </div>
-  </header>
+  </div>
+</header>
+
 
   <main class="w-full max-w-[1600px] mx-auto p-3 lg:p-4 space-y-3">
 
@@ -2986,6 +3118,26 @@ Object.assign(window,{
     const team=document.getElementById('atwarTasksTeamLink');
     if(team && session && session.role==='employee') team.style.display='none';
   }catch(e){}
+  try{ if(window.lucide) lucide.createIcons(); }catch(e){}
+})();
+</script>
+
+
+<script id="atwarTaskHeaderSearchSync">
+(function(){
+  const headerSearch=document.getElementById('taskHeaderSearch');
+  if(!headerSearch) return;
+
+  const findMainSearch=()=>document.getElementById('searchInput') || document.querySelector('input[placeholder*="بحث في المهام"]');
+
+  headerSearch.addEventListener('input',()=>{
+    const main=findMainSearch();
+    if(!main) return;
+    main.value=headerSearch.value;
+    main.dispatchEvent(new Event('input',{bubbles:true}));
+    main.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+
   try{ if(window.lucide) lucide.createIcons(); }catch(e){}
 })();
 </script>

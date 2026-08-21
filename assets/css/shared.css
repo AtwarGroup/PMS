@@ -135,3 +135,463 @@ input,select,button,.btn{
     padding-bottom:14px;
   }
 }
+
+
+/* =========================================================
+   ATWAR ONE V0.28 — UNIFIED SHELL STANDARD
+   One navigation/header density across all modules.
+   ========================================================= */
+:root{
+  --atwar-nav-width:160px;
+  --atwar-topbar-height:72px;
+}
+
+.atwar-shell{
+  grid-template-columns:var(--atwar-nav-width) minmax(0,1fr) !important;
+}
+
+.atwar-sidebar{
+  padding:14px 10px !important;
+  gap:10px !important;
+}
+
+.atwar-brand{
+  padding:6px 8px 14px !important;
+}
+.atwar-brand h1{
+  font-size:15px !important;
+  line-height:1.2 !important;
+}
+.atwar-brand p{
+  font-size:9px !important;
+  line-height:1.45 !important;
+}
+
+.atwar-nav{
+  gap:5px !important;
+}
+.atwar-nav a{
+  gap:9px !important;
+  padding:9px 10px !important;
+  min-height:36px !important;
+  border-radius:10px !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+}
+.atwar-nav i,
+.atwar-nav svg{
+  width:16px !important;
+  height:16px !important;
+}
+
+.atwar-side-section{
+  padding-top:10px !important;
+}
+.atwar-side-link{
+  gap:8px !important;
+  padding:8px 9px !important;
+  min-height:34px !important;
+  font-size:9.5px !important;
+}
+
+.atwar-topbar{
+  height:var(--atwar-topbar-height) !important;
+  padding:0 20px !important;
+  gap:14px !important;
+}
+.atwar-top-brand{
+  gap:12px !important;
+}
+.atwar-brand-mark{
+  width:4px !important;
+  height:38px !important;
+}
+.atwar-org-title h2{
+  font-size:17px !important;
+}
+.atwar-org-title p{
+  font-size:9px !important;
+}
+.atwar-pm-label{
+  font-size:8px !important;
+  line-height:1.35 !important;
+}
+.atwar-search{
+  height:36px !important;
+  min-width:220px !important;
+}
+.atwar-search input{
+  font-size:10px !important;
+}
+.atwar-user-name{
+  font-size:11px !important;
+}
+.atwar-user-role{
+  font-size:9px !important;
+}
+.atwar-avatar{
+  width:34px !important;
+  height:34px !important;
+  font-size:11px !important;
+}
+
+@media(max-width:1100px){
+  :root{--atwar-nav-width:68px}
+  .atwar-sidebar{padding:14px 8px !important}
+  .atwar-sidebar .atwar-brand h1,
+  .atwar-sidebar .atwar-brand p,
+  .atwar-nav span,
+  .atwar-side-link span{display:none !important}
+  .atwar-nav a,.atwar-side-link{justify-content:center !important}
+}
+
+
+/* V0.29 — Search icon alignment */
+.atwar-search{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  position:relative!important;
+}
+.atwar-search svg,
+.atwar-search i[data-lucide="search"]{
+  width:16px!important;
+  height:16px!important;
+  flex:0 0 16px!important;
+  margin:0!important;
+  position:static!important;
+}
+.atwar-search input{
+  line-height:1!important;
+  padding-top:0!important;
+  padding-bottom:0!important;
+}
+
+
+/* =========================================================
+   ATWAR ONE V0.30 — UI STANDARD V1
+   Centralized visual system
+   ========================================================= */
+
+:root{
+  /* Brand */
+  --atwar-navy:#0b1d3a;
+  --atwar-navy-2:#0c2342;
+  --atwar-blue:#1677ff;
+  --atwar-blue-hover:#0f68e7;
+
+  /* Surfaces */
+  --atwar-bg:#f4f7fb;
+  --atwar-surface:#ffffff;
+  --atwar-surface-soft:#f8fafc;
+
+  /* Text */
+  --atwar-text:#14243a;
+  --atwar-text-2:#53657c;
+  --atwar-muted:#7b8aa5;
+
+  /* Borders */
+  --atwar-border:#e5edf6;
+  --atwar-border-strong:#dfe7f1;
+
+  /* Status */
+  --atwar-success:#139c68;
+  --atwar-warning:#d97706;
+  --atwar-danger:#df3f44;
+  --atwar-info:#2563eb;
+
+  /* Typography */
+  --atwar-font:'Tajawal',sans-serif;
+  --atwar-fs-xxs:9px;
+  --atwar-fs-xs:10px;
+  --atwar-fs-sm:12px;
+  --atwar-fs-md:14px;
+  --atwar-fs-lg:17px;
+  --atwar-fs-xl:24px;
+  --atwar-fs-2xl:28px;
+
+  /* Radius */
+  --atwar-radius-control:10px;
+  --atwar-radius-card:14px;
+  --atwar-radius-large:18px;
+  --atwar-radius-pill:999px;
+
+  /* Spacing */
+  --atwar-sp-1:4px;
+  --atwar-sp-2:8px;
+  --atwar-sp-3:12px;
+  --atwar-sp-4:16px;
+  --atwar-sp-5:20px;
+  --atwar-sp-6:24px;
+
+  /* Shell */
+  --atwar-sidebar-width:160px;
+  --atwar-header-height:72px;
+}
+
+/* Base */
+html,body{
+  font-family:var(--atwar-font)!important;
+}
+body{
+  color:var(--atwar-text);
+  background:var(--atwar-bg);
+}
+
+/* Typography */
+.atwar-page-title,
+.page-title,
+h1.atwar-title{
+  font-size:var(--atwar-fs-2xl)!important;
+  line-height:1.25!important;
+  font-weight:900!important;
+}
+.atwar-section-title,
+.card-title,
+.panel-title{
+  font-size:var(--atwar-fs-lg)!important;
+  line-height:1.3!important;
+  font-weight:900!important;
+}
+.atwar-card-title{
+  font-size:var(--atwar-fs-md)!important;
+  font-weight:900!important;
+}
+.atwar-body,
+.atwar-text,
+body,
+button,
+input,
+select,
+textarea{
+  font-size:var(--atwar-fs-sm);
+}
+.atwar-meta,
+.muted,
+.subtitle,
+small{
+  font-size:var(--atwar-fs-xs)!important;
+  color:var(--atwar-muted);
+}
+
+/* Shared shell */
+.atwar-shell{
+  grid-template-columns:var(--atwar-sidebar-width) minmax(0,1fr)!important;
+}
+.atwar-sidebar{
+  background:linear-gradient(180deg,var(--atwar-navy-2),var(--atwar-navy) 62%,#0a1a33)!important;
+  color:#fff!important;
+  padding:14px 10px!important;
+  gap:10px!important;
+}
+.atwar-brand{
+  padding:6px 8px 14px!important;
+}
+.atwar-brand h1{
+  margin:0!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+}
+.atwar-brand p{
+  margin:5px 0 0!important;
+  font-size:var(--atwar-fs-xxs)!important;
+  color:#cbd7e8!important;
+  line-height:1.45!important;
+}
+.atwar-nav{
+  gap:5px!important;
+}
+.atwar-nav a{
+  min-height:36px!important;
+  padding:9px 10px!important;
+  border-radius:var(--atwar-radius-control)!important;
+  gap:9px!important;
+  color:#e9f0f8!important;
+  font-size:var(--atwar-fs-xs)!important;
+  font-weight:900!important;
+}
+.atwar-nav a:hover{
+  background:rgba(255,255,255,.07)!important;
+}
+.atwar-nav a.active{
+  background:linear-gradient(135deg,#1567d8,#2188ff)!important;
+  color:#fff!important;
+  box-shadow:0 8px 20px rgba(22,119,255,.22)!important;
+}
+.atwar-nav svg,
+.atwar-nav i{
+  width:16px!important;
+  height:16px!important;
+}
+.atwar-side-section{
+  padding-top:10px!important;
+}
+.atwar-side-link{
+  min-height:34px!important;
+  padding:8px 9px!important;
+  gap:8px!important;
+  font-size:9.5px!important;
+  border-radius:var(--atwar-radius-control)!important;
+}
+
+/* Header */
+.atwar-topbar{
+  height:var(--atwar-header-height)!important;
+  min-height:var(--atwar-header-height)!important;
+  padding:0 20px!important;
+  background:var(--atwar-navy)!important;
+  color:#fff!important;
+  gap:14px!important;
+}
+.atwar-top-brand{
+  gap:12px!important;
+}
+.atwar-brand-mark{
+  width:4px!important;
+  height:38px!important;
+  background:#22a0ff!important;
+  border-radius:var(--atwar-radius-pill)!important;
+}
+.atwar-org-title h2{
+  font-size:var(--atwar-fs-lg)!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+}
+.atwar-org-title p{
+  font-size:var(--atwar-fs-xxs)!important;
+  color:#d7e4f3!important;
+}
+.atwar-pm-label{
+  font-size:8px!important;
+  color:#21a4ff!important;
+  line-height:1.35!important;
+}
+.atwar-search{
+  height:36px!important;
+  min-height:36px!important;
+  min-width:220px!important;
+  padding:0 11px!important;
+  gap:8px!important;
+  display:flex!important;
+  align-items:center!important;
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:var(--atwar-radius-control)!important;
+}
+.atwar-search svg,
+.atwar-search i{
+  width:16px!important;
+  height:16px!important;
+  flex:0 0 16px!important;
+  position:static!important;
+  margin:0!important;
+}
+.atwar-search input{
+  min-height:auto!important;
+  border:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  padding:0!important;
+  font-size:var(--atwar-fs-xs)!important;
+}
+.atwar-search input::placeholder{
+  color:#91a5bd!important;
+}
+.atwar-user-name{
+  font-size:11px!important;
+  font-weight:900!important;
+}
+.atwar-user-role{
+  font-size:var(--atwar-fs-xxs)!important;
+  color:#c7d5e7!important;
+}
+.atwar-avatar{
+  width:34px!important;
+  height:34px!important;
+  font-size:11px!important;
+}
+
+/* Cards / panels */
+.home-card,
+.card,
+.panel,
+.box,
+.tile,
+.stat,
+.kpi-card,
+.employee-card,
+.team-card,
+.follow-card,
+.notification-card{
+  background:var(--atwar-surface);
+  border-color:var(--atwar-border)!important;
+  border-radius:var(--atwar-radius-card)!important;
+  box-shadow:0 4px 14px rgba(20,45,80,.035);
+}
+.atwar-content{
+  padding:20px!important;
+}
+
+/* Controls */
+button,
+.btn,
+input,
+select,
+textarea{
+  font-family:var(--atwar-font)!important;
+}
+button,
+.btn{
+  min-height:36px;
+  border-radius:var(--atwar-radius-control)!important;
+  font-size:var(--atwar-fs-sm)!important;
+}
+input,
+select,
+textarea{
+  border-color:var(--atwar-border-strong)!important;
+  border-radius:var(--atwar-radius-control)!important;
+}
+.atwar-primary,
+.btn-primary{
+  background:var(--atwar-blue)!important;
+  color:#fff!important;
+}
+.atwar-primary:hover,
+.btn-primary:hover{
+  background:var(--atwar-blue-hover)!important;
+}
+
+/* Pills */
+.badge,
+.pill,
+.tag,
+.status-chip{
+  border-radius:var(--atwar-radius-pill)!important;
+}
+
+/* Status colors */
+.text-success{color:var(--atwar-success)!important}
+.text-warning{color:var(--atwar-warning)!important}
+.text-danger{color:var(--atwar-danger)!important}
+.text-info{color:var(--atwar-info)!important}
+
+/* Footer */
+.atwar-footer,
+.atwar-copyright{
+  font-size:var(--atwar-fs-xxs)!important;
+  color:#8a98aa!important;
+}
+
+/* Responsive */
+@media(max-width:1100px){
+  :root{--atwar-sidebar-width:68px}
+  .atwar-sidebar{padding:14px 8px!important}
+  .atwar-sidebar .atwar-brand h1,
+  .atwar-sidebar .atwar-brand p,
+  .atwar-nav span,
+  .atwar-side-link span{display:none!important}
+  .atwar-nav a,
+  .atwar-side-link{justify-content:center!important}
+}
