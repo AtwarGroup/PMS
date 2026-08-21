@@ -406,3 +406,21 @@ tasks/index.html = LOCKED
 أي تعديل على صفحة المهام مستقبلاً يحتاج طلباً صريحاً من المستخدم.
 
 بقية تبسيطات V0.21 بقيت كما هي.
+
+
+V0.25 FIREBASE LOGIN INTEGRATION
+--------------------------------
+تم ربط login.html بـ Firebase Authentication الحقيقي المستخدم في صفحة المهام الأصلية.
+
+آلية الدخول:
+1. Firebase Authentication يتحقق من البريد وكلمة المرور.
+2. يتم قراءة users/{uid} من Realtime Database.
+3. يجب أن يكون المستخدم معرفاً في users/{uid}.
+4. يتم رفض الحساب إذا active=false أو status=inactive.
+5. يتم أخذ role و managerUid و managerChain من ملف المستخدم.
+6. يتم فتح الرئيسية وتطبيق الصلاحيات على الواجهة.
+7. تم حذف حسابات الاختبار من صفحة الدخول.
+8. تسجيل الخروج من ATWAR ONE يقوم أيضاً بـ Firebase signOut.
+
+مهم:
+tasks/index.html بقي Locked ولم يتم تعديل بايت واحد فيه.

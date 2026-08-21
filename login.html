@@ -42,46 +42,145 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
 
     <label>كلمة المرور</label>
     <input id="password" type="password" placeholder="••••••••">
-<button onclick="loginDemo()">دخول</button>
+<button id="loginButton" type="button">دخول</button>
     <div id="error" class="error">يرجى إدخال البريد الإلكتروني وكلمة المرور.</div>
 
     <div class="demo">
-      <b>حسابات الاختبار:</b><br>
-      موظف: employee@atwar.local &nbsp; / &nbsp; 123456<br>
-      مدير: manager@atwar.local &nbsp; / &nbsp; 123456<br>
-      مدير النظام: admin@atwar.local &nbsp; / &nbsp; 123456<br><br>
-      في النسخة النهائية سيتم استبدال هذه الحسابات بـ Firebase Authentication وملف المستخدم الحقيقي.
+      استخدم نفس البريد الإلكتروني وكلمة المرور الخاصة بحسابك في نظام المهام.
     </div>
 
-    <div style="margin-top:12px;font-size:11px;color:#7b8aa5;line-height:1.7">بعد تسجيل الدخول سيتم توجيهك تلقائياً إلى الصفحة الأنسب لدورك.</div>
+    <div style="margin-top:12px;font-size:11px;color:#7b8aa5;line-height:1.7">بعد التحقق من حسابك سيتم فتح الرئيسية وتطبيق الصلاحيات المسجلة في النظام.</div>
 <a href="landing.html" class="back">← العودة إلى صفحة البداية</a>
   </div>
 </section>
 </div>
+<script src="assets/js/firebase-config.js"></script>
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js"></script>
-<script>
-function loginDemo(){
-  const email=document.getElementById('email').value.trim().toLowerCase();
-  const password=document.getElementById('password').value.trim();
-  const account=(window.ATWAR_DEMO_ACCOUNTS||{})[email];
-  if(!account || account.password!==password){
-    const error=document.getElementById('error');
-    error.textContent='بيانات الدخول غير صحيحة.';
-    error.style.display='block';
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const app = getApps().length ? getApps()[0] : initializeApp(window.ATWAR_FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const emailEl = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const buttonEl = document.getElementById('loginButton');
+const errorEl = document.getElementById('error');
+let manualLoginInProgress = false;
+
+function roleLabel(role){
+  return role === 'admin' ? 'مدير النظام' : role === 'manager' ? 'مدير' : 'موظف';
+}
+
+function defaultPermissions(role){
+  return (window.ATWAR_ROLE_DEFAULT_PERMISSIONS?.[role] || ['home','tasks','profile']).slice();
+}
+
+function showError(message){
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+}
+
+function clearError(){
+  errorEl.style.display = 'none';
+}
+
+async function loadProfile(user){
+  const snap = await get(ref(db, `users/${user.uid}`));
+  if(!snap.exists()) throw new Error('profile-not-found');
+
+  const profile = { uid:user.uid, ...snap.val() };
+
+  if(profile.active === false || profile.status === 'inactive'){
+    throw new Error('account-inactive');
+  }
+
+  const role = ['employee','manager','admin'].includes(profile.role) ? profile.role : 'employee';
+
+  return {
+    uid: user.uid,
+    email: user.email || profile.email || '',
+    name: profile.name || user.email || 'المستخدم',
+    title: profile.title || profile.jobTitle || profile.position || roleLabel(role),
+    role,
+    managerUid: profile.managerUid || '',
+    managerChain: Array.isArray(profile.managerChain) ? profile.managerChain : [],
+    permissions: Array.isArray(profile.permissions) && profile.permissions.length
+      ? profile.permissions
+      : defaultPermissions(role),
+    source: 'firebase'
+  };
+}
+
+async function establishSession(user){
+  const session = await loadProfile(user);
+  localStorage.setItem('atwarSession', JSON.stringify(session));
+  localStorage.removeItem('atwarDemoSession');
+  return session;
+}
+
+async function login(){
+  const email = emailEl.value.trim();
+  const password = passwordEl.value;
+  if(!email || !password){
+    showError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
     return;
   }
 
-  localStorage.setItem('atwarDemoSession',JSON.stringify({
-    email,
-    role:account.role,
-    name:account.name,
-    title:account.title,
-    permissions:account.permissions
-  }));
+  manualLoginInProgress = true;
+  clearError();
+  buttonEl.disabled = true;
+  buttonEl.textContent = 'جاري الدخول...';
 
-  location.href=(window.ATWAR_START_PAGE||{})[account.role]||'index.html';
+  try{
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const session = await establishSession(cred.user);
+    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'index.html';
+  }catch(error){
+    console.error(error);
+    localStorage.removeItem('atwarSession');
+
+    if(error?.message === 'profile-not-found'){
+      await signOut(auth);
+      showError('الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.');
+    }else if(error?.message === 'account-inactive'){
+      await signOut(auth);
+      showError('هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.');
+    }else{
+      const code = error?.code || '';
+      showError(
+        code === 'auth/user-disabled' ? 'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.' :
+        code === 'auth/too-many-requests' ? 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى لاحقًا.' :
+        code === 'auth/network-request-failed' ? 'تعذر الاتصال بالخدمة. تحقق من الإنترنت ثم حاول مرة أخرى.' :
+        'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.'
+      );
+    }
+  }finally{
+    buttonEl.disabled = false;
+    buttonEl.textContent = 'دخول';
+    manualLoginInProgress = false;
+  }
 }
+
+buttonEl.addEventListener('click', login);
+passwordEl.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
+emailEl.addEventListener('keydown', e => { if(e.key === 'Enter') passwordEl.focus(); });
+
+onAuthStateChanged(auth, async user => {
+  if(!user || manualLoginInProgress) return;
+  try{
+    const session = await establishSession(user);
+    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'index.html';
+  }catch{
+    localStorage.removeItem('atwarSession');
+  }
+});
+
 lucide.createIcons();
 </script>
 

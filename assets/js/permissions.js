@@ -1,14 +1,17 @@
 
 function getAtwarDemoSession(){
-  try{return JSON.parse(localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
+  try{
+    return JSON.parse(
+      localStorage.getItem('atwarSession') ||
+      localStorage.getItem('atwarDemoSession') ||
+      'null'
+    );
+  }catch{return null}
 }
 
 function atwarDepth(){
-  return (
-    location.pathname.includes('/tasks/') ||
-    location.pathname.includes('/team/') ||
-    location.pathname.includes('/profile/')
-  ) ? '../' : '';
+  const nestedModules=['tasks','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day'];
+  return nestedModules.some(name=>location.pathname.includes('/'+name+'/')) ? '../' : '';
 }
 
 function atwarRoleRank(role){
@@ -61,8 +64,25 @@ function applyAtwarPermissions(){
   if(window.lucide) lucide.createIcons();
 }
 
-function atwarLogout(){
+async function atwarLogout(){
+  localStorage.removeItem('atwarSession');
   localStorage.removeItem('atwarDemoSession');
+
+  try{
+    const [{ initializeApp, getApps }, { getAuth, signOut }] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
+    ]);
+
+    const config = window.ATWAR_FIREBASE_CONFIG;
+    if(config){
+      const app = getApps().length ? getApps()[0] : initializeApp(config);
+      await signOut(getAuth(app));
+    }
+  }catch(error){
+    console.warn('Firebase sign-out warning:', error);
+  }
+
   location.href=atwarDepth()+'landing.html';
 }
 
