@@ -1,0 +1,18 @@
+{
+  "version": "0.32",
+  "purpose": "stability fix",
+  "tasks_missing_getElementById_targets": [
+    "moreMenu"
+  ],
+  "tasks_required_missing": [],
+  "tasks_unsafe_textContent_targets": [],
+  "profile_checks": {
+    "unified_shell": true,
+    "sidebar": true,
+    "header": true,
+    "shared_css": true,
+    "shell_components": true
+  },
+  "broken_local_links": [],
+  "errors": []
+}

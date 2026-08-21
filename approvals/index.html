@@ -5,6 +5,7 @@
 <title>ATWAR ONE – الاعتمادات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/shell-components.js"></script>
 <link rel="stylesheet" href="../assets/css/shared.css">
 <style>
 .approval-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
@@ -21,33 +22,9 @@
 </head>
 <body data-min-role="manager">
 <div class="atwar-shell">
-<aside class="atwar-sidebar">
-<div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
-<nav class="atwar-nav">
-<a href="../index.html"><i data-lucide="home"></i><span>الرئيسية</span></a>
-      <a href="../my-day/index.html"><i data-lucide="sun"></i><span>يومي</span></a>
-      <a href="../workspace/index.html"><i data-lucide="notebook-pen"></i><span>مساحة عملي</span></a>
-<a href="../tasks/index.html"><i data-lucide="square-check-big"></i><span>المهام</span></a>
-      <a href="../follow-up/index.html"><i data-lucide="clock-arrow-up"></i><span>المتابعات</span></a>
-<a href="../team/index.html"><i data-lucide="users"></i><span>الفريق</span></a>
-<a class="active" href="index.html"><i data-lucide="badge-check"></i><span>الاعتمادات</span></a>
-<a href="../profile/index.html"><i data-lucide="circle-user-round"></i><span>ملفي الوظيفي</span></a>
-      <a href="../organization/index.html"><i data-lucide="network"></i><span>الهيكل التنظيمي</span></a>
-</nav>
-<div class="atwar-spacer"></div>
-<div class="atwar-side-section">
-      <div class="atwar-side-link" onclick="atwarGoToStart()" style="cursor:pointer">
-        <i data-lucide="corner-up-right"></i><span>ابدأ من صفحتي</span>
-      </div>
-<a class="atwar-side-link" href="../landing.html" style="text-decoration:none"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
-<a class="atwar-side-link" data-role-min="admin" href="../admin/index.html" style="text-decoration:none"><i data-lucide="settings"></i><span>إدارة النظام</span></a>
-<div class="atwar-side-link logout" onclick="atwarLogout()" style="cursor:pointer"><i data-lucide="log-out"></i><span>تسجيل خروج</span></div>
-</div></aside>
+<atwar-sidebar active=""></atwar-sidebar>
 <section class="atwar-main">
-<header class="atwar-topbar">
-<div class="atwar-top-brand"><div class="atwar-brand-mark"></div><div class="atwar-org-title"><h2>نظام إدارة الأداء المؤسسي</h2><p>مؤسسة أطوار للتجارة</p></div><div class="atwar-pm-label">Performance Management<br>System</div></div>
-<div class="atwar-top-actions"><div class="atwar-search"><i data-lucide="search"></i><input data-global-search placeholder="ابحث..."></div><a href="../notifications/index.html" class="atwar-bell" style="color:white;text-decoration:none"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a><div class="atwar-user"><div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div><div class="atwar-avatar">أ</div></div></div>
-</header>
+<atwar-header></atwar-header>
 <main class="atwar-content">
 <div class="approval-head"><div><h1>الاعتمادات</h1><p>الطلبات التي تحتاج قرارك تظهر هنا مباشرة، والأحدث في الأعلى.</p></div><div class="filters"><button class="active">بانتظار اعتمادي</button><button>تمت معالجتها</button></div></div>
 
