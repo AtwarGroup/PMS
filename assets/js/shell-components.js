@@ -64,7 +64,16 @@
         <a href="user-guide.html" target="_blank" class="atwar-icon-btn" title="دليل المستخدم"><i data-lucide="book-open"></i></a>
         <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden atwar-icon-btn" title="المستخدمون"><i data-lucide="users"></i></button>
         <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
-      `:`<a href="${d}notifications/index.html" class="atwar-bell"><i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span></a>`;
+      `:`<div class="atwar-task-notification-wrap" data-global-notification-wrap>
+          <button type="button" class="atwar-bell" title="الإشعارات" data-global-notification-button>
+            <i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span>
+          </button>
+          <div class="atwar-task-notification-panel hidden" data-global-notification-panel>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-global-mark-read>تحديد الكل كمقروء</button></div>
+            <div class="atwar-notification-list" data-global-notification-list><div style="padding:24px;text-align:center;font-size:10px;color:#94a3b8">جاري تحميل الإشعارات...</div></div>
+            <a href="${d}notifications/index.html" style="display:block;padding:10px 14px;text-align:center;font-size:10px;font-weight:900;color:#2563eb;text-decoration:none;border-top:1px solid #eef2f7">عرض جميع الإشعارات</a>
+          </div>
+        </div>`;
 
       this.innerHTML=`<header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
         <div class="atwar-top-brand">
@@ -97,9 +106,79 @@
         if(av)av.textContent=(s.name||s.email||'م').trim().charAt(0);
       }
       window.lucide?.createIcons();
+      if(mode!=='tasks')setTimeout(()=>window.atwarInitGlobalNotifications?.(this,d),0);
     }
   }
 
+
+
+  window.atwarInitGlobalNotifications=async function(headerEl,depthPrefix=''){
+    if(!headerEl||headerEl.dataset.notificationsReady==='1')return;
+    const button=headerEl.querySelector('[data-global-notification-button]');
+    const panel=headerEl.querySelector('[data-global-notification-panel]');
+    const list=headerEl.querySelector('[data-global-notification-list]');
+    const badge=headerEl.querySelector('[data-global-notification-badge]');
+    const markAll=headerEl.querySelector('[data-global-mark-read]');
+    if(!button||!panel||!list||!badge)return;
+
+    headerEl.dataset.notificationsReady='1';
+    button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();panel.classList.toggle('hidden')});
+    panel.addEventListener('click',e=>e.stopPropagation());
+    document.addEventListener('click',()=>panel.classList.add('hidden'));
+
+    const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const ago=ts=>{const d=Math.max(0,Date.now()-Number(ts||0)),m=Math.floor(d/60000);if(m<1)return'الآن';if(m<60)return`منذ ${m} د`;const h=Math.floor(m/60);return h<24?`منذ ${h} س`:`منذ ${Math.floor(h/24)} يوم`};
+
+    try{
+      let tries=0;while(!window.ATWAR_FIREBASE_CONFIG&&tries<20){await new Promise(r=>setTimeout(r,100));tries++}
+      if(!window.ATWAR_FIREBASE_CONFIG)throw new Error('Firebase config unavailable');
+
+      const appMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const authMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const dbMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      const app=appMod.getApps().length?appMod.getApps()[0]:appMod.initializeApp(window.ATWAR_FIREBASE_CONFIG);
+      const auth=authMod.getAuth(app),db=dbMod.getDatabase(app);
+
+      authMod.onAuthStateChanged(auth,user=>{
+        if(!user)return;
+        const q=dbMod.query(dbMod.ref(db,`notificationsByUser/${user.uid}`),dbMod.orderByChild('createdAt'),dbMod.limitToLast(30));
+        dbMod.onValue(q,snap=>{
+          let rows=snap.exists()?Object.entries(snap.val()).map(([id,v])=>({id,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)):[];
+          // تنظيف تنبيهات التأخير القديمة الخاصة بمهام الفريق بعد اعتماد التنبيه الملخص.
+          const legacyTeamOverdue=rows.filter(x=>x.type==='overdue'&&x.ownerUid&&String(x.ownerUid)!==String(user.uid));
+          if(legacyTeamOverdue.length){
+            rows=rows.filter(x=>!legacyTeamOverdue.some(old=>old.id===x.id));
+          }
+          const unread=rows.filter(x=>!x.read).length;
+          badge.textContent=unread>99?'99+':String(unread);badge.classList.toggle('hidden',unread===0);
+          list.innerHTML=rows.length?rows.slice(0,8).map(n=>`
+            <button type="button" data-global-notification-id="${esc(n.id)}" data-owner-uid="${esc(n.ownerUid||'')}" class="atwar-global-notification-item ${n.read?'':'is-unread'}">
+              <span class="atwar-global-notification-icon">${(n.type==='overdue'||n.type==='overdue_summary')?'⚠️':n.type==='approved'?'✅':n.type==='approval'?'⏳':n.type==='manager_note'?'📝':'🔔'}</span>
+              <span class="atwar-global-notification-copy"><b>${esc(n.title||'إشعار')}</b><small>${esc(n.message||'')}</small></span>
+              <span class="atwar-global-notification-time">${ago(n.createdAt)}</span>
+            </button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
+
+          list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
+            const id=btn.dataset.globalNotificationId,ownerUid=btn.dataset.ownerUid||'';
+            const row=rows.find(x=>x.id===id);
+            try{await dbMod.update(dbMod.ref(db,`notificationsByUser/${user.uid}/${id}`),{read:true})}catch{}
+            panel.classList.add('hidden');
+            if(row?.type==='overdue_summary'){
+              location.href=`${depthPrefix}tasks/index.html?scope=OVERDUE`;
+            }else if(ownerUid&&row?.taskKey){
+              location.href=`${depthPrefix}tasks/index.html?owner=${encodeURIComponent(ownerUid)}&task=${encodeURIComponent(row.taskKey)}`;
+            }else if(ownerUid){
+              location.href=`${depthPrefix}tasks/index.html?owner=${encodeURIComponent(ownerUid)}`;
+            }
+          }));
+          markAll.onclick=async()=>{const changes={};rows.filter(x=>!x.read).forEach(x=>changes[`${x.id}/read`]=true);if(Object.keys(changes).length){try{await dbMod.update(dbMod.ref(db,`notificationsByUser/${user.uid}`),changes)}catch{}}};
+        },()=>{list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>'});
+      });
+    }catch(error){
+      console.error('Global notifications:',error);
+      list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';
+    }
+  };
 
   window.atwarSyncShellIdentity=function(profile,authUser){
     if(!profile&&!authUser)return;

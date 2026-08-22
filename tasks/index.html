@@ -562,11 +562,11 @@
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const firebaseConfig = {
+const firebaseConfig = window.ATWAR_FIREBASE_CONFIG || {
   apiKey: "AIzaSyCgvfHsmtb0qYAMfUjV7iKmZUcJ5n_aSy4",
   authDomain: "atwarpms.firebaseapp.com",
   databaseURL: "https://atwarpms-default-rtdb.firebaseio.com",
@@ -577,7 +577,7 @@ const firebaseConfig = {
   measurementId: "G-6L59HHPPJW"
 };
 
-const app=initializeApp(firebaseConfig);
+const app=getApps().length?getApps()[0]:initializeApp(firebaseConfig);
 const db=getDatabase(app);
 const auth=getAuth(app);
 
@@ -597,6 +597,8 @@ let managerDashboardCollapsed=false;
 let activityLogExpanded=false;
 let pendingAssigneeChange=null;
 let homeFilterValue='';
+let urlTargetTaskKey='';
+let urlTargetOwnerUid='';
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -876,6 +878,8 @@ function applyHomeDashboardFilterFromUrl(){
   const scope=String(params.get('scope')||'').toUpperCase();
   const ownerRaw=String(params.get('owner')||'').trim();
   const owner=ownerRaw.toLowerCase();
+  urlTargetOwnerUid=ownerRaw;
+  urlTargetTaskKey=String(params.get('task')||'').trim();
   homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
 
   // Deterministic owner scope: me, a permitted UID, or ALL.
@@ -912,6 +916,36 @@ function bindDetailsCloseButtons(){
   };
   document.getElementById('detailsCloseX')?.addEventListener('click',handler);
   document.getElementById('detailsCloseDone')?.addEventListener('click',handler);
+}
+
+
+async function openUrlTargetTaskIfReady(){
+  if(!urlTargetTaskKey||!urlTargetOwnerUid)return false;
+  const composite=`${urlTargetOwnerUid}::${urlTargetTaskKey}`;
+  let task=tasks.find(t=>compositeKey(t)===composite);
+
+  if(!task){
+    try{
+      const snap=await get(ref(db,`tasksByUser/${urlTargetOwnerUid}/${urlTargetTaskKey}`));
+      if(snap.exists()){
+        task={_key:urlTargetTaskKey,_ownerUid:urlTargetOwnerUid,...snap.val()};
+        if(!tasks.some(t=>compositeKey(t)===composite))tasks.push(task);
+      }
+    }catch(error){
+      console.error('Open URL task:',error);
+    }
+  }
+
+  if(!task)return false;
+  assigneeFilterValue=urlTargetOwnerUid;
+  setupAssigneeFilter();
+  homeFilterValue='';
+  selectedTaskKey=composite;
+  renderTasks();
+  renderDetails();
+  requestAnimationFrame(()=>scrollSelectedTaskIntoView(true));
+  urlTargetTaskKey='';
+  return true;
 }
 
 function nextDisplayId(){
@@ -1002,7 +1036,7 @@ function visibleUsers(){
       u.active!==false &&
       (
         String(u.uid)===String(currentUser.uid) ||
-        String(u.managerUid||'')===String(currentUser.uid)
+        isDescendantOf(u,currentUser.uid)
       )
     );
   }
@@ -1479,36 +1513,40 @@ async function createUniqueNotification(uid,key,data){
 async function checkOverdueNotifications(){
   if(!currentUser?.uid||!currentProfile)return;
   const today=localDateISO().replaceAll('-','');
-
-  // الموظف: تنبيه مهامه الشخصية المتأخرة.
-  // المدير: تنبيه مهامه + مهام فريقه المتأخرة التي يستطيع رؤيتها.
-  // مدير النظام: تنبيه المهام المتأخرة الظاهرة له.
   const overdueTasks=tasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0);
 
-  for(const task of overdueTasks){
+  // مهام المستخدم نفسه: إشعار لكل مهمة حتى يعرف المهمة المطلوبة مباشرة.
+  const own=overdueTasks.filter(t=>String(t._ownerUid||'')===String(currentUser.uid||''));
+  for(const task of own){
     const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt);
-    const isOwn=String(task._ownerUid||'')===String(currentUser.uid||'');
-    const owner=users.find(u=>u.uid===task._ownerUid);
-    const ownerName=owner?.name||task.assign||'الموظف';
-
-    let message='';
-    if(isOwn){
-      message=`المهمة "${task.title||'مهمة'}" متأخرة ${delay} يوم.`;
-    }else{
-      message=`مهمة ${ownerName} "${task.title||'مهمة'}" متأخرة ${delay} يوم.`;
-    }
-
     await createUniqueNotification(
       currentUser.uid,
       `overdue_${task._ownerUid}_${task._key}_${today}`,
       {
         type:'overdue',
-        title:isOwn?'مهمة متأخرة':'مهمة متأخرة لدى الفريق',
-        message,
+        title:'مهمة متأخرة',
+        message:`المهمة "${task.title||'مهمة'}" متأخرة ${delay} يوم.`,
         ownerUid:task._ownerUid,
         taskKey:task._key
       }
     );
+  }
+
+  // المدير/مدير النظام: تنبيه يومي واحد ملخص لمهام الفريق، بدل عشرات التنبيهات المتشابهة.
+  if(currentProfile.role==='manager'||currentProfile.role==='admin'){
+    const teamOverdue=overdueTasks.filter(t=>String(t._ownerUid||'')!==String(currentUser.uid||''));
+    if(teamOverdue.length){
+      await createUniqueNotification(
+        currentUser.uid,
+        `overdue_summary_${today}`,
+        {
+          type:'overdue_summary',
+          title:'مهام متأخرة ضمن نطاقك',
+          message:`يوجد ${teamOverdue.length} ${teamOverdue.length===1?'مهمة متأخرة':'مهام متأخرة'} تحتاج متابعة.`,
+          count:teamOverdue.length
+        }
+      );
+    }
   }
 }
 
@@ -1539,6 +1577,14 @@ async function openNotification(key){
   }
 
   toggleNotifications(false);
+  if(n.type==='overdue_summary'){
+    homeFilterValue='OVERDUE';
+    assigneeFilterValue='ALL';
+    setupAssigneeFilter();
+    renderTasks();
+    updateVisibleCount();
+    return;
+  }
   if(!n.ownerUid||!n.taskKey)return;
 
   const composite=`${n.ownerUid}::${n.taskKey}`;
@@ -1768,6 +1814,7 @@ function subscribeVisibleTasks(){
     renderDetails();
     renderManagerDashboard();
     setSaveStatus('saved');
+    openUrlTargetTaskIfReady();
     checkOverdueNotifications();
   };
 
@@ -1781,7 +1828,7 @@ function subscribeVisibleTasks(){
   }
 
   // 1) المهام التي يحق له رؤية كامل مسار صاحبها:
-  // نفسه + فريقه المباشر، أو الجميع للـAdmin.
+  // نفسه + كامل شجرته الإدارية، أو الجميع للـAdmin.
   scoped.forEach(u=>{
     const unsub=onValue(
       ref(db,`tasksByUser/${u.uid}`),

@@ -637,3 +637,11 @@ body.atwar-task-page #authLoadingScreen,body.atwar-task-page #loginScreen,body.a
 @media(max-width:1200px){.atwar-task-save-status{display:none!important}.atwar-task-tools .atwar-search{width:180px!important}}
 @media(max-width:1050px){.atwar-pm-label{display:none!important}.atwar-task-tools .atwar-search{display:none!important}.atwar-user{display:none!important}}
 @media(max-width:1100px){.atwar-shell{grid-template-columns:68px minmax(0,1fr)!important}}
+
+
+.atwar-global-notification-item{width:100%;border:0;border-bottom:1px solid #eef2f7;background:#fff;padding:10px 12px;display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:start;text-align:right;font-family:inherit;color:#334155;cursor:pointer}
+.atwar-global-notification-item:hover{background:#f8fafc}.atwar-global-notification-item.is-unread{background:#f4f8ff}
+.atwar-global-notification-icon{font-size:14px;line-height:1.4}.atwar-global-notification-copy{min-width:0;display:block}
+.atwar-global-notification-copy b{display:block;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atwar-global-notification-copy small{display:block;font-size:9px;color:#718096;line-height:1.55;margin-top:3px;max-height:30px;overflow:hidden}
+.atwar-global-notification-time{font-size:8px;color:#a0aec0;white-space:nowrap;padding-top:2px}

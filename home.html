@@ -68,24 +68,14 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.40.1</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.40.5</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
 </div>
 <script src="assets/js/shared.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
-  setTimeout(()=>{
-    const session=getAtwarDemoSession?.();
-    const grid=document.getElementById('homeTeamEvents');
-    if(grid && session?.role==='employee'){
-      grid.style.gridTemplateColumns='1fr';
-    }
-  },0);
-});
-</script>
+
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js"></script>
 <script src="assets/js/firebase-config.js"></script>
@@ -191,8 +181,8 @@ onAuthStateChanged(auth,async authUser=>{
     const visibleTasks=buckets.flat();
     const myTasks=visibleTasks.filter(t=>t._ownerUid===uid);
 
-    // Admin = organization-wide indicators. Manager/employee = own task indicators.
-    const indicatorTasks=profile.role==='admin'?visibleTasks:myTasks;
+    // Admin = organization-wide. Manager = full managerial scope. Employee = personal indicators.
+    const indicatorTasks=(profile.role==='admin'||profile.role==='manager')?visibleTasks:myTasks;
     if(profile.role==='admin'){
       setText('homeStatCompleted',indicatorTasks.filter(t=>t.status==='مكتملة').length);
       const sub=document.getElementById('homeStatCompletedScope');if(sub)sub.textContent='جميع المهام';
