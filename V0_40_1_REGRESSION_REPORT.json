@@ -1,0 +1,32 @@
+{
+  "version": "V0.40.1",
+  "verdict": "READY",
+  "missing_task_header_contract_functions": [],
+  "header_checks": {
+    "task_bell_button_exists": true,
+    "task_notification_panel_exists": true,
+    "toggle_exported": true,
+    "mark_all_exported": true,
+    "open_notification_exported": true,
+    "users_modal_exported": true,
+    "export_excel_exported": true,
+    "import_excel_exported": true,
+    "notification_subscription": true,
+    "notification_firebase_path": true,
+    "non_task_bell_links_to_page": true,
+    "notifications_page_live_firebase": true,
+    "add_task_exported": true,
+    "details_close_exported": true
+  },
+  "syntax_errors": [],
+  "broken_links": [],
+  "duplicate_ids": [],
+  "root_cause": "Task header uses inline handlers while task logic lives inside an ES module. Five functions existed but were not exported to window, so the browser could not resolve them on click/change.",
+  "functions_fixed": [
+    "toggleNotifications",
+    "markAllNotificationsRead",
+    "openUsersModal",
+    "exportToExcel",
+    "handleImport"
+  ]
+}

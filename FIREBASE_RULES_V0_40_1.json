@@ -1,0 +1,58 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "tasksByUser": {
+      "$ownerUid": {
+        ".read": "auth != null && ($ownerUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child($ownerUid).child('managerUid').val() === auth.uid || root.child('users').child($ownerUid).child('managerChain').child(auth.uid).val() === true)",
+        "$taskId": {
+          ".read": "auth != null && ($ownerUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child($ownerUid).child('managerUid').val() === auth.uid || root.child('users').child($ownerUid).child('managerChain').child(auth.uid).val() === true || data.child('createdByUid').val() === auth.uid)",
+          ".write": "auth != null && (       (        root.child('users').child(auth.uid).child('role').val() === 'admin' &&        (         !data.exists() ||         data.child('status').val() !== 'مكتملة' ||         !newData.exists() ||         newData.child('status').val() === 'قيد التنفيذ'        )       ) ||       (        $ownerUid === auth.uid &&        data.child('status').val() !== 'بانتظار الاعتماد' &&        data.child('status').val() !== 'مكتملة' &&        newData.child('status').val() !== 'مكتملة'       ) ||       (        root.child('users').child($ownerUid).child('managerUid').val() === auth.uid &&        data.child('status').val() !== 'مكتملة' &&        (         data.child('status').val() !== 'بانتظار الاعتماد' ||         newData.child('status').val() === 'مكتملة' ||         newData.child('status').val() === 'قيد التنفيذ'        )       ) || ( data.exists() && root.child('users').child($ownerUid).child('managerChain').child(auth.uid).val() === true && data.child('status').val() !== 'بانتظار الاعتماد' && data.child('status').val() !== 'مكتملة' && newData.child('status').val() !== 'مكتملة' ) ||       (        data.child('createdByUid').val() === auth.uid &&        data.child('status').val() !== 'بانتظار الاعتماد' &&        data.child('status').val() !== 'مكتملة' &&        newData.child('status').val() !== 'مكتملة'       ) ||       (        !data.exists() &&        newData.child('createdByUid').val() === auth.uid &&        root.child('users').child($ownerUid).child('managerChain').child(auth.uid).val() === true       )      )",
+          ".validate": "newData.hasChildren(['id','title','createdByUid','createdBy','assignUid','assign','status','progress']) && newData.child('assignUid').val() === $ownerUid && newData.child('progress').isNumber() && newData.child('progress').val() >= 0 && newData.child('progress').val() <= 100"
+        }
+      }
+    },
+    "createdTaskIndex": {
+      "$creatorUid": {
+        ".read": "auth != null && ($creatorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "$taskId": {
+          ".write": "auth != null && ($creatorUid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || (data.exists() && root.child('users').child(data.val()).child('managerChain').child(auth.uid).val() === true) || (newData.exists() && root.child('users').child(newData.val()).child('managerChain').child(auth.uid).val() === true))",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+    "notificationsByUser": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$notificationId": {
+          ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child($uid).child('managerUid').val() === auth.uid || root.child('users').child($uid).child('managerChain').child(auth.uid).val() === true)",
+          ".validate": "newData.hasChildren(['type','title','message','read','createdAt'])"
+        }
+      }
+    },
+    "notesByUser": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        ".write": "auth != null && $uid === auth.uid",
+        "quickNote": {
+          ".validate": "!newData.exists() || (newData.hasChildren(['text','updatedAt']) && newData.child('text').isString() && newData.child('updatedAt').isNumber())"
+        }
+      }
+    },
+    "followUpsByUser": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$followUpId": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "!newData.exists() || (newData.hasChildren(['title','status','createdAt','updatedAt']) && newData.child('title').isString() && newData.child('status').isString() && (newData.child('status').val() === 'wait' || newData.child('status').val() === 'soon' || newData.child('status').val() === 'done') && newData.child('createdAt').isNumber() && newData.child('updatedAt').isNumber() && (!newData.child('date').exists() || newData.child('date').isString()) && (!newData.child('note').exists() || newData.child('note').isString()))"
+        }
+      }
+    }
+  }
+}

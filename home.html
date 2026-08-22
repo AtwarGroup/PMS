@@ -61,19 +61,14 @@
   </section>
 
   <section id="homeTeamEvents" style="display:grid;grid-template-columns:2fr 1.15fr;gap:16px">
-    <article class="home-card" data-role-min="manager">
-      <div class="home-head"><h3><i data-lucide="users"></i> فريقي</h3><a href="team/index.html">عرض الفريق بالكامل</a></div>
-      <div id="homeTeamGrid" class="team-mini-grid">
-<div class="mini-member"><div><b>جاري تحميل الفريق...</b><small>يتم قراءة بيانات المستخدمين</small></div></div>
-</div>
-    </article>
+    
   </section>
 
   
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.38.2</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.40.1</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -246,14 +241,6 @@ onAuthStateChanged(auth,async authUser=>{
     document.getElementById('homeAttentionBody').innerHTML=attention.length
       ? attention.join('')
       : '<div class="home-item"><div><b>لا يوجد ما يحتاج انتباهك الآن</b><small>لا توجد إجراءات أو مهام متأخرة ضمن نطاقك</small></div></div>';
-
-    // Direct team only; admin without direct reports sees no invented team.
-    const teamHost=document.getElementById('homeTeamGrid');
-    if(teamHost){
-      teamHost.innerHTML=directTeam.length
-        ? directTeam.slice(0,6).map(u=>`<div class="mini-member"><div class="mini-avatar">${esc((u.name||u.email||'م').trim().charAt(0))}</div><div><b>${esc(u.name||u.email||'مستخدم')}</b><small>${esc(u.title||u.jobTitle||u.position||'—')}</small></div></div>`).join('')
-        : '<div class="mini-member"><div><b>لا يوجد فريق مباشر مرتبط بالحساب</b><small>تعرض الصفحة فقط العلاقات المسجلة في قاعدة البيانات</small></div></div>';
-    }
     try{lucide.createIcons()}catch(e){}
   }catch(e){
     console.error('Dashboard sync:',e);

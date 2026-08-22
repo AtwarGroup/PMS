@@ -250,7 +250,7 @@
           <p class="text-[11px] text-slate-500 mt-0.5">ملخص سريع لأداء المهام حسب الموظف</p>
         </div>
         <div class="flex items-center gap-1.5">
-          <button type="button" onclick="filterByTeamMember('ALL')" class="text-xs font-bold text-slate-500 hover:bg-slate-50 px-3 py-2 rounded-lg">كل المسؤولين</button>
+          <button type="button" id="teamFilterAllButton" class="text-xs font-bold text-slate-500 hover:bg-slate-50 px-3 py-2 rounded-lg">كل المسؤولين</button>
           <button type="button" onclick="toggleManagerDashboard()" class="text-xs font-bold text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-lg">
             <span id="managerDashboardToggleText">إخفاء</span>
           </button>
@@ -268,20 +268,20 @@
     <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 flex flex-col md:flex-row items-center gap-3 justify-between">
       <input id="searchInput" type="text" placeholder="🔍 بحث في المهام..." class="w-full md:w-[420px] border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
       <div class="flex flex-wrap gap-1.5" id="quickFilters">
-        <button type="button" data-filter="ALL" onclick="setQuickFilter('ALL')" class="qf active">الكل</button>
-        <button type="button" data-filter="TODAY" onclick="setQuickFilter('TODAY')" class="qf">اليوم</button>
-        <button type="button" data-filter="DELAYED" onclick="setQuickFilter('DELAYED')" class="qf">متأخرة</button>
-        <button type="button" data-filter="قيد التنفيذ" onclick="setQuickFilter('قيد التنفيذ')" class="qf">قيد التنفيذ</button>
-        <button type="button" data-filter="مكتملة" onclick="setQuickFilter('مكتملة')" class="qf">مكتملة</button>
+        <button type="button" data-filter="ALL" class="qf active">الكل</button>
+        <button type="button" data-filter="TODAY" class="qf">اليوم</button>
+        <button type="button" data-filter="DELAYED" class="qf">متأخرة</button>
+        <button type="button" data-filter="قيد التنفيذ" class="qf">قيد التنفيذ</button>
+        <button type="button" data-filter="مكتملة" class="qf">مكتملة</button>
       </div>
-      <select id="sortFilter" onchange="setSortFilter(this.value)" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
+      <select id="sortFilter" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
         <option value="DEFAULT">الترتيب الافتراضي</option>
         <option value="NEWEST">الأحدث</option>
         <option value="OLDEST">الأقدم</option>
         <option value="PRIORITY">الأولوية</option>
         <option value="DUE">تاريخ الاستحقاق</option>
       </select>
-      <select id="assigneeFilter" onchange="setAssigneeFilter(this.value)" class="hidden border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
+      <select id="assigneeFilter" class="hidden border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
         <option value="ALL">كل المسؤولين</option>
       </select>
       <select id="statusFilter" class="hidden">
@@ -508,6 +508,8 @@
           </div>
           <input id="userNameInput" placeholder="اسم المستخدم" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
           <input id="userEmailInput" type="email" placeholder="البريد الإلكتروني" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+          <input id="userTitleInput" placeholder="المسمى الوظيفي" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+          <input id="userDepartmentInput" placeholder="الإدارة" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
           <select id="userRoleInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
             <option value="employee">موظف</option>
             <option value="manager">مدير</option>
@@ -889,6 +891,17 @@ function applyHomeDashboardFilterFromUrl(){
   if(status)status.value='ALL';
   document.querySelectorAll('.qf').forEach(b=>b.classList.toggle('active',b.dataset.filter==='ALL'));
   setupAssigneeFilter();
+}
+
+function bindTaskFilters(){
+  document.querySelectorAll('#quickFilters .qf').forEach(btn=>btn.addEventListener('click',()=>setQuickFilter(btn.dataset.filter||'ALL')));
+  document.getElementById('sortFilter')?.addEventListener('change',e=>setSortFilter(e.target.value));
+  document.getElementById('assigneeFilter')?.addEventListener('change',e=>setAssigneeFilter(e.target.value));
+  document.getElementById('teamFilterAllButton')?.addEventListener('click',()=>filterByTeamMember('ALL'));
+  document.getElementById('teamMembersGrid')?.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-team-filter-uid]');
+    if(btn)filterByTeamMember(btn.dataset.teamFilterUid);
+  });
 }
 
 function bindDetailsCloseButtons(){
@@ -1284,6 +1297,7 @@ onAuthStateChanged(auth,async(user)=>{
     applyRoleUI();
     showApp(true);
     bindDetailsCloseButtons();
+    bindTaskFilters();
     applyHomeDashboardFilterFromUrl();
     renderManagerDashboard();
     subscribeVisibleTasks();
@@ -1363,7 +1377,7 @@ function renderManagerDashboard(){
     const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
     const rate=tTotal?Math.round((tDone/tTotal)*100):0;
     return `
-      <button type="button" onclick="filterByTeamMember('${escapeHTML(u.uid)}')" class="team-card text-right border border-slate-200 rounded-xl px-3 py-2.5 bg-white min-h-[96px]">
+      <button type="button" data-team-filter-uid="${escapeHTML(u.uid)}" class="team-card text-right border border-slate-200 rounded-xl px-3 py-2.5 bg-white min-h-[96px]">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black shrink-0">${escapeHTML((u.name||u.email||'?').charAt(0).toUpperCase())}</div>
           <div class="min-w-0 flex-1">
@@ -2209,6 +2223,7 @@ function toggleMoreMenu(force){
 function setQuickFilter(v){
   const s=document.getElementById('statusFilter');
   if(!s)return;
+  homeFilterValue='';
   s.value=v;
   document.querySelectorAll('.qf').forEach(b=>b.classList.toggle('active',b.dataset.filter===v));
   renderTasks();
@@ -2306,6 +2321,8 @@ function showUserForm(user=null){
   document.getElementById('userUidAdvancedInput').value=user?.uid||'';
   document.getElementById('userNameInput').value=user?.name||'';
   document.getElementById('userEmailInput').value=user?.email||'';
+  document.getElementById('userTitleInput').value=user?.title||user?.jobTitle||user?.position||'';
+  document.getElementById('userDepartmentInput').value=user?.department||user?.departmentName||'';
   document.getElementById('userRoleInput').value=user?.role||'employee';
   document.getElementById('userStatusInput').value=user?(user.status||(user.active===false?'inactive':'active')):'active';
   populateManagerOptions(user?.managerUid||'');
@@ -2349,6 +2366,7 @@ function renderUsersManagement(){
       <div class="min-w-0 flex-1">
         <div class="font-black text-sm text-slate-800 truncate">${escapeHTML(u.name||'بدون اسم')}</div>
         <div class="text-xs text-slate-500 truncate">${escapeHTML(u.email||u.uid||'')}</div>
+        <div class="text-[10px] text-slate-400 truncate mt-0.5">${escapeHTML(u.title||u.jobTitle||'بدون مسمى')} • ${escapeHTML(u.department||u.departmentName||'بدون إدارة')}</div>
       </div>
       <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">${escapeHTML(roleArabic(u.role))}</span>
       <span class="text-[11px] font-bold ${u.status==='inactive'||u.active===false?'text-rose-600':'text-emerald-600'}">${u.status==='inactive'||u.active===false?'غير نشط':'نشط'}</span>
@@ -2364,12 +2382,14 @@ async function saveUserProfile(){
   if(!uid)uid=document.getElementById('userUidAdvancedInput').value.trim();
   const name=document.getElementById('userNameInput').value.trim();
   const email=document.getElementById('userEmailInput').value.trim();
+  const title=document.getElementById('userTitleInput').value.trim();
+  const department=document.getElementById('userDepartmentInput').value.trim();
   const role=document.getElementById('userRoleInput').value;
   const status=document.getElementById('userStatusInput').value;
   let managerUid=document.getElementById('userManagerUidInput').value.trim();
   if(managerUid===uid)managerUid='';
   if(!uid){showToast('يرجى فتح الإعدادات المتقدمة وإدخال Firebase UID للمستخدم الجديد.','warning');toggleFirebaseAdvanced(true);document.getElementById('userUidAdvancedInput')?.focus();return;}
-  if(!name||!email){showToast('يرجى إدخال الاسم والبريد الإلكتروني.','warning');return;}
+  if(!name||!email||!title||!department){showToast('يرجى إدخال الاسم والبريد الإلكتروني والمسمى الوظيفي والإدارة.','warning');return;}
   const normalizedEmail=email.toLowerCase();
   const duplicate=users.find(u=>u.uid!==uid&&String(u.email||'').trim().toLowerCase()===normalizedEmail);
   if(duplicate){
@@ -2380,7 +2400,7 @@ async function saveUserProfile(){
   const saveButton=document.querySelector('button[onclick="saveUserProfile()"]');
   if(saveButton){saveButton.disabled=true;saveButton.textContent='جاري الحفظ...';}
   try{
-    const payload={uid,name,email,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
+    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
     await update(ref(db,`users/${uid}`),payload);
 
     const idx=users.findIndex(u=>u.uid===uid);
@@ -2470,6 +2490,7 @@ async function deleteSelectedTask(){
 
 function setAssigneeFilter(value){
   assigneeFilterValue=String(value||'ALL');
+  homeFilterValue='';
   const sel=document.getElementById('assigneeFilter');
   if(sel && sel.value!==assigneeFilterValue)sel.value=assigneeFilterValue;
   renderTasks();
@@ -3089,8 +3110,22 @@ window.toggleFirebaseAdvanced=toggleFirebaseAdvanced;
 window.toggleManagerDashboard=toggleManagerDashboard;
 window.toggleSubtask=toggleSubtask;
 window.updateSelectedField=updateSelectedField;
+window.handleImport=handleImport;
+window.exportToExcel=exportToExcel;
+window.openUsersModal=openUsersModal;
+window.markAllNotificationsRead=markAllNotificationsRead;
+window.toggleNotifications=toggleNotifications;
 </script>
 
-<script src="../assets/js/permissions.js"></script>
+<script src="../assets/js/permissions.js">
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notificationPanel');
+  const button=document.getElementById('notificationButton');
+  if(!panel||panel.classList.contains('hidden'))return;
+  if(panel.contains(e.target)||button?.contains(e.target))return;
+  toggleNotifications(false);
+});
+
+</script>
 </body>
 </html>

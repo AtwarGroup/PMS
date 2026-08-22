@@ -1,0 +1,49 @@
+{
+  "version": "V0.40.0",
+  "verdict": "READY",
+  "syntax_errors": [],
+  "broken_links": [],
+  "duplicate_ids": [],
+  "old_versions": [],
+  "checks": {
+    "profile_light_theme": true,
+    "profile_no_dark_gradient": true,
+    "workspace_no_quick_access": true,
+    "workspace_no_about": true,
+    "workspace_notes_followups_only": true,
+    "home_team_removed": true,
+    "filter_no_inline_quick": true,
+    "filter_direct_bind": true,
+    "quick_filter_clears_dashboard_scope": true,
+    "assignee_filter_clears_dashboard_scope": true,
+    "user_form_title": true,
+    "user_form_department": true,
+    "user_payload_title_department": true,
+    "profile_reads_title_department": true
+  },
+  "filter_simulation_counts": {
+    "ALL": 85,
+    "TODAY": 0,
+    "DELAYED": 12,
+    "قيد التنفيذ": 12,
+    "مكتملة": 5
+  },
+  "filter_tests": {
+    "quick_all_nonzero": true,
+    "quick_delayed_subset": true,
+    "quick_inprogress_subset": true,
+    "quick_completed_subset": true,
+    "assignee_owner_counts_sum": true
+  },
+  "assignee_counts": {
+    "4oCNuUycLhN2Vu6UAlkqOhpvr0T2": 1,
+    "8b8VzGtW5LSXuRQw568RtZ9dxBi2": 14,
+    "8ulVPJxWIBSx1ePZf8rQyCFvYx53": 0,
+    "EsWGST0XrfZWqKtWrvBbcCnHrNH3": 2,
+    "KmJcFCE8B0Y2iq4LvyrsNEoHyDt2": 17,
+    "Qqgqt57WSwWW1uWVSHPXFCcXbcQ2": 0,
+    "S23C5ImIrAX8jN2K3Qn8Y1hXMIj2": 0,
+    "SK9kgX3MHlOWQMwmnJbfGjCvtha2": 39,
+    "pHmqFFzF4uQh68JJD1K2cKIdl093": 12
+  }
+}

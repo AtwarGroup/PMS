@@ -33,6 +33,9 @@
 .follow-empty{font-size:11px;color:#7b8aa5;padding:18px;text-align:center;border:1px dashed #dce5ef;border-radius:12px}
 .follow-form{display:none;margin-top:10px;padding:12px;background:#f8fbff;border:1px solid #e0eaf5;border-radius:13px}.follow-form.show{display:block}.follow-form input,.follow-form textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:9px;padding:9px;font-family:inherit;margin-top:7px}.follow-form textarea{min-height:70px}
 
+.workspace-main-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.workspace-main-grid .ws-card{min-height:470px}.workspace-note-card .note-input{min-height:330px}.workspace-follow-card .follow-list{max-height:390px}
+@media(max-width:900px){.workspace-main-grid{grid-template-columns:1fr}.workspace-main-grid .ws-card{min-height:auto}}
 </style>
 </head>
 <body>
@@ -41,47 +44,27 @@
 <section class="atwar-main">
 <atwar-header></atwar-header>
 <main class="atwar-content">
-<div class="ws-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد، محفوظة في حسابك.</p></div></div>
-
-<div class="ws-grid">
-<section class="ws-card">
-<h3><i data-lucide="sticky-note" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
-<textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل سريعة، فكرة، رقم متابعة أو شيء تريد تذكره..."></textarea>
-<div class="note-actions"><small>ملاحظة شخصية محفوظة في حسابك</small><button onclick="saveNote()">حفظ الملاحظة</button></div>
-<div id="savedNotice" class="notice">تم حفظ الملاحظة في حسابك.</div>
-</section>
-
-<section class="ws-card">
-<h3>وصول سريع</h3>
-<div class="quick">
-<a href="../tasks/index.html"><i data-lucide="list-checks"></i><b>مهامي</b><small>فتح قائمة المهام</small></a>
-<a href="../profile/index.html"><i data-lucide="contact"></i><b>ملفي الوظيفي</b><small>بياناتي الوظيفية</small></a>
-<a data-role-min="manager" href="../team/index.html"><i data-lucide="users"></i><b>فريقي</b><small>متابعة الفريق</small></a>
-<a data-role-min="manager" href="../approvals/index.html"><i data-lucide="badge-check"></i><b>اعتماداتي</b><small>ما يحتاج قرارك</small></a>
+<div class="ws-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد، محفوظة في حسابك.</p></div></div><div class="workspace-main-grid">
+  <section class="ws-card workspace-note-card">
+    <h3><i data-lucide="notebook-pen" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
+    <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية محفوظة في حسابك ويمكن الرجوع إليها من أي جهاز.</p>
+    <textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره..."></textarea>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
+      <span style="font-size:9px;color:#93a0b2">يتم الحفظ في Firebase لحسابك فقط.</span>
+      <button type="button" onclick="saveNote()" class="save-note">حفظ الملاحظة</button>
+    </div>
+    <div id="savedNotice" class="saved-notice" style="display:none">تم الحفظ</div>
+  </section>
+  <section class="ws-card workspace-follow-card">
+    <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
+    <div id="workspaceFollowForm" class="follow-form">
+      <input id="wfTitle" placeholder="عنوان المتابعة"><input id="wfDate" type="date"><textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px"><button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button><button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button></div>
+    </div>
+    <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
+  </section>
 </div>
-</section>
-
-<section class="ws-card">
-<div class="follow-head"><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
-<div id="workspaceFollowForm" class="follow-form">
-  <input id="wfTitle" placeholder="عنوان المتابعة">
-  <input id="wfDate" type="date">
-  <textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
-  <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px">
-    <button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button>
-    <button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button>
-  </div>
-</div>
-<div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
-</section>
-
-<section class="ws-card">
-<h3>عن مساحة عملي</h3>
-<p style="font-size:12px;line-height:1.9;color:#607087;margin:0">مساحة شخصية خفيفة للملاحظات والمتابعات التي لا تحتاج إلى إنشاء مهمة رسمية. جميع البيانات مرتبطة بحسابك وتظهر من أي جهاز بعد تسجيل الدخول.</p>
-</section>
-</div>
-
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.38.2</span><span>Firebase Sync</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.40.1</span><span>Firebase Sync</span></footer>
 </main></section></div>
 
 <script src="../assets/js/firebase-config.js"></script>

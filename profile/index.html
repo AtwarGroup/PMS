@@ -10,110 +10,36 @@
 <link rel="stylesheet" href="../assets/css/shared.css">
 
 <style>
-.profile-page{padding:20px}
-.profile-hero{
-  background:linear-gradient(135deg,#0d2a4c,#123d68);
-  border-radius:18px;
-  padding:22px;
-  color:#fff;
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:18px;
-  align-items:center;
-}
+.profile-page{padding:24px;background:#f4f7fb;min-height:calc(100vh - 64px)}
+.profile-page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
+.profile-page-head h1{margin:0;color:#0f2340;font-size:28px;font-weight:900}
+.profile-page-head p{margin:5px 0 0;color:#7d8ca2;font-size:11px}
+.profile-hero{background:#fff;border:1px solid #e3eaf3;border-radius:18px;padding:18px 20px;color:#10233f;display:flex;justify-content:space-between;gap:18px;align-items:center;box-shadow:0 6px 18px rgba(25,55,90,.04);position:relative;overflow:hidden}
+.profile-hero:after{content:"";position:absolute;right:0;top:18px;bottom:18px;width:4px;background:#1677ff;border-radius:4px 0 0 4px}
 .profile-identity{display:flex;align-items:center;gap:14px}
-.profile-avatar{
-  width:58px;height:58px;border-radius:16px;background:#fff;color:#0b1d3a;
-  display:grid;place-items:center;font-size:22px;font-weight:900;flex:none
-}
-.profile-name{font-size:24px;font-weight:900;line-height:1.2}
-.profile-title{font-size:11px;color:#cfdeef;margin-top:5px}
-.profile-state{
-  border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.08);
-  padding:9px 12px;border-radius:10px;font-size:10px;font-weight:900
-}
-.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-.profile-card{
-  background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:18px;
-  box-shadow:0 4px 14px rgba(20,45,80,.035)
-}
-.profile-card h3{
-  margin:0 0 13px;font-size:16px;font-weight:900;color:#14243a
-}
-.profile-row{
-  display:flex;align-items:center;justify-content:space-between;gap:18px;
-  padding:10px 0;border-bottom:1px solid #edf2f7
-}
+.profile-avatar{width:54px;height:54px;border-radius:15px;background:#eaf3ff;color:#1677ff;display:grid;place-items:center;font-size:21px;font-weight:900;flex:none;border:1px solid #dceaff}
+.profile-name{font-size:21px;font-weight:900;line-height:1.2}
+.profile-title{font-size:10px;color:#7d8ca2;margin-top:5px}
+.profile-state{border:1px solid #d7efe5;background:#eefbf6;color:#119362;padding:8px 12px;border-radius:999px;font-size:10px;font-weight:900}
+.profile-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-top:14px}
+.profile-card{background:#fff;border:1px solid #e3eaf3;border-radius:16px;padding:18px;box-shadow:0 4px 14px rgba(20,45,80,.03)}
+.profile-card h3{margin:0 0 13px;font-size:15px;font-weight:900;color:#14243a}
+.profile-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid #edf2f7}
 .profile-row:last-child{border-bottom:0}
-.profile-label{font-size:10px;color:#7b8aa5}
-.profile-value{font-size:12px;font-weight:900;color:#26384f;text-align:left}
+.profile-label{font-size:10px;color:#7b8aa5;font-weight:700}
+.profile-value{font-size:11px;font-weight:900;color:#26384f;text-align:left}
 .profile-links{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.profile-link{
-  text-decoration:none;color:#24364e;border:1px solid #e1ebf6;border-radius:12px;
-  padding:14px;background:#fbfdff;display:block
-}
-.profile-link:hover{border-color:#b8d5f7;background:#f7fbff}
+.profile-link{text-decoration:none;color:#24364e;border:1px solid #e1ebf6;border-radius:12px;padding:13px;background:#fbfdff;display:block;transition:.15s ease}
+.profile-link:hover{border-color:#b8d5f7;background:#f4f9ff;transform:translateY(-1px)}
 .profile-link svg{width:18px;height:18px;color:#1677ff}
-.profile-link b{display:block;font-size:12px;margin-top:7px}
+.profile-link b{display:block;font-size:11px;margin-top:7px}
 .profile-link small{display:block;font-size:9px;color:#8190a4;margin-top:4px;line-height:1.6}
-.profile-loading{
-  min-height:350px;display:flex;align-items:center;justify-content:center
-}
-.profile-loading-box{
-  background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:22px;
-  min-width:280px;text-align:center
-}
-.profile-spinner{
-  width:34px;height:34px;margin:0 auto 10px;border:3px solid #e5edf6;
-  border-top-color:#1677ff;border-radius:50%;animation:spin .8s linear infinite
-}
+.profile-loading{min-height:350px;display:flex;align-items:center;justify-content:center}
+.profile-loading-box{background:#fff;border:1px solid #e5edf6;border-radius:14px;padding:22px;min-width:280px;text-align:center}
+.profile-spinner{width:34px;height:34px;margin:0 auto 10px;border:3px solid #e5edf6;border-top-color:#1677ff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .profile-empty{color:#8b97a8;font-size:10px}
-@media(max-width:850px){
-  .profile-grid{grid-template-columns:1fr}
-  .profile-hero{grid-template-columns:1fr}
-  .profile-links{grid-template-columns:1fr}
-}
-</style>
-
-<style id="profileFallbackStyle">
-.profile-under-construction{
-  min-height:calc(100vh - 112px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-}
-.profile-under-card{
-  width:min(520px,100%);
-  background:#fff;
-  border:1px solid #e5edf6;
-  border-radius:18px;
-  padding:34px 28px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(20,45,80,.05);
-}
-.profile-under-icon{
-  width:58px;height:58px;margin:0 auto 16px;
-  border-radius:16px;background:#eef6ff;color:#1677ff;
-  display:grid;place-items:center;
-}
-.profile-under-icon svg{width:26px;height:26px}
-.profile-under-card h2{
-  margin:0;font-size:24px;font-weight:900;color:#14243a
-}
-.profile-under-card p{
-  margin:10px auto 0;max-width:420px;
-  font-size:11px;line-height:1.9;color:#7b8aa5
-}
-.profile-under-user{
-  margin-top:18px;
-  display:inline-flex;align-items:center;gap:8px;
-  background:#f8fafc;border:1px solid #e5edf6;
-  border-radius:999px;padding:8px 12px;
-  font-size:10px;font-weight:900;color:#41536a
-}
+@media(max-width:850px){.profile-grid{grid-template-columns:1fr}.profile-hero{align-items:flex-start}.profile-links{grid-template-columns:1fr}.profile-page-head{align-items:flex-start;flex-direction:column}}
 </style>
 
 <script id="hamzaOwnApprovedProfileRoute">
@@ -134,19 +60,9 @@
     <atwar-header></atwar-header>
 
     <main class="profile-page">
-      
-<div id="profileUnderConstruction" class="profile-under-construction hidden">
-  <div class="profile-under-card">
-    <div class="profile-under-icon"><i data-lucide="construction"></i></div>
-    <h2>بيانات الملف غير مكتملة</h2>
-    <p>
-      سيتم عرض البيانات الوظيفية المتوفرة في حسابك، وتظهر التفاصيل الإضافية عند توفرها واعتمادها.
-    </p>
-    <div class="profile-under-user">
-      <i data-lucide="user-round"></i>
-      <span id="profileUnderUser">المستخدم</span>
-    </div>
-  </div>
+      <div class="profile-page-head">
+        <div><h1>ملفي الوظيفي</h1><p>بياناتك الوظيفية والمعلومات التنظيمية المسجلة في النظام.</p></div>
+      </div>
 </div>
 
 <div id="profileLoading" class="profile-loading">
@@ -274,7 +190,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>V0.38.2</span>
+          <span>V0.40.1</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -379,17 +295,6 @@ function hasRealEmploymentProfile(record){
   return meaningful >= 2;
 }
 
-function showUnderConstruction(session){
-  document.getElementById('profileLoading')?.classList.add('hidden');
-  document.getElementById('profileContent')?.classList.add('hidden');
-  document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
-
-  const underUser=document.getElementById('profileUnderUser');
-  if(underUser) underUser.textContent=session?.name || session?.email || 'المستخدم';
-
-  try{ lucide.createIcons(); }catch(e){}
-}
-
 async function renderProfile(){
   const session = getSession();
 
@@ -448,14 +353,14 @@ async function renderProfile(){
     document.getElementById('employmentType').textContent = employmentType;
 
     document.getElementById('profileLoading').classList.add('hidden');
-    document.getElementById('profileUnderConstruction').classList.add('hidden');
+    
     document.getElementById('profileContent').classList.remove('hidden');
 
     try{ lucide.createIcons(); }catch(e){}
   }catch(error){
     console.error(error);
     document.getElementById('profileLoading')?.classList.add('hidden');
-    document.getElementById('profileUnderConstruction')?.classList.add('hidden');
+    
     document.getElementById('profileContent')?.classList.remove('hidden');
     document.getElementById('profileName').textContent=session.name||session.email||'المستخدم';
     document.getElementById('profileTitle').textContent=session.title||roleLabel(session.role);
