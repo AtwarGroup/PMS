@@ -1015,10 +1015,12 @@ async function syncManagerChains(){
     users=users.map(u=>({...u,managerChain:buildManagerChainForUser(u)}));
     const me=users.find(u=>u.uid===currentUser?.uid);
     if(me)currentProfile=me;
-    window.atwarSyncShellIdentity?.(currentProfile,user);
+    window.atwarSyncShellIdentity?.(currentProfile,currentUser);
+    return true;
   }catch(error){
     console.error('Manager chain sync:',error);
-    showToast('تعذر تحديث التسلسل الإداري في قاعدة البيانات.','warning',4500);
+    showToast(`تم حفظ بيانات المستخدم، لكن تعذر تحديث التسلسل الإداري (${error?.code||error?.message||'خطأ غير معروف'}).`,'warning',5000);
+    return false;
   }
 }
 
@@ -1313,8 +1315,9 @@ onAuthStateChanged(auth,async(user)=>{
 
     // Admin يحافظ على managerChain محدثة لكل المستخدمين.
     if(currentProfile.role==='admin'){
-      await syncManagerChains();
-      await syncCreatedTaskIndex();
+      // أعمال الصيانة لا يجب أن تمنع مدير النظام من الدخول إلى النظام.
+      syncManagerChains().catch(error=>console.error('Background manager-chain sync:',error));
+      syncCreatedTaskIndex().catch(error=>console.error('Background task-index sync:',error));
     }
 
     document.getElementById('currentUserBadge').textContent=
@@ -2461,12 +2464,12 @@ async function saveUserProfile(){
     else users.push(payload);
 
     // أي تغيير في المدير المباشر قد يؤثر على كل من تحته، لذلك نعيد بناء الشجرة.
-    await syncManagerChains();
+    const chainSynced=await syncManagerChains();
 
     renderUsersManagement();
     hideUserForm();
     setSaveStatus('saved');
-    showToast('تم حفظ المستخدم بنجاح.','success');
+    if(chainSynced)showToast('تم حفظ المستخدم بنجاح.','success');
   }catch(error){
     console.error('Save user error:',error);
     setSaveStatus('error');
