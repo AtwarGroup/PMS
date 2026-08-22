@@ -31,7 +31,7 @@
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">
           <a class="atwar-side-link" href="${d}landing.html"><i data-lucide="layout-grid"></i><span>بوابة الأنظمة</span></a>
-          ${s?.role==='admin'?`<a class="atwar-side-link" href="${d}admin/index.html"><i data-lucide="settings"></i><span>إدارة النظام</span></a>`:''}
+          ${s?.role==='admin'?`<a class="atwar-side-link ${active==='admin'?'active':''}" href="${d}admin/index.html"><i data-lucide="settings"></i><span>إدارة النظام</span></a>`:''}
           <div class="atwar-side-link"><i data-lucide="circle-help"></i><span>الدعم والمساعدة</span></div>
           <button type="button" class="atwar-side-link atwar-shell-logout"><i data-lucide="log-out"></i><span>تسجيل خروج</span></button>
         </div>

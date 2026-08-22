@@ -15,26 +15,62 @@
 @media(max-width:850px){.admin-grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body data-min-role="admin">
+<body data-min-role="admin" style="visibility:hidden">
 <div class="atwar-shell">
-<atwar-sidebar active=""></atwar-sidebar>
+<atwar-sidebar active="admin"></atwar-sidebar>
 <section class="atwar-main"><atwar-header></atwar-header>
 <main class="atwar-content">
-<section style="min-height:460px;display:flex;align-items:center;justify-content:center">
-  <div style="width:min(720px,100%);background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:34px">
-    <div style="display:flex;align-items:center;gap:14px">
-      <div style="width:48px;height:48px;border-radius:14px;background:#eef6ff;color:#1677ff;display:grid;place-items:center"><i data-lucide="shield-check"></i></div>
-      <div><h1 style="font-size:24px;margin:0">إدارة النظام</h1><p style="font-size:12px;color:#66778d;margin:5px 0 0">بيئة الإدارة في الإصدار التجريبي التشغيلي.</p></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:22px">
-      <a href="../tasks/index.html" style="text-decoration:none;border:1px solid #e5edf6;border-radius:14px;padding:16px;color:#20364f"><b>إدارة المهام والمستخدمين</b><div style="font-size:10px;color:#7b8aa5;margin-top:5px">الوصول إلى المهام وأدوات مدير النظام المتاحة حاليًا.</div></a>
-      <a href="../team/index.html" style="text-decoration:none;border:1px solid #e5edf6;border-radius:14px;padding:16px;color:#20364f"><b>الفريق والهيكل الإداري</b><div style="font-size:10px;color:#7b8aa5;margin-top:5px">مراجعة المستخدمين والعلاقات الإدارية الفعلية.</div></a>
-    </div>
-    <div style="margin-top:18px;padding:12px 14px;background:#f8fbff;border:1px solid #e2edf8;border-radius:12px;font-size:10px;color:#607087;line-height:1.8">الصلاحيات الفعلية محمية عبر Firebase Rules ومنطق الأدوار داخل النظام. لا يتم عرض أدوات إعداد غير مفعلة.</div>
+<section style="max-width:1000px;margin:0 auto;padding:18px 0 30px">
+  <div style="margin-bottom:18px">
+    <h1 style="font-size:28px;margin:0;color:#10233f">إدارة النظام</h1>
+    <p style="font-size:11px;color:#7b8aa5;margin:6px 0 0">إدارة حسابات المستخدمين والأدوار والصلاحيات ومكونات النظام المتاحة لمدير النظام.</p>
+  </div>
+
+  <div class="admin-grid">
+    <a class="admin-card" href="users.html">
+      <i data-lucide="users-round"></i>
+      <h3>إدارة الحسابات</h3>
+      <p>إضافة وتعديل المستخدمين، المسمى الوظيفي، الإدارة، الدور، المدير المباشر وحالة الحساب.</p>
+    </a>
+
+    <a class="admin-card" href="roles.html">
+      <i data-lucide="shield-check"></i>
+      <h3>الأدوار والصلاحيات</h3>
+      <p>استعراض صلاحيات الموظف والمدير ومدير النظام، وتحديد الدور لكل حساب من إدارة الحسابات.</p>
+    </a>
+
+    <a class="admin-card" href="../tasks/index.html">
+      <i data-lucide="square-check-big"></i>
+      <h3>إدارة المهام</h3>
+      <p>الوصول إلى جميع المهام والمؤشرات وإعادة فتح المهام المكتملة عند الحاجة.</p>
+    </a>
+
+    <a class="admin-card" href="../team/index.html">
+      <i data-lucide="network"></i>
+      <h3>الهيكل الإداري</h3>
+      <p>مراجعة العلاقات الإدارية والمديرين والموظفين الواقعين تحت كل مستوى إداري.</p>
+    </a>
   </div>
 </section>
-<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>V0.40.7</span><span>إصدار تشغيلي</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>V0.40.8</span><span>إدارة النظام</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/firebase-config.js"></script>
-<script src="../assets/js/permissions.js"></script><script>lucide.createIcons();</script>
+<script src="../assets/js/permissions.js"></script>
+<script type="module">
+import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+const auth=getAuth(app),db=getDatabase(app);
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace('../login.html');return}
+  try{
+    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
+    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
+    window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
+    document.body.style.visibility='visible';
+    try{lucide.createIcons()}catch{}
+  }catch(error){console.error('Admin access:',error);location.replace('../home.html')}
+});
+</script>
 </body></html>

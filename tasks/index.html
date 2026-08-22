@@ -599,6 +599,7 @@ let pendingAssigneeChange=null;
 let homeFilterValue='';
 let urlTargetTaskKey='';
 let urlTargetOwnerUid='';
+let openAdminUsersFromUrl=false;
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -878,6 +879,7 @@ function applyHomeDashboardFilterFromUrl(){
   const scope=String(params.get('scope')||'').toUpperCase();
   const ownerRaw=String(params.get('owner')||'').trim();
   const owner=ownerRaw.toLowerCase();
+  openAdminUsersFromUrl=String(params.get('admin')||'').toLowerCase()==='users';
   urlTargetOwnerUid=ownerRaw;
   urlTargetTaskKey=String(params.get('task')||'').trim();
   homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
@@ -1336,6 +1338,10 @@ onAuthStateChanged(auth,async(user)=>{
     renderManagerDashboard();
     subscribeVisibleTasks();
     subscribeNotifications();
+
+    if(openAdminUsersFromUrl && currentProfile.role==='admin'){
+      setTimeout(()=>openUsersModal(),150);
+    }
 
     setTimeout(()=>checkOverdueNotifications(),1200);
 

@@ -1,3 +1,71 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – إدارة النظام</title><script>location.replace('index.html');</script></head><body></body></html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – الأدوار والصلاحيات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.roles-wrap{max-width:1050px;margin:0 auto}.role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.role-card{background:#fff;border:1px solid #e3eaf3;border-radius:18px;padding:18px}.role-card h3{margin:0;font-size:16px}.role-card p{font-size:10px;color:#7b8aa5;line-height:1.7}
+.perm{display:flex;align-items:center;gap:7px;padding:8px 0;border-top:1px solid #eef2f7;font-size:10px;font-weight:700}.perm i{width:15px;color:#16a36a}
+.admin-actions{margin-top:16px;display:flex;gap:8px}.admin-actions a{text-decoration:none;border-radius:10px;padding:9px 13px;font-size:10px;font-weight:900}
+.primary{background:#1677ff;color:white}.secondary{background:white;color:#20364f;border:1px solid #dce6f1}
+@media(max-width:850px){.role-grid{grid-template-columns:1fr}}
+</style>
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/shell-components.js"></script>
+</head>
+<body style="visibility:hidden">
+<div class="atwar-shell">
+<atwar-sidebar active="admin"></atwar-sidebar>
+<section class="atwar-main"><atwar-header></atwar-header>
+<main class="atwar-content">
+  <div class="roles-wrap">
+    <div style="margin-bottom:18px"><h1 style="margin:0;font-size:28px">الأدوار والصلاحيات</h1><p style="font-size:11px;color:#7b8aa5">الصلاحيات الأساسية المعتمدة لكل دور في النظام.</p></div>
+    <div class="role-grid">
+      <section class="role-card"><h3>موظف</h3><p>النطاق الشخصي للمستخدم.</p>
+        <div class="perm"><i data-lucide="check"></i>الرئيسية والمهام الشخصية</div>
+        <div class="perm"><i data-lucide="check"></i>مساحة عملي والملاحظات والمتابعات</div>
+        <div class="perm"><i data-lucide="check"></i>ملفي الوظيفي</div>
+        <div class="perm"><i data-lucide="check"></i>الإشعارات والبحث ضمن نطاقه</div>
+      </section>
+      <section class="role-card"><h3>مدير</h3><p>صلاحيات الموظف + إدارة كامل الشجرة الواقعة تحته.</p>
+        <div class="perm"><i data-lucide="check"></i>عرض مهام الفريق والمؤشرات</div>
+        <div class="perm"><i data-lucide="check"></i>الفريق والهيكل الإداري</div>
+        <div class="perm"><i data-lucide="check"></i>إدارة المهام النشطة ضمن نطاقه</div>
+        <div class="perm"><i data-lucide="check"></i>اعتماد مهام المرؤوسين المباشرين</div>
+      </section>
+      <section class="role-card"><h3>مدير النظام</h3><p>كامل نطاق النظام والإعدادات الإدارية.</p>
+        <div class="perm"><i data-lucide="check"></i>جميع المهام والمستخدمين</div>
+        <div class="perm"><i data-lucide="check"></i>إدارة الحسابات والأدوار</div>
+        <div class="perm"><i data-lucide="check"></i>إعادة فتح المهام المكتملة</div>
+        <div class="perm"><i data-lucide="check"></i>الوصول إلى الهيكل الإداري الكامل</div>
+      </section>
+    </div>
+    <div class="admin-actions">
+      <a class="primary" href="users.html">إدارة الحسابات</a>
+      <a class="secondary" href="index.html">العودة لإدارة النظام</a>
+    </div>
+  </div>
+<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>V0.40.8</span><span>Admin Only</span></footer>
+</main></section></div>
+<script type="module">
+import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+const auth=getAuth(app),db=getDatabase(app);
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace('../login.html');return}
+  try{
+    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
+    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
+    window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
+    document.body.style.visibility='visible';
+    try{lucide.createIcons()}catch{}
+  }catch(error){console.error('Admin roles access:',error);location.replace('index.html')}
+});
+</script>
+</body></html>

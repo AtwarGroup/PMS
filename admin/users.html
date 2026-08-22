@@ -1,3 +1,36 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – إدارة النظام</title><script>location.replace('index.html');</script></head><body></body></html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – إدارة الحسابات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/firebase-config.js"></script>
+</head>
+<body style="visibility:hidden">
+<div style="min-height:100vh;background:#f4f7fb;display:grid;place-items:center">
+  <div style="background:#fff;border:1px solid #e3eaf3;border-radius:18px;padding:28px;text-align:center;min-width:320px">
+    <div style="font-weight:900;color:#10233f">جاري فتح إدارة الحسابات...</div>
+  </div>
+</div>
+<script type="module">
+import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+const auth=getAuth(app),db=getDatabase(app);
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace('../login.html');return}
+  try{
+    const snap=await get(ref(db,`users/${user.uid}`));
+    const profile=snap.exists()?snap.val():null;
+    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
+    location.replace('../tasks/index.html?admin=users');
+  }catch(error){
+    console.error('Admin accounts access:',error);
+    location.replace('index.html');
+  }
+});
+</script>
+</body></html>
