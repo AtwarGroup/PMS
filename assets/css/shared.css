@@ -645,3 +645,6 @@ body.atwar-task-page #authLoadingScreen,body.atwar-task-page #loginScreen,body.a
 .atwar-global-notification-copy b{display:block;font-size:10px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .atwar-global-notification-copy small{display:block;font-size:9px;color:#718096;line-height:1.55;margin-top:3px;max-height:30px;overflow:hidden}
 .atwar-global-notification-time{font-size:8px;color:#a0aec0;white-space:nowrap;padding-top:2px}
+
+/* Shared visibility utility used by header/dropdowns across non-Tailwind pages */
+.hidden{display:none!important}

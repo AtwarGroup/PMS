@@ -40,6 +40,14 @@
 @keyframes spin{to{transform:rotate(360deg)}}
 .profile-empty{color:#8b97a8;font-size:10px}
 @media(max-width:850px){.profile-grid{grid-template-columns:1fr}.profile-hero{align-items:flex-start}.profile-links{grid-template-columns:1fr}.profile-page-head{align-items:flex-start;flex-direction:column}}
+
+.profile-under-construction{min-height:430px;display:flex;align-items:center;justify-content:center}
+.profile-under-card{width:min(560px,100%);background:#fff;border:1px solid #e3eaf3;border-radius:20px;padding:34px;text-align:center;box-shadow:0 8px 24px rgba(20,45,80,.04)}
+.profile-under-icon{width:58px;height:58px;border-radius:17px;background:#eaf3ff;color:#1677ff;display:grid;place-items:center;margin:0 auto 16px}
+.profile-under-icon svg{width:26px;height:26px}
+.profile-under-card h2{margin:0;color:#10233f;font-size:23px;font-weight:900}
+.profile-under-card p{margin:10px auto 0;color:#7b8aa5;font-size:11px;line-height:1.9;max-width:430px}
+
 </style>
 
 <script id="hamzaOwnApprovedProfileRoute">
@@ -69,6 +77,14 @@
           <div class="profile-spinner"></div>
           <div style="font-weight:900;font-size:12px">جاري تحميل ملفك الوظيفي...</div>
           <div style="font-size:10px;color:#7b8aa5;margin-top:5px">يتم قراءة بيانات المستخدم المسجل دخوله.</div>
+        </div>
+      </div>
+
+      <div id="profileUnderConstruction" class="profile-under-construction hidden">
+        <div class="profile-under-card">
+          <div class="profile-under-icon"><i data-lucide="construction"></i></div>
+          <h2>الملف الوظيفي تحت الإنشاء</h2>
+          <p>لم يتم تجهيز واعتماد الملف الوظيفي الخاص بهذا الحساب حتى الآن. سيتم إتاحته بعد استكمال محتواه واعتماده.</p>
         </div>
       </div>
 
@@ -189,7 +205,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>V0.40.5</span>
+          <span>V0.40.6</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -295,78 +311,23 @@ function hasRealEmploymentProfile(record){
 }
 
 async function renderProfile(){
-  const session = getSession();
+  const session=getSession();
 
   if(!session?.uid){
     location.href='../login.html';
     return;
   }
 
-  try{
-    const userRecord = await loadUserRecord(session.uid);
-
-    const merged = {...userRecord, ...session};
-
-    const hasJobDescription=!!(userRecord.jobDescription||userRecord.job_description||userRecord.jobDescriptionId);
-    const hasKpi=!!(userRecord.kpis||userRecord.kpi);
-    document.getElementById('jobDescriptionLink')?.classList.toggle('hidden',!hasJobDescription);
-    document.getElementById('kpiLink')?.classList.toggle('hidden',!hasKpi);
-
-    const managerUid = pick(
-      merged,
-      ['managerUid','managerUID','manager_id','managerId'],
-      ''
-    );
-
-    const managerName = await loadManagerName(managerUid);
-
-    const name = pick(merged,['name','fullName','displayName'],session.email || 'المستخدم');
-    const title = pick(merged,['title','jobTitle','position','job_title'],roleLabel(session.role));
-    const department = pick(merged,['department','departmentName','division','section'],'غير محدد');
-    const employeeCode = pick(merged,['employeeCode','employeeId','employeeNumber','code'],'غير محدد');
-    const email = pick(merged,['email'],session.email || '—');
-    const organization = pick(merged,['organization','companyName'],'مؤسسة أطوار للتجارة');
-    const joinDate = pick(merged,['joinDate','joiningDate','hireDate','startDate'],'غير محدد');
-    const location = pick(merged,['location','branch','workLocation'],'غير محدد');
-    const employmentType = pick(merged,['employmentType','employeeType','contractType'],'غير محدد');
-    const active = !(merged.active === false || merged.status === 'inactive');
-
-    document.getElementById('profileAvatar').textContent = String(name).trim().charAt(0) || 'م';
-    document.getElementById('profileName').textContent = name;
-    document.getElementById('profileTitle').textContent = title;
-    document.getElementById('profileOrganization').textContent = organization;
-    document.getElementById('profileStatus').textContent = active ? 'نشط' : 'غير نشط';
-
-    document.getElementById('jobTitle').textContent = title;
-    document.getElementById('department').textContent = department;
-    document.getElementById('managerName').textContent = managerName;
-    document.getElementById('employeeCode').textContent = employeeCode;
-    document.getElementById('profileEmail').textContent = email;
-
-    document.getElementById('systemRole').textContent = roleLabel(session.role);
-    document.getElementById('accountStatus').textContent = active ? 'نشط' : 'غير نشط';
-    document.getElementById('managerUidDisplay').textContent = managerUid ? 'مرتبط بالمدير المباشر' : 'غير محدد';
-
-    document.getElementById('joinDate').textContent = joinDate;
-    document.getElementById('workLocation').textContent = location;
-    document.getElementById('employmentType').textContent = employmentType;
-
-    document.getElementById('profileLoading').classList.add('hidden');
-    
-    document.getElementById('profileContent').classList.remove('hidden');
-
-    try{ lucide.createIcons(); }catch(e){}
-  }catch(error){
-    console.error(error);
-    document.getElementById('profileLoading')?.classList.add('hidden');
-    
-    document.getElementById('profileContent')?.classList.remove('hidden');
-    document.getElementById('profileName').textContent=session.name||session.email||'المستخدم';
-    document.getElementById('profileTitle').textContent=session.title||roleLabel(session.role);
-    document.getElementById('jobTitle').textContent=session.title||roleLabel(session.role);
-    document.getElementById('profileEmail').textContent=session.email||'—';
-    document.getElementById('systemRole').textContent=roleLabel(session.role);
+  // الملف الوحيد الذي تم تجهيزه واعتماده حتى الآن هو ملف المدير المالي.
+  if(session.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2'){
+    location.replace('financial-manager.html');
+    return;
   }
+
+  document.getElementById('profileLoading')?.classList.add('hidden');
+  document.getElementById('profileContent')?.classList.add('hidden');
+  document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
+  try{lucide.createIcons()}catch(e){}
 }
 
 renderProfile();
