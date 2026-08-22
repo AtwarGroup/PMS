@@ -477,67 +477,7 @@
   </main>
 </div>
 
-
-  <!-- User Management -->
   </div></section></div>
-<div id="usersModal" onclick="if(event.target===this)closeUsersModal()" class="hidden fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm p-4">
-    <div class="max-w-4xl mx-auto mt-8 bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[86vh] flex flex-col">
-      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-        <div>
-          <h2 class="font-black text-lg text-slate-900">إدارة المستخدمين</h2>
-          <p class="text-xs text-slate-500 mt-1">إدارة الاسم والصلاحية والحالة للمستخدمين المسجلين. يتم منع تكرار البريد الإلكتروني.</p>
-        </div>
-        <button type="button" onclick="closeUsersModal()" class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 text-xl">×</button>
-      </div>
-
-      <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
-        <div class="text-xs text-slate-500">أنشئ الحساب أولاً في Firebase Authentication، ثم أضف بيانات المستخدم هنا. استخدم الإعدادات المتقدمة فقط لربط UID عند الإضافة الأولى.</div>
-        <button type="button" onclick="showUserForm()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl">＋ إضافة مستخدم</button>
-      </div>
-
-      <div id="userFormBox" class="hidden p-4 border-b border-blue-100 bg-blue-50/40">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input id="userUidInput" type="hidden">
-          <button type="button" id="advancedFirebaseToggle" onclick="toggleFirebaseAdvanced()" class="md:col-span-2 text-right text-xs font-bold text-slate-500 hover:text-blue-700">
-            ⚙️ إعدادات متقدمة
-          </button>
-          <div id="firebaseAdvancedBox" hidden class="hidden md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
-            <label class="block text-[11px] font-bold text-slate-500 mb-2">Firebase UID</label>
-            <input id="userUidAdvancedInput" placeholder="الصق UID من Firebase Authentication" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
-            <p class="text-[10px] text-slate-400 mt-2">اختياري للعرض، ويستخدم فقط لربط حساب Firebase عند الإضافة الأولى.</p>
-          </div>
-          <input id="userNameInput" placeholder="اسم المستخدم" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
-          <input id="userEmailInput" type="email" placeholder="البريد الإلكتروني" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
-          <input id="userTitleInput" placeholder="المسمى الوظيفي" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
-          <input id="userDepartmentInput" placeholder="الإدارة" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
-          <select id="userRoleInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
-            <option value="employee">موظف</option>
-            <option value="manager">مدير</option>
-            <option value="admin">مدير النظام</option>
-          </select>
-
-          <select id="userManagerUidInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
-            <option value="">بدون مدير مباشر</option>
-          </select>
-          <select id="userStatusInput" class="border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white">
-            <option value="active">نشط</option>
-            <option value="inactive">غير نشط</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-2 mt-3">
-          <button type="button" onclick="hideUserForm()" class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold">إلغاء</button>
-          <button type="button" onclick="saveUserProfile()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">حفظ المستخدم</button>
-        </div>
-      </div>
-
-      <div class="overflow-auto">
-        <div id="usersList" class="divide-y divide-slate-100"></div>
-        <div id="usersEmpty" class="hidden py-14 text-center text-slate-400 text-sm">لا توجد ملفات مستخدمين.</div>
-      </div>
-    </div>
-  </div>
-
-
   <div id="toastContainer" aria-live="polite"></div>
 
   <div id="appDialog" onclick="if(event.target===this)document.getElementById('appDialogCancel').click()" class="hidden dialog-backdrop">
@@ -599,7 +539,6 @@ let pendingAssigneeChange=null;
 let homeFilterValue='';
 let urlTargetTaskKey='';
 let urlTargetOwnerUid='';
-let openAdminUsersFromUrl=false;
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -609,13 +548,6 @@ document.addEventListener('keydown',e=>{
     document.getElementById('appDialogCancel')?.click();
     return;
   }
-
-  const usersModal=document.getElementById('usersModal');
-  if(usersModal && !usersModal.classList.contains('hidden')){
-    closeUsersModal();
-    return;
-  }
-
   const notificationPanel=document.getElementById('notificationPanel');
   if(notificationPanel && !notificationPanel.classList.contains('hidden')){
     toggleNotifications(false);
@@ -879,7 +811,6 @@ function applyHomeDashboardFilterFromUrl(){
   const scope=String(params.get('scope')||'').toUpperCase();
   const ownerRaw=String(params.get('owner')||'').trim();
   const owner=ownerRaw.toLowerCase();
-  openAdminUsersFromUrl=String(params.get('admin')||'').toLowerCase()==='users';
   urlTargetOwnerUid=ownerRaw;
   urlTargetTaskKey=String(params.get('task')||'').trim();
   homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
@@ -984,45 +915,7 @@ function isDescendantOf(userOrUid,managerUid){
   return false;
 }
 
-function buildManagerChainForUser(user){
-  const chain={};
-  const visited=new Set();
-  let cursor=user;
 
-  while(cursor?.managerUid){
-    const parentUid=String(cursor.managerUid);
-    if(visited.has(parentUid))break;
-    visited.add(parentUid);
-    chain[parentUid]=true;
-    cursor=getUserByUid(parentUid);
-  }
-
-  return chain;
-}
-
-async function syncManagerChains(){
-  if(currentProfile?.role!=='admin'||!users.length)return;
-
-  const updates={};
-  users.forEach(u=>{
-    updates[`users/${u.uid}/managerChain`]=buildManagerChainForUser(u);
-  });
-
-  try{
-    await update(ref(db),updates);
-
-    // Update local cache too.
-    users=users.map(u=>({...u,managerChain:buildManagerChainForUser(u)}));
-    const me=users.find(u=>u.uid===currentUser?.uid);
-    if(me)currentProfile=me;
-    window.atwarSyncShellIdentity?.(currentProfile,currentUser);
-    return true;
-  }catch(error){
-    console.error('Manager chain sync:',error);
-    showToast(`تم حفظ بيانات المستخدم، لكن تعذر تحديث التسلسل الإداري (${error?.code||error?.message||'خطأ غير معروف'}).`,'warning',5000);
-    return false;
-  }
-}
 
 // المستخدمون الذين يحق للمستخدم رؤية كامل مهامهم:
 // الموظف: نفسه فقط.
@@ -1315,8 +1208,6 @@ onAuthStateChanged(auth,async(user)=>{
 
     // Admin يحافظ على managerChain محدثة لكل المستخدمين.
     if(currentProfile.role==='admin'){
-      // أعمال الصيانة لا يجب أن تمنع مدير النظام من الدخول إلى النظام.
-      syncManagerChains().catch(error=>console.error('Background manager-chain sync:',error));
       syncCreatedTaskIndex().catch(error=>console.error('Background task-index sync:',error));
     }
 
@@ -1329,10 +1220,6 @@ onAuthStateChanged(auth,async(user)=>{
         : currentProfile.role==='manager'
           ? 'مهامك ومهام فريقك'
           : 'مهامك الشخصية';
-
-    document.getElementById('usersButton')
-      ?.classList.toggle('hidden',currentProfile.role!=='admin');
-
     applyRoleUI();
     showApp(true);
     bindDetailsCloseButtons();
@@ -1341,11 +1228,6 @@ onAuthStateChanged(auth,async(user)=>{
     renderManagerDashboard();
     subscribeVisibleTasks();
     subscribeNotifications();
-
-    if(openAdminUsersFromUrl && currentProfile.role==='admin'){
-      setTimeout(()=>openUsersModal(),150);
-    }
-
     setTimeout(()=>checkOverdueNotifications(),1200);
 
   }catch(error){
@@ -2315,201 +2197,6 @@ async function commitQuickAdd(){
 }
 
 
-function toggleFirebaseAdvanced(force){
-  const box=document.getElementById('firebaseAdvancedBox');
-  if(!box)return;
-  const show=typeof force==='boolean'?force:box.hidden;
-  box.hidden=!show;
-  box.classList.toggle('hidden',!show);
-}
-function roleArabic(role){
-  return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||role||'موظف';
-}
-function statusArabic(status){return status==='inactive'?'غير نشط':'نشط'}
-
-function openUsersModal(){
-  if(currentProfile?.role!=='admin')return;
-  document.getElementById('usersModal')?.classList.remove('hidden');
-  renderUsersManagement();
-}
-function closeUsersModal(){
-  document.getElementById('usersModal')?.classList.add('hidden');
-  hideUserForm();
-}
-
-function populateManagerOptions(selectedUid='',editingUid=''){
-  const select=document.getElementById('userManagerUidInput');
-  if(!select)return;
-
-  // منع تكوين دورة إدارية: لا يظهر المستخدم نفسه ولا أي مرؤوس تابع له كمدير مباشر محتمل.
-  const uniqueByUid=new Map();
-  users.forEach(u=>{
-    if(!u?.uid||u.active===false||!(u.role==='manager'||u.role==='admin'))return;
-    if(editingUid && String(u.uid)===String(editingUid))return;
-    if(editingUid && isDescendantOf(u,editingUid))return;
-    uniqueByUid.set(u.uid,u);
-  });
-
-  const selectedUser=users.find(u=>u.uid===selectedUid);
-  const selectedEmail=String(selectedUser?.email||'').trim().toLowerCase();
-  const seenEmails=new Set();
-  const managers=[];
-
-  [...uniqueByUid.values()]
-    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'))
-    .forEach(u=>{
-      const email=String(u.email||'').trim().toLowerCase();
-      if(email && seenEmails.has(email))return;
-      if(email)seenEmails.add(email);
-      managers.push(u);
-    });
-
-  select.innerHTML='<option value="">بدون مدير مباشر</option>'+managers.map(u=>{
-    const email=String(u.email||'').trim().toLowerCase();
-    const selected=(u.uid===selectedUid)||(!managers.some(x=>x.uid===selectedUid) && selectedEmail && email===selectedEmail);
-    return `<option value="${escapeHTML(u.uid)}" ${selected?'selected':''}>${escapeHTML(u.name||u.email||u.uid)} — ${escapeHTML(roleArabic(u.role))}</option>`;
-  }).join('');
-}
-function showUserForm(user=null){
-  if(currentProfile?.role!=='admin')return;
-  document.getElementById('userFormBox')?.classList.remove('hidden');
-  document.getElementById('userUidInput').value=user?.uid||'';
-  document.getElementById('userUidAdvancedInput').value=user?.uid||'';
-  document.getElementById('userNameInput').value=user?.name||'';
-  document.getElementById('userEmailInput').value=user?.email||'';
-  document.getElementById('userTitleInput').value=user?.title||user?.jobTitle||user?.position||'';
-  document.getElementById('userDepartmentInput').value=user?.department||user?.departmentName||'';
-  document.getElementById('userRoleInput').value=user?.role||'employee';
-  document.getElementById('userStatusInput').value=user?(user.status||(user.active===false?'inactive':'active')):'active';
-  populateManagerOptions(user?.managerUid||'',user?.uid||'');
-
-  // الإعدادات المتقدمة مخفية افتراضيًا دائمًا.
-  toggleFirebaseAdvanced(false);
-  document.getElementById('advancedFirebaseToggle').classList.toggle('hidden',!!user);
-}
-function hideUserForm(){
-  const box=document.getElementById('userFormBox');
-  if(box)box.classList.add('hidden');
-  const uid=document.getElementById('userUidInput');
-  const uidAdv=document.getElementById('userUidAdvancedInput');
-  if(uid)uid.value='';
-  if(uidAdv)uidAdv.value='';
-  toggleFirebaseAdvanced(false);
-  document.getElementById('advancedFirebaseToggle')?.classList.remove('hidden');
-}
-function renderUsersManagement(){
-  const list=document.getElementById('usersList'), empty=document.getElementById('usersEmpty');
-  if(!list||!empty)return;
-  const byUid=new Map();
-  users.forEach(u=>{ if(u?.uid) byUid.set(u.uid,u); });
-  const seenEmails=new Set();
-  const rows=[...byUid.values()]
-    .filter(u=>{
-      const email=String(u.email||'').trim().toLowerCase();
-      if(!email)return true;
-      if(seenEmails.has(email))return false;
-      seenEmails.add(email);
-      return true;
-    })
-    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'));
-  list.innerHTML='';
-  empty.classList.toggle('hidden',rows.length>0);
-  rows.forEach(u=>{
-    const row=document.createElement('div');
-    row.className='px-5 py-4 flex items-center gap-3 hover:bg-slate-50';
-    row.innerHTML=`
-      <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-black">${escapeHTML((u.name||u.email||'?').trim().charAt(0).toUpperCase())}</div>
-      <div class="min-w-0 flex-1">
-        <div class="font-black text-sm text-slate-800 truncate">${escapeHTML(u.name||'بدون اسم')}</div>
-        <div class="text-xs text-slate-500 truncate">${escapeHTML(u.email||u.uid||'')}</div>
-        <div class="text-[10px] text-slate-400 truncate mt-0.5">${escapeHTML(u.title||u.jobTitle||'بدون مسمى')} • ${escapeHTML(u.department||u.departmentName||'بدون إدارة')}</div>
-      </div>
-      <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">${escapeHTML(roleArabic(u.role))}</span>
-      <span class="text-[11px] font-bold ${u.status==='inactive'||u.active===false?'text-rose-600':'text-emerald-600'}">${u.status==='inactive'||u.active===false?'غير نشط':'نشط'}</span>
-      <button type="button" class="text-xs font-bold text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-lg">تعديل</button>`;
-    row.querySelector('button').onclick=()=>showUserForm(u);
-    list.appendChild(row);
-  });
-}
-async function saveUserProfile(){
-
-  if(currentProfile?.role!=='admin')return;
-  let uid=document.getElementById('userUidInput').value.trim();
-  if(!uid)uid=document.getElementById('userUidAdvancedInput').value.trim();
-  const name=document.getElementById('userNameInput').value.trim();
-  const email=document.getElementById('userEmailInput').value.trim();
-  const title=document.getElementById('userTitleInput').value.trim();
-  const department=document.getElementById('userDepartmentInput').value.trim();
-  const role=document.getElementById('userRoleInput').value;
-  const status=document.getElementById('userStatusInput').value;
-  let managerUid=document.getElementById('userManagerUidInput').value.trim();
-  const originalUid=document.getElementById('userUidInput').value.trim();
-  const isNewUser=!originalUid;
-
-  if(managerUid===uid)managerUid='';
-  if(!uid){showToast('يرجى فتح الإعدادات المتقدمة وإدخال Firebase UID للمستخدم الجديد.','warning');toggleFirebaseAdvanced(true);document.getElementById('userUidAdvancedInput')?.focus();return;}
-  if(!name||!email||!title||!department){showToast('يرجى إدخال الاسم والبريد الإلكتروني والمسمى الوظيفي والإدارة.','warning');return;}
-
-  if(isNewUser && users.some(u=>String(u.uid)===String(uid))){
-    showToast('Firebase UID مستخدم بالفعل. افتح الحساب الموجود من زر تعديل بدل إنشاء مستخدم جديد.','error',5000);
-    return;
-  }
-
-  const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(!emailPattern.test(email)){
-    showToast('صيغة البريد الإلكتروني غير صحيحة.','error');
-    return;
-  }
-
-  if(managerUid){
-    const candidateManager=users.find(u=>String(u.uid)===String(managerUid));
-    if(!candidateManager){
-      showToast('المدير المباشر المحدد غير موجود في النظام.','error');
-      return;
-    }
-    if(String(candidateManager.uid)===String(uid)||isDescendantOf(candidateManager,uid)){
-      showToast('لا يمكن تعيين المستخدم نفسه أو أحد مرؤوسيه كمدير مباشر.','error',5000);
-      return;
-    }
-  }
-
-  const normalizedEmail=email.toLowerCase();
-  const duplicate=users.find(u=>u.uid!==uid&&String(u.email||'').trim().toLowerCase()===normalizedEmail);
-  if(duplicate){
-    showToast('هذا البريد الإلكتروني مرتبط بمستخدم آخر بالفعل.','error');
-    return;
-  }
-  setSaveStatus('saving');
-  const saveButton=document.querySelector('button[onclick="saveUserProfile()"]');
-  if(saveButton){saveButton.disabled=true;saveButton.textContent='جاري الحفظ...';}
-  try{
-    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
-    await update(ref(db,`users/${uid}`),payload);
-
-    const idx=users.findIndex(u=>u.uid===uid);
-    if(idx>=0)users[idx]={...users[idx],...payload};
-    else users.push(payload);
-
-    // بيانات المستخدم أصبحت محفوظة فعلياً هنا؛ لا نجعل إعادة بناء التسلسل الإداري تعطل واجهة الحفظ.
-    renderUsersManagement();
-    hideUserForm();
-    setSaveStatus('saved');
-    showToast('تم حفظ المستخدم بنجاح.','success');
-
-    // أي تغيير في المدير المباشر قد يؤثر على من تحته، لذلك نحدّث managerChain في الخلفية.
-    // في حال فشل التحديث تظل بيانات المستخدم المحفوظة سليمة ويظهر تنبيه مستقل فقط.
-    syncManagerChains().catch(error=>{
-      console.error('Background manager-chain sync after user save:',error);
-    });
-  }catch(error){
-    console.error('Save user error:',error);
-    setSaveStatus('error');
-    showToast(`تعذر حفظ المستخدم: ${error?.code||error?.message||'خطأ غير معروف'}`,'error',4500);
-  }finally{
-    if(saveButton){saveButton.disabled=false;saveButton.textContent='حفظ المستخدم';}
-  }
-}
-
 async function addNewTask(quickTitle='',openDetails=true){
   const today=localDateISO(),ownerUid=currentUser.uid;
   const owner=users.find(u=>u.uid===ownerUid)||currentProfile;
@@ -3139,14 +2826,7 @@ function handleImport(e){
 Object.assign(window,{
   addNewTask, logoutUser, exportToExcel, handleImport, updateSelectedField,
   deleteSelectedTask, clearSelection, closeDetailsKeepPosition,
-  toggleMoreMenu, setQuickFilter, showQuickAdd, hideQuickAdd, quickAddKey, commitQuickAdd
-,
-  openUsersModal,
-  closeUsersModal,
-  showUserForm,
-  hideUserForm,
-  saveUserProfile,
-  toggleFirebaseAdvanced,
+  toggleMoreMenu, setQuickFilter, showQuickAdd, hideQuickAdd, quickAddKey, commitQuickAdd,
   setupAssigneeFilter,
   setAssigneeFilter,
   toggleNotifications,
@@ -3173,33 +2853,27 @@ window.adminReopenCompletedTask=adminReopenCompletedTask;
 window.approveSelectedTask=approveSelectedTask;
 window.cancelNewSubtask=cancelNewSubtask;
 window.closeDetailsKeepPosition=closeDetailsKeepPosition;
-window.closeUsersModal=closeUsersModal;
 window.commitQuickAdd=commitQuickAdd;
 window.completeSelectedTask=completeSelectedTask;
 window.deleteSelectedTask=deleteSelectedTask;
 window.deleteSubtask=deleteSubtask;
 window.filterByTeamMember=filterByTeamMember;
 window.hideQuickAdd=hideQuickAdd;
-window.hideUserForm=hideUserForm;
 window.openNotification=openNotification;
 window.quickAddKey=quickAddKey;
 window.returnTaskForCorrection=returnTaskForCorrection;
 window.saveNewSubtask=saveNewSubtask;
-window.saveUserProfile=saveUserProfile;
 window.setAssigneeFilter=setAssigneeFilter;
 window.setQuickFilter=setQuickFilter;
 window.setSortFilter=setSortFilter;
 window.showQuickAdd=showQuickAdd;
-window.showUserForm=showUserForm;
 window.startSelectedTask=startSelectedTask;
 window.toggleActivityLog=toggleActivityLog;
-window.toggleFirebaseAdvanced=toggleFirebaseAdvanced;
 window.toggleManagerDashboard=toggleManagerDashboard;
 window.toggleSubtask=toggleSubtask;
 window.updateSelectedField=updateSelectedField;
 window.handleImport=handleImport;
 window.exportToExcel=exportToExcel;
-window.openUsersModal=openUsersModal;
 window.markAllNotificationsRead=markAllNotificationsRead;
 window.toggleNotifications=toggleNotifications;
 </script>
