@@ -2337,16 +2337,17 @@ function closeUsersModal(){
   hideUserForm();
 }
 
-function populateManagerOptions(selectedUid=''){
+function populateManagerOptions(selectedUid='',editingUid=''){
   const select=document.getElementById('userManagerUidInput');
   if(!select)return;
 
-  // Build a clean manager list: unique UID first, then unique email.
+  // منع تكوين دورة إدارية: لا يظهر المستخدم نفسه ولا أي مرؤوس تابع له كمدير مباشر محتمل.
   const uniqueByUid=new Map();
   users.forEach(u=>{
-    if(u?.uid && u.active!==false && (u.role==='manager'||u.role==='admin')){
-      uniqueByUid.set(u.uid,u);
-    }
+    if(!u?.uid||u.active===false||!(u.role==='manager'||u.role==='admin'))return;
+    if(editingUid && String(u.uid)===String(editingUid))return;
+    if(editingUid && isDescendantOf(u,editingUid))return;
+    uniqueByUid.set(u.uid,u);
   });
 
   const selectedUser=users.find(u=>u.uid===selectedUid);
@@ -2365,7 +2366,6 @@ function populateManagerOptions(selectedUid=''){
 
   select.innerHTML='<option value="">بدون مدير مباشر</option>'+managers.map(u=>{
     const email=String(u.email||'').trim().toLowerCase();
-    // If an old duplicate UID was selected, preserve the same person by email.
     const selected=(u.uid===selectedUid)||(!managers.some(x=>x.uid===selectedUid) && selectedEmail && email===selectedEmail);
     return `<option value="${escapeHTML(u.uid)}" ${selected?'selected':''}>${escapeHTML(u.name||u.email||u.uid)} — ${escapeHTML(roleArabic(u.role))}</option>`;
   }).join('');
@@ -2381,7 +2381,7 @@ function showUserForm(user=null){
   document.getElementById('userDepartmentInput').value=user?.department||user?.departmentName||'';
   document.getElementById('userRoleInput').value=user?.role||'employee';
   document.getElementById('userStatusInput').value=user?(user.status||(user.active===false?'inactive':'active')):'active';
-  populateManagerOptions(user?.managerUid||'');
+  populateManagerOptions(user?.managerUid||'',user?.uid||'');
 
   // الإعدادات المتقدمة مخفية افتراضيًا دائمًا.
   toggleFirebaseAdvanced(false);
@@ -2443,9 +2443,36 @@ async function saveUserProfile(){
   const role=document.getElementById('userRoleInput').value;
   const status=document.getElementById('userStatusInput').value;
   let managerUid=document.getElementById('userManagerUidInput').value.trim();
+  const originalUid=document.getElementById('userUidInput').value.trim();
+  const isNewUser=!originalUid;
+
   if(managerUid===uid)managerUid='';
   if(!uid){showToast('يرجى فتح الإعدادات المتقدمة وإدخال Firebase UID للمستخدم الجديد.','warning');toggleFirebaseAdvanced(true);document.getElementById('userUidAdvancedInput')?.focus();return;}
   if(!name||!email||!title||!department){showToast('يرجى إدخال الاسم والبريد الإلكتروني والمسمى الوظيفي والإدارة.','warning');return;}
+
+  if(isNewUser && users.some(u=>String(u.uid)===String(uid))){
+    showToast('Firebase UID مستخدم بالفعل. افتح الحساب الموجود من زر تعديل بدل إنشاء مستخدم جديد.','error',5000);
+    return;
+  }
+
+  const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!emailPattern.test(email)){
+    showToast('صيغة البريد الإلكتروني غير صحيحة.','error');
+    return;
+  }
+
+  if(managerUid){
+    const candidateManager=users.find(u=>String(u.uid)===String(managerUid));
+    if(!candidateManager){
+      showToast('المدير المباشر المحدد غير موجود في النظام.','error');
+      return;
+    }
+    if(String(candidateManager.uid)===String(uid)||isDescendantOf(candidateManager,uid)){
+      showToast('لا يمكن تعيين المستخدم نفسه أو أحد مرؤوسيه كمدير مباشر.','error',5000);
+      return;
+    }
+  }
+
   const normalizedEmail=email.toLowerCase();
   const duplicate=users.find(u=>u.uid!==uid&&String(u.email||'').trim().toLowerCase()===normalizedEmail);
   if(duplicate){
@@ -2463,13 +2490,17 @@ async function saveUserProfile(){
     if(idx>=0)users[idx]={...users[idx],...payload};
     else users.push(payload);
 
-    // أي تغيير في المدير المباشر قد يؤثر على كل من تحته، لذلك نعيد بناء الشجرة.
-    const chainSynced=await syncManagerChains();
-
+    // بيانات المستخدم أصبحت محفوظة فعلياً هنا؛ لا نجعل إعادة بناء التسلسل الإداري تعطل واجهة الحفظ.
     renderUsersManagement();
     hideUserForm();
     setSaveStatus('saved');
-    if(chainSynced)showToast('تم حفظ المستخدم بنجاح.','success');
+    showToast('تم حفظ المستخدم بنجاح.','success');
+
+    // أي تغيير في المدير المباشر قد يؤثر على من تحته، لذلك نحدّث managerChain في الخلفية.
+    // في حال فشل التحديث تظل بيانات المستخدم المحفوظة سليمة ويظهر تنبيه مستقل فقط.
+    syncManagerChains().catch(error=>{
+      console.error('Background manager-chain sync after user save:',error);
+    });
   }catch(error){
     console.error('Save user error:',error);
     setSaveStatus('error');
