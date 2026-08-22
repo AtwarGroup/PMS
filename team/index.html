@@ -40,7 +40,7 @@
     <div class="panel"><h3>مؤشرات الفريق</h3><div id="teamMetrics" style="margin-top:14px;color:#64748b">جاري احتساب المؤشرات...</div></div>
   </section>
 
-  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>V0.40.6</span><span>Firebase Live Data</span></footer>
+  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>V0.40.7</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded',()=>{
  });
 });
 </script>
-<script src="../assets/js/consolidation.js"></script>
 <script type="module" id="teamFirebaseBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -69,10 +68,23 @@ const grid=document.getElementById('teamGrid'),search=document.getElementById('t
 let members=[],tasksByOwner=new Map(),profile=null,allUsers=[];
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function overdue(t){
- if(!t?.end||t.status==='مكتملة'||t.status==='بانتظار الاعتماد')return false;
- return new Date()>new Date(t.end+'T23:59:59');
+function parseDateOnly(v){
+ if(!v)return null;
+ const d=new Date(v+(String(v).length===10?'T00:00:00':''));
+ return Number.isNaN(d.getTime())?null:d;
 }
+function delayDays(t){
+ const end=parseDateOnly(t?.end);if(!end)return 0;
+ if(t?.status==='مكتملة'&&!t?.actualEnd)return 0;
+ let compare=null;
+ if(t?.status==='بانتظار الاعتماد'&&t?.submittedAt)compare=new Date(Number(t.submittedAt));
+ else if(t?.actualEnd)compare=parseDateOnly(t.actualEnd);
+ else compare=new Date();
+ if(!compare||Number.isNaN(compare.getTime()))return 0;
+ const limit=new Date(end);limit.setHours(23,59,59,999);
+ return compare>limit?Math.max(0,Math.floor((compare-limit)/86400000)):0;
+}
+function overdue(t){return delayDays(t)>0}
 function rowsFor(uid){return tasksByOwner.get(uid)||[]}
 function card(u){
  const rows=rowsFor(u.uid),done=rows.filter(t=>t.status==='مكتملة').length,run=rows.filter(t=>t.status==='قيد التنفيذ').length,late=rows.filter(overdue).length,total=rows.length;

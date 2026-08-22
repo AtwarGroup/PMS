@@ -68,7 +68,7 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.40.6</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.40.7</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -88,8 +88,6 @@ document.addEventListener('DOMContentLoaded',()=>{
  });
 });
 </script>
-<script src="assets/js/consolidation.js"></script>
-
 <script type="module" id="homeFirebaseDashboard">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -125,9 +123,13 @@ function delayDays(t){
 }
 function completedThisMonth(t){
   if(t?.status!=='مكتملة')return false;
-  const d=t.approvedAt?new Date(Number(t.approvedAt)):t.actualEnd?new Date(t.actualEnd+'T00:00:00'):null;
-  if(!d||Number.isNaN(d.getTime()))return true;
-  const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
+  let d=null;
+  if(t.approvedAt)d=new Date(Number(t.approvedAt));
+  else if(t.actualEnd)d=new Date(t.actualEnd+'T00:00:00');
+  else if(t.updatedAt)d=new Date(Number(t.updatedAt));
+  if(!d||Number.isNaN(d.getTime()))return false;
+  const n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
 }
 function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=v}
 function friendly(hostId,title,small){

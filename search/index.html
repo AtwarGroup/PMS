@@ -31,7 +31,7 @@
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.40.6</span><span>Firebase Live Search</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.40.7</span><span>Firebase Live Search</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
@@ -53,7 +53,7 @@ function render(q=''){
  if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}
  const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));
  const peopleRows=people.filter(x=>`${x.name||''} ${x.email||''} ${x.title||x.jobTitle||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.name||x.email||'مستخدم',meta:x.title||x.jobTitle||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.uid)}`,kind:'موظف'}));
- const taskRows=tasks.filter(x=>`${x.title||''} ${x.desc||''} ${x.notes||''} ${x.assign||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assign||''}`,icon:'square-check-big',href:'../tasks/index.html',kind:'مهمة'}));
+ const taskRows=tasks.filter(x=>`${x.title||''} ${x.desc||''} ${x.notes||''} ${x.assign||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assign||''}`,icon:'square-check-big',href:`../tasks/index.html?owner=${encodeURIComponent(x._ownerUid)}&task=${encodeURIComponent(x._key)}`,kind:'مهمة'}));
  const rows=[...taskRows,...peopleRows,...pageRows];
  results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';
  try{lucide.createIcons()}catch{}
@@ -90,5 +90,4 @@ onAuthStateChanged(auth,async user=>{
 });
 input.addEventListener('input',e=>render(e.target.value));
 </script>
-<script src="../assets/js/consolidation.js"></script>
 </body></html>

@@ -1,3 +1,52 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>دليل المهام</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet"><style>body{font-family:Tajawal;background:#f8fafc;color:#17233a;padding:40px;max-width:900px;margin:auto}section{background:white;border:1px solid #e2e8f0;border-radius:18px;padding:24px}h1{margin-top:0}</style></head><body><section><h1>دليل نظام المهام</h1><p>هذه نسخة ATWAR ONE من دليل المهام. سيتم ربط دليل التشغيل الكامل بعد اعتماد V1.</p><p><a href="index.html">العودة إلى المهام</a></p></section>
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-</body></html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – دليل نظام المهام</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tajawal,Arial,sans-serif;background:#f4f7fb;color:#15243a}
+main{max-width:920px;margin:0 auto;padding:34px 20px 50px}.hero,.card{background:#fff;border:1px solid #e2eaf3;border-radius:18px}
+.hero{padding:24px;margin-bottom:14px}.hero h1{margin:0;font-size:26px}.hero p{color:#728198;font-size:11px;line-height:1.9;margin:7px 0 0}
+.card{padding:20px;margin-top:12px}.card h2{font-size:16px;margin:0 0 12px}.steps{display:grid;gap:9px}.step{padding:12px 14px;border:1px solid #e8eef5;border-radius:12px;background:#fbfdff;font-size:11px;line-height:1.8}
+.step b{color:#0f6fd8}.note{font-size:10px;color:#6f7f93;line-height:1.8}.back{display:inline-block;margin-top:16px;text-decoration:none;color:#1677ff;font-size:11px;font-weight:900}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+  <h1>دليل نظام المهام</h1>
+  <p>مرجع مختصر لاستخدام المهام في ATWAR ONE وفق دورة العمل والصلاحيات المعتمدة حاليًا.</p>
+</section>
+<section class="card">
+  <h2>دورة المهمة</h2>
+  <div class="steps">
+    <div class="step"><b>1. إنشاء المهمة:</b> يتم تحديد المسؤول وتاريخ البداية والنهاية والأولوية والتفاصيل المطلوبة.</div>
+    <div class="step"><b>2. التنفيذ:</b> الموظف يحدث نسبة الإنجاز والملاحظات حتى اكتمال العمل.</div>
+    <div class="step"><b>3. إرسال للاعتماد:</b> عند إنهاء العمل تتحول المهمة إلى <strong>بانتظار الاعتماد</strong> ويتوقف احتساب التأخير عند وقت الإرسال.</div>
+    <div class="step"><b>4. قرار المدير:</b> المدير المباشر يعتمد المهمة فتتحول إلى <strong>مكتملة</strong>، أو يعيدها للعمل مع ملاحظة.</div>
+    <div class="step"><b>5. بعد الإكمال:</b> المهمة المكتملة مقفلة، ولا يمكن إعادة فتحها إلا بواسطة مدير النظام مع تسجيل سبب إعادة الفتح.</div>
+  </div>
+</section>
+<section class="card">
+  <h2>الفلاتر والبحث</h2>
+  <p class="note">استخدم «الكل، اليوم، متأخرة، قيد التنفيذ، مكتملة» مع فلتر المسؤول والترتيب. البحث العام يفتح المهمة المرتبطة مباشرة عندما تكون ضمن نطاق صلاحيتك.</p>
+</section>
+<section class="card">
+  <h2>الصلاحيات</h2>
+  <p class="note">الموظف يرى مهامه. المدير يرى مهامه وكامل الشجرة الإدارية الواقعة تحت مسؤوليته، بينما الاعتماد يبقى للمدير المباشر. مدير النظام لديه نطاق النظام وإمكانية إعادة فتح المهمة المكتملة.</p>
+</section>
+<a class="back" href="index.html">← العودة إلى المهام</a>
+</main>
+<script src="../assets/js/firebase-config.js"></script>
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
+onAuthStateChanged(getAuth(app),user=>{if(!user)location.replace('../login.html')});
+try{lucide.createIcons()}catch{}
+</script>
+</body>
+</html>
