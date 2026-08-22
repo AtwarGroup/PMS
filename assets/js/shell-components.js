@@ -62,7 +62,6 @@
         <label id="importLabel" for="importFile" class="atwar-icon-btn" title="رفع Excel"><i data-lucide="upload"></i></label>
         <button type="button" onclick="exportToExcel()" class="atwar-icon-btn" title="تنزيل Excel"><i data-lucide="download"></i></button>
         <a href="user-guide.html" target="_blank" class="atwar-icon-btn" title="دليل المستخدم"><i data-lucide="book-open"></i></a>
-        <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden atwar-icon-btn" title="المستخدمون"><i data-lucide="users"></i></button>
         <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
       `:`<div class="atwar-task-notification-wrap" data-global-notification-wrap>
           <button type="button" class="atwar-bell" title="الإشعارات" data-global-notification-button>
