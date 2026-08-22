@@ -116,6 +116,14 @@
 }
 </style>
 
+<script id="hamzaOwnApprovedProfileRoute">
+(function(){
+  try{
+    const session=JSON.parse(localStorage.getItem('atwarSession')||'null');
+    if(session?.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2') location.replace('financial-manager.html');
+  }catch(e){}
+})();
+</script>
 </head>
 
 <body>
@@ -130,10 +138,9 @@
 <div id="profileUnderConstruction" class="profile-under-construction hidden">
   <div class="profile-under-card">
     <div class="profile-under-icon"><i data-lucide="construction"></i></div>
-    <h2>الصفحة تحت الإنشاء</h2>
+    <h2>بيانات الملف غير مكتملة</h2>
     <p>
-      لم تتم إضافة بيانات ملفك الوظيفي إلى النظام حتى الآن.
-      سيتم إظهار الملف الوظيفي والوصف الوظيفي ومؤشرات الأداء فور استكمال بياناتك واعتمادها.
+      سيتم عرض البيانات الوظيفية المتوفرة في حسابك، وتظهر التفاصيل الإضافية عند توفرها واعتمادها.
     </p>
     <div class="profile-under-user">
       <i data-lucide="user-round"></i>
@@ -200,13 +207,13 @@
             <h3>ملفي</h3>
 
             <div class="profile-links">
-              <a class="profile-link" href="job-description.html">
+              <a id="jobDescriptionLink" class="profile-link hidden" href="job-description.html">
                 <i data-lucide="file-text"></i>
                 <b>الوصف الوظيفي</b>
                 <small>الهدف الوظيفي والمسؤوليات والمهام الرئيسية.</small>
               </a>
 
-              <a class="profile-link" href="kpi.html">
+              <a id="kpiLink" class="profile-link hidden" href="kpi.html">
                 <i data-lucide="chart-no-axes-combined"></i>
                 <b>مؤشرات الأداء KPI</b>
                 <small>المؤشرات والأهداف ونتائج الأداء المرتبطة بملفك.</small>
@@ -218,10 +225,10 @@
                 <small>الانتقال إلى المهام الحالية والمتابعة.</small>
               </a>
 
-              <a class="profile-link" href="../follow-up/index.html">
+              <a class="profile-link" href="../workspace/index.html">
                 <i data-lucide="clock-arrow-up"></i>
-                <b>متابعاتي</b>
-                <small>الأمور التي تحتاج انتظار رد أو متابعة لاحقة.</small>
+                <b>مساحة عملي</b>
+                <small>الملاحظات والمتابعات الشخصية المحفوظة في حسابك.</small>
               </a>
             </div>
           </section>
@@ -267,7 +274,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>V0.37.9</span>
+          <span>V0.38.2</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -291,9 +298,7 @@ const db = getDatabase(app);
 function getSession(){
   try{
     return JSON.parse(
-      localStorage.getItem('atwarSession') ||
-      localStorage.getItem('atwarDemoSession') ||
-      'null'
+      localStorage.getItem('atwarSession') || 'null'
     );
   }catch{
     return null;
@@ -396,15 +401,12 @@ async function renderProfile(){
   try{
     const userRecord = await loadUserRecord(session.uid);
 
-    // IMPORTANT:
-    // If no actual employment profile has been created, do not show
-    // any default/static job profile.
-    if(!hasRealEmploymentProfile(userRecord)){
-      showUnderConstruction(session);
-      return;
-    }
-
     const merged = {...userRecord, ...session};
+
+    const hasJobDescription=!!(userRecord.jobDescription||userRecord.job_description||userRecord.jobDescriptionId);
+    const hasKpi=!!(userRecord.kpis||userRecord.kpi);
+    document.getElementById('jobDescriptionLink')?.classList.toggle('hidden',!hasJobDescription);
+    document.getElementById('kpiLink')?.classList.toggle('hidden',!hasKpi);
 
     const managerUid = pick(
       merged,
@@ -452,7 +454,14 @@ async function renderProfile(){
     try{ lucide.createIcons(); }catch(e){}
   }catch(error){
     console.error(error);
-    showUnderConstruction(session);
+    document.getElementById('profileLoading')?.classList.add('hidden');
+    document.getElementById('profileUnderConstruction')?.classList.add('hidden');
+    document.getElementById('profileContent')?.classList.remove('hidden');
+    document.getElementById('profileName').textContent=session.name||session.email||'المستخدم';
+    document.getElementById('profileTitle').textContent=session.title||roleLabel(session.role);
+    document.getElementById('jobTitle').textContent=session.title||roleLabel(session.role);
+    document.getElementById('profileEmail').textContent=session.email||'—';
+    document.getElementById('systemRole').textContent=roleLabel(session.role);
   }
 }
 

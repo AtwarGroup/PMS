@@ -29,7 +29,7 @@
 
   <section style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
     <div class="dash-card" data-task-scope="COMPLETED" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small id="homeStatCompletedScope">هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
-    <div class="dash-card" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>مهامي المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
+    <div class="dash-card" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>المهام المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
     <div class="dash-card" data-task-scope="OVERDUE" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
     <div class="dash-card" data-role-min="manager" data-task-scope="APPROVAL" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
   </section>
@@ -56,7 +56,7 @@
       <div id="homeTodayBody" class="home-body">
         <div class="home-item"><div><b>جاري تحميل مهامك...</b><small>المهام الخاصة بحسابك</small></div></div>
       </div>
-      <a class="home-link" href="tasks/index.html">عرض جميع المهام ‹</a>
+      <a class="home-link" href="tasks/index.html?owner=me">عرض مهامي ‹</a>
     </article>
   </section>
 
@@ -73,7 +73,7 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.37.9</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>V0.38.2</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -105,21 +105,38 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="assets/js/consolidation.js"></script>
 
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-
-
-
 <script type="module" id="homeFirebaseDashboard">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function todayISO(){return new Date().toISOString().slice(0,10)}
+function localDateISO(d=new Date()){
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayISO(){return localDateISO()}
+function parseDateOnly(v){
+  if(!v)return null;
+  const d=new Date(v+(String(v).length===10?'T00:00:00':''));
+  return Number.isNaN(d.getTime())?null:d;
+}
 function delayDays(t){
-  if(!t?.end||t.status==='مكتملة'||t.status==='بانتظار الاعتماد')return 0;
-  const end=new Date(t.end+'T23:59:59'),now=new Date();
-  return now>end?Math.max(1,Math.floor((now-end)/86400000)+1):0;
+  const end=parseDateOnly(t?.end); if(!end)return 0;
+  if(t?.status==='مكتملة'&&!t?.actualEnd)return 0;
+
+  let compare=null;
+  if(t?.status==='بانتظار الاعتماد' && t?.submittedAt){
+    compare=new Date(Number(t.submittedAt));
+  }else if(t?.actualEnd){
+    compare=parseDateOnly(t.actualEnd);
+  }else{
+    compare=new Date();
+  }
+
+  if(!compare || Number.isNaN(compare.getTime()))return 0;
+  const limit=new Date(end); limit.setHours(23,59,59,999);
+  return compare>limit?Math.max(0,Math.floor((compare-limit)/86400000)):0;
 }
 function completedThisMonth(t){
   if(t?.status!=='مكتملة')return false;
@@ -153,11 +170,19 @@ onAuthStateChanged(auth,async authUser=>{
     const usersSnap=await get(ref(db,'users'));
     const users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([id,v])=>({uid:id,...v})):[];
     const profile=users.find(u=>u.uid===uid)||{uid,role:'employee',email:authUser.email};
+    window.atwarSyncShellIdentity?.(profile,authUser);
 
     const directTeam=users.filter(u=>u.managerUid===uid||u.managerUID===uid||u.managerId===uid);
+    const fullTeam=users.filter(u=>
+      u.uid!==uid &&
+      (
+        u.managerUid===uid||u.managerUID===uid||u.managerId===uid||
+        u.managerChain?.[uid]===true
+      )
+    );
     const ownerUids=profile.role==='admin'
       ? users.map(u=>u.uid)
-      : profile.role==='manager'?[uid,...directTeam.map(u=>u.uid)]:[uid];
+      : profile.role==='manager'?[uid,...fullTeam.map(u=>u.uid)]:[uid];
 
     const buckets=await Promise.all([...new Set(ownerUids)].map(async ownerUid=>{
       try{

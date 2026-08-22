@@ -109,7 +109,7 @@ async function loadProfile(user){
     title: profile.title || profile.jobTitle || profile.position || roleLabel(role),
     role,
     managerUid: profile.managerUid || '',
-    managerChain: Array.isArray(profile.managerChain) ? profile.managerChain : [],
+    managerChain: (profile.managerChain && typeof profile.managerChain === 'object') ? profile.managerChain : {},
     permissions: Array.isArray(profile.permissions) && profile.permissions.length
       ? profile.permissions
       : defaultPermissions(role),

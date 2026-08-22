@@ -31,7 +31,7 @@
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.37.9</span><span>قيد التطوير</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.38.2</span><span>Firebase Live Search</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
@@ -65,10 +65,15 @@ onAuthStateChanged(auth,async user=>{
   const us=await get(ref(db,'users')),allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
   profile=allUsers.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee'};
   const direct=allUsers.filter(u=>String(u.managerUid||'')===String(user.uid));
-  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false):profile.role==='manager'?direct:[];
+  const descendants=allUsers.filter(u=>
+    u.uid!==user.uid &&
+    u.active!==false &&
+    (String(u.managerUid||'')===String(user.uid) || u.managerChain?.[user.uid]===true)
+  );
+  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false):profile.role==='manager'?descendants:[];
   people=visibleUsers;
 
-  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...direct.map(u=>u.uid)]:[user.uid];
+  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...descendants.map(u=>u.uid)]:[user.uid];
   const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([id,v])=>({_key:id,_ownerUid:uid,...v})):[]}catch{return []}}));
   tasks=buckets.flat();
 
@@ -86,6 +91,4 @@ onAuthStateChanged(auth,async user=>{
 input.addEventListener('input',e=>render(e.target.value));
 </script>
 <script src="../assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
 </body></html>

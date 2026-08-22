@@ -2,9 +2,7 @@
 function getAtwarDemoSession(){
   try{
     return JSON.parse(
-      localStorage.getItem('atwarSession') ||
-      localStorage.getItem('atwarDemoSession') ||
-      'null'
+      localStorage.getItem('atwarSession') || 'null'
     );
   }catch{return null}
 }

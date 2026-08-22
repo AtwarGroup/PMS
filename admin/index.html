@@ -19,17 +19,23 @@
 <div class="atwar-shell">
 <atwar-sidebar active=""></atwar-sidebar>
 <section class="atwar-main"><atwar-header></atwar-header>
-<main class="atwar-content"><h1 style="font-size:28px;margin:0 0 5px">إدارة النظام</h1><p style="font-size:12px;color:#7b8aa5;margin:0 0 18px">إعدادات الإدارة والصلاحيات، بدون خلطها مع واجهة الموظف اليومية.</p>
-<section class="admin-grid">
-<a class="admin-card" href="users.html"><i data-lucide="users-cog"></i><h3>المستخدمون والصلاحيات</h3><p>إدارة الحسابات والأدوار والمدير المباشر وحالة المستخدم.</p></a>
-<a class="admin-card" href="roles.html"><i data-lucide="key-round"></i><h3>الأدوار والصلاحيات</h3><p>تحديد الوصول إلى الوحدات ونطاق العرض الافتراضي لكل دور.</p></a>
-<div class="admin-card"><i data-lucide="activity"></i><h3>سجل النظام</h3><p>سيتم تخصيصه للأحداث الإدارية المهمة والتغييرات على النظام.</p></div>
+<main class="atwar-content">
+<section style="min-height:460px;display:flex;align-items:center;justify-content:center">
+  <div style="width:min(720px,100%);background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:34px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:#eef6ff;color:#1677ff;display:grid;place-items:center"><i data-lucide="shield-check"></i></div>
+      <div><h1 style="font-size:24px;margin:0">إدارة النظام</h1><p style="font-size:12px;color:#66778d;margin:5px 0 0">بيئة الإدارة في الإصدار التجريبي التشغيلي.</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:22px">
+      <a href="../tasks/index.html" style="text-decoration:none;border:1px solid #e5edf6;border-radius:14px;padding:16px;color:#20364f"><b>إدارة المهام والمستخدمين</b><div style="font-size:10px;color:#7b8aa5;margin-top:5px">الوصول إلى المهام وأدوات مدير النظام المتاحة حاليًا.</div></a>
+      <a href="../team/index.html" style="text-decoration:none;border:1px solid #e5edf6;border-radius:14px;padding:16px;color:#20364f"><b>الفريق والهيكل الإداري</b><div style="font-size:10px;color:#7b8aa5;margin-top:5px">مراجعة المستخدمين والعلاقات الإدارية الفعلية.</div></a>
+    </div>
+    <div style="margin-top:18px;padding:12px 14px;background:#f8fbff;border:1px solid #e2edf8;border-radius:12px;font-size:10px;color:#607087;line-height:1.8">الصلاحيات الفعلية محمية عبر Firebase Rules ومنطق الأدوار داخل النظام. لا يتم عرض أدوات إعداد غير مفعلة.</div>
+  </div>
 </section>
-<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>V0.37.9</span><span>قيد التطوير</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>V0.38.2</span><span>Production Pilot</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script><script>lucide.createIcons();</script>
 <script src="../assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
 </body></html>

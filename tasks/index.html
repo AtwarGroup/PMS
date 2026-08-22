@@ -747,6 +747,10 @@ function sortTasksForDisplay(rows){
 function escapeHTML(value=''){
   return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 }
+function localDateISO(d=new Date()){
+  if(!(d instanceof Date)||Number.isNaN(d.getTime()))return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function parseDateOnly(v){
   if(!v)return null;
   const d=new Date(v+(String(v).length===10?'T00:00:00':''));
@@ -868,13 +872,23 @@ async function closeDetailsKeepPosition(){
 function applyHomeDashboardFilterFromUrl(){
   const params=new URLSearchParams(location.search);
   const scope=String(params.get('scope')||'').toUpperCase();
+  const ownerRaw=String(params.get('owner')||'').trim();
+  const owner=ownerRaw.toLowerCase();
   homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
-  if(!homeFilterValue)return;
 
-  // Keep the existing task UI filters neutral; the URL scope applies separately.
+  // Deterministic owner scope: me, a permitted UID, or ALL.
+  if(owner==='me'){
+    assigneeFilterValue='__MY_TASKS__';
+  }else if(ownerRaw && users.some(u=>String(u.uid)===ownerRaw)){
+    assigneeFilterValue=ownerRaw;
+  }else{
+    assigneeFilterValue='ALL';
+  }
+
   const status=document.getElementById('statusFilter');
   if(status)status.value='ALL';
   document.querySelectorAll('.qf').forEach(b=>b.classList.toggle('active',b.dataset.filter==='ALL'));
+  setupAssigneeFilter();
 }
 
 function bindDetailsCloseButtons(){
@@ -952,6 +966,7 @@ async function syncManagerChains(){
     users=users.map(u=>({...u,managerChain:buildManagerChainForUser(u)}));
     const me=users.find(u=>u.uid===currentUser?.uid);
     if(me)currentProfile=me;
+    window.atwarSyncShellIdentity?.(currentProfile,user);
   }catch(error){
     console.error('Manager chain sync:',error);
     showToast('تعذر تحديث التسلسل الإداري في قاعدة البيانات.','warning',4500);
@@ -1135,10 +1150,10 @@ function applyRoleUI(){
 }
 function excelDateToISO(v){
   if(!v)return '';
-  if(v instanceof Date&&!Number.isNaN(v.getTime()))return v.toISOString().slice(0,10);
+  if(v instanceof Date&&!Number.isNaN(v.getTime()))return localDateISO(v);
   if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);if(d)return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`}
   const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
-  const d=new Date(s); return Number.isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+  const d=new Date(s); return Number.isNaN(d.getTime())?'':localDateISO(d);
 }
 
 document.getElementById('statusFilter').addEventListener('change',()=>{renderTasks();});
@@ -1232,11 +1247,12 @@ onAuthStateChanged(auth,async(user)=>{
         : [currentProfile];
 
       if(currentProfile.role==='manager'){
+        // Load the complete managerial tree. managerChain is maintained by Admin
+        // and lets a manager see direct and indirect reports consistently.
         users=allUsers.filter(u=>
-          u.uid===user.uid ||
-          u.managerUid===user.uid ||
-          u.managerUID===user.uid ||
-          u.managerId===user.uid
+          String(u.uid)===String(user.uid) ||
+          String(u.managerUid||u.managerUID||u.managerId||'')===String(user.uid) ||
+          u.managerChain?.[user.uid]===true
         );
       }else{
         users=allUsers;
@@ -1448,7 +1464,7 @@ async function createUniqueNotification(uid,key,data){
 
 async function checkOverdueNotifications(){
   if(!currentUser?.uid||!currentProfile)return;
-  const today=new Date().toISOString().slice(0,10).replaceAll('-','');
+  const today=localDateISO().replaceAll('-','');
 
   // الموظف: تنبيه مهامه الشخصية المتأخرة.
   // المدير: تنبيه مهامه + مهام فريقه المتأخرة التي يستطيع رؤيتها.
@@ -2065,7 +2081,7 @@ async function approveSelectedTask(){
 
   task.status='مكتملة';
   task.progress=100;
-  task.actualEnd=new Date().toISOString().slice(0,10);
+  task.actualEnd=localDateISO();
   task.approvedAt=Date.now();
   task.approvedByUid=currentUser.uid;
   task.approvedBy=currentProfile?.name||currentUser.email||'المدير';
@@ -2388,7 +2404,7 @@ async function saveUserProfile(){
 }
 
 async function addNewTask(quickTitle='',openDetails=true){
-  const today=new Date().toISOString().slice(0,10),ownerUid=currentUser.uid;
+  const today=localDateISO(),ownerUid=currentUser.uid;
   const owner=users.find(u=>u.uid===ownerUid)||currentProfile;
   const createdNow=Date.now();
   const task={
@@ -2476,7 +2492,7 @@ function setupAssigneeFilter(){
 
   const options=[{value:'ALL',label:'كل المسؤولين'}];
 
-  if(currentProfile.role==='manager'){
+  if(currentProfile.role==='manager'||currentProfile.role==='admin'){
     options.push({value:'__MY_TASKS__',label:'مهامي'});
   }
 
@@ -2550,7 +2566,7 @@ function renderTasks(){
     const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt),key=compositeKey(t);
     const selected=key===selectedTaskKey;
     const due=t.end||'بدون تاريخ';
-    const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(new Date().toISOString().slice(0,10),t.end)} يوم`;
+    const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
     const timingClass=delay>0?'text-rose-600':'text-slate-500';
     const card=document.createElement('div');
     card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;

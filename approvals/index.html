@@ -1,54 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ATWAR ONE – الاعتمادات</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
-<style>
-.approval-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
-.approval-head h1{margin:0;font-size:29px}.approval-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
-.filters{display:flex;gap:8px}.filters button{border:1px solid #e0e8f2;background:#fff;border-radius:11px;padding:9px 12px;font-family:inherit;font-weight:900;color:#63738a}
-.filters button.active{background:#0b1d3a;color:#fff}
-.approval-card{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:18px;margin-bottom:12px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
-.a-title{font-weight:900;font-size:15px}.a-meta{font-size:11px;color:#7d8ba0;margin-top:5px}.a-note{font-size:12px;color:#516177;margin-top:10px}
-.a-actions{display:flex;gap:8px}.a-actions button{border:0;border-radius:10px;padding:9px 13px;font-family:inherit;font-weight:900;cursor:pointer}
-.approve{background:#eaf8f1;color:#16835c}.open{background:#edf5ff;color:#176ed0}
-.badge{display:inline-block;background:#fff5e6;color:#b76c00;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:900;margin-right:7px}
-@media(max-width:800px){.approval-head{align-items:start;flex-direction:column;gap:12px}.approval-card{grid-template-columns:1fr}.a-actions{justify-content:flex-start}}
-</style>
-</head>
-<body data-min-role="manager">
-<div class="atwar-shell">
-<atwar-sidebar active=""></atwar-sidebar>
-<section class="atwar-main">
-<atwar-header></atwar-header>
-<main class="atwar-content">
-<section style="min-height:420px;display:flex;align-items:center;justify-content:center">
-<div style="background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:32px;text-align:center;max-width:520px">
-<div style="font-size:22px;font-weight:900">الصفحة تحت الإنشاء</div>
-<div style="font-size:11px;color:#7b8aa5;margin-top:8px;line-height:1.8">سيتم ربط الاعتمادات بالبيانات الفعلية بعد اعتماد دورة العمل النهائية.</div>
-</div></section>
-</main>
-<footer class="atwar-footer"><span>ATWAR ONE • Approvals Module</span><span>V0.37.9</span><span>قيد التطوير</span></footer>
-</main></section></div>
-<script>lucide.createIcons();</script>
-<script src="../assets/js/roles-config.js"></script>
-<script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/firebase-config.js"></script>
-<script src="../assets/js/permissions.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
- const s=document.querySelector('[data-global-search]');
- if(s) s.addEventListener('keydown',e=>{
-   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
- });
-});
-</script>
-<script src="../assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-</body></html>
+<script>location.replace('../tasks/index.html?scope=APPROVAL');</script>
+</head><body></body></html>

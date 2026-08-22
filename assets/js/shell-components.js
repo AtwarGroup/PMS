@@ -7,7 +7,7 @@
     return after.length>1?'../':'';
   }
   function getSession(){
-    try{return JSON.parse(localStorage.getItem('atwarSession')||localStorage.getItem('atwarDemoSession')||'null')}catch{return null}
+    try{return JSON.parse(localStorage.getItem('atwarSession')||'null')}catch{return null}
   }
   const rank={employee:1,manager:2,admin:3};
 
@@ -64,7 +64,7 @@
         <a href="user-guide.html" target="_blank" class="atwar-icon-btn" title="دليل المستخدم"><i data-lucide="book-open"></i></a>
         <button type="button" id="usersButton" onclick="openUsersModal()" class="hidden atwar-icon-btn" title="المستخدمون"><i data-lucide="users"></i></button>
         <input id="importFile" type="file" accept=".xlsx" class="hidden" onchange="handleImport(event)">
-      `:`<a href="${d}notifications/index.html" class="atwar-bell"><i data-lucide="bell"></i><span class="atwar-badge">5</span></a>`;
+      `:`<a href="${d}notifications/index.html" class="atwar-bell"><i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span></a>`;
 
       this.innerHTML=`<header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
         <div class="atwar-top-brand">
@@ -99,6 +99,22 @@
       window.lucide?.createIcons();
     }
   }
+
+
+  window.atwarSyncShellIdentity=function(profile,authUser){
+    if(!profile&&!authUser)return;
+    const current={
+      uid:profile?.uid||authUser?.uid||'',
+      email:profile?.email||authUser?.email||'',
+      name:profile?.name||profile?.fullName||authUser?.displayName||profile?.email||authUser?.email||'المستخدم',
+      role:profile?.role||'employee',
+      title:profile?.title||profile?.jobTitle||profile?.position||''
+    };
+    try{localStorage.setItem('atwarSession',JSON.stringify(current))}catch{}
+    document.querySelectorAll('[data-user-name]').forEach(x=>x.textContent=current.name);
+    document.querySelectorAll('[data-user-title]').forEach(x=>x.textContent=current.title);
+    document.querySelectorAll('.atwar-avatar').forEach(x=>x.textContent=(current.name||'م').trim().charAt(0));
+  };
 
   if(!customElements.get('atwar-sidebar'))customElements.define('atwar-sidebar',AtwarSidebar);
   if(!customElements.get('atwar-header'))customElements.define('atwar-header',AtwarHeader);

@@ -1,0 +1,16 @@
+{
+  "home.html": "730f38fdb5a627be1f5b07950ee111dc22f8edff6d6165d2507410153d62514a",
+  "login.html": "0f5287f30de95e890c7a49c2901864a7cc307082530e1d03689d5cd93a701e40",
+  "tasks/index.html": "8581f9cf7d6f64196d37085ee6ec45d6b69f0de233eca0256dd61f3b13a64d2e",
+  "team/index.html": "1c07a04586dd2d5262c53e787a2ae6c5929124ba555ceaa7127366fe52e3571e",
+  "team/employee.html": "56f8531382bad4f8414e9b10d7c7d6c1c67a0a8cf1a4f16d1ceb81a6986ead87",
+  "workspace/index.html": "dfd5436b260c9196dd5fe42c35e83e0ea97f3264144727d304c95db664b58139",
+  "my-day/index.html": "98e8708e830f5b9d8091a34bbbbfaa8ac32ae2886d159064970c2a442f09b8fe",
+  "notifications/index.html": "be583c87242343c3651a32c21c1eecb8abeffd3c86b7316d47f2c5c3740cee06",
+  "search/index.html": "283e37f6576f73d48405bbf48e972a0db2cf0381106c52011ef886abcdd7b6cf",
+  "profile/index.html": "d9515b844e157f35e98e565a5c333481085a2e8ab4e9fdff6b3b7375dcf2f0ce",
+  "profile/financial-manager.html": "bd094ed9553e460c071f669947d3667840810055581daceb1aa2a193c6572bd3",
+  "assets/js/shell-components.js": "43d5ba1f6f383b326dc19401a12d506b4eb153e9683b12fc61845442acdcb4b8",
+  "assets/js/permissions.js": "bd614cf290f05ddbc09c071424e3380bfd75cdbafe62f8acf6ebb2e856ca60c3",
+  "FIREBASE_RULES_V0_38_2.json": "1a22bab21dd8bde1d1a2f7169a593488861320f12deffae085f02ef2188552de"
+}

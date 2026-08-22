@@ -49,6 +49,12 @@
 .quick-links a{text-decoration:none;border:1px solid #dbe7f5;background:#fff;color:#176fd3;padding:9px 12px;border-radius:11px;font-size:11px;font-weight:900}
 @media(max-width:1000px){.emp-top{flex-direction:column;align-items:flex-start}.hero-stats{min-width:0;width:100%}.two-col,.three-col{grid-template-columns:1fr}}
 </style>
+<script id="hamzaApprovedProfileRoute">
+(function(){
+  const uid=new URLSearchParams(location.search).get('uid');
+  if(uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2') location.replace('../profile/financial-manager.html');
+})();
+</script>
 </head>
 <body data-min-role="manager">
 <div class="atwar-shell">
@@ -66,13 +72,13 @@
             <div class="emp-avatar" id="employeeInitial">م</div>
             <div>
               <h1 class="emp-name" id="employeeName">الموظف</h1>
-              <div class="emp-meta"><span id="employeeTitle">موظف</span> • الإدارة المالية • المدير المباشر: رئيس الحسابات</div>
+              <div class="emp-meta"><span id="employeeTitle">—</span> • <span id="employeeDepartment">—</span> • المدير المباشر: <span id="employeeManager">—</span></div>
             </div>
           </div>
           <div class="hero-stats">
-            <div class="hero-stat"><b style="color:#7dd3fc">6</b><span>مهام مفتوحة</span></div>
-            <div class="hero-stat"><b style="color:#fca5a5">1</b><span>متأخرة</span></div>
-            <div class="hero-stat"><b style="color:#fde68a">1</b><span>بانتظار اعتماد</span></div>
+            <div class="hero-stat"><b id="heroOpenTasks" style="color:#7dd3fc">—</b><span>مهام مفتوحة</span></div>
+            <div class="hero-stat"><b id="heroOverdueTasks" style="color:#fca5a5">—</b><span>متأخرة</span></div>
+            <div class="hero-stat"><b id="heroApprovalTasks" style="color:#fde68a">—</b><span>بانتظار اعتماد</span></div>
           </div>
         </div>
       </section>
@@ -113,9 +119,7 @@
       <section id="tab-kpi" class="tab-panel"><div class="panel"><h3>مؤشرات الأداء</h3><p style="font-size:13px;line-height:1.9;color:#56677e">لم تتم إضافة مؤشرات أداء معتمدة لهذا الموظف داخل النظام بعد.</p></div></section>
 
       <div class="quick-links">
-        <a href="../tasks/index.html">عرض جميع المهام</a>
-        <a href="../profile/job-description.html">نموذج الوصف الوظيفي</a>
-        <a href="../profile/kpi.html">نموذج KPI</a>
+        <a id="employeeTasksLink" href="../tasks/index.html">عرض مهام الموظف</a>
       </div>
 
       <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>ATWAR ONE</span><span></span></footer>
@@ -146,34 +150,54 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script src="../assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-
 <script type="module" id="employeeFirebaseBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 const uid=new URLSearchParams(location.search).get('uid'),app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function late(t){if(!t?.end||t.status==='مكتملة'||t.status==='بانتظار الاعتماد')return false;return new Date()>new Date(t.end+'T23:59:59')}
+function parseDateOnly(v){if(!v)return null;const d=new Date(v+(String(v).length===10?'T00:00:00':''));return Number.isNaN(d.getTime())?null:d}
+function delayDays(t){
+ const end=parseDateOnly(t?.end);if(!end)return 0;
+ if(t?.status==='مكتملة'&&!t?.actualEnd)return 0;
+ let compare=null;
+ if(t?.status==='بانتظار الاعتماد'&&t?.submittedAt)compare=new Date(Number(t.submittedAt));
+ else if(t?.actualEnd)compare=parseDateOnly(t.actualEnd);
+ else compare=new Date();
+ if(!compare||Number.isNaN(compare.getTime()))return 0;
+ const limit=new Date(end);limit.setHours(23,59,59,999);
+ return compare>limit?Math.max(0,Math.floor((compare-limit)/86400000)):0;
+}
+function late(t){return delayDays(t)>0}
 onAuthStateChanged(auth,async me=>{
  if(!me){location.href='../login.html';return}
  const n=document.getElementById('employeeName'),title=document.getElementById('employeeTitle'),initial=document.getElementById('employeeInitial');
- if(!uid){n.textContent='الصفحة تحت الإنشاء';title.textContent='لم يتم تحديد موظف صالح.';return}
+ if(!uid){n.textContent='بيانات الموظف غير متاحة';title.textContent='لم يتم تحديد سجل موظف صالح.';return}
+ document.getElementById('employeeTasksLink').href=`../tasks/index.html?owner=${encodeURIComponent(uid)}`;
  try{
   const [uSnap,usersSnap,taskSnap]=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,'users')),get(ref(db,`tasksByUser/${uid}`))]);
-  if(!uSnap.exists()){n.textContent='الصفحة تحت الإنشاء';title.textContent='لم تتم إضافة بيانات هذا الموظف.';return}
+  if(!uSnap.exists()){n.textContent='بيانات الموظف غير متاحة';title.textContent='لم يتم العثور على سجل الموظف.';return}
   const u=uSnap.val(),name=u.name||u.fullName||u.displayName||u.email||'المستخدم';
   n.textContent=name;title.textContent=u.title||u.jobTitle||u.position||'—';initial.textContent=name.trim().charAt(0)||'م';
   document.getElementById('overviewTitle').textContent=u.title||u.jobTitle||u.position||'—';
-  document.getElementById('overviewDepartment').textContent=u.department||u.departmentName||'غير مضاف';
+  const dept=u.department||u.departmentName||'غير مضاف';
+  document.getElementById('overviewDepartment').textContent=dept;
+  document.getElementById('employeeDepartment').textContent=dept;
   const users=usersSnap.exists()?usersSnap.val():{},mgr=u.managerUid?users[u.managerUid]:null;
-  document.getElementById('overviewManager').textContent=mgr?.name||mgr?.email||'غير مضاف';
+  const mgrName=mgr?.name||mgr?.email||'غير مضاف';
+  document.getElementById('overviewManager').textContent=mgrName;
+  document.getElementById('employeeManager').textContent=mgrName;
   const tasks=taskSnap.exists()?Object.entries(taskSnap.val()).map(([id,v])=>({id,...v})):[];
+  const overdueCount=tasks.filter(late).length;
+  const openCount=tasks.filter(x=>x.status!=='مكتملة').length;
+  const approvalCount=tasks.filter(x=>x.status==='بانتظار الاعتماد').length;
+  document.getElementById('heroOpenTasks').textContent=openCount;
+  document.getElementById('heroOverdueTasks').textContent=overdueCount;
+  document.getElementById('heroApprovalTasks').textContent=approvalCount;
   document.getElementById('empTotalTasks').textContent=tasks.length;
   document.getElementById('empInProgress').textContent=tasks.filter(x=>x.status==='قيد التنفيذ').length;
   document.getElementById('empCompleted').textContent=tasks.filter(x=>x.status==='مكتملة').length;
-  document.getElementById('empOverdue').textContent=tasks.filter(late).length;
+  document.getElementById('empOverdue').textContent=overdueCount;
   const list=document.getElementById('employeeTaskList');
   list.innerHTML=tasks.length?tasks.slice(0,10).map(x=>`<div class="task-row"><div><div class="task-title">${esc(x.title||'مهمة')}</div><div class="task-sub">${esc(x.end||'بدون تاريخ')}</div></div><span class="pill ${x.status==='قيد التنفيذ'?'run':x.status==='قيد الانتظار'?'wait':late(x)?'delay':'wait'}">${esc(late(x)?'متأخرة':x.status||'')}</span></div>`).join(''):'<div class="task-row"><div><div class="task-title">لا توجد مهام مسجلة لهذا الموظف.</div></div></div>';
  }catch(e){console.error('Employee profile:',e);n.textContent='بيانات الموظف غير متاحة حالياً';title.textContent='أعد تحميل الصفحة بعد لحظات.'}

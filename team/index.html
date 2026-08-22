@@ -40,7 +40,7 @@
     <div class="panel"><h3>مؤشرات الفريق</h3><div id="teamMetrics" style="margin-top:14px;color:#64748b">جاري احتساب المؤشرات...</div></div>
   </section>
 
-  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>V0.37.9</span><span>Firebase Live Data</span></footer>
+  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>V0.38.2</span><span>Firebase Live Data</span></footer>
 </main>
 
   </section>
@@ -59,9 +59,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script src="../assets/js/consolidation.js"></script>
-
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-
 <script type="module" id="teamFirebaseBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -91,25 +88,30 @@ function renderMembers(){
 }
 function renderHierarchy(){
  const host=document.getElementById('teamHierarchy');if(!host)return;
- if(profile?.role==='manager'){
-   host.innerHTML=`<div style="background:#0b1d3a;color:#fff;border-radius:12px;padding:12px 14px;font-weight:900">${esc(profile.name||profile.email||'المدير')}</div>
-   <div style="margin:10px 20px;border-right:2px solid #bfdbfe;padding-right:16px">${members.length?members.map(u=>`<div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:10px;padding:10px 12px;margin:7px 0;font-weight:800">${esc(u.name||u.email||'مستخدم')} <span style="font-size:10px;color:#64748b">• ${esc(u.title||u.jobTitle||'—')}</span></div>`).join(''):'<div>لا يوجد مرؤوسون مباشرون.</div>'}</div>`;
-   return;
- }
- // Admin: build actual hierarchy from all active users.
  const active=allUsers.filter(u=>u.active!==false),byParent=new Map();
  active.forEach(u=>{const key=String(u.managerUid||'ROOT');if(!byParent.has(key))byParent.set(key,[]);byParent.get(key).push(u)});
- const draw=(parent,depth=0,seen=new Set())=>{
-   if(depth>6)return '';
-   return (byParent.get(String(parent))||[]).filter(u=>!seen.has(u.uid)).map(u=>{
-     const next=new Set(seen);next.add(u.uid);
-     return `<div style="margin:${depth?6:8}px ${depth*16}px 0 0;border-right:${depth?'2px solid #dbeafe':'0'};padding-right:${depth?12:0}">
-       <div style="background:${depth?'#eff6ff':'#0b1d3a'};color:${depth?'#263b55':'#fff'};border-radius:10px;padding:9px 12px;font-weight:800">${esc(u.name||u.email||'مستخدم')} <span style="font-size:9px;opacity:.75">• ${esc(u.title||u.jobTitle||u.role||'')}</span></div>
-       ${draw(u.uid,depth+1,next)}
-     </div>`;
-   }).join('');
+
+ const personNode=(u,depth=0,seen=new Set())=>{
+   if(!u||depth>8||seen.has(u.uid))return '';
+   const next=new Set(seen);next.add(u.uid);
+   const children=byParent.get(String(u.uid))||[];
+   return `<div style="margin:${depth?7:0}px ${depth*18}px 0 0;${depth?'border-right:2px solid #dbeafe;padding-right:12px':''}">
+     <a href="employee.html?uid=${encodeURIComponent(u.uid)}" style="display:block;text-decoration:none;background:${depth?'#eff6ff':'#0b1d3a'};color:${depth?'#263b55':'#fff'};border-radius:10px;padding:10px 12px;font-weight:800">
+       ${esc(u.name||u.email||'مستخدم')} <span style="font-size:9px;opacity:.75">• ${esc(u.title||u.jobTitle||u.position||u.role||'')}</span>
+     </a>
+     ${children.map(c=>personNode(c,depth+1,next)).join('')}
+   </div>`;
  };
- host.innerHTML=draw('ROOT')||'<div>لا توجد علاقات إدارية مسجلة.</div>';
+
+ if(profile?.role==='manager'){
+   // المدير يرى نفسه ثم كل من يقع تحته في الهيكل، بما في ذلك موظفو مرؤوسيه.
+   host.innerHTML=personNode(profile,0,new Set())||'<div>لا توجد علاقات إدارية مسجلة.</div>';
+   return;
+ }
+
+ // مدير النظام يرى جميع الجذور وكل التسلسل الإداري تحتها.
+ const roots=active.filter(u=>!u.managerUid || !active.some(x=>String(x.uid)===String(u.managerUid)));
+ host.innerHTML=roots.length?roots.map(r=>personNode(r,0,new Set())).join(''):'<div>لا توجد علاقات إدارية مسجلة.</div>';
 }
 function renderMetrics(){
  const host=document.getElementById('teamMetrics');if(!host)return;
@@ -132,6 +134,7 @@ onAuthStateChanged(auth,async user=>{
  try{
    const us=await get(ref(db,'users'));allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
    profile=allUsers.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee',email:user.email};
+   window.atwarSyncShellIdentity?.(profile,user);
    if(profile.role==='employee'){location.href='../home.html';return}
 
    if(profile.role==='admin'){
@@ -140,10 +143,17 @@ onAuthStateChanged(auth,async user=>{
      document.getElementById('teamScopeLabel').textContent='نطاق النظام';
      document.getElementById('teamPageSubtitle').textContent='جميع المستخدمين النشطين والمهام ضمن صلاحيات مدير النظام.';
    }else{
-     members=allUsers.filter(u=>u.active!==false&&String(u.managerUid||'')===String(user.uid));
+     members=allUsers.filter(u=>
+       u.active!==false &&
+       u.uid!==user.uid &&
+       (
+         String(u.managerUid||'')===String(user.uid) ||
+         u.managerChain?.[user.uid]===true
+       )
+     );
      document.getElementById('teamPageTitle').textContent='فريقي';
-     document.getElementById('teamScopeLabel').textContent=profile.department||profile.departmentName||'فريقي المباشر';
-     document.getElementById('teamPageSubtitle').textContent='أعضاء فريقك المباشر والمهام المرتبطة بهم.';
+     document.getElementById('teamScopeLabel').textContent=profile.department||profile.departmentName||'فريقي';
+     document.getElementById('teamPageSubtitle').textContent='جميع الموظفين الواقعين ضمن مسؤوليتك المباشرة وغير المباشرة.';
    }
 
    const buckets=await Promise.all(members.map(async u=>{

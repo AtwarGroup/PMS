@@ -42,7 +42,7 @@ const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONF
 const host=document.getElementById('profileDataHost');
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function empty(){
- host.innerHTML=`<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">الصفحة تحت الإنشاء</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات الوصف الوظيفي المعتمدة لهذا المستخدم حتى الآن.</p></div>`;
+ host.innerHTML=`<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">لا توجد بيانات معتمدة</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات الوصف الوظيفي المعتمدة لهذا الحساب حتى الآن.</p></div>`;
 }
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href='../login.html';return}
