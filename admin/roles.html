@@ -12,7 +12,7 @@
 .perm{display:flex;align-items:center;gap:7px;padding:8px 0;border-top:1px solid #eef2f7;font-size:10px;font-weight:700}.perm i{width:15px;color:#16a36a}
 .admin-actions{margin-top:16px;display:flex;gap:8px}.admin-actions a{text-decoration:none;border-radius:10px;padding:9px 13px;font-size:10px;font-weight:900}
 .primary{background:#1677ff;color:white}.secondary{background:white;color:#20364f;border:1px solid #dce6f1}
-@media(max-width:850px){.role-grid{grid-template-columns:1fr}}
+.badge-count{font-size:9px;color:#1677ff;background:#eaf3ff;border-radius:999px;padding:3px 7px;margin-right:4px}@media(max-width:850px){.role-grid{grid-template-columns:1fr}}
 </style>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/shell-components.js"></script>
@@ -23,21 +23,21 @@
 <section class="atwar-main"><atwar-header></atwar-header>
 <main class="atwar-content">
   <div class="roles-wrap">
-    <div style="margin-bottom:18px"><h1 style="margin:0;font-size:28px">الأدوار والصلاحيات</h1><p style="font-size:11px;color:#7b8aa5">الصلاحيات الأساسية المعتمدة لكل دور في النظام.</p></div>
+    <div style="margin-bottom:18px"><h1 style="margin:0;font-size:28px">الأدوار والصلاحيات</h1><p style="font-size:11px;color:#7b8aa5">مرجع الصلاحيات المعتمدة لكل دور. تغيير دور المستخدم يتم من إدارة الحسابات.</p></div>
     <div class="role-grid">
-      <section class="role-card"><h3>موظف</h3><p>النطاق الشخصي للمستخدم.</p>
+      <section class="role-card"><h3>موظف <span id="countEmployee" class="badge-count"></span></h3><p>النطاق الشخصي للمستخدم.</p>
         <div class="perm"><i data-lucide="check"></i>الرئيسية والمهام الشخصية</div>
         <div class="perm"><i data-lucide="check"></i>مساحة عملي والملاحظات والمتابعات</div>
         <div class="perm"><i data-lucide="check"></i>ملفي الوظيفي</div>
         <div class="perm"><i data-lucide="check"></i>الإشعارات والبحث ضمن نطاقه</div>
       </section>
-      <section class="role-card"><h3>مدير</h3><p>صلاحيات الموظف + إدارة كامل الشجرة الواقعة تحته.</p>
+      <section class="role-card"><h3>مدير <span id="countManager" class="badge-count"></span></h3><p>صلاحيات الموظف + إدارة كامل الشجرة الواقعة تحته.</p>
         <div class="perm"><i data-lucide="check"></i>عرض مهام الفريق والمؤشرات</div>
         <div class="perm"><i data-lucide="check"></i>الفريق والهيكل الإداري</div>
         <div class="perm"><i data-lucide="check"></i>إدارة المهام النشطة ضمن نطاقه</div>
         <div class="perm"><i data-lucide="check"></i>اعتماد مهام المرؤوسين المباشرين</div>
       </section>
-      <section class="role-card"><h3>مدير النظام</h3><p>كامل نطاق النظام والإعدادات الإدارية.</p>
+      <section class="role-card"><h3>مدير النظام <span id="countAdmin" class="badge-count"></span></h3><p>كامل نطاق النظام والإعدادات الإدارية.</p>
         <div class="perm"><i data-lucide="check"></i>جميع المهام والمستخدمين</div>
         <div class="perm"><i data-lucide="check"></i>إدارة الحسابات والأدوار</div>
         <div class="perm"><i data-lucide="check"></i>إعادة فتح المهام المكتملة</div>
@@ -49,7 +49,7 @@
       <a class="secondary" href="index.html">العودة لإدارة النظام</a>
     </div>
   </div>
-<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>V0.40.9</span><span>Admin Only</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>V0.41.1</span><span>Admin Only</span></footer>
 </main></section></div>
 <script type="module">
 import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -63,6 +63,11 @@ onAuthStateChanged(auth,async user=>{
     const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
     if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
     window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
+    const all=await get(ref(db,'users'));
+    const rows=all.exists()?Object.values(all.val()):[];
+    document.getElementById('countEmployee').textContent=rows.filter(x=>x.role==='employee').length;
+    document.getElementById('countManager').textContent=rows.filter(x=>x.role==='manager').length;
+    document.getElementById('countAdmin').textContent=rows.filter(x=>x.role==='admin').length;
     document.body.style.visibility='visible';
     try{lucide.createIcons()}catch{}
   }catch(error){console.error('Admin roles access:',error);location.replace('index.html')}

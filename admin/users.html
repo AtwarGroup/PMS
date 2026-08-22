@@ -1,36 +1,269 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ATWAR ONE – إدارة الحسابات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/shared.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+.accounts-wrap{max-width:1150px;margin:0 auto}
+.page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:16px}
+.page-head h1{margin:0;font-size:28px;color:#10233f}.page-head p{margin:6px 0 0;font-size:11px;color:#7b8aa5}
+.primary-btn,.secondary-btn{border:0;border-radius:10px;padding:9px 13px;font-family:inherit;font-size:11px;font-weight:900;cursor:pointer}
+.primary-btn{background:#1677ff;color:#fff}.secondary-btn{background:#fff;color:#20364f;border:1px solid #dbe5f0}
+.card{background:#fff;border:1px solid #e3eaf3;border-radius:18px;box-shadow:0 5px 16px rgba(20,45,80,.03)}
+.toolbar{padding:14px 16px;border-bottom:1px solid #edf2f7;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.toolbar input{min-width:260px;flex:1;border:1px solid #dfe7f0;border-radius:10px;padding:10px 12px;font-family:inherit}
+.users-list{display:grid}.user-row{display:grid;grid-template-columns:46px 1.5fr 1fr 1fr auto;gap:10px;align-items:center;padding:13px 16px;border-bottom:1px solid #eef2f7}
+.user-row:last-child{border-bottom:0}.avatar{width:40px;height:40px;border-radius:12px;background:#eaf3ff;color:#1677ff;display:grid;place-items:center;font-weight:900}
+.name{font-size:12px;font-weight:900;color:#22364e}.meta{font-size:10px;color:#7b8aa5;margin-top:3px}.badge{font-size:10px;font-weight:900;border-radius:999px;padding:6px 9px;background:#f2f5f8;color:#516074;display:inline-block}
+.status-active{color:#129167}.status-inactive{color:#c84d57}
+.form-card{display:none;margin-bottom:14px;padding:18px}.form-card.open{display:block}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid input,.grid select{border:1px solid #dfe7f0;border-radius:10px;padding:10px 12px;font-family:inherit;background:#fff}
+.full{grid-column:1/-1}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.help{font-size:10px;color:#7b8aa5;line-height:1.8}.hidden{display:none!important}
+.toast-wrap{position:fixed;left:18px;bottom:18px;z-index:200;display:grid;gap:8px}.toast{background:#fff;border:1px solid #dce6f1;border-radius:12px;padding:11px 13px;font-size:11px;font-weight:800;box-shadow:0 12px 30px rgba(0,0,0,.12)}
+.toast.success{border-right:4px solid #1aa36f}.toast.error{border-right:4px solid #d64b54}.toast.warning{border-right:4px solid #e2a11c}
+.empty{padding:45px;text-align:center;color:#8a98aa;font-size:11px}
+@media(max-width:900px){.user-row{grid-template-columns:42px 1fr auto}.user-row .secondary-meta{display:none}.grid{grid-template-columns:1fr}}
+</style>
 <script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/shell-components.js"></script>
 </head>
 <body style="visibility:hidden">
-<div style="min-height:100vh;background:#f4f7fb;display:grid;place-items:center">
-  <div style="background:#fff;border:1px solid #e3eaf3;border-radius:18px;padding:28px;text-align:center;min-width:320px">
-    <div style="font-weight:900;color:#10233f">جاري فتح إدارة الحسابات...</div>
+<div class="atwar-shell">
+<atwar-sidebar active="admin"></atwar-sidebar>
+<section class="atwar-main">
+<atwar-header></atwar-header>
+<main class="atwar-content">
+<div class="accounts-wrap">
+  <div class="page-head">
+    <div>
+      <h1>إدارة الحسابات</h1>
+      <p>إضافة وتعديل بيانات المستخدمين وربطهم بالهيكل الإداري. هذه الصفحة مستقلة عن نظام المهام.</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="secondary-btn" style="text-decoration:none" href="index.html">إدارة النظام</a>
+      <button id="newUserBtn" class="primary-btn" type="button">＋ إضافة مستخدم</button>
+    </div>
   </div>
+
+  <section id="userForm" class="card form-card">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+      <div>
+        <div id="formTitle" style="font-size:16px;font-weight:900">إضافة مستخدم</div>
+        <div class="help">يجب أن يكون حساب Firebase Authentication موجودًا مسبقًا، ثم يتم ربط Firebase UID بملف المستخدم عند الإضافة الأولى.</div>
+      </div>
+      <button id="closeFormBtn" class="secondary-btn" type="button">إغلاق</button>
+    </div>
+
+    <div class="grid">
+      <input id="userUid" class="full" placeholder="Firebase UID">
+      <input id="userName" placeholder="الاسم">
+      <input id="userEmail" type="email" placeholder="البريد الإلكتروني">
+      <input id="userTitle" placeholder="المسمى الوظيفي">
+      <input id="userDepartment" placeholder="الإدارة">
+      <select id="userRole">
+        <option value="employee">موظف</option>
+        <option value="manager">مدير</option>
+        <option value="admin">مدير النظام</option>
+      </select>
+      <select id="userManager"><option value="">بدون مدير مباشر</option></select>
+      <select id="userStatus" class="full">
+        <option value="active">نشط</option>
+        <option value="inactive">غير نشط</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button id="cancelBtn" class="secondary-btn" type="button">إلغاء</button>
+      <button id="saveBtn" class="primary-btn" type="button">حفظ المستخدم</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <input id="searchInput" placeholder="بحث بالاسم أو البريد أو المسمى أو الإدارة...">
+      <div id="usersCount" class="help"></div>
+    </div>
+    <div id="usersList" class="users-list"></div>
+    <div id="emptyState" class="empty hidden">لا توجد حسابات مطابقة.</div>
+  </section>
 </div>
+<footer class="atwar-footer"><span>ATWAR ONE • Accounts</span><span>V0.41.1</span><span>Admin Only</span></footer>
+</main>
+</section>
+</div>
+<div id="toastWrap" class="toast-wrap"></div>
+
 <script type="module">
 import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase,ref,get,update,onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
 const auth=getAuth(app),db=getDatabase(app);
+
+let currentUser=null,currentProfile=null,users=[],editingUid='';
+
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const roleAr=r=>({employee:'موظف',manager:'مدير',admin:'مدير النظام'})[r]||r||'موظف';
+
+function toast(message,type='success'){
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;$('toastWrap').appendChild(el);
+  setTimeout(()=>el.remove(),4200);
+}
+function userByUid(uid){return users.find(u=>String(u.uid)===String(uid))||null}
+function isDescendantOf(userOrUid,managerUid){
+  const user=typeof userOrUid==='string'?userByUid(userOrUid):userOrUid;
+  if(!user||!managerUid)return false;
+  const seen=new Set();let cursor=user;
+  while(cursor?.managerUid){
+    const parent=String(cursor.managerUid);
+    if(seen.has(parent))break;seen.add(parent);
+    if(parent===String(managerUid))return true;
+    cursor=userByUid(parent);
+  }
+  return false;
+}
+function buildManagerChain(user){
+  const chain={},seen=new Set();let cursor=user;
+  while(cursor?.managerUid){
+    const parent=String(cursor.managerUid);
+    if(seen.has(parent))break;seen.add(parent);chain[parent]=true;cursor=userByUid(parent);
+  }
+  return chain;
+}
+async function syncAffectedHierarchy(rootUid){
+  const affected=users.filter(u=>String(u.uid)===String(rootUid)||isDescendantOf(u,rootUid));
+  const results=await Promise.allSettled(affected.map(async u=>{
+    const managerChain=buildManagerChain(u);
+    await update(ref(db,`users/${u.uid}`),{managerChain});
+    u.managerChain=managerChain;
+  }));
+  return results.every(r=>r.status==='fulfilled');
+}
+function populateManagers(selected='',editing=''){
+  const list=users.filter(u=>u.active!==false&&(u.role==='manager'||u.role==='admin'))
+    .filter(u=>String(u.uid)!==String(editing))
+    .filter(u=>!editing||!isDescendantOf(u,editing))
+    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'));
+  $('userManager').innerHTML='<option value="">بدون مدير مباشر</option>'+list.map(u=>`<option value="${esc(u.uid)}" ${String(u.uid)===String(selected)?'selected':''}>${esc(u.name||u.email||u.uid)} — ${esc(roleAr(u.role))}</option>`).join('');
+}
+function openForm(user=null){
+  editingUid=user?.uid||'';
+  $('formTitle').textContent=user?'تعديل المستخدم':'إضافة مستخدم';
+  $('userUid').value=user?.uid||'';
+  $('userUid').disabled=!!user;
+  $('userName').value=user?.name||'';
+  $('userEmail').value=user?.email||'';
+  $('userTitle').value=user?.jobTitle||user?.title||'';
+  $('userDepartment').value=user?.departmentName||user?.department||'';
+  $('userRole').value=user?.role||'employee';
+  $('userStatus').value=user?(user.status||(user.active===false?'inactive':'active')):'active';
+  populateManagers(user?.managerUid||'',user?.uid||'');
+  $('userForm').classList.add('open');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeForm(){
+  editingUid='';$('userForm').classList.remove('open');
+}
+function render(){
+  const q=$('searchInput').value.trim().toLowerCase();
+  const rows=users.filter(u=>`${u.name||''} ${u.email||''} ${u.jobTitle||u.title||''} ${u.departmentName||u.department||''}`.toLowerCase().includes(q))
+    .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'));
+  $('usersCount').textContent=`${rows.length} حساب`;
+  $('usersList').innerHTML=rows.map(u=>`
+    <div class="user-row">
+      <div class="avatar">${esc((u.name||u.email||'?').trim().charAt(0).toUpperCase())}</div>
+      <div><div class="name">${esc(u.name||'بدون اسم')}</div><div class="meta">${esc(u.email||u.uid||'')}</div></div>
+      <div class="secondary-meta"><div class="name">${esc(u.jobTitle||u.title||'بدون مسمى')}</div><div class="meta">${esc(u.departmentName||u.department||'بدون إدارة')}</div></div>
+      <div class="secondary-meta"><span class="badge">${esc(roleAr(u.role))}</span><div class="meta ${u.active===false?'status-inactive':'status-active'}">${u.active===false?'غير نشط':'نشط'}</div></div>
+      <button class="secondary-btn" type="button" data-edit="${esc(u.uid)}">تعديل</button>
+    </div>`).join('');
+  $('emptyState').classList.toggle('hidden',rows.length>0);
+  document.querySelectorAll('[data-edit]').forEach(btn=>btn.onclick=()=>openForm(userByUid(btn.dataset.edit)));
+}
+async function saveUser(){
+  if(currentProfile?.role!=='admin')return;
+  const uid=$('userUid').value.trim(),name=$('userName').value.trim(),email=$('userEmail').value.trim();
+  const title=$('userTitle').value.trim(),department=$('userDepartment').value.trim(),role=$('userRole').value,status=$('userStatus').value;
+  let managerUid=$('userManager').value.trim();
+
+  if(!uid||!name||!email||!title||!department){toast('يرجى تعبئة جميع الحقول المطلوبة.','warning');return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('صيغة البريد الإلكتروني غير صحيحة.','error');return}
+  if(!editingUid && users.some(u=>String(u.uid)===String(uid))){toast('Firebase UID مستخدم بالفعل.','error');return}
+  if(users.some(u=>String(u.uid)!==String(uid)&&String(u.email||'').trim().toLowerCase()===email.toLowerCase())){toast('البريد الإلكتروني مرتبط بمستخدم آخر.','error');return}
+  if(managerUid===uid)managerUid='';
+  if(managerUid){
+    const mgr=userByUid(managerUid);
+    if(!mgr){toast('المدير المباشر المحدد غير موجود.','error');return}
+    if(isDescendantOf(mgr,uid)){toast('لا يمكن تعيين أحد مرؤوسي المستخدم كمدير مباشر له.','error');return}
+  }
+
+  const previous=userByUid(uid),previousManager=String(previous?.managerUid||'');
+
+  // حماية حساب مدير النظام الحالي من قفل نفسه خارج لوحة الإدارة.
+  if(String(uid)===String(currentUser?.uid) && (role!=='admin'||status!=='active')){
+    toast('لا يمكن تغيير دور حساب مدير النظام الحالي أو تعطيله من داخل جلسته.','error');
+    return;
+  }
+
+  // لا نسمح بكسر الهيكل: المدير الذي لديه مرؤوسون يجب إعادة توزيعهم أولاً.
+  const directReports=users.filter(u=>String(u.managerUid||'')===String(uid));
+  if(directReports.length && (role==='employee'||status==='inactive')){
+    toast(`لدى هذا المستخدم ${directReports.length} مرؤوس مباشر. أعد توزيعهم أولاً قبل تغيير دوره أو تعطيله.`,'warning');
+    return;
+  }
+
+  const hierarchyChanged=!previous||previousManager!==String(managerUid||'');
+  const btn=$('saveBtn');btn.disabled=true;btn.textContent='جاري الحفظ...';
+
+  try{
+    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
+    await update(ref(db,`users/${uid}`),payload);
+    const verify=await get(ref(db,`users/${uid}`));
+    if(!verify.exists())throw new Error('save-verification-failed');
+    const saved={...verify.val(),uid};
+    if(String(saved.name||'')!==name||String(saved.jobTitle||saved.title||'')!==title||String(saved.departmentName||saved.department||'')!==department||String(saved.role||'')!==role||String(saved.managerUid||'')!==String(managerUid||'')){
+      throw new Error('save-verification-mismatch');
+    }
+
+    const idx=users.findIndex(u=>String(u.uid)===String(uid));
+    if(idx>=0)users[idx]={...users[idx],...saved};else users.push(saved);
+    render();closeForm();toast('تم حفظ بيانات المستخدم بنجاح.','success');
+
+    if(hierarchyChanged){
+      const ok=await syncAffectedHierarchy(uid);
+      if(!ok)toast('تم حفظ المستخدم، لكن تعذر تحديث جزء من التسلسل الإداري.','warning');
+      else render();
+    }
+  }catch(error){
+    console.error('Save user:',error);
+    toast(`تعذر حفظ المستخدم (${error?.code||error?.message||'خطأ غير معروف'}).`,'error');
+  }finally{
+    btn.disabled=false;btn.textContent='حفظ المستخدم';
+  }
+}
+
+$('newUserBtn').onclick=()=>openForm();
+$('closeFormBtn').onclick=closeForm;$('cancelBtn').onclick=closeForm;$('saveBtn').onclick=saveUser;$('searchInput').oninput=render;
+
 onAuthStateChanged(auth,async user=>{
   if(!user){location.replace('../login.html');return}
   try{
     const snap=await get(ref(db,`users/${user.uid}`));
-    const profile=snap.exists()?snap.val():null;
-    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
-    location.replace('../tasks/index.html?admin=users');
-  }catch(error){
-    console.error('Admin accounts access:',error);
-    location.replace('index.html');
-  }
+    currentProfile=snap.exists()?snap.val():null;currentUser=user;
+    if(!currentProfile||currentProfile.role!=='admin'){location.replace('../home.html');return}
+    window.atwarSyncShellIdentity?.({...currentProfile,uid:user.uid},user);
+    onValue(ref(db,'users'),usersSnap=>{
+      users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v})):[];
+      render();document.body.style.visibility='visible';try{lucide.createIcons()}catch{}
+    },error=>{console.error(error);toast('تعذر تحميل الحسابات.','error');document.body.style.visibility='visible'});
+  }catch(error){console.error(error);location.replace('index.html')}
 });
 </script>
-</body></html>
+</body>
+</html>
