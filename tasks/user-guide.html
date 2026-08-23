@@ -3,42 +3,178 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – دليل نظام المهام</title>
+<title>ATWAR ONE – دليل المستخدم</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Tajawal,Arial,sans-serif;background:#f4f7fb;color:#15243a}
-main{max-width:920px;margin:0 auto;padding:34px 20px 50px}.hero,.card{background:#fff;border:1px solid #e2eaf3;border-radius:18px}
-.hero{padding:24px;margin-bottom:14px}.hero h1{margin:0;font-size:26px}.hero p{color:#728198;font-size:11px;line-height:1.9;margin:7px 0 0}
-.card{padding:20px;margin-top:12px}.card h2{font-size:16px;margin:0 0 12px}.steps{display:grid;gap:9px}.step{padding:12px 14px;border:1px solid #e8eef5;border-radius:12px;background:#fbfdff;font-size:11px;line-height:1.8}
-.step b{color:#0f6fd8}.note{font-size:10px;color:#6f7f93;line-height:1.8}.back{display:inline-block;margin-top:16px;text-decoration:none;color:#1677ff;font-size:11px;font-weight:900}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Tajawal,Arial,sans-serif;background:#f5f7fb;color:#14243b}
+main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#1677ff;color:#fff;display:grid;place-items:center}
+.brand-text b{display:block;font-size:14px}.brand-text span{font-size:10px;color:#7e8ca0}
+.back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:#176fd3;font-size:10px;font-weight:900;background:#fff;border:1px solid #e0e8f1;border-radius:10px;padding:8px 10px}
+.hero{background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid #dfe7f1;border-radius:20px;padding:28px 26px;box-shadow:0 8px 24px rgba(20,45,80,.035)}
+.hero h1{margin:0;font-size:30px;line-height:1.3}.hero p{margin:9px 0 0;color:#6f7e92;font-size:12px;line-height:1.9;max-width:720px}
+.pilot{margin-top:18px;display:flex;gap:10px;align-items:flex-start;background:#fff9ea;border:1px solid #f2dfaa;border-radius:12px;padding:12px 14px;color:#6c571f;font-size:10px;line-height:1.8;font-weight:700}
+.pilot i{flex:0 0 auto;margin-top:2px}
+.nav{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}
+.nav a{text-decoration:none;color:#4f6077;background:#fff;border:1px solid #e2e9f2;border-radius:999px;padding:7px 10px;font-size:9.5px;font-weight:900}
+.nav a:hover{color:#176fd3;border-color:#cfe0f6}
+.section{background:#fff;border:1px solid #e2e9f2;border-radius:18px;padding:20px;margin-top:12px;scroll-margin-top:16px}
+.section-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.section-icon{width:34px;height:34px;border-radius:10px;background:#edf5ff;color:#176fd3;display:grid;place-items:center}
+.section h2{margin:0;font-size:16px}
+.section p,.section li{font-size:10.5px;line-height:1.9;color:#607087}
+.section ul{margin:8px 0 0;padding-right:19px}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.flow-item{position:relative;background:#fbfdff;border:1px solid #e6edf5;border-radius:12px;padding:12px;text-align:center}
+.flow-item b{display:block;color:#176fd3;font-size:10px;margin-bottom:5px}.flow-item span{font-size:9px;line-height:1.65;color:#6e7e92}
+.flow-item:not(:last-child)::after{content:"←";position:absolute;left:-8px;top:50%;transform:translateY(-50%);color:#aebac9;font-weight:900}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{background:#fbfdff;border:1px solid #e6edf5;border-radius:12px;padding:13px}.mini b{display:block;font-size:11px;color:#22364e;margin-bottom:5px}.mini span{font-size:9.5px;color:#6f7f93;line-height:1.75}
+.note{margin-top:10px;border-right:3px solid #176fd3;background:#f6faff;border-radius:10px;padding:10px 12px;font-size:9.5px;color:#5e7188;line-height:1.8}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.role{border:1px solid #e5ecf4;border-radius:12px;padding:13px;background:#fbfdff}.role b{font-size:11px;color:#176fd3}.role p{margin:6px 0 0;font-size:9.5px}
+.footer{text-align:center;padding:22px 0 5px;color:#9aa6b5;font-size:9px}
+@media(max-width:760px){
+  main{padding:16px 11px 32px}
+  .hero{padding:21px 18px}.hero h1{font-size:24px}
+  .flow{grid-template-columns:1fr}.flow-item:not(:last-child)::after{display:none}
+  .two-col,.roles{grid-template-columns:1fr}
+  .topbar{align-items:flex-start}
+}
 </style>
 </head>
 <body>
 <main>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><i data-lucide="circle-help" size="20"></i></div>
+    <div class="brand-text"><b>ATWAR ONE</b><span>دليل المستخدم</span></div>
+  </div>
+  <a class="back" href="../home.html"><i data-lucide="arrow-right" size="15"></i> العودة للرئيسية</a>
+</div>
+
 <section class="hero">
-  <h1>دليل نظام المهام</h1>
-  <p>مرجع مختصر لاستخدام المهام في ATWAR ONE وفق دورة العمل والصلاحيات المعتمدة حاليًا.</p>
-</section>
-<section class="card">
-  <h2>دورة المهمة</h2>
-  <div class="steps">
-    <div class="step"><b>1. إنشاء المهمة:</b> يتم تحديد المسؤول وتاريخ البداية والنهاية والأولوية والتفاصيل المطلوبة.</div>
-    <div class="step"><b>2. التنفيذ:</b> الموظف يحدث نسبة الإنجاز والملاحظات حتى اكتمال العمل.</div>
-    <div class="step"><b>3. إرسال للاعتماد:</b> عند إنهاء العمل تتحول المهمة إلى <strong>بانتظار الاعتماد</strong> ويتوقف احتساب التأخير عند وقت الإرسال.</div>
-    <div class="step"><b>4. قرار المدير:</b> المدير المباشر يعتمد المهمة فتتحول إلى <strong>مكتملة</strong>، أو يعيدها للعمل مع ملاحظة.</div>
-    <div class="step"><b>5. بعد الإكمال:</b> المهمة المكتملة مقفلة، ولا يمكن إعادة فتحها إلا بواسطة مدير النظام مع تسجيل سبب إعادة الفتح.</div>
+  <h1>دليل استخدام ATWAR ONE</h1>
+  <p>مرجع مختصر وعملي يوضح أهم وظائف النظام ودورة المهام والصلاحيات الأساسية لجميع المستخدمين.</p>
+  <div class="pilot">
+    <i data-lucide="flask-conical" size="17"></i>
+    <div><b>المرحلة التجريبية:</b> يتم تطوير وتحسين النظام بشكل مستمر. أي ملاحظة أو خطأ أو اقتراح يتم مشاركته مع إدارة النظام لمراجعته ومعالجته ضمن التطوير اليومي.</div>
   </div>
 </section>
-<section class="card">
-  <h2>الفلاتر والبحث</h2>
-  <p class="note">استخدم «الكل، اليوم، متأخرة، قيد التنفيذ، مكتملة» مع فلتر المسؤول والترتيب. البحث العام يفتح المهمة المرتبطة مباشرة عندما تكون ضمن نطاق صلاحيتك.</p>
+
+<nav class="nav">
+  <a href="#start">الدخول</a>
+  <a href="#home">الرئيسية</a>
+  <a href="#tasks">المهام</a>
+  <a href="#approval">الاعتماد</a>
+  <a href="#tools">البحث والإشعارات</a>
+  <a href="#workspace">مساحة عملي</a>
+  <a href="#team">الفريق والملف</a>
+  <a href="#roles">الصلاحيات</a>
+  <a href="#admin">إدارة النظام</a>
+</nav>
+
+<section class="section" id="start">
+  <div class="section-head"><div class="section-icon"><i data-lucide="log-in" size="18"></i></div><h2>الدخول إلى النظام</h2></div>
+  <div class="two-col">
+    <div class="mini"><b>تسجيل الدخول</b><span>استخدم بيانات الحساب المخصصة لك. بعد الدخول يعرض النظام الوظائف والمهام حسب دورك وهيكلك الإداري.</span></div>
+    <div class="mini"><b>تسجيل الخروج</b><span>استخدم خيار تسجيل الخروج عند الانتهاء، خصوصًا إذا كنت تستخدم جهازًا مشتركًا.</span></div>
+  </div>
 </section>
-<section class="card">
-  <h2>الصلاحيات</h2>
-  <p class="note">الموظف يرى مهامه. المدير يرى مهامه وكامل الشجرة الإدارية الواقعة تحت مسؤوليته، بينما الاعتماد يبقى للمدير المباشر. مدير النظام لديه نطاق النظام وإمكانية إعادة فتح المهمة المكتملة.</p>
+
+<section class="section" id="home">
+  <div class="section-head"><div class="section-icon"><i data-lucide="home" size="18"></i></div><h2>الصفحة الرئيسية</h2></div>
+  <p>تعطيك الصفحة الرئيسية ملخصًا سريعًا للعمل الحالي بدون الحاجة للدخول إلى تفاصيل المهام.</p>
+  <div class="two-col">
+    <div class="mini"><b>المؤشرات</b><span>توضح المهام المكتملة والمفتوحة والمتأخرة، ويظهر «بانتظار اعتمادي» عند وجود مهام تحتاج قرارك.</span></div>
+    <div class="mini"><b>المحتوى الشخصي</b><span>تعرض مهامي اليوم، آخر ملاحظة شخصية، والأعمال التي تحتاج انتباهك وفق نطاق الحساب.</span></div>
+  </div>
+  <div class="note">يمكن الضغط على مؤشرات المهام للانتقال مباشرة إلى صفحة المهام بالنطاق المناسب.</div>
 </section>
-<a class="back" href="index.html">← العودة إلى المهام</a>
+
+<section class="section" id="tasks">
+  <div class="section-head"><div class="section-icon"><i data-lucide="square-check-big" size="18"></i></div><h2>دورة المهمة</h2></div>
+  <div class="flow">
+    <div class="flow-item"><b>1. إنشاء</b><span>عنوان، مسؤول، تواريخ، أولوية ووصف.</span></div>
+    <div class="flow-item"><b>2. تنفيذ</b><span>بدء العمل وتحديث الإنجاز والملاحظات.</span></div>
+    <div class="flow-item"><b>3. اعتماد</b><span>إرسال المهمة بعد الانتهاء للمدير.</span></div>
+    <div class="flow-item"><b>4. قرار المدير</b><span>اعتماد أو إعادة للتصحيح.</span></div>
+    <div class="flow-item"><b>5. إغلاق</b><span>تصبح مكتملة ومقفلة.</span></div>
+  </div>
+
+  <h3 style="font-size:12px;margin:18px 0 7px">أثناء التنفيذ</h3>
+  <ul>
+    <li>حدّث نسبة الإنجاز والملاحظات كلما تقدم العمل.</li>
+    <li>عند استخدام مهام فرعية يتم احتساب نسبة الإنجاز منها.</li>
+    <li>يمكن تغيير المسؤول فقط ضمن الصلاحيات المتاحة لك.</li>
+    <li>الوصول إلى 100% لا يغلق المهمة تلقائيًا؛ الإغلاق يتم عبر الاعتماد.</li>
+  </ul>
+</section>
+
+<section class="section" id="approval">
+  <div class="section-head"><div class="section-icon"><i data-lucide="user-round-check" size="18"></i></div><h2>الاعتماد وإعادة فتح المهمة</h2></div>
+  <div class="two-col">
+    <div class="mini"><b>إرسال للاعتماد</b><span>عند انتهاء التنفيذ تتحول المهمة إلى «بانتظار الاعتماد»، ويتوقف احتساب التأخير عند وقت الإرسال.</span></div>
+    <div class="mini"><b>قرار المدير</b><span>المدير المباشر يستطيع اعتماد المهمة أو إعادتها للتصحيح مع ملاحظة.</span></div>
+    <div class="mini"><b>المهمة المكتملة</b><span>بعد الاعتماد تصبح المهمة مكتملة ومقفلة ولا يمكن تعديلها كأي مهمة مفتوحة.</span></div>
+    <div class="mini"><b>إعادة الفتح</b><span>مدير النظام فقط يستطيع إعادة فتح مهمة مكتملة، مع تسجيل سبب إعادة الفتح.</span></div>
+  </div>
+</section>
+
+<section class="section" id="tools">
+  <div class="section-head"><div class="section-icon"><i data-lucide="search" size="18"></i></div><h2>الفلاتر والبحث والإشعارات</h2></div>
+  <div class="two-col">
+    <div class="mini"><b>الفلاتر والبحث</b><span>استخدم الحالة، المسؤول، الترتيب والبحث للوصول بسرعة إلى المهام المطلوبة.</span></div>
+    <div class="mini"><b>الإشعارات</b><span>تعرض الإسناد والتحديثات وطلبات الاعتماد وملاحظات المدير. الضغط على الإشعار المرتبط بمهمة يفتح المهمة مباشرة متى كانت ضمن صلاحيتك.</span></div>
+  </div>
+  <div class="note">إذا لم تظهر مهمة تتوقع رؤيتها، تحقق أولًا من الفلاتر الحالية ومن نطاق صلاحيتك.</div>
+</section>
+
+<section class="section" id="workspace">
+  <div class="section-head"><div class="section-icon"><i data-lucide="notebook-tabs" size="18"></i></div><h2>مساحة عملي</h2></div>
+  <p>مساحة شخصية مساندة للعمل، وتحفظ بياناتها في قاعدة البيانات تحت حساب المستخدم.</p>
+  <div class="two-col">
+    <div class="mini"><b>ملاحظاتي</b><span>لتسجيل معلومة أو تذكير شخصي سريع والعودة إليه لاحقًا.</span></div>
+    <div class="mini"><b>متابعاتي</b><span>لمتابعة موضوع يحتاج استكمالًا أو رجوعًا في وقت لاحق.</span></div>
+  </div>
+  <div class="note">الملاحظات والمتابعات تبقى محفوظة عند تسجيل الخروج وعند الدخول من جهاز أو متصفح آخر.</div>
+</section>
+
+<section class="section" id="team">
+  <div class="section-head"><div class="section-icon"><i data-lucide="users" size="18"></i></div><h2>الفريق والهيكل والملف الوظيفي</h2></div>
+  <div class="two-col">
+    <div class="mini"><b>فريقي والهيكل</b><span>للمديرين، ويعرض الموظفين الواقعين تحت مسؤوليتهم حسب المدير المباشر والتسلسل الإداري المعتمد.</span></div>
+    <div class="mini"><b>الملف الوظيفي</b><span>إذا تم تجهيز ملف الموظف يظهر داخل النظام. وإذا لم يجهز بعد تظهر رسالة «الملف الوظيفي تحت الإنشاء».</span></div>
+  </div>
+  <div class="note">إذا كان هناك خطأ في المدير المباشر أو الإدارة، تتم مشاركته مع إدارة النظام لتصحيح الهيكل.</div>
+</section>
+
+<section class="section" id="roles">
+  <div class="section-head"><div class="section-icon"><i data-lucide="shield-check" size="18"></i></div><h2>الصلاحيات</h2></div>
+  <div class="roles">
+    <div class="role"><b>الموظف</b><p>يدير مهامه ومساحة عمله ويحدث التنفيذ ويرسل المهمة للاعتماد.</p></div>
+    <div class="role"><b>المدير</b><p>يتابع فريقه ومهامه، ويعتمد مهام مرؤوسيه المباشرين أو يعيدها للتصحيح.</p></div>
+    <div class="role"><b>مدير النظام</b><p>يدير الحسابات والصلاحيات وله نطاق إداري أوسع، وهو الوحيد الذي يستطيع إعادة فتح المهمة المكتملة.</p></div>
+  </div>
+</section>
+
+<section class="section" id="admin">
+  <div class="section-head"><div class="section-icon"><i data-lucide="settings" size="18"></i></div><h2>إدارة النظام</h2></div>
+  <p>قسم خاص بمدير النظام لإدارة الحسابات ومراجعة الأدوار والصلاحيات. عند إضافة أو تعديل مستخدم يجب التأكد من الاسم والبريد والمسمى والإدارة والدور والمدير المباشر.</p>
+  <div class="note">لا تستخدم صلاحيات مدير النظام لإجراء تغييرات غير معتمدة على الحسابات أو الهيكل الإداري.</div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div class="section-icon"><i data-lucide="message-circle-warning" size="18"></i></div><h2>عند وجود ملاحظة أو مشكلة</h2></div>
+  <p>شارك الملاحظة مع إدارة النظام، ويفضل ذكر الصفحة والخطوة التي قمت بها وإرفاق صورة للشاشة عند الحاجة. سيتم مراجعة الملاحظات ومعالجتها ضمن عملية التطوير المستمرة.</p>
+</section>
+
+<div class="footer">ATWAR ONE • User Guide • Pilot Phase</div>
 </main>
 <script src="../assets/js/firebase-config.js"></script>
 <script type="module">
