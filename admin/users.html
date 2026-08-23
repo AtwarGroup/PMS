@@ -137,7 +137,9 @@ function buildManagerChain(user){
   return chain;
 }
 async function syncAffectedHierarchy(rootUid){
-  const affected=users.filter(u=>String(u.uid)===String(rootUid)||isDescendantOf(u,rootUid));
+  // المستخدم نفسه يتم حفظ managerChain له ضمن نفس عملية الحفظ؛ هنا نحدّث مرؤوسيه فقط.
+  const affected=users.filter(u=>String(u.uid)!==String(rootUid)&&isDescendantOf(u,rootUid));
+  if(!affected.length)return true;
   const results=await Promise.allSettled(affected.map(async u=>{
     const managerChain=buildManagerChain(u);
     await update(ref(db,`users/${u.uid}`),{managerChain});
@@ -222,7 +224,9 @@ async function saveUser(){
   const btn=$('saveBtn');btn.disabled=true;btn.textContent='جاري الحفظ...';
 
   try{
-    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,updatedAt:Date.now()};
+    const draftUser={...(previous||{}),uid,managerUid};
+    const managerChain=buildManagerChain(draftUser);
+    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,managerChain,updatedAt:Date.now()};
     await update(ref(db,`users/${uid}`),payload);
     const verify=await get(ref(db,`users/${uid}`));
     if(!verify.exists())throw new Error('save-verification-failed');
