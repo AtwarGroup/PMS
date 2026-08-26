@@ -299,10 +299,27 @@
           <span id="visibleCount" class="text-xs font-bold text-slate-500">0 مهام</span>
         </div>
           <div id="quickAddBox" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
-            <div class="flex items-center gap-2">
-              <input id="quickAddInput" type="text" onkeydown="quickAddKey(event)" placeholder="اكتب عنوان المهمة واضغط Enter..." class="flex-1 border border-blue-200 bg-white rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-400">
-              <button type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold">إضافة</button>
-              <button type="button" onclick="hideQuickAdd()" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500">×</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_minmax(180px,1fr)_150px_150px_auto] gap-2 items-end">
+              <label class="block">
+                <span class="block text-[10px] font-bold text-slate-500 mb-1">اسم المهمة</span>
+                <input id="quickAddInput" type="text" onkeydown="quickAddKey(event)" placeholder="اكتب عنوان المهمة..." class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-400">
+              </label>
+              <label class="block">
+                <span class="block text-[10px] font-bold text-slate-500 mb-1">إسناد إلى</span>
+                <select id="quickAddAssignee" class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-400"></select>
+              </label>
+              <label class="block">
+                <span class="block text-[10px] font-bold text-slate-500 mb-1">تاريخ البدء</span>
+                <input id="quickAddStart" type="date" class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-400">
+              </label>
+              <label class="block">
+                <span class="block text-[10px] font-bold text-slate-500 mb-1">تاريخ الانتهاء</span>
+                <input id="quickAddEnd" type="date" class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-400">
+              </label>
+              <div class="flex gap-2">
+                <button type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold whitespace-nowrap">إضافة المهمة</button>
+                <button type="button" onclick="hideQuickAdd()" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500" aria-label="إلغاء">×</button>
+              </div>
             </div>
           </div>
         <div id="tasksList" class="divide-y divide-slate-100 overflow-visible"></div>
@@ -2167,45 +2184,132 @@ function setQuickFilter(v){
   renderTasks();
   updateVisibleCount();
 }
+function populateQuickAddAssignees(){
+  const select=document.getElementById('quickAddAssignee');
+  if(!select||!currentUser)return;
+
+  const allowed=assignableUsers()
+    .filter(u=>u?.uid&&u.active!==false)
+    .sort((a,b)=>{
+      if(String(a.uid)===String(currentUser.uid))return -1;
+      if(String(b.uid)===String(currentUser.uid))return 1;
+      return String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar');
+    });
+
+  select.innerHTML=allowed.map(u=>
+    `<option value="${escapeHTML(u.uid)}">${escapeHTML(u.name||u.email||u.uid)}</option>`
+  ).join('');
+
+  if(allowed.some(u=>String(u.uid)===String(currentUser.uid))){
+    select.value=currentUser.uid;
+  }
+  select.disabled=allowed.length<=1;
+}
+
 function showQuickAdd(){
   const box=document.getElementById('quickAddBox');
   const input=document.getElementById('quickAddInput');
-  if(!box||!input){ console.error('Quick add controls not found'); return; }
+  const start=document.getElementById('quickAddStart');
+  const end=document.getElementById('quickAddEnd');
+  if(!box||!input||!start||!end){
+    console.error('Quick add controls not found');
+    showToast('تعذر فتح نموذج إضافة المهمة.','error');
+    return;
+  }
+
+  const today=localDateISO();
+  if(!start.value)start.value=today;
+  if(!end.value)end.value=start.value||today;
+  end.min=start.value||today;
+  start.onchange=()=>{
+    end.min=start.value||today;
+    if(end.value && end.value<start.value)end.value=start.value;
+  };
+  populateQuickAddAssignees();
+
   box.classList.remove('hidden');
   requestAnimationFrame(()=>{
     box.scrollIntoView({behavior:'smooth',block:'center'});
     input.focus();
   });
 }
+
 function hideQuickAdd(){
   const box=document.getElementById('quickAddBox');
   const input=document.getElementById('quickAddInput');
+  const start=document.getElementById('quickAddStart');
+  const end=document.getElementById('quickAddEnd');
   if(box)box.classList.add('hidden');
   if(input)input.value='';
+  if(start)start.value='';
+  if(end){end.value='';end.removeAttribute('min');}
 }
+
 function quickAddKey(e){
   if(e.key==='Enter'){e.preventDefault();commitQuickAdd();}
   else if(e.key==='Escape'){e.preventDefault();hideQuickAdd();}
 }
+
 async function commitQuickAdd(){
   const input=document.getElementById('quickAddInput');
-  if(!input)return;
+  const assignee=document.getElementById('quickAddAssignee');
+  const startInput=document.getElementById('quickAddStart');
+  const endInput=document.getElementById('quickAddEnd');
+  if(!input||!assignee||!startInput||!endInput)return;
+
   const title=input.value.trim();
-  if(!title){input.focus();return;}
-  await addNewTask(title,false);
-  hideQuickAdd();
+  const ownerUid=String(assignee.value||currentUser?.uid||'');
+  const start=String(startInput.value||'');
+  const end=String(endInput.value||'');
+
+  if(!title){showToast('اكتب اسم المهمة.','warning');input.focus();return;}
+  if(!ownerUid||!canManageUser(ownerUid)){
+    showToast('لا تملك صلاحية إسناد المهمة لهذا المستخدم.','error');
+    return;
+  }
+  if(!start||!end){
+    showToast('حدد تاريخ البدء وتاريخ الانتهاء.','warning');
+    return;
+  }
+  if(end<start){
+    showToast('تاريخ الانتهاء يجب أن يكون مساويًا أو بعد تاريخ البدء.','warning');
+    endInput.focus();
+    return;
+  }
+
+  const added=await addNewTask(title,false,{ownerUid,start,end});
+  if(added)hideQuickAdd();
 }
 
+async function addNewTask(quickTitle='',openDetails=true,options={}){
+  const today=localDateISO();
+  const ownerUid=String(options?.ownerUid||currentUser.uid);
+  if(!canManageUser(ownerUid)){
+    showToast('لا تملك صلاحية إسناد المهمة لهذا المستخدم.','error');
+    return false;
+  }
 
-async function addNewTask(quickTitle='',openDetails=true){
-  const today=localDateISO(),ownerUid=currentUser.uid;
-  const owner=users.find(u=>u.uid===ownerUid)||currentProfile;
+  const owner=users.find(u=>String(u.uid)===ownerUid)||(
+    String(currentProfile?.uid||currentUser?.uid)===ownerUid?currentProfile:null
+  );
+  if(!owner){
+    showToast('تعذر العثور على المستخدم المسؤول عن المهمة.','error');
+    return false;
+  }
+
+  const start=String(options?.start||today);
+  const end=String(options?.end||start||today);
+  if(end<start){
+    showToast('تاريخ الانتهاء يجب أن يكون مساويًا أو بعد تاريخ البدء.','warning');
+    return false;
+  }
+
   const createdNow=Date.now();
   const task={
     id:nextDisplayId(),title:quickTitle||'مهمة جديدة',desc:'',type:'',
     createdByUid:currentUser.uid,createdBy:currentProfile.name||currentUser.email,
     assignUid:ownerUid,assign:owner.name||owner.email||ownerUid,
-    start:today,end:today,actualEnd:'',status:'قيد الانتظار',progress:0,priority:'normal',notes:'',managerNotes:'',
+    start,end,actualEnd:'',status:'قيد الانتظار',progress:0,priority:'normal',notes:'',managerNotes:'',
     createdAt:createdNow,updatedAt:createdNow,
     activity:[{
       type:'created',
@@ -2215,6 +2319,7 @@ async function addNewTask(quickTitle='',openDetails=true){
       createdAt:createdNow
     }]
   };
+
   setSaveStatus('saving');
   try{
     const newRef=push(ref(db,`tasksByUser/${ownerUid}`));
@@ -2223,8 +2328,15 @@ async function addNewTask(quickTitle='',openDetails=true){
     await notifyTaskAssigned(task,ownerUid,newRef.key);
     if(openDetails)selectedTaskKey=`${ownerUid}::${newRef.key}`;
     setSaveStatus('saved');
+    showToast('تمت إضافة المهمة بنجاح.','success');
     if(openDetails)requestAnimationFrame(()=>scrollSelectedTaskIntoView(true));
-  }catch(error){console.error(error);setSaveStatus('error')}
+    return true;
+  }catch(error){
+    console.error('Add task error:',error);
+    setSaveStatus('error');
+    showToast('تعذر إضافة المهمة. حاول مرة أخرى.','error');
+    return false;
+  }
 }
 async function deleteSelectedTask(){
   if(!canDeleteTasks()){
