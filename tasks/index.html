@@ -515,12 +515,12 @@
 
 <!--
   ATWAR ONE – Tasks
-  Production Version: 1.3.16 (Deferred Assignee Save)
+  Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = window.ATWAR_FIREBASE_CONFIG || {
@@ -701,6 +701,9 @@ function sortTasksForDisplay(rows){
 function escapeHTML(value=''){
   return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 }
+function isActiveProfile(profile){
+  return !!profile && profile.active!==false && profile.status!=='inactive';
+}
 function localDateISO(d=new Date()){
   if(!(d instanceof Date)||Number.isNaN(d.getTime()))return '';
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -710,12 +713,17 @@ function parseDateOnly(v){
   const d=new Date(v+(String(v).length===10?'T00:00:00':''));
   return Number.isNaN(d.getTime())?null:d;
 }
+function calendarDaySerial(value){
+  const d=value instanceof Date?value:parseDateOnly(value);
+  if(!d||Number.isNaN(d.getTime()))return null;
+  return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
+}
 function calcDuration(s,e){
-  const a=parseDateOnly(s),b=parseDateOnly(e); if(!a||!b)return 0;
-  const d=Math.floor((b-a)/86400000); return d>=0?d+1:0;
+  const a=calendarDaySerial(s),b=calendarDaySerial(e); if(a===null||b===null)return 0;
+  const d=b-a; return d>=0?d+1:0;
 }
 function calcDelay(e,a,status,submittedAt){
-  const end=parseDateOnly(e); if(!end)return 0;
+  const end=calendarDaySerial(e); if(end===null)return 0;
   if(status==='مكتملة'&&!a)return 0;
 
   let compare=null;
@@ -727,11 +735,35 @@ function calcDelay(e,a,status,submittedAt){
     compare=new Date();
   }
 
-  if(!compare || Number.isNaN(compare.getTime()))return 0;
-  const limit=new Date(end); limit.setHours(23,59,59,999);
-  return compare>limit?Math.max(0,Math.floor((compare-limit)/86400000)):0;
+  const compareDay=calendarDaySerial(compare);
+  return compareDay===null?0:Math.max(0,compareDay-end);
 }
 function normalizeProgress(v){return Math.max(0,Math.min(100,Number.parseInt(v||0,10)||0))}
+
+function isISODate(value){
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value||'')) && !!parseDateOnly(value);
+}
+function validateTaskFieldValue(task,field,value){
+  let normalized=typeof value==='string'?value.trim():value;
+  if(field==='title'){
+    if(!normalized)return {ok:false,message:'عنوان المهمة مطلوب.'};
+    if(String(normalized).length>200)return {ok:false,message:'عنوان المهمة يجب ألا يتجاوز 200 حرف.'};
+  }
+  if(field==='start'||field==='end'){
+    if(!isISODate(normalized))return {ok:false,message:'صيغة التاريخ غير صالحة.'};
+    const start=field==='start'?normalized:task.start;
+    const end=field==='end'?normalized:task.end;
+    if(start&&end&&String(start)>String(end))return {ok:false,message:'تاريخ الانتهاء يجب ألا يسبق تاريخ البدء.'};
+  }
+  if(field==='priority'&&!['normal','important','urgent'].includes(String(normalized))){
+    return {ok:false,message:'قيمة الأولوية غير صالحة.'};
+  }
+  const limits={desc:5000,notes:5000,managerNotes:2000};
+  if(limits[field]&&String(normalized||'').length>limits[field]){
+    return {ok:false,message:`النص يتجاوز الحد المسموح (${limits[field]} حرف).`};
+  }
+  return {ok:true,value:normalized};
+}
 
 function formatDateAR(v){
   if(!v)return '—';
@@ -942,15 +974,15 @@ function visibleUsers(){
   if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
-    return users.filter(u=>u.active!==false);
+    return users.filter(isActiveProfile);
   }
 
   if(currentProfile.role==='manager'){
     return users.filter(u=>
-      u.active!==false &&
+      isActiveProfile(u) &&
       (
         String(u.uid)===String(currentUser.uid) ||
-        isDescendantOf(u,currentUser.uid)
+        String(u.managerUid||'')===String(currentUser.uid)
       )
     );
   }
@@ -964,12 +996,12 @@ function assignableUsers(){
   if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
-    return users.filter(u=>u.active!==false);
+    return users.filter(isActiveProfile);
   }
 
   if(currentProfile.role==='manager'){
     return users.filter(u=>
-      u.active!==false &&
+      isActiveProfile(u) &&
       (
         String(u.uid)===String(currentUser.uid) ||
         isDescendantOf(u,currentUser.uid)
@@ -987,6 +1019,16 @@ function canManageUser(uid){
   if(String(uid)===String(currentUser.uid))return true;
 
   return currentProfile.role==='manager' && isDescendantOf(uid,currentUser.uid);
+}
+function canReassignTaskTo(task,uid){
+  if(!task||!currentProfile||!currentUser)return false;
+  const target=getUserByUid(uid);
+  if(!target||!isActiveProfile(target))return false;
+  if(currentProfile.role==='admin')return true;
+  if(currentProfile.role!=='manager')return false;
+  if(String(uid)===String(currentUser.uid))return true;
+  if(String(target.managerUid||'')===String(currentUser.uid))return true;
+  return isDescendantOf(target,currentUser.uid) && String(task.createdByUid||'')===String(currentUser.uid);
 }
 function canDeleteTasks(){return currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager')}
 
@@ -1040,6 +1082,9 @@ function canEditTaskField(task,field){
   if(field==='assignUid'){
     return isManagerRole();
   }
+
+  // الموظف يغيّر الحالة من أزرار سير العمل فقط، وليس من القائمة اليدوية.
+  if(field==='status' && currentProfile.role==='employee')return false;
 
   // ملاحظات المدير: المدير/مدير النظام فقط.
   if(field==='managerNotes'){
@@ -1154,6 +1199,34 @@ document.getElementById('loginForm').addEventListener('submit',async(e)=>{
 
 async function logoutUser(){await signOut(auth)}
 
+async function loadManagerUserTree(managerUid,rootProfile){
+  const found=new Map([[String(rootProfile.uid),rootProfile]]);
+  const queue=[String(managerUid)];
+  const visitedManagers=new Set();
+
+  while(queue.length){
+    const parentUid=queue.shift();
+    if(!parentUid||visitedManagers.has(parentUid))continue;
+    visitedManagers.add(parentUid);
+
+    const childrenSnap=await withTimeout(
+      get(query(ref(db,'users'),orderByChild('managerUid'),equalTo(parentUid))),
+      8000
+    );
+    if(!childrenSnap.exists())continue;
+
+    for(const [uid,value] of Object.entries(childrenSnap.val())){
+      const child={uid,...value};
+      found.set(String(uid),child);
+      if((child.role==='manager'||child.role==='admin')&&!visitedManagers.has(String(uid))){
+        queue.push(String(uid));
+      }
+    }
+  }
+
+  return [...found.values()];
+}
+
 onAuthStateChanged(auth,async(user)=>{
   clearTaskListeners();
 
@@ -1187,46 +1260,34 @@ onAuthStateChanged(auth,async(user)=>{
 
     currentProfile={uid:user.uid,...profileSnap.val()};
 
-    if(currentProfile.active===false){
+    if(!isActiveProfile(currentProfile)){
       await signOut(auth);
       showToast('هذا الحساب غير مفعل.','warning');
       return;
     }
 
-    // Stability-first / Free-tier friendly:
-    // employee -> self only
-    // manager  -> one small users read, then filter direct team locally.
-    // admin    -> all users when organization-wide scope is needed.
-    //
-    // This avoids requiring an indexed managerUid query in the current live Rules.
+    if(!['employee','manager','admin'].includes(currentProfile.role)){
+      await signOut(auth);
+      showToast('دور هذا الحساب غير صالح.','warning');
+      return;
+    }
+
     if(currentProfile.role==='employee'){
       users=[currentProfile];
+    }else if(currentProfile.role==='manager'){
+      // استعلامات مقيدة بالخادم: نحمّل الشجرة للإسناد، بينما عرض المسارات
+      // الكاملة يظل مقتصرًا على المستخدم ومرؤوسيه المباشرين.
+      users=await loadManagerUserTree(user.uid,currentProfile);
     }else{
       const usersSnap=await withTimeout(get(ref(db,'users')),8000);
-      const allUsers=usersSnap.exists()
+      users=usersSnap.exists()
         ? Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v}))
         : [currentProfile];
-
-      if(currentProfile.role==='manager'){
-        // Load the complete managerial tree. managerChain is maintained by Admin
-        // and lets a manager see direct and indirect reports consistently.
-        users=allUsers.filter(u=>
-          String(u.uid)===String(user.uid) ||
-          String(u.managerUid||u.managerUID||u.managerId||'')===String(user.uid) ||
-          u.managerChain?.[user.uid]===true
-        );
-      }else{
-        users=allUsers;
-      }
     }
 
     const me=users.find(u=>u.uid===user.uid);
     if(me)currentProfile=me;
-
-    // Admin يحافظ على managerChain محدثة لكل المستخدمين.
-    if(currentProfile.role==='admin'){
-      syncCreatedTaskIndex().catch(error=>console.error('Background task-index sync:',error));
-    }
+    window.atwarSyncShellIdentity?.(currentProfile,user);
 
     document.getElementById('currentUserBadge').textContent=
       `👤 ${currentProfile.name||user.email} • ${roleLabel(currentProfile.role)}`;
@@ -1235,7 +1296,7 @@ onAuthStateChanged(auth,async(user)=>{
       currentProfile.role==='admin'
         ? 'عرض جميع المهام'
         : currentProfile.role==='manager'
-          ? 'مهامك ومهام فريقك'
+          ? 'مهامك وفريقك المباشر، مع المهام التي أنشأتها لغير المباشرين'
           : 'مهامك الشخصية';
     applyRoleUI();
     showApp(true);
@@ -1265,12 +1326,12 @@ function managerTeamUsers(){
   if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
-    return users.filter(u=>u.active!==false && String(u.uid)!==String(currentUser.uid));
+    return users.filter(u=>isActiveProfile(u) && String(u.uid)!==String(currentUser.uid));
   }
 
   if(currentProfile.role==='manager'){
     return users.filter(u=>
-      u.active!==false &&
+      isActiveProfile(u) &&
       String(u.managerUid||'')===String(currentUser.uid)
     );
   }
@@ -1385,7 +1446,7 @@ function renderNotifications(){
     return;
   }
   list.innerHTML=notifications.slice(0,30).map(n=>`
-    <button type="button" onclick="openNotification('${escapeHTML(n._key)}')" class="w-full text-right px-4 py-3 border-b border-slate-100 hover:bg-slate-50 ${n.read?'bg-white':'bg-blue-50/60'}">
+    <button type="button" data-notification-key="${escapeHTML(n._key)}" class="w-full text-right px-4 py-3 border-b border-slate-100 hover:bg-slate-50 ${n.read?'bg-white':'bg-blue-50/60'}">
       <div class="flex gap-2 items-start">
         <span class="mt-0.5">${n.type==='overdue'?'⚠️':n.type==='manager_note'?'📝':n.type==='approved'?'✅':n.type==='reopened'?'↩️':n.type==='approval'?'⏳':n.type==='completed'?'✅':n.type==='started'?'▶️':n.type==='updated'?'✏️':'📌'}</span>
         <div class="min-w-0 flex-1">
@@ -1395,6 +1456,9 @@ function renderNotifications(){
         ${n.read?'':'<span class="w-2 h-2 rounded-full bg-blue-600 mt-1.5"></span>'}
       </div>
     </button>`).join('');
+  list.querySelectorAll('[data-notification-key]').forEach(button=>{
+    button.addEventListener('click',()=>openNotification(button.dataset.notificationKey));
+  });
 }
 
 function toggleNotifications(force){
@@ -1612,45 +1676,6 @@ async function notifyTaskUpdated(task,field){
 }
 
 
-async function setCreatedTaskIndex(taskKey,ownerUid,creatorUid){
-  if(!taskKey||!ownerUid||!creatorUid)return;
-  await set(ref(db,`createdTaskIndex/${creatorUid}/${taskKey}`),ownerUid);
-}
-
-async function removeCreatedTaskIndex(taskKey,creatorUid){
-  if(!taskKey||!creatorUid)return;
-  await remove(ref(db,`createdTaskIndex/${creatorUid}/${taskKey}`));
-}
-
-// ترحيل/إصلاح الفهرس للمهام الموجودة سابقًا.
-// ينفذه مدير النظام فقط بعد تسجيل الدخول.
-async function syncCreatedTaskIndex(){
-  if(currentProfile?.role!=='admin'||!users.length)return;
-
-  const updates={};
-
-  try{
-    for(const u of users){
-      const snap=await get(ref(db,`tasksByUser/${u.uid}`));
-      if(!snap.exists())continue;
-
-      for(const [taskKey,task] of Object.entries(snap.val())){
-        const creatorUid=String(task?.createdByUid||'');
-        if(creatorUid){
-          updates[`createdTaskIndex/${creatorUid}/${taskKey}`]=u.uid;
-        }
-      }
-    }
-
-    if(Object.keys(updates).length){
-      await update(ref(db),updates);
-    }
-  }catch(error){
-    console.error('Created-task index sync:',error);
-    showToast('تعذر تحديث فهرس المهام المنشأة.','warning',4500);
-  }
-}
-
 function clearTaskListeners(){
   unsubscribeTasks.forEach(fn=>{try{fn()}catch{}});
   unsubscribeTasks=[];
@@ -1735,8 +1760,8 @@ function subscribeVisibleTasks(){
     return;
   }
 
-  // 1) المهام التي يحق له رؤية كامل مسار صاحبها:
-  // نفسه + كامل شجرته الإدارية، أو الجميع للـAdmin.
+  // 1) المسارات الكاملة المسموح بها: المستخدم نفسه، والمرؤوسون
+  // المباشرون للمدير، أو الجميع لمدير النظام.
   scoped.forEach(u=>{
     const unsub=onValue(
       ref(db,`tasksByUser/${u.uid}`),
@@ -1821,19 +1846,163 @@ function subscribeVisibleTasks(){
   }
 }
 
-async function saveTask(task){
-  if(!task?._key||!task?._ownerUid)return;
-  const {_key,_ownerUid,...payload}=task;
-  setSaveStatus('saving');
-  try{await set(ref(db,`tasksByUser/${_ownerUid}/${_key}`),payload);setSaveStatus('saved')}
-  catch(error){console.error(error);setSaveStatus('error');throw error}
+function taskDatabasePath(task){
+  if(!task?._key||!task?._ownerUid)return '';
+  return `tasksByUser/${task._ownerUid}/${task._key}`;
 }
 
+function taskFromSnapshot(task,snapshot){
+  if(!snapshot?.exists?.())return null;
+  return {_key:task._key,_ownerUid:task._ownerUid,...snapshot.val()};
+}
+
+// سياسة الكتابة الموحدة للمهام الموجودة:
+// أي تعديل على سجل مهمة قائم يتم داخل Transaction على أحدث نسخة من الخادم.
+// هذا يمنع الكتابة فوق تعديل متزامن في حقل آخر، ويضيف سجل النشاط في نفس العملية.
+async function updateTaskFieldsSafely(task,changes,{activityType='',activityDetail=''}={}){
+  const path=taskDatabasePath(task);
+  if(!path)return null;
+  const patch={...changes};
+  Object.keys(patch).forEach(k=>patch[k]===undefined&&delete patch[k]);
+  setSaveStatus('saving');
+  try{
+    const result=await runTransaction(ref(db,path),current=>{
+      if(!current)return;
+      const next={...current,...patch,updatedAt:Date.now()};
+      next.revision=Number(current.revision||0)+1;
+      if(activityType){
+        const rows=Array.isArray(current.activity)?current.activity:[];
+        next.activity=[...rows,buildActivityEntry(activityType,activityDetail)].slice(-100);
+      }
+      return next;
+    },{applyLocally:false});
+    if(!result.committed){
+      setSaveStatus('saved');
+      showToast('لم تعد المهمة موجودة أو تعذر تطبيق التعديل على أحدث نسخة.','warning',5000);
+      return null;
+    }
+    setSaveStatus('saved');
+    return taskFromSnapshot(task,result.snapshot);
+  }catch(error){
+    console.error('Task field transaction:',error);
+    setSaveStatus('error');
+    showToast('تعذر حفظ التعديل بأمان. لم تتم كتابة نسخة قديمة فوق بيانات أحدث.','error',5000);
+    return null;
+  }
+}
+
+// انتقالات الحالة والعمليات المركبة تتم كـ Transaction على المهمة الحالية في الخادم.
+// إذا غيّر مستخدم آخر المهمة أثناء العملية، يعيد Firebase المحاولة على أحدث نسخة بدل الكتابة فوقها.
+async function transactTask(task,allowedStatuses,mutator,{activityType='',activityDetail='',conflictMessage='تغيرت حالة المهمة من مستخدم آخر. راجع الحالة الحالية ثم أعد المحاولة.'}={}){
+  const path=taskDatabasePath(task);
+  if(!path)return null;
+  let abortReason='';
+  setSaveStatus('saving');
+  try{
+    const result=await runTransaction(ref(db,path),current=>{
+      if(!current){abortReason='missing';return;}
+      const currentStatus=String(current.status||'قيد الانتظار');
+      if(Array.isArray(allowedStatuses)&&allowedStatuses.length&&!allowedStatuses.includes(currentStatus)){
+        abortReason='status';
+        return;
+      }
+      const next={...current};
+      const ok=mutator(next,current);
+      if(ok===false){abortReason='blocked';return;}
+      next.updatedAt=Date.now();
+      next.revision=Number(current.revision||0)+1;
+      if(activityType){
+        const rows=Array.isArray(current.activity)?current.activity:[];
+        next.activity=[...rows,buildActivityEntry(activityType,activityDetail)].slice(-100);
+      }
+      return next;
+    },{applyLocally:false});
+
+    if(!result.committed){
+      setSaveStatus('saved');
+      showToast(abortReason==='missing'?'لم تعد المهمة موجودة.':conflictMessage,'warning',5000);
+      return null;
+    }
+    setSaveStatus('saved');
+    return taskFromSnapshot(task,result.snapshot);
+  }catch(error){
+    console.error('Task transaction:',error);
+    setSaveStatus('error');
+    showToast('تعذر تنفيذ العملية بأمان. لم يتم اعتماد تغيير غير مكتمل.','error',5000);
+    return null;
+  }
+}
+
+
+const TASK_OPERATION_INTENT_TTL_MS=120000;
+
+function operationIntentIsActive(intent){
+  return !!intent && Number(intent.at||0) > Date.now()-TASK_OPERATION_INTENT_TTL_MS;
+}
+
+async function prepareTaskOperation(task,type,targetUid=''){
+  const path=taskDatabasePath(task);
+  if(!path)return null;
+  const token=(globalThis.crypto?.randomUUID?.()||`${currentUser.uid}_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  let abortReason='';
+  try{
+    const result=await runTransaction(ref(db,path),current=>{
+      if(!current){abortReason='missing';return;}
+      const currentIntent=current.operationIntent||null;
+      if(operationIntentIsActive(currentIntent) && String(currentIntent.byUid||'')!==String(currentUser.uid||'')){
+        abortReason='locked';return;
+      }
+      const status=String(current.status||'قيد الانتظار');
+      if(type==='reassign' && (status==='بانتظار الاعتماد'||status==='مكتملة')){
+        abortReason='status';return;
+      }
+      if(type==='delete' && status==='مكتملة' && currentProfile?.role!=='admin'){
+        abortReason='status';return;
+      }
+      const next={...current};
+      next.operationIntent={type,token,byUid:currentUser.uid,at:Date.now()};
+      if(targetUid)next.operationIntent.targetUid=String(targetUid);
+      next.revision=Number(current.revision||0)+1;
+      next.updatedAt=Date.now();
+      return next;
+    },{applyLocally:false});
+    if(!result.committed){
+      const msg=abortReason==='locked'?'هناك عملية أخرى جارية على المهمة. أعد المحاولة بعد لحظات.':abortReason==='missing'?'لم تعد المهمة موجودة.':'لا يمكن تنفيذ هذه العملية على حالة المهمة الحالية.';
+      showToast(msg,'warning',5000);
+      return null;
+    }
+    return {token,task:taskFromSnapshot(task,result.snapshot)};
+  }catch(error){
+    console.error('Prepare task operation error:',error);
+    showToast('تعذر حجز المهمة للعملية المطلوبة بأمان. لم يتم تنفيذ أي تغيير جزئي.','error',5000);
+    return null;
+  }
+}
+
+async function clearTaskOperation(task,token){
+  const path=taskDatabasePath(task);
+  if(!path||!token)return;
+  try{
+    await runTransaction(ref(db,path),current=>{
+      if(!current)return;
+      const intent=current.operationIntent||null;
+      if(String(intent?.token||'')!==String(token))return;
+      if(String(intent?.byUid||'')!==String(currentUser?.uid||'') && currentProfile?.role!=='admin')return;
+      const next={...current};
+      delete next.operationIntent;
+      next.revision=Number(current.revision||0)+1;
+      next.updatedAt=Date.now();
+      return next;
+    },{applyLocally:false});
+  }catch(error){
+    console.warn('Could not clear task operation intent; it expires automatically.',error);
+  }
+}
 
 function stageAssigneeChange(task,newUid){
   if(!task)return;
   const target=users.find(u=>String(u.uid||'')===String(newUid||''));
-  if(!target||!canManageUser(newUid)){
+  if(!target||!canReassignTaskTo(task,newUid)){
     showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
     renderDetails();
     return;
@@ -1865,42 +2034,63 @@ async function commitPendingAssigneeChange(){
 
   const {taskKey,oldOwnerUid,newOwnerUid}=pendingAssigneeChange;
   const target=users.find(u=>String(u.uid||'')===String(newOwnerUid));
-
-  if(!target||!canManageUser(newOwnerUid)){
+  if(!target||!canReassignTaskTo(task,newOwnerUid)){
     showToast('ليست لديك صلاحية إسناد المهمة لهذا المستخدم.','warning');
     return false;
   }
 
-  const moved={
-    ...task,
-    assignUid:newOwnerUid,
-    assign:target.name||target.email||newOwnerUid,
-    updatedAt:Date.now()
-  };
-  appendActivity(moved,'assigned',`تم إسناد المهمة إلى ${target.name||target.email||newOwnerUid}`);
-
-  const payload={...moved};
-  delete payload._key;
-  delete payload._ownerUid;
-
   isReassigningTask=true;
   setSaveStatus('saving');
-
+  let prepared=null;
   try{
-    await set(ref(db,`tasksByUser/${newOwnerUid}/${taskKey}`),payload);
-    await setCreatedTaskIndex(taskKey,newOwnerUid,payload.createdByUid);
-    await remove(ref(db,`tasksByUser/${oldOwnerUid}/${taskKey}`));
-    await notifyTaskAssigned(payload,newOwnerUid,taskKey);
+    // Intent قصير العمر يقفل المهمة قبل النقل. أي تعديل متزامن يُمنع أثناء العملية.
+    prepared=await prepareTaskOperation(task,'reassign',newOwnerUid);
+    if(!prepared){isReassigningTask=false;setSaveStatus('saved');return false;}
+
+    const locked=prepared.task;
+    const fresh={...locked};
+    delete fresh._key;
+    delete fresh._ownerUid;
+    const sourceRevision=Number(fresh.revision||0);
+    const transferToken=prepared.token;
+
+    const moved={...fresh};
+    delete moved.operationIntent;
+    moved.assignUid=newOwnerUid;
+    moved.assign=target.name||target.email||newOwnerUid;
+    moved.lastReassignedFromUid=oldOwnerUid;
+    moved.lastReassignedByUid=currentUser.uid;
+    moved.lastReassignedAt=Date.now();
+    moved.lastReassignmentToken=transferToken;
+    moved.revision=sourceRevision+1;
+    moved.updatedAt=Date.now();
+    const activityRows=Array.isArray(moved.activity)?moved.activity:[];
+    moved.activity=[...activityRows,buildActivityEntry('assigned',`تم إسناد المهمة إلى ${target.name||target.email||newOwnerUid}`)].slice(-100);
+
+    const creatorUid=String(moved.createdByUid||'');
+    const changes={
+      [`tasksByUser/${newOwnerUid}/${taskKey}`]:moved,
+      [`tasksByUser/${oldOwnerUid}/${taskKey}`]:null
+    };
+    if(creatorUid)changes[`createdTaskIndex/${creatorUid}/${taskKey}`]=newOwnerUid;
+
+    // نقل المهمة وحذف الأصل وتحديث الفهرس عملية ذرية واحدة.
+    // القواعد تتحقق من operationIntent + revision قبل قبول النقل.
+    await update(ref(db),changes);
+    await notifyTaskAssigned(moved,newOwnerUid,taskKey);
 
     pendingAssigneeChange=null;
     isReassigningTask=false;
+    selectedTaskKey=`${newOwnerUid}::${taskKey}`;
     setSaveStatus('saved');
+    showToast('تم نقل المهمة وحفظ الفهرس في عملية ذرية واحدة.','success');
     return true;
   }catch(error){
-    console.error('Deferred reassignment error:',error);
+    console.error('Intent-guarded reassignment error:',error);
+    if(prepared)await clearTaskOperation(prepared.task,prepared.token);
     isReassigningTask=false;
     setSaveStatus('error');
-    showToast('تعذر حفظ تغيير المسؤول.','error');
+    showToast('تعذر نقل المهمة بأمان. لم يتم تنفيذ أي نقل جزئي.','error',5000);
     return false;
   }
 }
@@ -1921,12 +2111,8 @@ async function updateTaskField(task,f,v){
     stageAssigneeChange(task,v);
     return;
   }
-  if(f==='progress'){
-    v=normalizeProgress(v);
-    // الوصول إلى 100% لا يغلق المهمة؛ الإغلاق يمر حصراً عبر الاعتماد.
-    task.progress=v;
-  }else if(f==='status'){
-    // منع أي تحويل يدوي إلى مكتملة أو إعادة فتح مكتملة من الحقل.
+
+  if(f==='status'){
     if(v==='مكتملة'){
       showToast('لا يمكن تحويل المهمة إلى مكتملة يدويًا. يجب إرسالها للاعتماد ثم اعتماد المدير.','warning');
       renderDetails();
@@ -1937,35 +2123,68 @@ async function updateTaskField(task,f,v){
       renderDetails();
       return;
     }
-    task.status=v;
-    if(v!=='بانتظار الاعتماد' && task.progress===100)task.progress=95;
-  }else task[f]=v;
-  if(f==='progress'){
-    appendActivity(task,'progress',`نسبة الإنجاز: ${normalizeProgress(task.progress)}%`);
-  }else if(f==='notes' && String(v||'').trim()){
-    appendActivity(task,'note','تم تحديث ملاحظات المهمة');
-  }else if(f==='managerNotes' && String(v||'').trim()){
-    appendActivity(task,'manager_note','تم تحديث ملاحظات المدير');
-  }else if(f==='status'){
-    if(v==='قيد التنفيذ')appendActivity(task,'started','تم تحويل المهمة إلى قيد التنفيذ');
-    else if(v==='مكتملة')appendActivity(task,'completed','تم إكمال المهمة');
-    else appendActivity(task,'updated',`تم تغيير الحالة إلى ${v}`);
-  }else if(['title','start','end','priority','desc'].includes(f)){
-    appendActivity(task,'updated',`تم تعديل ${f==='title'?'عنوان المهمة':f==='start'?'تاريخ البداية':f==='end'?'تاريخ الاستحقاق':f==='priority'?'الأولوية':'الوصف'}`);
+    if(!['قيد الانتظار','قيد التنفيذ','بانتظار الاعتماد'].includes(String(v||''))){
+      showToast('حالة المهمة غير صالحة.','warning');
+      renderDetails();
+      return;
+    }
+    if(v==='بانتظار الاعتماد'){
+      showToast('إرسال المهمة للاعتماد يتم من زر إنهاء المهمة فقط.','warning');
+      renderDetails();
+      return;
+    }
+
+    const detail=v==='قيد التنفيذ'?'تم تحويل المهمة إلى قيد التنفيذ':`تم تغيير الحالة إلى ${v}`;
+    const updated=await transactTask(task,['قيد الانتظار','قيد التنفيذ'],next=>{
+      next.status=v;
+      if(v!=='بانتظار الاعتماد' && normalizeProgress(next.progress)===100)next.progress=95;
+      if(v==='قيد التنفيذ')next.startedAt=next.startedAt||Date.now();
+      return true;
+    },{activityType:v==='قيد التنفيذ'?'started':'updated',activityDetail:detail});
+    if(!updated)return;
+    await notifyTaskUpdated(updated,f);
+    if(String(updated._ownerUid||'')===String(currentUser?.uid||'') && v==='قيد التنفيذ'){
+      await notifyManagerOfEmployeeAction(updated,'started');
+    }
+    return;
   }
 
-  task.updatedAt=Date.now();
-  await saveTask(task);
-  await notifyTaskUpdated(task,f);
+  const validation=validateTaskFieldValue(task,f,v);
+  if(!validation.ok){
+    showToast(validation.message,'warning');
+    renderDetails();
+    return;
+  }
+  v=validation.value;
 
-  // إشعارات المدير من تحديثات الموظف على مهمته.
-  if(String(task._ownerUid||'')===String(currentUser?.uid||'')){
+  const changes={};
+  let activityType='updated';
+  let activityDetail='تم تحديث المهمة';
+
+  if(f==='progress'){
+    v=normalizeProgress(v);
+    changes.progress=v;
+    activityType='progress';
+    activityDetail=`نسبة الإنجاز: ${v}%`;
+  }else{
+    changes[f]=v;
     if(f==='notes' && String(v||'').trim()){
-      await notifyManagerOfEmployeeAction(task,'note');
-    }else if(f==='status' && v==='قيد التنفيذ'){
-      await notifyManagerOfEmployeeAction(task,'started');
-    }else if(f==='status' && v==='مكتملة'){
-      await notifyManagerOfEmployeeAction(task,'completed');
+      activityType='note';activityDetail='تم تحديث ملاحظات المهمة';
+    }else if(f==='managerNotes' && String(v||'').trim()){
+      activityType='manager_note';activityDetail='تم تحديث ملاحظات المدير';
+    }else if(['title','start','end','priority','desc'].includes(f)){
+      activityType='updated';
+      activityDetail=`تم تعديل ${f==='title'?'عنوان المهمة':f==='start'?'تاريخ البداية':f==='end'?'تاريخ الاستحقاق':f==='priority'?'الأولوية':'الوصف'}`;
+    }
+  }
+
+  const updated=await updateTaskFieldsSafely(task,changes,{activityType,activityDetail});
+  if(!updated)return;
+  await notifyTaskUpdated(updated,f);
+
+  if(String(updated._ownerUid||'')===String(currentUser?.uid||'')){
+    if(f==='notes' && String(v||'').trim()){
+      await notifyManagerOfEmployeeAction(updated,'note');
     }
   }
 }
@@ -1979,14 +2198,18 @@ async function startSelectedTask(){
   }
   if(task.status==='مكتملة')return;
 
-  task.status='قيد التنفيذ';
-  task.startedAt=task.startedAt||Date.now();
-  if(normalizeProgress(task.progress)===0)task.progress=5;
-  appendActivity(task,'started','بدأ المسؤول العمل على المهمة');
-  task.updatedAt=Date.now();
-
-  await saveTask(task);
-  await notifyManagerOfEmployeeAction(task,'started');
+  const updated=await transactTask(task,['قيد الانتظار'],next=>{
+    next.status='قيد التنفيذ';
+    next.startedAt=next.startedAt||Date.now();
+    if(normalizeProgress(next.progress)===0)next.progress=5;
+    return true;
+  },{
+    activityType:'started',
+    activityDetail:'بدأ المسؤول العمل على المهمة',
+    conflictMessage:'تم تغيير حالة المهمة قبل بدء العمل. راجع الحالة الحالية.'
+  });
+  if(!updated)return;
+  await notifyManagerOfEmployeeAction(updated,'started');
   renderDetails();
 }
 
@@ -1996,7 +2219,7 @@ async function completeSelectedTask(){
 
   const checklist=normalizeSubtasks(task);
   if(checklist.length && checklist.some(x=>!x.done)){
-    showToast('أكمل جميع المهام الفرعية قبل إرسال المهمة للاعتماد.','warning');
+    showToast('أكمل جميع المهام الفرعية قبل إنهاء المهمة.','warning');
     return;
   }
   if(String(task._ownerUid)!==String(currentUser.uid)){
@@ -2004,40 +2227,35 @@ async function completeSelectedTask(){
     return;
   }
   if(task.status!=='قيد التنفيذ'){
-    showToast('يجب أن تكون المهمة قيد التنفيذ قبل إرسالها للاعتماد.','warning');
+    showToast('يجب أن تكون المهمة قيد التنفيذ قبل إنهائها.','warning');
     return;
   }
 
-  task.status='بانتظار الاعتماد';
-  task.progress=100;
-  task.submittedAt=Date.now();
-  task.actualEnd='';
-  appendActivity(task,'submitted','تم إنهاء العمل وإرسال المهمة للاعتماد');
-  task.updatedAt=Date.now();
+  const owner=getUserByUid(currentUser.uid)||currentProfile;
+  const hasDirectManager=String(owner?.managerUid||'').trim()!=='';
 
-  await saveTask(task);
-  await notifyManagerOfEmployeeAction(task,'submitted');
-  await notifyAdminsIfNoManager(task);
+  const updated=await transactTask(task,['قيد التنفيذ'],next=>{
+    const currentChecklist=normalizeSubtasks(next);
+    if(currentChecklist.length && currentChecklist.some(x=>!x.done))return false;
+    next.progress=100;
+    if(hasDirectManager){
+      next.status='بانتظار الاعتماد';
+      next.submittedAt=Date.now();
+      next.actualEnd='';
+    }else{
+      next.status='مكتملة';
+      next.completedAt=Date.now();
+      next.actualEnd=localDateISO();
+    }
+    return true;
+  },{
+    activityType:hasDirectManager?'submitted':'completed',
+    activityDetail:hasDirectManager?'تم إنهاء العمل وإرسال المهمة للاعتماد':'تم إنهاء المهمة مباشرة لعدم وجود مدير مباشر',
+    conflictMessage:'تعذر إنهاء المهمة لأن بياناتها تغيرت. راجع المهام الفرعية والحالة الحالية.'
+  });
+  if(!updated)return;
+  if(hasDirectManager)await notifyManagerOfEmployeeAction(updated,'submitted');
   renderDetails();
-}
-
-
-
-async function notifyAdminsIfNoManager(task){
-  if(!task||!currentUser?.uid)return;
-  const employee=users.find(u=>u.uid===currentUser.uid);
-  if(employee?.managerUid)return;
-
-  const admins=users.filter(u=>u.role==='admin' && u.uid!==currentUser.uid && u.active!==false);
-  for(const admin of admins){
-    await createNotification(admin.uid,{
-      type:'approval',
-      title:'مهمة بانتظار الاعتماد',
-      message:`المهمة "${task.title||'مهمة'}" بانتظار اعتماد مدير النظام لعدم وجود مدير مباشر للمسؤول عنها.`,
-      ownerUid:task._ownerUid,
-      taskKey:task._key
-    });
-  }
 }
 
 async function approveSelectedTask(){
@@ -2048,22 +2266,28 @@ async function approveSelectedTask(){
   }
   if(task.status!=='بانتظار الاعتماد')return;
 
-  task.status='مكتملة';
-  task.progress=100;
-  task.actualEnd=localDateISO();
-  task.approvedAt=Date.now();
-  task.approvedByUid=currentUser.uid;
-  task.approvedBy=currentProfile?.name||currentUser.email||'المدير';
-  appendActivity(task,'approved',`تم اعتماد المهمة بواسطة ${task.approvedBy}`);
-  task.updatedAt=Date.now();
-  await saveTask(task);
+  const approver=currentProfile?.name||currentUser.email||'المدير';
+  const updated=await transactTask(task,['بانتظار الاعتماد'],next=>{
+    next.status='مكتملة';
+    next.progress=100;
+    next.actualEnd=localDateISO();
+    next.approvedAt=Date.now();
+    next.approvedByUid=currentUser.uid;
+    next.approvedBy=approver;
+    return true;
+  },{
+    activityType:'approved',
+    activityDetail:`تم اعتماد المهمة بواسطة ${approver}`,
+    conflictMessage:'تمت معالجة المهمة من مستخدم آخر قبل الاعتماد. راجع حالتها الحالية.'
+  });
+  if(!updated)return;
 
-  await createNotification(task._ownerUid,{
+  await createNotification(updated._ownerUid,{
     type:'approved',
     title:'تم اعتماد المهمة',
-    message:`تم اعتماد إكمال "${task.title||'مهمة'}" بواسطة ${task.approvedBy}.`,
-    ownerUid:task._ownerUid,
-    taskKey:task._key
+    message:`تم اعتماد إكمال "${updated.title||'مهمة'}" بواسطة ${approver}.`,
+    ownerUid:updated._ownerUid,
+    taskKey:updated._key
   });
   renderDetails();
 }
@@ -2087,22 +2311,29 @@ async function returnTaskForCorrection(){
     return;
   }
 
-  task.status='قيد التنفيذ';
-  task.progress=Math.min(95,normalizeProgress(task.progress));
-  task.managerNotes=String(note).trim();
-  task.returnedAt=Date.now();
-  task.returnedByUid=currentUser.uid;
-  task.returnedBy=currentProfile?.name||currentUser.email||'المدير';
-  appendActivity(task,'reopened',`أعيدت المهمة للعمل: ${task.managerNotes}`);
-  task.updatedAt=Date.now();
-  await saveTask(task);
+  const managerNote=String(note).trim();
+  const returnedBy=currentProfile?.name||currentUser.email||'المدير';
+  const updated=await transactTask(task,['بانتظار الاعتماد'],next=>{
+    next.status='قيد التنفيذ';
+    next.progress=Math.min(95,normalizeProgress(next.progress));
+    next.managerNotes=managerNote;
+    next.returnedAt=Date.now();
+    next.returnedByUid=currentUser.uid;
+    next.returnedBy=returnedBy;
+    return true;
+  },{
+    activityType:'reopened',
+    activityDetail:`أعيدت المهمة للعمل: ${managerNote}`,
+    conflictMessage:'تمت معالجة المهمة من مستخدم آخر قبل إعادتها للعمل. راجع حالتها الحالية.'
+  });
+  if(!updated)return;
 
-  await createNotification(task._ownerUid,{
+  await createNotification(updated._ownerUid,{
     type:'reopened',
     title:'أعيدت المهمة للعمل',
-    message:`أعاد ${task.returnedBy} "${task.title||'مهمة'}" للعمل: ${task.managerNotes}`,
-    ownerUid:task._ownerUid,
-    taskKey:task._key
+    message:`أعاد ${returnedBy} "${updated.title||'مهمة'}" للعمل: ${managerNote}`,
+    ownerUid:updated._ownerUid,
+    taskKey:updated._key
   });
   renderDetails();
 }
@@ -2127,26 +2358,30 @@ async function adminReopenCompletedTask(){
     return;
   }
 
-  task.status='قيد التنفيذ';
-  task.progress=95;
-  task.reopenedAt=Date.now();
-  task.reopenedByUid=currentUser.uid;
-  task.reopenedBy=currentProfile?.name||currentUser.email||'مدير النظام';
-  task.reopenReason=String(reason).trim();
+  const reopenReason=String(reason).trim();
+  const reopenedBy=currentProfile?.name||currentUser.email||'مدير النظام';
+  const updated=await transactTask(task,['مكتملة'],next=>{
+    next.status='قيد التنفيذ';
+    next.progress=95;
+    next.reopenedAt=Date.now();
+    next.reopenedByUid=currentUser.uid;
+    next.reopenedBy=reopenedBy;
+    next.reopenReason=reopenReason;
+    next.actualEnd='';
+    return true;
+  },{
+    activityType:'reopened',
+    activityDetail:`أعيد فتح المهمة المكتملة بواسطة مدير النظام. السبب: ${reopenReason}`,
+    conflictMessage:'تم تغيير حالة المهمة قبل إعادة فتحها. راجع حالتها الحالية.'
+  });
+  if(!updated)return;
 
-  // الاحتفاظ ببيانات الاعتماد السابقة كسجل تاريخي، مع إزالة تاريخ الإغلاق الفعلي الحالي.
-  task.actualEnd='';
-  appendActivity(task,'reopened',`أعيد فتح المهمة المكتملة بواسطة مدير النظام. السبب: ${task.reopenReason}`);
-  task.updatedAt=Date.now();
-
-  await saveTask(task);
-
-  await createNotification(task._ownerUid,{
+  await createNotification(updated._ownerUid,{
     type:'reopened',
     title:'أعيد فتح مهمة مكتملة',
-    message:`أعاد مدير النظام فتح "${task.title||'مهمة'}": ${task.reopenReason}`,
-    ownerUid:task._ownerUid,
-    taskKey:task._key
+    message:`أعاد مدير النظام فتح "${updated.title||'مهمة'}": ${reopenReason}`,
+    ownerUid:updated._ownerUid,
+    taskKey:updated._key
   });
 
   renderDetails();
@@ -2189,7 +2424,7 @@ function populateQuickAddAssignees(){
   if(!select||!currentUser)return;
 
   const allowed=assignableUsers()
-    .filter(u=>u?.uid&&u.active!==false)
+    .filter(u=>u?.uid&&isActiveProfile(u))
     .sort((a,b)=>{
       if(String(a.uid)===String(currentUser.uid))return -1;
       if(String(b.uid)===String(currentUser.uid))return 1;
@@ -2263,11 +2498,12 @@ async function commitQuickAdd(){
   const end=String(endInput.value||'');
 
   if(!title){showToast('اكتب اسم المهمة.','warning');input.focus();return;}
+  if(title.length>200){showToast('عنوان المهمة يجب ألا يتجاوز 200 حرف.','warning');input.focus();return;}
   if(!ownerUid||!canManageUser(ownerUid)){
     showToast('لا تملك صلاحية إسناد المهمة لهذا المستخدم.','error');
     return;
   }
-  if(!start||!end){
+  if(!isISODate(start)||!isISODate(end)){
     showToast('حدد تاريخ البدء وتاريخ الانتهاء.','warning');
     return;
   }
@@ -2292,13 +2528,22 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
   const owner=users.find(u=>String(u.uid)===ownerUid)||(
     String(currentProfile?.uid||currentUser?.uid)===ownerUid?currentProfile:null
   );
-  if(!owner){
+  if(!owner||!isActiveProfile(owner)){
     showToast('تعذر العثور على المستخدم المسؤول عن المهمة.','error');
     return false;
   }
 
   const start=String(options?.start||today);
   const end=String(options?.end||start||today);
+  const title=String(quickTitle||'مهمة جديدة').trim();
+  if(!title||title.length>200){
+    showToast('عنوان المهمة مطلوب ويجب ألا يتجاوز 200 حرف.','warning');
+    return false;
+  }
+  if(!isISODate(start)||!isISODate(end)){
+    showToast('صيغة تاريخ المهمة غير صالحة.','warning');
+    return false;
+  }
   if(end<start){
     showToast('تاريخ الانتهاء يجب أن يكون مساويًا أو بعد تاريخ البدء.','warning');
     return false;
@@ -2306,11 +2551,11 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
 
   const createdNow=Date.now();
   const task={
-    id:nextDisplayId(),title:quickTitle||'مهمة جديدة',desc:'',type:'',
+    id:nextDisplayId(),title,desc:'',type:'',
     createdByUid:currentUser.uid,createdBy:currentProfile.name||currentUser.email,
     assignUid:ownerUid,assign:owner.name||owner.email||ownerUid,
     start,end,actualEnd:'',status:'قيد الانتظار',progress:0,priority:'normal',notes:'',managerNotes:'',
-    createdAt:createdNow,updatedAt:createdNow,
+    createdAt:createdNow,updatedAt:createdNow,revision:1,
     activity:[{
       type:'created',
       detail:'تم إنشاء المهمة',
@@ -2323,8 +2568,11 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
   setSaveStatus('saving');
   try{
     const newRef=push(ref(db,`tasksByUser/${ownerUid}`));
-    await set(newRef,task);
-    await setCreatedTaskIndex(newRef.key,ownerUid,task.createdByUid);
+    const changes={
+      [`tasksByUser/${ownerUid}/${newRef.key}`]:task,
+      [`createdTaskIndex/${task.createdByUid}/${newRef.key}`]:ownerUid
+    };
+    await update(ref(db),changes);
     await notifyTaskAssigned(task,ownerUid,newRef.key);
     if(openDetails)selectedTaskKey=`${ownerUid}::${newRef.key}`;
     setSaveStatus('saved');
@@ -2346,7 +2594,6 @@ async function deleteSelectedTask(){
 
   const task=selectedTask();
   if(!task)return;
-
   if(task.status==='مكتملة' && currentProfile?.role!=='admin'){
     showToast('المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.','error');
     return;
@@ -2357,19 +2604,28 @@ async function deleteSelectedTask(){
     : 'هل تريد حذف المهمة نهائيًا؟';
 
   if(await appConfirm(confirmMessage,'حذف المهمة')){
+    let prepared=null;
     try{
       setSaveStatus('saving');
-      await remove(ref(db,`tasksByUser/${task._ownerUid}/${task._key}`));
-      await removeCreatedTaskIndex(task._key,task.createdByUid);
+      // نحجز أحدث نسخة أولًا حتى لا يحذف المدير تعديلًا وصل في نفس اللحظة.
+      prepared=await prepareTaskOperation(task,'delete');
+      if(!prepared){setSaveStatus('saved');return;}
+      const locked=prepared.task;
+      const changes={
+        [`tasksByUser/${locked._ownerUid}/${locked._key}`]:null
+      };
+      if(locked.createdByUid)changes[`createdTaskIndex/${locked.createdByUid}/${locked._key}`]=null;
+      await update(ref(db),changes);
       selectedTaskKey=null;
       renderTasks();
       renderDetails();
       setSaveStatus('saved');
-      showToast('تم حذف المهمة.','success');
+      showToast('تم حذف المهمة والفهرس بأمان.','success');
     }catch(error){
       console.error('Delete task error:',error);
+      if(prepared)await clearTaskOperation(prepared.task,prepared.token);
       setSaveStatus('error');
-      showToast('تعذر حذف المهمة. حاول مرة أخرى.','error');
+      showToast('تعذر حذف المهمة. لم يتم حذف أي جزء من العملية.','error',5000);
     }
   }
 }
@@ -2630,48 +2886,120 @@ function cancelNewSubtask(){
   document.getElementById('subtaskInputRow').classList.add('hidden');
   const input=document.getElementById('newSubtaskInput');if(input)input.value='';
 }
+function createSubtaskId(){
+  return globalThis.crypto?.randomUUID?.()||`st_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+function captureSubtaskTarget(task,index){
+  const item=normalizeSubtasks(task)[index];
+  if(!item)return null;
+  return {
+    id:String(item.id||''),
+    createdAt:Number(item.createdAt||0),
+    title:String(item.title||''),
+    done:!!item.done,
+    expectedIndex:Number(index)
+  };
+}
+function locateSubtaskIndex(items,target){
+  if(!target||!Array.isArray(items))return -1;
+  if(target.id){
+    const byId=items.findIndex(x=>String(x?.id||'')===target.id);
+    if(byId>=0)return byId;
+  }
+  if(target.createdAt){
+    const matches=[];
+    items.forEach((x,i)=>{
+      if(Number(x?.createdAt||0)===target.createdAt && String(x?.title||'')===target.title)matches.push(i);
+    });
+    if(matches.length===1)return matches[0];
+  }
+  const expected=items[target.expectedIndex];
+  if(expected && String(expected?.title||'')===target.title && !!expected?.done===target.done)return target.expectedIndex;
+  const exact=[];
+  items.forEach((x,i)=>{
+    if(String(x?.title||'')===target.title && !!x?.done===target.done)exact.push(i);
+  });
+  if(exact.length===1)return exact[0];
+  const byTitle=[];
+  items.forEach((x,i)=>{if(String(x?.title||'')===target.title)byTitle.push(i);});
+  return byTitle.length===1?byTitle[0]:-1;
+}
+
 async function saveNewSubtask(){
   const task=selectedTask();if(!task||!canEditSubtasks(task))return;
   const input=document.getElementById('newSubtaskInput');
   const title=String(input?.value||'').trim();
   if(!title){showToast('اكتب اسم المهمة الفرعية أولاً.','warning');return;}
   const scrollPos=captureScrollPosition();
-  task.subtasks=[...normalizeSubtasks(task),{title,done:false,createdAt:Date.now()}];
-  task.progress=subtaskProgress(task);
-  appendActivity(task,'subtask',`تمت إضافة مهمة فرعية: ${title}`);
-  task.updatedAt=Date.now();
-  await saveTask(task);
+  const subtaskId=createSubtaskId();
+  const createdAt=Date.now();
+  const updated=await transactTask(task,['قيد الانتظار','قيد التنفيذ'],next=>{
+    const items=Array.isArray(next.subtasks)?next.subtasks:[];
+    next.subtasks=[...items,{id:subtaskId,title,done:false,createdAt}];
+    next.progress=subtaskProgress(next);
+    return true;
+  },{
+    activityType:'subtask',
+    activityDetail:`تمت إضافة مهمة فرعية: ${title}`,
+    conflictMessage:'تغيرت المهمة أثناء إضافة المهمة الفرعية. راجع البيانات الحالية ثم أعد المحاولة.'
+  });
+  if(!updated)return;
   cancelNewSubtask();
   renderDetails();
   restoreScrollPosition(scrollPos);
 }
 async function toggleSubtask(index,done){
   const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  const target=captureSubtaskTarget(task,index);
+  if(!target){renderDetails();return;}
   const scrollPos=captureScrollPosition();
-  const items=normalizeSubtasks(task).map(x=>({...x}));
-  if(!items[index])return;
-  items[index].done=!!done;
-  items[index].completedAt=done?Date.now():null;
-  task.subtasks=items;
-  task.progress=subtaskProgress(task);
-  appendActivity(task,'subtask',`${done?'تم إنجاز':'تم إلغاء إنجاز'} المهمة الفرعية: ${items[index].title||''}`);
-  if(task.progress>0&&task.status==='قيد الانتظار')task.status='قيد التنفيذ';
-  task.updatedAt=Date.now();
-  await saveTask(task);
+  const itemTitle=target.title;
+  const generatedId=target.id||createSubtaskId();
+  const completedAt=done?Date.now():null;
+  const updated=await transactTask(task,['قيد الانتظار','قيد التنفيذ'],next=>{
+    const items=(Array.isArray(next.subtasks)?next.subtasks:[]).map(x=>({...x}));
+    const currentIndex=locateSubtaskIndex(items,target);
+    if(currentIndex<0)return false;
+    if(!items[currentIndex].id)items[currentIndex].id=generatedId;
+    items[currentIndex].done=!!done;
+    items[currentIndex].completedAt=completedAt;
+    next.subtasks=items;
+    next.progress=subtaskProgress(next);
+    if(next.progress>0&&next.status==='قيد الانتظار'){
+      next.status='قيد التنفيذ';
+      next.startedAt=next.startedAt||Date.now();
+    }
+    return true;
+  },{
+    activityType:'subtask',
+    activityDetail:`${done?'تم إنجاز':'تم إلغاء إنجاز'} المهمة الفرعية: ${itemTitle}`,
+    conflictMessage:'تغيرت قائمة المهام الفرعية ولم يعد من الآمن تحديد نفس العنصر. راجع القائمة الحالية ثم أعد المحاولة.'
+  });
+  if(!updated)return;
   renderDetails();
   restoreScrollPosition(scrollPos);
 }
+
 async function deleteSubtask(index){
   const task=selectedTask();if(!task||!canEditSubtasks(task))return;
+  const target=captureSubtaskTarget(task,index);
+  if(!target){renderDetails();return;}
   const scrollPos=captureScrollPosition();
-  const before=normalizeSubtasks(task);
-  const removed=before[index];
-  const items=before.filter((_,i)=>i!==index);
-  task.subtasks=items;
-  if(items.length)task.progress=subtaskProgress(task);
-  appendActivity(task,'subtask',`تم حذف مهمة فرعية: ${removed?.title||''}`);
-  task.updatedAt=Date.now();
-  await saveTask(task);
+  const removedTitle=target.title;
+  const updated=await transactTask(task,['قيد الانتظار','قيد التنفيذ'],next=>{
+    const before=(Array.isArray(next.subtasks)?next.subtasks:[]).map(x=>({...x}));
+    const currentIndex=locateSubtaskIndex(before,target);
+    if(currentIndex<0)return false;
+    const items=before.filter((_,i)=>i!==currentIndex);
+    next.subtasks=items;
+    next.progress=items.length?subtaskProgress(next):0;
+    return true;
+  },{
+    activityType:'subtask',
+    activityDetail:`تم حذف مهمة فرعية: ${removedTitle}`,
+    conflictMessage:'تغيرت قائمة المهام الفرعية ولم يعد من الآمن حذف نفس العنصر. راجع القائمة الحالية ثم أعد المحاولة.'
+  });
+  if(!updated)return;
   renderDetails();
   restoreScrollPosition(scrollPos);
 }
@@ -2817,9 +3145,10 @@ function renderDetails(){
   completeBtn.classList.toggle('hidden',!isOwner || task.status!=='قيد التنفيذ');
 
   if(isOwner){
+    const ownerHasManager=String((getUserByUid(currentUser.uid)||currentProfile)?.managerUid||'')!=='';
     workflowHint.textContent=
       task.status==='قيد الانتظار'?'ابدأ المهمة عند بدء العمل الفعلي.':
-      task.status==='قيد التنفيذ'?'حدّث نسبة الإنجاز والملاحظات ثم أرسلها للاعتماد عند الاكتمال.':
+      task.status==='قيد التنفيذ'?(ownerHasManager?'حدّث نسبة الإنجاز والملاحظات ثم أرسلها للاعتماد عند الاكتمال.':'حدّث نسبة الإنجاز والملاحظات ثم أكمل المهمة عند الانتهاء.'):
       task.status==='بانتظار الاعتماد'?'تم إرسال المهمة للمدير وهي بانتظار الاعتماد.':
       'تم اعتماد وإكمال المهمة.';
   }
@@ -2849,7 +3178,7 @@ function renderDetails(){
   delayEl.className=`mt-1 text-sm font-black ${delay>0?'text-rose-600':'text-slate-800'}`;
   document.getElementById('detailTiming').textContent=`المدة: ${duration} يوم${delay>0?` • التأخير: ${delay} يوم`:''}`;
   const assigneeBox=document.getElementById('assigneeBox');
-  const allowed=assignableUsers();
+  const allowed=assignableUsers().filter(u=>canReassignTaskTo(task,u.uid));
 
   const pendingForTask=
     pendingAssigneeChange &&
@@ -2913,24 +3242,103 @@ function handleImport(e){
     try{
       const wb=XLSX.read(new Uint8Array(evt.target.result),{type:'array',cellDates:true});
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true});
-      const allowed=assignableUsers(),byName=new Map(allowed.map(u=>[(u.name||u.email||'').trim(),u]));
-      for(let i=0;i<rows.length;i++){
-        const r=rows[i],target=byName.get(String(r['المسؤول']||'').trim())||currentProfile;
-        const task={
-          id:String(r['#']||i+1),title:r['عنوان المهمة']||'',desc:r['الوصف']||'',type:'',
-          createdByUid:currentUser.uid,createdBy:r['أنشئت بواسطة']||currentProfile.name||currentUser.email,
-          assignUid:target.uid,assign:target.name||target.email,
-          start:excelDateToISO(r['تاريخ البداية']),end:excelDateToISO(r['تاريخ الاستحقاق']||r['تاريخ النهاية']),
-          actualEnd:'',status:r['الحالة']||'قيد الانتظار',priority:r['الأولوية']||'normal',progress:normalizeProgress(r['الإنجاز %']||0),
-          notes:r['ملاحظات']||'',managerNotes:r['ملاحظات المدير']||'',createdAt:Date.now(),updatedAt:Date.now()
-        };
-        const importRef=push(ref(db,`tasksByUser/${target.uid}`));
-        await set(importRef,task);
-        await setCreatedTaskIndex(importRef.key,target.uid,task.createdByUid);
+      if(!rows.length){showToast('ملف Excel لا يحتوي على مهام.','warning');return;}
+      const allowed=assignableUsers().filter(isActiveProfile);
+      const identities=new Map();
+      for(const user of allowed){
+        for(const value of [user.uid,user.name,user.email]){
+          const key=String(value||'').trim().toLowerCase();
+          if(!key)continue;
+          const matches=identities.get(key)||[];
+          if(!matches.some(x=>String(x.uid)===String(user.uid)))matches.push(user);
+          identities.set(key,matches);
+        }
       }
-      showToast('تم استيراد المهام بنجاح.','success');
-    }catch(error){console.error(error);showToast('تعذر استيراد الملف. تحقق من تنسيق الأعمدة.','error')}
-    finally{e.target.value=''}
+      const changes={};
+      const validStatuses=new Set(['قيد الانتظار','قيد التنفيذ','بانتظار الاعتماد','مكتملة']);
+      const validPriorities=new Set(['normal','important','urgent']);
+
+      // نبني كل الاستيراد أولًا ثم ننفذه بعملية root update واحدة.
+      // أي صف غير صالح يوقف العملية قبل كتابة أي مهمة، لمنع الاستيراد الجزئي.
+      for(let i=0;i<rows.length;i++){
+        const r=rows[i];
+        const assigneeName=String(r['المسؤول']||'').trim().toLowerCase();
+        if(!assigneeName)throw new Error(`ROW_${i+2}_ASSIGNEE`);
+        const matches=identities.get(assigneeName)||[];
+        if(matches.length>1)throw new Error(`ROW_${i+2}_ASSIGNEE_AMBIGUOUS`);
+        const target=matches[0];
+        if(!target?.uid||!canManageUser(target.uid))throw new Error(`ROW_${i+2}_ASSIGNEE`);
+
+        const title=String(r['عنوان المهمة']||'').trim();
+        const desc=String(r['الوصف']||'').trim();
+        const notes=String(r['ملاحظات']||'').trim();
+        const managerNotes=String(r['ملاحظات المدير']||'').trim();
+        if(!title||title.length>200)throw new Error(`ROW_${i+2}_TITLE`);
+        if(desc.length>5000||notes.length>5000||managerNotes.length>2000)throw new Error(`ROW_${i+2}_TEXT`);
+
+        const start=excelDateToISO(r['تاريخ البداية']);
+        const end=excelDateToISO(r['تاريخ الاستحقاق']||r['تاريخ النهاية']);
+        if(!isISODate(start)||!isISODate(end))throw new Error(`ROW_${i+2}_DATE`);
+        if(start>end)throw new Error(`ROW_${i+2}_DATE_ORDER`);
+
+        const requestedStatus=String(r['الحالة']||'قيد الانتظار').trim();
+        if(!validStatuses.has(requestedStatus))throw new Error(`ROW_${i+2}_STATUS`);
+        // المدير يستورد مهام جديدة فقط بحالة قيد الانتظار؛ الحالات التاريخية المتقدمة للـAdmin.
+        if(currentProfile?.role!=='admin' && requestedStatus!=='قيد الانتظار')throw new Error(`ROW_${i+2}_MANAGER_STATUS`);
+
+        const priority=String(r['الأولوية']||'normal').trim().toLowerCase();
+        if(!validPriorities.has(priority))throw new Error(`ROW_${i+2}_PRIORITY`);
+        const progressRaw=r['الإنجاز %']??0;
+        const progress=Number(progressRaw);
+        if(!Number.isInteger(progress)||progress<0||progress>100)throw new Error(`ROW_${i+2}_PROGRESS`);
+        if((requestedStatus==='بانتظار الاعتماد'||requestedStatus==='مكتملة')&&progress!==100){
+          throw new Error(`ROW_${i+2}_PROGRESS`);
+        }
+
+        const now=Date.now();
+        const task={
+          id:String(r['#']||i+1).slice(0,100),title,desc,type:'',
+          createdByUid:currentUser.uid,createdBy:currentProfile.name||currentUser.email,
+          assignUid:target.uid,assign:target.name||target.email,
+          start,end,actualEnd:requestedStatus==='مكتملة'?end:'',status:requestedStatus,priority,progress,
+          notes,managerNotes,createdAt:now,updatedAt:now,revision:1,
+          activity:[{
+            type:'created',detail:'تم إنشاء المهمة عبر استيراد Excel',userUid:currentUser.uid,
+            userName:currentProfile.name||currentUser.email,createdAt:now
+          }]
+        };
+        if(requestedStatus==='بانتظار الاعتماد')task.submittedAt=now;
+        if(requestedStatus==='مكتملة')task.completedAt=now;
+        const importRef=push(ref(db,`tasksByUser/${target.uid}`));
+        changes[`tasksByUser/${target.uid}/${importRef.key}`]=task;
+        changes[`createdTaskIndex/${task.createdByUid}/${importRef.key}`]=target.uid;
+      }
+
+      await update(ref(db),changes);
+      showToast(`تم استيراد ${rows.length} مهمة بنجاح في عملية واحدة.`,`success`);
+    }catch(error){
+      console.error(error);
+      const code=String(error?.message||'');
+      const match=code.match(/^ROW_(\d+)_(.+)$/);
+      if(match){
+        const row=match[1],kind=match[2];
+        const messages={
+          ASSIGNEE:'المسؤول غير موجود ضمن نطاق صلاحيتك',
+          ASSIGNEE_AMBIGUOUS:'اسم المسؤول يطابق أكثر من حساب؛ استخدم UID أو البريد الإلكتروني',
+          TITLE:'عنوان المهمة مطلوب ولا يتجاوز 200 حرف',
+          TEXT:'أحد الحقول النصية يتجاوز الحد المسموح',
+          DATE:'تاريخ البداية أو النهاية غير صالح',
+          DATE_ORDER:'تاريخ الانتهاء يسبق تاريخ البداية',
+          STATUS:'حالة المهمة غير صالحة',
+          PRIORITY:'الأولوية يجب أن تكون normal أو important أو urgent',
+          MANAGER_STATUS:'المدير يستطيع استيراد المهام الجديدة بحالة قيد الانتظار فقط؛ الحالات التاريخية المتقدمة تتطلب مدير النظام',
+          PROGRESS:'المهمة بانتظار الاعتماد أو المكتملة يجب أن تكون نسبة إنجازها 100%'
+        };
+        showToast(`تعذر الاستيراد — الصف ${row}: ${messages[kind]||'بيانات غير صالحة'}. لم تتم كتابة أي صف.`,`error`,6500);
+      }else{
+        showToast('تعذر استيراد الملف. لم تتم كتابة أي صف. تحقق من تنسيق الأعمدة والصلاحيات.','error',6000);
+      }
+    }finally{e.target.value=''}
   };
   reader.readAsArrayBuffer(file);
 }
@@ -2989,15 +3397,15 @@ window.markAllNotificationsRead=markAllNotificationsRead;
 window.toggleNotifications=toggleNotifications;
 </script>
 
-<script src="../assets/js/permissions.js">
+<script src="../assets/js/permissions.js"></script>
+<script>
 document.addEventListener('click',e=>{
   const panel=document.getElementById('notificationPanel');
   const button=document.getElementById('notificationButton');
   if(!panel||panel.classList.contains('hidden'))return;
   if(panel.contains(e.target)||button?.contains(e.target))return;
-  toggleNotifications(false);
+  window.toggleNotifications?.(false);
 });
-
 </script>
 </body>
 </html>

@@ -1,59 +1,58 @@
 {
-  "version": "0.35",
+  "version": "0.42.0-candidate-10",
   "modules": [
     {
       "id": "home",
       "path": "home.html",
       "minRole": "employee",
-      "status": "prototype",
+      "status": "stable",
       "navigation": "primary"
     },
     {
       "id": "tasks",
       "path": "tasks/index.html",
       "minRole": "employee",
-      "status": "locked-original",
-      "navigation": "primary",
-      "locked": true
+      "status": "stable",
+      "navigation": "primary"
     },
     {
       "id": "team",
       "path": "team/index.html",
       "minRole": "manager",
-      "status": "professional-prototype",
+      "status": "stable",
       "navigation": "primary"
     },
     {
       "id": "profile",
       "path": "profile/index.html",
       "minRole": "employee",
-      "status": "professional-baseline",
+      "status": "stable",
       "navigation": "primary"
     },
     {
       "id": "job-description",
       "path": "profile/job-description.html",
       "minRole": "employee",
-      "status": "prototype"
+      "status": "conditional"
     },
     {
       "id": "kpi",
       "path": "profile/kpi.html",
       "minRole": "employee",
-      "status": "prototype"
+      "status": "conditional"
     },
     {
       "id": "approvals",
       "path": "approvals/index.html",
       "minRole": "manager",
-      "status": "deprecated-v0.21",
+      "status": "redirect",
       "navigation": "hidden"
     },
     {
       "id": "workspace",
       "path": "workspace/index.html",
       "minRole": "employee",
-      "status": "prototype",
+      "status": "stable",
       "navigation": "primary",
       "label": "ملاحظاتي"
     },
@@ -61,54 +60,54 @@
       "id": "notifications",
       "path": "notifications/index.html",
       "minRole": "employee",
-      "status": "prototype",
+      "status": "stable",
       "navigation": "supporting"
     },
     {
       "id": "search",
       "path": "search/index.html",
       "minRole": "employee",
-      "status": "prototype",
+      "status": "stable",
       "navigation": "supporting"
     },
     {
       "id": "organization",
       "path": "organization/index.html",
       "minRole": "employee",
-      "status": "deprecated-v0.21",
+      "status": "conditional",
       "navigation": "hidden"
     },
     {
       "id": "follow-up",
       "path": "follow-up/index.html",
       "minRole": "employee",
-      "status": "prototype",
+      "status": "redirect",
       "navigation": "primary"
     },
     {
       "id": "my-day",
       "path": "my-day/index.html",
       "minRole": "employee",
-      "status": "deprecated-v0.21",
+      "status": "stable",
       "navigation": "hidden"
     },
     {
       "id": "admin",
       "path": "admin/index.html",
       "minRole": "admin",
-      "status": "prototype"
+      "status": "stable"
     },
     {
       "id": "users",
       "path": "admin/users.html",
       "minRole": "admin",
-      "status": "prototype"
+      "status": "stable"
     },
     {
       "id": "roles",
       "path": "admin/roles.html",
       "minRole": "admin",
-      "status": "prototype"
+      "status": "stable"
     }
   ]
 }

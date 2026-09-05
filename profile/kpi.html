@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <script type="module" id="realProfileDataBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
 const host=document.getElementById('profileDataHost');
@@ -45,8 +45,14 @@ function empty(){
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href='../login.html';return}
  try{
-   const snap=await get(ref(db,`users/${user.uid}`));if(!snap.exists()){empty();return}
-   const record=snap.val(),data=record.kpis || record.kpi || null;
+   const snap=await get(ref(db,`users/${user.uid}`));
+   if(!snap.exists()||snap.val()?.active===false||snap.val()?.status==='inactive'){
+     await signOut(auth);location.href='../login.html';return;
+   }
+   const record=snap.val();
+   if(!['employee','manager','admin'].includes(record.role)){await signOut(auth);location.href='../login.html';return}
+   window.atwarSyncShellIdentity?.({uid:user.uid,...record},user);
+   const data=record.kpis || record.kpi || null;
    if(!data || (typeof data==='string'&&!data.trim()) || (typeof data==='object'&&!Object.keys(data).length)){empty();return}
    const rows=Array.isArray(data)?data:Object.entries(data).map(([name,value])=>({name,value}));
    host.innerHTML=`<div style="width:min(900px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">مؤشرات الأداء</h1><div style="display:grid;gap:10px">${rows.map(x=>`<div style="border:1px solid #e7edf5;border-radius:12px;padding:12px"><b>${esc(x.name||x.title||x.kpi||'مؤشر')}</b><div style="color:#607087;margin-top:5px">${esc(x.value??x.score??x.target??'—')}</div></div>`).join('')}</div></div>`;

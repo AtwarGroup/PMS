@@ -100,7 +100,8 @@ async function loadProfile(user){
     throw new Error('account-inactive');
   }
 
-  const role = ['employee','manager','admin'].includes(profile.role) ? profile.role : 'employee';
+  if(!['employee','manager','admin'].includes(profile.role))throw new Error('invalid-role');
+  const role = profile.role;
 
   return {
     uid: user.uid,
@@ -140,7 +141,7 @@ async function login(){
   try{
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const session = await establishSession(cred.user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'index.html';
+    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
   }catch(error){
     console.error(error);
     localStorage.removeItem('atwarSession');
@@ -151,7 +152,11 @@ async function login(){
     }else if(error?.message === 'account-inactive'){
       await signOut(auth);
       showError('هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.');
+    }else if(error?.message === 'invalid-role'){
+      await signOut(auth);
+      showError('دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.');
     }else{
+      if(auth.currentUser) await signOut(auth).catch(()=>{});
       const code = error?.code || '';
       showError(
         code === 'auth/user-disabled' ? 'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.' :
@@ -175,9 +180,10 @@ onAuthStateChanged(auth, async user => {
   if(!user || manualLoginInProgress) return;
   try{
     const session = await establishSession(user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'index.html';
+    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
   }catch{
     localStorage.removeItem('atwarSession');
+    await signOut(auth).catch(()=>{});
   }
 });
 

@@ -52,7 +52,7 @@
     </a>
   </div>
 </section>
-<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>V0.41.1</span><span>إدارة النظام</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>Candidate 10</span><span>إدارة النظام</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
@@ -66,7 +66,9 @@ onAuthStateChanged(auth,async user=>{
   if(!user){location.replace('../login.html');return}
   try{
     const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
+    if(!profile||profile.active===false||profile.status==='inactive'||profile.role!=='admin'){
+      await auth.signOut().catch(()=>{});location.replace('../login.html');return
+    }
     window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
     document.body.style.visibility='visible';
     try{lucide.createIcons()}catch{}

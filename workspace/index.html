@@ -64,13 +64,13 @@
     <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>V0.40.9</span><span>Firebase Sync</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Candidate 10</span><span>Firebase Sync</span></footer>
 </main></section></div>
 
 <script src="../assets/js/firebase-config.js"></script>
 <script type="module" id="workspaceFirebaseNotes">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get, set, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
@@ -92,12 +92,23 @@ function renderFollowups(){
    ${x.note?`<div class="follow-note">${esc(x.note)}</div>`:''}
    <div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div>
  </div>`).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';
- host.querySelectorAll('[data-follow-done]').forEach(b=>b.addEventListener('click',async()=>update(ref(db,`followUpsByUser/${uid}/${b.dataset.followDone}`),{status:'done',updatedAt:Date.now()})));
- host.querySelectorAll('[data-follow-delete]').forEach(b=>b.addEventListener('click',async()=>remove(ref(db,`followUpsByUser/${uid}/${b.dataset.followDelete}`))));
+ host.querySelectorAll('[data-follow-done]').forEach(b=>b.addEventListener('click',async()=>{
+   try{await update(ref(db,`followUpsByUser/${uid}/${b.dataset.followDone}`),{status:'done',updatedAt:Date.now()})}
+   catch(e){console.error(e);showNotice('تعذر تحديث المتابعة.','error')}
+ }));
+ host.querySelectorAll('[data-follow-delete]').forEach(b=>b.addEventListener('click',async()=>{
+   try{await remove(ref(db,`followUpsByUser/${uid}/${b.dataset.followDelete}`))}
+   catch(e){console.error(e);showNotice('تعذر حذف المتابعة.','error')}
+ }));
 }
 
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href='../login.html';return}
+ const profileSnap=await get(ref(db,`users/${user.uid}`)).catch(()=>null);
+ if(!profileSnap?.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'||!['employee','manager','admin'].includes(profileSnap.val()?.role)){
+   await signOut(auth).catch(()=>{});location.href='../login.html';return;
+ }
+ window.atwarSyncShellIdentity?.({uid:user.uid,...profileSnap.val()},user);
  uid=user.uid;noteRef=ref(db,`notesByUser/${uid}/quickNote`);followRef=ref(db,`followUpsByUser/${uid}`);
  try{const snap=await get(noteRef),v=snap.exists()?snap.val():null;noteInput.value=typeof v==='string'?v:(v?.text||'')}catch{noteInput.value='';showNotice('الملاحظات غير متاحة حالياً.','error')}
  if(followUnsub)followUnsub();
@@ -106,7 +117,9 @@ onAuthStateChanged(auth,async user=>{
 
 window.saveNote=async function(){
  if(!uid||!noteRef||saving)return; saving=true;
- try{await set(noteRef,{text:String(noteInput.value||''),updatedAt:Date.now()});showNotice('تم حفظ الملاحظة ومزامنتها بنجاح')}
+ const text=String(noteInput.value||'');
+ if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}
+ try{await set(noteRef,{text,updatedAt:Date.now()});showNotice('تم حفظ الملاحظة ومزامنتها بنجاح')}
  catch(e){console.error(e);showNotice('لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.','error')}
  finally{saving=false}
 };
@@ -116,10 +129,15 @@ document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form
 document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));
 document.getElementById('wfSave')?.addEventListener('click',async()=>{
  if(!followRef||!uid)return;
- const title=document.getElementById('wfTitle').value.trim();if(!title)return;
+ const title=document.getElementById('wfTitle').value.trim();
+ const note=document.getElementById('wfNote').value.trim();
+ if(!title){showNotice('عنوان المتابعة مطلوب.','error');return}
+ if(title.length>200||note.length>5000){showNotice('عنوان أو ملاحظة المتابعة تتجاوز الحد المسموح.','error');return}
  const now=Date.now(),item=push(followRef);
- await set(item,{title,date:document.getElementById('wfDate').value||'',note:document.getElementById('wfNote').value.trim(),status:'soon',createdAt:now,updatedAt:now});
- document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');
+ try{
+   await set(item,{title,date:document.getElementById('wfDate').value||'',note,status:'soon',createdAt:now,updatedAt:now});
+   document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');
+ }catch(e){console.error(e);showNotice('تعذر حفظ المتابعة.','error')}
 });
 try{lucide.createIcons()}catch{}
 </script>

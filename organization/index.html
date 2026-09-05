@@ -20,7 +20,7 @@
 @media(max-width:1000px){.dept-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.dept-grid{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
+<body style="visibility:hidden">
 <div class="atwar-shell">
 <atwar-sidebar active=""></atwar-sidebar>
 <section class="atwar-main">
@@ -30,14 +30,40 @@
 <div style="width:min(620px,100%);background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:34px;text-align:center">
 <i data-lucide="network" style="width:42px;height:42px;color:#1677ff"></i>
 <h1 style="font-size:24px;margin:14px 0 8px">الهيكل التنظيمي</h1>
-<p style="font-size:12px;color:#66778d;line-height:1.9">لن نعرض إدارات أو هيكلاً افتراضيًا غير مخزن في النظام. الهيكل التشغيلي الحالي يظهر ديناميكيًا في صفحة الفريق اعتمادًا على علاقات المدير المباشر المسجلة في Firebase.</p>
-<a href="../team/index.html" style="display:inline-block;margin-top:16px;padding:10px 16px;background:#0b1d3a;color:#fff;border-radius:10px;text-decoration:none;font-weight:900;font-size:11px">فتح الفريق والهيكل الفعلي</a>
+<p id="organizationMessage" style="font-size:12px;color:#66778d;line-height:1.9">جاري التحقق من نطاقك التنظيمي...</p>
+<a id="organizationTeamLink" href="../team/index.html" style="display:none;margin-top:16px;padding:10px 16px;background:#0b1d3a;color:#fff;border-radius:10px;text-decoration:none;font-weight:900;font-size:11px">فتح الفريق والهيكل الفعلي</a>
 </div></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>V0.40.9</span><span>بيانات فعلية فقط</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>Candidate 10</span><span>بيانات فعلية فقط</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/permissions.js"></script>
+<script type="module" id="organizationAccessGuard">
+import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth,onAuthStateChanged,signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace('../login.html');return}
+  try{
+    const snap=await get(ref(db,`users/${user.uid}`));
+    if(!snap.exists()||snap.val()?.active===false||snap.val()?.status==='inactive'||!['employee','manager','admin'].includes(snap.val()?.role)){
+      await signOut(auth);location.replace('../login.html');return;
+    }
+    const profile={uid:user.uid,...snap.val()};
+    window.atwarSyncShellIdentity?.(profile,user);
+    const message=document.getElementById('organizationMessage'),link=document.getElementById('organizationTeamLink');
+    if(profile.role==='manager'||profile.role==='admin'){
+      message.textContent='لا يعرض النظام هيكلًا افتراضيًا. افتح صفحة الفريق لرؤية العلاقات الفعلية المسجلة، مع قصر المدير على فريقه المباشر.';
+      link.style.display='inline-block';
+    }else{
+      message.textContent='تفاصيل الهيكل التنظيمي مخصصة للمديرين. يمكنك متابعة مهامك وملفك الوظيفي من مساحتك الشخصية.';
+      link.style.display='none';
+    }
+    document.body.style.visibility='visible';
+  }catch(error){console.error('Organization:',error);location.replace('../home.html')}
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{const q=document.querySelector('[data-global-search]');if(q)q.addEventListener('keydown',e=>{if(e.key==='Enter'&&q.value.trim())location.href='../search/index.html?q='+encodeURIComponent(q.value.trim())})});
 lucide.createIcons();

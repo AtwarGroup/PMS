@@ -47,7 +47,7 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
 }
 </style>
 </head>
-<body>
+<body style="visibility:hidden">
 <main>
 
 <div class="topbar">
@@ -112,14 +112,14 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
     <li>حدّث نسبة الإنجاز والملاحظات كلما تقدم العمل.</li>
     <li>عند استخدام مهام فرعية يتم احتساب نسبة الإنجاز منها.</li>
     <li>يمكن تغيير المسؤول فقط ضمن الصلاحيات المتاحة لك.</li>
-    <li>الوصول إلى 100% لا يغلق المهمة تلقائيًا؛ الإغلاق يتم عبر الاعتماد.</li>
+    <li>إذا لم يكن للحساب مدير مباشر، تُغلق المهمة المكتملة مباشرة عند طلب الإنهاء؛ وإلا تمر عبر الاعتماد.</li>
   </ul>
 </section>
 
 <section class="section" id="approval">
   <div class="section-head"><div class="section-icon"><i data-lucide="user-round-check" size="18"></i></div><h2>الاعتماد وإعادة فتح المهمة</h2></div>
   <div class="two-col">
-    <div class="mini"><b>إرسال للاعتماد</b><span>عند انتهاء التنفيذ تتحول المهمة إلى «بانتظار الاعتماد»، ويتوقف احتساب التأخير عند وقت الإرسال.</span></div>
+    <div class="mini"><b>إرسال للاعتماد</b><span>عند وجود مدير مباشر تتحول المهمة إلى «بانتظار الاعتماد»، ويتوقف احتساب التأخير عند وقت الإرسال.</span></div>
     <div class="mini"><b>قرار المدير</b><span>المدير المباشر يستطيع اعتماد المهمة أو إعادتها للتصحيح مع ملاحظة.</span></div>
     <div class="mini"><b>المهمة المكتملة</b><span>بعد الاعتماد تصبح المهمة مكتملة ومقفلة ولا يمكن تعديلها كأي مهمة مفتوحة.</span></div>
     <div class="mini"><b>إعادة الفتح</b><span>مدير النظام فقط يستطيع إعادة فتح مهمة مكتملة، مع تسجيل سبب إعادة الفتح.</span></div>
@@ -148,7 +148,7 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
 <section class="section" id="team">
   <div class="section-head"><div class="section-icon"><i data-lucide="users" size="18"></i></div><h2>الفريق والهيكل والملف الوظيفي</h2></div>
   <div class="two-col">
-    <div class="mini"><b>فريقي والهيكل</b><span>للمديرين، ويعرض الموظفين الواقعين تحت مسؤوليتهم حسب المدير المباشر والتسلسل الإداري المعتمد.</span></div>
+    <div class="mini"><b>فريقي والهيكل</b><span>يعرض للمدير فريقه المباشر. ويمكنه إسناد مهمة جديدة عبر الشجرة التابعة له، بينما تبقى مهام غير المباشرين خاصة إلا ما أنشأه لهم بنفسه.</span></div>
     <div class="mini"><b>الملف الوظيفي</b><span>إذا تم تجهيز ملف الموظف يظهر داخل النظام. وإذا لم يجهز بعد تظهر رسالة «الملف الوظيفي تحت الإنشاء».</span></div>
   </div>
   <div class="note">إذا كان هناك خطأ في المدير المباشر أو الإدارة، تتم مشاركته مع إدارة النظام لتصحيح الهيكل.</div>
@@ -158,7 +158,7 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
   <div class="section-head"><div class="section-icon"><i data-lucide="shield-check" size="18"></i></div><h2>الصلاحيات</h2></div>
   <div class="roles">
     <div class="role"><b>الموظف</b><p>يدير مهامه ومساحة عمله ويحدث التنفيذ ويرسل المهمة للاعتماد.</p></div>
-    <div class="role"><b>المدير</b><p>يتابع فريقه ومهامه، ويعتمد مهام مرؤوسيه المباشرين أو يعيدها للتصحيح.</p></div>
+    <div class="role"><b>المدير</b><p>يتابع مهام مرؤوسيه المباشرين، ويعتمدها أو يعيدها للتصحيح. ويرى من مهام غير المباشرين ما أنشأه لهم شخصيًا فقط.</p></div>
     <div class="role"><b>مدير النظام</b><p>يدير الحسابات والصلاحيات وله نطاق إداري أوسع، وهو الوحيد الذي يستطيع إعادة فتح المهمة المكتملة.</p></div>
   </div>
 </section>
@@ -174,14 +174,25 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
   <p>شارك الملاحظة مع إدارة النظام، ويفضل ذكر الصفحة والخطوة التي قمت بها وإرفاق صورة للشاشة عند الحاجة. سيتم مراجعة الملاحظات ومعالجتها ضمن عملية التطوير المستمرة.</p>
 </section>
 
-<div class="footer">ATWAR ONE • User Guide • Pilot Phase</div>
+<div class="footer">ATWAR ONE • User Guide • Candidate 10</div>
 </main>
 <script src="../assets/js/firebase-config.js"></script>
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-onAuthStateChanged(getAuth(app),user=>{if(!user)location.replace('../login.html')});
+const auth=getAuth(app),db=getDatabase(app);
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.replace('../login.html');return}
+  try{
+    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
+    if(!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+      await auth.signOut().catch(()=>{});location.replace('../login.html');return
+    }
+    document.body.style.visibility='visible';
+  }catch(error){console.error('User guide access:',error);await auth.signOut().catch(()=>{});location.replace('../login.html')}
+});
 try{lucide.createIcons()}catch{}
 </script>
 </body>

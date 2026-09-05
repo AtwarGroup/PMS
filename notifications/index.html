@@ -38,7 +38,7 @@
 <section id="notifList"></section>
 <div id="notifEmpty" class="n-empty">لا توجد إشعارات في هذا التصنيف.</div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • Notifications</span><span>V0.40.9</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Notifications</span><span>Candidate 10</span><span>Firebase Live Data</span></footer>
 </main>
 </section>
 </div>
@@ -49,8 +49,8 @@
 <script src="../assets/js/permissions.js"></script>
 <script type="module" id="notificationsFirebaseBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, onValue, update, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get, onValue, update, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
 let uid='',notifications=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -73,8 +73,13 @@ async function openNotif(id){
  if(n.ownerUid){location.href=`../tasks/index.html?owner=${encodeURIComponent(n.ownerUid)}`;return}
  location.href='../home.html';
 }
-onAuthStateChanged(auth,user=>{
+onAuthStateChanged(auth,async user=>{
  if(!user){location.href='../login.html';return}
+ const profileSnap=await get(ref(db,`users/${user.uid}`)).catch(()=>null);
+ if(!profileSnap?.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'||!['employee','manager','admin'].includes(profileSnap.val()?.role)){
+   await signOut(auth).catch(()=>{});location.href='../login.html';return;
+ }
+ window.atwarSyncShellIdentity?.({uid:user.uid,...profileSnap.val()},user);
  uid=user.uid;
  const recent=query(ref(db,`notificationsByUser/${uid}`),orderByChild('createdAt'),limitToLast(100));
  onValue(recent,snap=>{

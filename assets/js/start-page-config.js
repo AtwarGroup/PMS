@@ -1,11 +1,11 @@
 window.ATWAR_START_PAGE = {
-  employee: 'home.html',
-  manager: 'home.html',
-  admin: 'home.html'
+  employee: 'my-day/index.html',
+  manager: 'team/index.html',
+  admin: 'organization/index.html'
 };
 
 window.ATWAR_START_LABEL = {
-  employee: 'الرئيسية',
-  manager: 'الرئيسية',
-  admin: 'الرئيسية'
+  employee: 'يومي',
+  manager: 'فريقي',
+  admin: 'المنظمة'
 };
