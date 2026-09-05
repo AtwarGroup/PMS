@@ -1,10 +1,8 @@
 
 (function(){
   function depth(){
-    const parts=location.pathname.split('/').filter(Boolean);
-    const pms=parts.lastIndexOf('PMS');
-    const after=pms>=0?parts.slice(pms+1):parts;
-    return after.length>1?'../':'';
+    const nestedModules=['tasks','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day'];
+    return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
     try{return JSON.parse(localStorage.getItem('atwarSession')||'null')}catch{return null}
@@ -181,12 +179,16 @@
 
   window.atwarSyncShellIdentity=function(profile,authUser){
     if(!profile&&!authUser)return;
+    const previous=getSession()||{};
     const current={
       uid:profile?.uid||authUser?.uid||'',
       email:profile?.email||authUser?.email||'',
       name:profile?.name||profile?.fullName||authUser?.displayName||profile?.email||authUser?.email||'المستخدم',
       role:profile?.role||'employee',
-      title:profile?.title||profile?.jobTitle||profile?.position||''
+      title:profile?.title||profile?.jobTitle||profile?.position||previous.title||'',
+      managerUid:profile?.managerUid||previous.managerUid||'',
+      managerChain:(profile?.managerChain&&typeof profile.managerChain==='object')?profile.managerChain:(previous.managerChain||{}),
+      permissions:Array.isArray(profile?.permissions)?profile.permissions:(Array.isArray(previous.permissions)?previous.permissions:[])
     };
     try{localStorage.setItem('atwarSession',JSON.stringify(current))}catch{}
     document.querySelectorAll('[data-user-name]').forEach(x=>x.textContent=current.name);

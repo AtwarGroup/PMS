@@ -49,14 +49,6 @@
             scrollbar-width: none;
         }
     </style>
-<script>
-(function(){
-  try{
-    const s=JSON.parse(localStorage.getItem('atwarSession')||'null');
-    if(!s){ location.replace('../login.html'); return; }
-  }catch(e){ location.replace('../login.html'); }
-})();
-</script>
 </head>
 <body class="bg-[#F8FAFC] print:bg-white">
     <div class="atwar-shell print:block">
@@ -91,14 +83,19 @@
             get(ref(db,`users/${user.uid}`)),
             get(ref(db,`users/${TARGET_UID}`))
           ]);
-          const viewer=viewerSnap.exists()?viewerSnap.val():{};
-          const target=targetSnap.exists()?targetSnap.val():{};
+          if(!viewerSnap.exists()||!targetSnap.exists()){location.replace('../home.html');return}
+          const viewer=viewerSnap.val();
+          const target=targetSnap.val();
+          if(viewer.active===false||viewer.status==='inactive'||target.active===false||target.status==='inactive'){
+            location.replace('../home.html');return;
+          }
+          if(!['employee','manager','admin'].includes(viewer.role)){location.replace('../login.html');return}
           const allowed=
             user.uid===TARGET_UID ||
             viewer.role==='admin' ||
-            String(target.managerUid||'')===String(user.uid) ||
-            target.managerChain?.[user.uid]===true;
+            (viewer.role==='manager'&&String(target.managerUid||'')===String(user.uid));
           if(!allowed){location.replace('../home.html');return}
+          window.atwarSyncShellIdentity?.({uid:user.uid,...viewer},user);
           document.body.style.visibility='visible';
         }catch(error){
           console.error('Financial profile access:',error);
@@ -776,7 +773,7 @@
               </main>
 
               <footer className="py-12 text-center border-t border-slate-200 mt-12 bg-white print:hidden">
-                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال</p>
+                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال • Candidate 10</p>
               </footer>
             </div>
           );

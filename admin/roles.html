@@ -31,10 +31,10 @@
         <div class="perm"><i data-lucide="check"></i>ملفي الوظيفي</div>
         <div class="perm"><i data-lucide="check"></i>الإشعارات والبحث ضمن نطاقه</div>
       </section>
-      <section class="role-card"><h3>مدير <span id="countManager" class="badge-count"></span></h3><p>صلاحيات الموظف + إدارة كامل الشجرة الواقعة تحته.</p>
-        <div class="perm"><i data-lucide="check"></i>عرض مهام الفريق والمؤشرات</div>
-        <div class="perm"><i data-lucide="check"></i>الفريق والهيكل الإداري</div>
-        <div class="perm"><i data-lucide="check"></i>إدارة المهام النشطة ضمن نطاقه</div>
+      <section class="role-card"><h3>مدير <span id="countManager" class="badge-count"></span></h3><p>صلاحيات الموظف + متابعة المرؤوسين المباشرين، مع إسناد مهام جديدة عبر الشجرة التابعة له.</p>
+        <div class="perm"><i data-lucide="check"></i>عرض مؤشرات ومهام المرؤوسين المباشرين</div>
+        <div class="perm"><i data-lucide="check"></i>عرض الفريق المباشر والهيكل المسموح</div>
+        <div class="perm"><i data-lucide="check"></i>إدارة مهامه وما أنشأه شخصيًا للمرؤوسين غير المباشرين</div>
         <div class="perm"><i data-lucide="check"></i>اعتماد مهام المرؤوسين المباشرين</div>
       </section>
       <section class="role-card"><h3>مدير النظام <span id="countAdmin" class="badge-count"></span></h3><p>كامل نطاق النظام والإعدادات الإدارية.</p>
@@ -49,7 +49,7 @@
       <a class="secondary" href="index.html">العودة لإدارة النظام</a>
     </div>
   </div>
-<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>V0.41.1</span><span>Admin Only</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>Candidate 10</span><span>Admin Only</span></footer>
 </main></section></div>
 <script type="module">
 import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -61,7 +61,9 @@ onAuthStateChanged(auth,async user=>{
   if(!user){location.replace('../login.html');return}
   try{
     const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.role!=='admin'){location.replace('../home.html');return}
+    if(!profile||profile.active===false||profile.status==='inactive'||profile.role!=='admin'){
+      await auth.signOut().catch(()=>{});location.replace('../login.html');return
+    }
     window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
     const all=await get(ref(db,'users'));
     const rows=all.exists()?Object.values(all.val()):[];

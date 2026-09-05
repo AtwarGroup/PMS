@@ -50,14 +50,6 @@
 
 </style>
 
-<script id="hamzaOwnApprovedProfileRoute">
-(function(){
-  try{
-    const session=JSON.parse(localStorage.getItem('atwarSession')||'null');
-    if(session?.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2') location.replace('financial-manager.html');
-  }catch(e){}
-})();
-</script>
 </head>
 
 <body>
@@ -205,7 +197,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>V0.40.9</span>
+          <span>Candidate 10</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -221,9 +213,11 @@
 
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app = getApps().length ? getApps()[0] : initializeApp(window.ATWAR_FIREBASE_CONFIG);
+const auth = getAuth(app);
 const db = getDatabase(app);
 
 function getSession(){
@@ -310,16 +304,19 @@ function hasRealEmploymentProfile(record){
   return meaningful >= 2;
 }
 
-async function renderProfile(){
-  const session=getSession();
-
-  if(!session?.uid){
-    location.href='../login.html';
-    return;
+async function renderProfile(authUser){
+  const snap=await get(ref(db,`users/${authUser.uid}`));
+  if(!snap.exists()||snap.val()?.active===false||snap.val()?.status==='inactive'){
+    await signOut(auth);location.href='../login.html';return;
   }
+  const profile={uid:authUser.uid,...snap.val()};
+  if(!['employee','manager','admin'].includes(profile.role)){
+    await signOut(auth);location.href='../login.html';return;
+  }
+  window.atwarSyncShellIdentity?.(profile,authUser);
 
   // الملف الوحيد الذي تم تجهيزه واعتماده حتى الآن هو ملف المدير المالي.
-  if(session.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2'){
+  if(authUser.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2'){
     location.replace('financial-manager.html');
     return;
   }
@@ -330,7 +327,15 @@ async function renderProfile(){
   try{lucide.createIcons()}catch(e){}
 }
 
-renderProfile();
+onAuthStateChanged(auth,user=>{
+  if(!user){location.href='../login.html';return}
+  renderProfile(user).catch(error=>{
+    console.error('Profile:',error);
+    document.getElementById('profileLoading')?.classList.add('hidden');
+    document.getElementById('profileContent')?.classList.add('hidden');
+    document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
+  });
+});
 </script>
 </body>
 </html>

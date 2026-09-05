@@ -91,7 +91,7 @@
     <div id="emptyState" class="empty hidden">لا توجد حسابات مطابقة.</div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • Accounts</span><span>V0.41.1</span><span>Admin Only</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Accounts</span><span>Candidate 10</span><span>Admin Only</span></footer>
 </main>
 </section>
 </div>
@@ -116,6 +116,7 @@ function toast(message,type='success'){
   setTimeout(()=>el.remove(),4200);
 }
 function userByUid(uid){return users.find(u=>String(u.uid)===String(uid))||null}
+function isActiveProfile(profile){return !!profile&&profile.active!==false&&profile.status!=='inactive'}
 function isDescendantOf(userOrUid,managerUid){
   const user=typeof userOrUid==='string'?userByUid(userOrUid):userOrUid;
   if(!user||!managerUid)return false;
@@ -128,27 +129,19 @@ function isDescendantOf(userOrUid,managerUid){
   }
   return false;
 }
-function buildManagerChain(user){
-  const chain={},seen=new Set();let cursor=user;
+function buildManagerChainFromGraph(user,graph){
+  const chain={},seen=new Set([String(user?.uid||'')]);let cursor=user;
   while(cursor?.managerUid){
     const parent=String(cursor.managerUid);
-    if(seen.has(parent))break;seen.add(parent);chain[parent]=true;cursor=userByUid(parent);
+    if(seen.has(parent))throw new Error('hierarchy-cycle');
+    const manager=graph.get(parent);
+    if(!manager)throw new Error('manager-not-found');
+    seen.add(parent);chain[parent]=true;cursor=manager;
   }
   return chain;
 }
-async function syncAffectedHierarchy(rootUid){
-  // المستخدم نفسه يتم حفظ managerChain له ضمن نفس عملية الحفظ؛ هنا نحدّث مرؤوسيه فقط.
-  const affected=users.filter(u=>String(u.uid)!==String(rootUid)&&isDescendantOf(u,rootUid));
-  if(!affected.length)return true;
-  const results=await Promise.allSettled(affected.map(async u=>{
-    const managerChain=buildManagerChain(u);
-    await update(ref(db,`users/${u.uid}`),{managerChain});
-    u.managerChain=managerChain;
-  }));
-  return results.every(r=>r.status==='fulfilled');
-}
 function populateManagers(selected='',editing=''){
-  const list=users.filter(u=>u.active!==false&&(u.role==='manager'||u.role==='admin'))
+  const list=users.filter(u=>isActiveProfile(u)&&(u.role==='manager'||u.role==='admin'))
     .filter(u=>String(u.uid)!==String(editing))
     .filter(u=>!editing||!isDescendantOf(u,editing))
     .sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ar'));
@@ -182,7 +175,7 @@ function render(){
       <div class="avatar">${esc((u.name||u.email||'?').trim().charAt(0).toUpperCase())}</div>
       <div><div class="name">${esc(u.name||'بدون اسم')}</div><div class="meta">${esc(u.email||u.uid||'')}</div></div>
       <div class="secondary-meta"><div class="name">${esc(u.jobTitle||u.title||'بدون مسمى')}</div><div class="meta">${esc(u.departmentName||u.department||'بدون إدارة')}</div></div>
-      <div class="secondary-meta"><span class="badge">${esc(roleAr(u.role))}</span><div class="meta ${u.active===false?'status-inactive':'status-active'}">${u.active===false?'غير نشط':'نشط'}</div></div>
+      <div class="secondary-meta"><span class="badge">${esc(roleAr(u.role))}</span><div class="meta ${isActiveProfile(u)?'status-active':'status-inactive'}">${isActiveProfile(u)?'نشط':'غير نشط'}</div></div>
       <button class="secondary-btn" type="button" data-edit="${esc(u.uid)}">تعديل</button>
     </div>`).join('');
   $('emptyState').classList.toggle('hidden',rows.length>0);
@@ -195,17 +188,22 @@ async function saveUser(){
   let managerUid=$('userManager').value.trim();
 
   if(!uid||!name||!email||!title||!department){toast('يرجى تعبئة جميع الحقول المطلوبة.','warning');return}
+  if(uid.length>128||/[.#$\[\]\/]/.test(uid)){toast('Firebase UID غير صالح أو يتجاوز 128 محرفًا.','error');return}
+  if(name.length>120||email.length>254||title.length>160||department.length>160){toast('أحد الحقول يتجاوز الحد المسموح.','error');return}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('صيغة البريد الإلكتروني غير صحيحة.','error');return}
+  if(!['employee','manager','admin'].includes(role)||!['active','inactive'].includes(status)){toast('الدور أو حالة الحساب غير صالحة.','error');return}
+  if(editingUid&&String(editingUid)!==String(uid)){toast('لا يمكن تغيير Firebase UID لحساب موجود.','error');return}
   if(!editingUid && users.some(u=>String(u.uid)===String(uid))){toast('Firebase UID مستخدم بالفعل.','error');return}
   if(users.some(u=>String(u.uid)!==String(uid)&&String(u.email||'').trim().toLowerCase()===email.toLowerCase())){toast('البريد الإلكتروني مرتبط بمستخدم آخر.','error');return}
-  if(managerUid===uid)managerUid='';
+  if(managerUid===uid){toast('لا يمكن تعيين المستخدم مديرًا مباشرًا لنفسه.','error');return}
   if(managerUid){
     const mgr=userByUid(managerUid);
     if(!mgr){toast('المدير المباشر المحدد غير موجود.','error');return}
+    if(!isActiveProfile(mgr)||!['manager','admin'].includes(mgr.role)){toast('يجب أن يكون المدير المباشر حساب مدير نشطًا.','error');return}
     if(isDescendantOf(mgr,uid)){toast('لا يمكن تعيين أحد مرؤوسي المستخدم كمدير مباشر له.','error');return}
   }
 
-  const previous=userByUid(uid),previousManager=String(previous?.managerUid||'');
+  const previous=userByUid(uid);
 
   // حماية حساب مدير النظام الحالي من قفل نفسه خارج لوحة الإدارة.
   if(String(uid)===String(currentUser?.uid) && (role!=='admin'||status!=='active')){
@@ -220,14 +218,21 @@ async function saveUser(){
     return;
   }
 
-  const hierarchyChanged=!previous||previousManager!==String(managerUid||'');
   const btn=$('saveBtn');btn.disabled=true;btn.textContent='جاري الحفظ...';
 
   try{
-    const draftUser={...(previous||{}),uid,managerUid};
-    const managerChain=buildManagerChain(draftUser);
-    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status!=='inactive',managerUid,managerChain,updatedAt:Date.now()};
-    await update(ref(db,`users/${uid}`),payload);
+    const payload={uid,name,email,title,jobTitle:title,department,departmentName:department,role,status,active:status==='active',managerUid,updatedAt:Date.now()};
+    const graph=new Map(users.map(u=>[String(u.uid),{...u,uid:String(u.uid)}]));
+    graph.set(String(uid),{...(previous||{}),...payload});
+    const chains=new Map();
+    graph.forEach((graphUser,graphUid)=>chains.set(graphUid,buildManagerChainFromGraph(graphUser,graph)));
+    const changes={};
+    Object.entries(payload).forEach(([key,value])=>{changes[`users/${uid}/${key}`]=value===''&&key==='managerUid'?null:value});
+    graph.forEach((graphUser,graphUid)=>{
+      const chain=chains.get(graphUid)||{};
+      changes[`users/${graphUid}/managerChain`]=Object.keys(chain).length?chain:null;
+    });
+    await update(ref(db),changes);
     const verify=await get(ref(db,`users/${uid}`));
     if(!verify.exists())throw new Error('save-verification-failed');
     const saved={...verify.val(),uid};
@@ -236,14 +241,9 @@ async function saveUser(){
     }
 
     const idx=users.findIndex(u=>String(u.uid)===String(uid));
-    if(idx>=0)users[idx]={...users[idx],...saved};else users.push(saved);
+    const refreshed=await get(ref(db,'users'));
+    users=refreshed.exists()?Object.entries(refreshed.val()).map(([savedUid,v])=>({uid:savedUid,...v})):[];
     render();closeForm();toast('تم حفظ بيانات المستخدم بنجاح.','success');
-
-    if(hierarchyChanged){
-      const ok=await syncAffectedHierarchy(uid);
-      if(!ok)toast('تم حفظ المستخدم، لكن تعذر تحديث جزء من التسلسل الإداري.','warning');
-      else render();
-    }
   }catch(error){
     console.error('Save user:',error);
     toast(`تعذر حفظ المستخدم (${error?.code||error?.message||'خطأ غير معروف'}).`,'error');
@@ -260,7 +260,9 @@ onAuthStateChanged(auth,async user=>{
   try{
     const snap=await get(ref(db,`users/${user.uid}`));
     currentProfile=snap.exists()?snap.val():null;currentUser=user;
-    if(!currentProfile||currentProfile.role!=='admin'){location.replace('../home.html');return}
+    if(!isActiveProfile(currentProfile)||currentProfile.role!=='admin'){
+      await auth.signOut().catch(()=>{});location.replace('../login.html');return
+    }
     window.atwarSyncShellIdentity?.({...currentProfile,uid:user.uid},user);
     onValue(ref(db,'users'),usersSnap=>{
       users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([uid,v])=>({uid,...v})):[];

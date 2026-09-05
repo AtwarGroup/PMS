@@ -56,7 +56,7 @@
 })();
 </script>
 </head>
-<body data-min-role="manager">
+<body data-min-role="manager" style="visibility:hidden">
 <div class="atwar-shell">
   <atwar-sidebar active="team"></atwar-sidebar>
 
@@ -72,7 +72,7 @@
           <p id="employeeProfileMessage" style="font-size:11px;color:#7b8aa5;line-height:1.9;margin:11px auto 0;max-width:450px">لم يتم تجهيز واعتماد الملف الوظيفي الخاص بهذا الموظف حتى الآن.</p>
         </div>
       </section>
-      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>ATWAR ONE</span><span>Firebase Live Data</span></footer>
+      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Candidate 10</span><span>Firebase Live Data</span></footer>
     </main>
   </section>
 </div>
@@ -120,12 +120,12 @@ onAuthStateChanged(auth,async viewer=>{
     if(!viewerSnap.exists()||!targetSnap.exists()){location.replace('index.html');return}
 
     const vp=viewerSnap.val(),target=targetSnap.val();
+    if(vp.active===false||vp.status==='inactive'||target.active===false||target.status==='inactive'){
+      location.replace('index.html');return;
+    }
     const allowed=
       vp.role==='admin' ||
-      (vp.role==='manager' && (
-        String(target.managerUid||'')===String(viewer.uid) ||
-        target.managerChain?.[viewer.uid]===true
-      ));
+      (vp.role==='manager' && String(target.managerUid||'')===String(viewer.uid));
     if(!allowed){location.replace('../home.html');return}
 
     if(uid===HAMZA_UID){
@@ -137,6 +137,7 @@ onAuthStateChanged(auth,async viewer=>{
     document.getElementById('employeeProfileMessage').textContent=
       `لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${name} حتى الآن.`;
     window.atwarSyncShellIdentity?.(vp,viewer);
+    document.body.style.visibility='visible';
     try{lucide.createIcons()}catch{}
   }catch(error){
     console.error('Employee profile access:',error);

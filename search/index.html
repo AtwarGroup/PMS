@@ -31,7 +31,7 @@
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>V0.40.9</span><span>Firebase Live Search</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>Candidate 10</span><span>Firebase Live Search</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
@@ -40,8 +40,8 @@
 <script src="../assets/js/permissions.js"></script>
 <script type="module" id="liveSearchBinding">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
 const input=document.getElementById('query'),results=document.getElementById('results');
@@ -62,20 +62,41 @@ function render(q=''){
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href='../login.html';return}
  try{
-  const us=await get(ref(db,'users')),allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[];
-  profile=allUsers.find(u=>u.uid===user.uid)||{uid:user.uid,role:'employee'};
+  const profileSnap=await get(ref(db,`users/${user.uid}`));
+  if(!profileSnap.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'){
+    await signOut(auth);location.href='../login.html';return;
+  }
+  profile={uid:user.uid,...profileSnap.val()};
+  if(!['employee','manager','admin'].includes(profile.role)){await signOut(auth);location.href='../login.html';return}
+  let allUsers=[profile];
+  if(profile.role==='manager'){
+    const us=await get(query(ref(db,'users'),orderByChild('managerUid'),equalTo(user.uid)));
+    if(us.exists())allUsers.push(...Object.entries(us.val()).map(([uid,v])=>({uid,...v})));
+  }else if(profile.role==='admin'){
+    const us=await get(ref(db,'users'));
+    allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[profile];
+  }
   const direct=allUsers.filter(u=>String(u.managerUid||'')===String(user.uid));
-  const descendants=allUsers.filter(u=>
-    u.uid!==user.uid &&
-    u.active!==false &&
-    (String(u.managerUid||'')===String(user.uid) || u.managerChain?.[user.uid]===true)
-  );
-  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false):profile.role==='manager'?descendants:[];
+  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false&&u.status!=='inactive'):profile.role==='manager'?direct.filter(u=>u.active!==false&&u.status!=='inactive'):[];
   people=visibleUsers;
 
-  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...descendants.map(u=>u.uid)]:[user.uid];
+  const activeDirect=direct.filter(u=>u.active!==false&&u.status!=='inactive');
+  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...activeDirect.map(u=>u.uid)]:[user.uid];
   const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([id,v])=>({_key:id,_ownerUid:uid,...v})):[]}catch{return []}}));
-  tasks=buckets.flat();
+  const merged=new Map();buckets.flat().forEach(t=>merged.set(`${t._ownerUid}::${t._key}`,t));
+  if(profile.role==='manager'){
+    const indexSnap=await get(ref(db,`createdTaskIndex/${user.uid}`));
+    const indexRows=indexSnap.exists()?indexSnap.val():{};
+    await Promise.all(Object.entries(indexRows).map(async([taskKey,ownerUid])=>{
+      ownerUid=String(ownerUid||'');if(!ownerUid||ownerIds.includes(ownerUid))return;
+      const taskSnap=await get(ref(db,`tasksByUser/${ownerUid}/${taskKey}`));
+      if(taskSnap.exists()&&String(taskSnap.val()?.createdByUid||'')===String(user.uid)){
+        merged.set(`${ownerUid}::${taskKey}`,{_key:taskKey,_ownerUid:ownerUid,...taskSnap.val()});
+      }
+    }));
+  }
+  tasks=[...merged.values()];
+  window.atwarSyncShellIdentity?.(profile,user);
 
   pages=[
    {title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},

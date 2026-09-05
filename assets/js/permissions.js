@@ -1,11 +1,14 @@
 
-function getAtwarDemoSession(){
+function getAtwarSession(){
   try{
-    return JSON.parse(
-      localStorage.getItem('atwarSession') || 'null'
-    );
+    const session=JSON.parse(localStorage.getItem('atwarSession')||'null');
+    if(!session||!session.uid||!['employee','manager','admin'].includes(session.role))return null;
+    return session;
   }catch{return null}
 }
+
+// توافق مؤقت مع الصفحات القديمة التي تستدعي الاسم السابق.
+const getAtwarDemoSession=getAtwarSession;
 
 function atwarDepth(){
   const nestedModules=['tasks','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day'];
@@ -18,7 +21,7 @@ function atwarRoleRank(role){
 }
 
 function requireAtwarSession(){
-  const session=getAtwarDemoSession();
+  const session=getAtwarSession();
   if(!session){
     if(!location.pathname.endsWith('login.html') && !location.pathname.endsWith('landing.html')){
       location.href=atwarDepth()+'login.html';
@@ -34,7 +37,7 @@ function applyAtwarPermissions(){
 
   const requiredPageRole=document.body?.dataset?.minRole;
   if(requiredPageRole && atwarRoleRank(s.role)<atwarRoleRank(requiredPageRole)){
-    location.href=atwarDepth()+'index.html';
+    location.href=atwarDepth()+'home.html';
     return;
   }
 
@@ -88,7 +91,7 @@ document.addEventListener('DOMContentLoaded',applyAtwarPermissions);
 
 
 function atwarGoToStart(){
-  const s=getAtwarDemoSession();
+  const s=getAtwarSession();
   if(!s){ location.href=atwarDepth()+'login.html'; return; }
   const starts=window.ATWAR_START_PAGE||{};
   const target=starts[s.role]||'home.html';
