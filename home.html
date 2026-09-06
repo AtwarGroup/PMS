@@ -114,12 +114,18 @@ function calendarDaySerial(value){
   const d=value instanceof Date?value:parseDateOnly(value);
   return !d||Number.isNaN(d.getTime())?null:Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
 }
+function approvalPausedDays(t){
+  const rows=(Array.isArray(t?.activity)?t.activity:Object.values(t?.activity||{})).filter(Boolean).sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
+  let submittedDay=null,paused=0;
+  for(const row of rows){const day=calendarDaySerial(new Date(Number(row.createdAt||0)));if(day===null)continue;if(row.type==='submitted')submittedDay=day;else if(row.type==='reopened'&&submittedDay!==null){paused+=Math.max(0,day-submittedDay);submittedDay=null;}}
+  return paused;
+}
 function delayDays(t){
   const end=calendarDaySerial(t?.end); if(end===null)return 0;
-  if(t?.status==='مكتملة'&&!t?.actualEnd)return 0;
+  if(t?.status==='مكتملة'&&!t?.actualEnd&&!t?.submittedAt)return 0;
 
   let compare=null;
-  if(t?.status==='بانتظار الاعتماد' && t?.submittedAt){
+  if((t?.status==='بانتظار الاعتماد'||t?.status==='مكتملة') && t?.submittedAt){
     compare=new Date(Number(t.submittedAt));
   }else if(t?.actualEnd){
     compare=parseDateOnly(t.actualEnd);
@@ -128,7 +134,7 @@ function delayDays(t){
   }
 
   const compareDay=calendarDaySerial(compare);
-  return compareDay===null?0:Math.max(0,compareDay-end);
+  return compareDay===null?0:Math.max(0,compareDay-end-approvalPausedDays(t));
 }
 function completedThisMonth(t){
   if(t?.status!=='مكتملة')return false;

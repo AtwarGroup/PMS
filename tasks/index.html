@@ -722,12 +722,24 @@ function calcDuration(s,e){
   const a=calendarDaySerial(s),b=calendarDaySerial(e); if(a===null||b===null)return 0;
   const d=b-a; return d>=0?d+1:0;
 }
-function calcDelay(e,a,status,submittedAt){
+function approvalPausedDays(activity){
+  const rows=(Array.isArray(activity)?activity:Object.values(activity||{}))
+    .filter(Boolean).sort((x,y)=>Number(x.createdAt||0)-Number(y.createdAt||0));
+  let submittedDay=null,paused=0;
+  for(const row of rows){
+    const day=calendarDaySerial(new Date(Number(row.createdAt||0)));
+    if(day===null)continue;
+    if(row.type==='submitted')submittedDay=day;
+    else if(row.type==='reopened'&&submittedDay!==null){paused+=Math.max(0,day-submittedDay);submittedDay=null;}
+  }
+  return paused;
+}
+function calcDelay(e,a,status,submittedAt,activity){
   const end=calendarDaySerial(e); if(end===null)return 0;
-  if(status==='مكتملة'&&!a)return 0;
+  if(status==='مكتملة'&&!a&&!submittedAt)return 0;
 
   let compare=null;
-  if(status==='بانتظار الاعتماد' && submittedAt){
+  if((status==='بانتظار الاعتماد'||status==='مكتملة') && submittedAt){
     compare=new Date(Number(submittedAt));
   }else if(a){
     compare=parseDateOnly(a);
@@ -736,7 +748,7 @@ function calcDelay(e,a,status,submittedAt){
   }
 
   const compareDay=calendarDaySerial(compare);
-  return compareDay===null?0:Math.max(0,compareDay-end);
+  return compareDay===null?0:Math.max(0,compareDay-end-approvalPausedDays(activity));
 }
 function normalizeProgress(v){return Math.max(0,Math.min(100,Number.parseInt(v||0,10)||0))}
 
@@ -1361,7 +1373,7 @@ function renderManagerDashboard(){
 
   const teamTasks=tasks.filter(t=>team.some(u=>u.uid===t._ownerUid));
   const total=teamTasks.length;
-  const overdue=teamTasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+  const overdue=teamTasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
   const inProgress=teamTasks.filter(t=>t.status==='قيد التنفيذ').length;
   const completed=teamTasks.filter(t=>t.status==='مكتملة').length;
   const completionRate=total?Math.round((completed/total)*100):0;
@@ -1377,7 +1389,7 @@ function renderManagerDashboard(){
     const tTotal=rows.length;
     const tDone=rows.filter(t=>t.status==='مكتملة').length;
     const tProgress=rows.filter(t=>t.status==='قيد التنفيذ').length;
-    const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+    const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
     const rate=tTotal?Math.round((tDone/tTotal)*100):0;
     return `
       <button type="button" data-team-filter-uid="${escapeHTML(u.uid)}" class="team-card text-right border border-slate-200 rounded-xl px-3 py-2.5 bg-white min-h-[96px]">
@@ -1485,12 +1497,12 @@ async function createUniqueNotification(uid,key,data){
 async function checkOverdueNotifications(){
   if(!currentUser?.uid||!currentProfile)return;
   const today=localDateISO().replaceAll('-','');
-  const overdueTasks=tasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0);
+  const overdueTasks=tasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0);
 
   // مهام المستخدم نفسه: إشعار لكل مهمة حتى يعرف المهمة المطلوبة مباشرة.
   const own=overdueTasks.filter(t=>String(t._ownerUid||'')===String(currentUser.uid||''));
   for(const task of own){
-    const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt);
+    const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity);
     await createUniqueNotification(
       currentUser.uid,
       `overdue_${task._ownerUid}_${task._key}_${today}`,
@@ -2689,7 +2701,7 @@ function filteredTasks(){
         if(String(t._ownerUid||'')!==String(assignee))return false;
       }
     }
-    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt);
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity);
 
     // Filters coming from the home dashboard.
     if(homeFilterValue==='OPEN' && t.status==='مكتملة')return false;
@@ -2728,7 +2740,7 @@ function renderTasks(){
   box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
   document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
   rows.forEach(t=>{
-    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt),key=compositeKey(t);
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),key=compositeKey(t);
     const selected=key===selectedTaskKey;
     const due=t.end||'بدون تاريخ';
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
@@ -3173,7 +3185,7 @@ function renderDetails(){
   managerNotes.classList.toggle('bg-slate-50',!canManagerNote);
   managerNotes.placeholder=canManagerNote?'ملاحظة خاصة بالمدير...':'ملاحظات المدير — للقراءة فقط';
   document.getElementById('detailCreatedBy').textContent=task.createdBy||'';
-  const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt),duration=calcDuration(task.start,task.end);
+  const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity),duration=calcDuration(task.start,task.end);
   document.getElementById('detailDuration').textContent=`${duration} يوم`;
   const delayEl=document.getElementById('detailDelay');
   delayEl.textContent=`${delay} يوم`;
@@ -3218,7 +3230,7 @@ function updateStats(){
   document.getElementById('stat-completed').textContent=tasks.filter(t=>t.status==='مكتملة').length;
   document.getElementById('stat-progress').textContent=tasks.filter(t=>t.status==='قيد التنفيذ').length;
   document.getElementById('stat-pending').textContent=tasks.filter(t=>t.status==='قيد الانتظار').length;
-  document.getElementById('stat-delayed').textContent=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)>0).length;
+  document.getElementById('stat-delayed').textContent=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
 }
 
 async function exportToExcel(){
@@ -3230,7 +3242,7 @@ async function exportToExcel(){
     {header:'الحالة',key:'status',width:14},{header:'الأولوية',key:'priority',width:12},{header:'الإنجاز %',key:'progress',width:12},
     {header:'التأخير (يوم)',key:'delay',width:14},{header:'ملاحظات',key:'notes',width:30},{header:'ملاحظات المدير',key:'managerNotes',width:30}
   ];
-  tasks.forEach(t=>ws.addRow({...t,delay:calcDelay(t.end,t.actualEnd,t.status,t.submittedAt)}));
+  tasks.forEach(t=>ws.addRow({...t,delay:calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)}));
   ws.getRow(1).font={bold:true};
   const buf=await wb.xlsx.writeBuffer(),blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='tasks_export.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
