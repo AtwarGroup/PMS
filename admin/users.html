@@ -3,7 +3,7 @@
 </style></head><body data-min-role="admin"><div class="atwar-shell"><atwar-sidebar active="admin"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content"><h1>إدارة الحسابات</h1>
 <section class="card"><h3 style="margin-top:0">إضافة مستخدم جديد</h3><p class="hint">يتم إنشاء الحساب وإعداد صلاحياته بالكامل من داخل ATWAR ONE.</p><div class="create-grid" style="margin-top:12px"><div><label>الاسم</label><input id="nName"></div><div><label>البريد الإلكتروني</label><input id="nEmail" type="email"></div><div><label>كلمة المرور المؤقتة</label><input id="nPassword" type="password" minlength="8"></div><div><label>المسمى</label><input id="nTitle"></div><div><label>القسم</label><input id="nDept"></div><div><label>الدور</label><select id="nRole"><option value="employee">موظف</option><option value="manager">مدير</option><option value="admin">مدير نظام</option></select></div><div><label>المدير المباشر</label><select id="nManager"><option value="">بدون مدير</option></select></div><div><label>الحالة</label><select id="nStatus"><option value="active">نشط</option><option value="inactive">غير نشط</option></select></div><div style="display:flex;align-items:end"><button id="createUser" class="btn" style="width:100%">إضافة المستخدم</button></div></div><div id="createState" class="msg"></div></section>
 <div id="state" class="msg"></div><section class="card"><div class="head"><span>الاسم</span><span>المسمى</span><span>القسم</span><span>الدور</span><span>المدير المباشر</span><span>الحالة</span><span></span></div><div id="list">جاري التحميل...</div></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Admin Users</span><span>Production 1.2</span><span>Auth + Profiles</span></footer></main></section></div>
+<footer class="atwar-footer"><span>ATWAR ONE • Admin Users</span><span>Production 1.3</span><span>Auth + Profiles</span></footer></main></section></div>
 <script type="module">
 import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const c=window.ATWAR_SUPABASE_CONFIG,sb=window.ATWAR_SUPABASE||createClient(c.url,c.publishableKey);window.ATWAR_SUPABASE=sb;
@@ -11,7 +11,24 @@ let users=[];
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const state=(m,e=false,id='state')=>{const x=document.getElementById(id);x.textContent=m;x.className='msg'+(e?' err':'')};
 function managerOptions(selected='',exclude=''){return '<option value="">بدون مدير</option>'+users.filter(x=>x.id!==exclude&&x.active&&x.status==='active'&&['manager','admin'].includes(x.role)).map(m=>`<option value="${m.id}" ${selected===m.id?'selected':''}>${esc(m.full_name)}</option>`).join('')}
-async function invoke(body){const{data,error}=await sb.functions.invoke('admin-create-user',{body});if(error)throw error;if(data?.error)throw new Error(data.error);return data}
+async function invoke(body){
+  const {data:{session},error:sessionErr}=await sb.auth.getSession();
+  if(sessionErr||!session?.access_token) throw new Error('انتهت جلسة الدخول. أعد تسجيل الدخول.');
+  const res=await fetch(`${c.url}/functions/v1/admin-create-user`,{
+    method:'POST',
+    headers:{
+      'Authorization':`Bearer ${session.access_token}`,
+      'apikey':c.publishableKey,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify(body)
+  });
+  const text=await res.text();
+  let data={};
+  try{data=text?JSON.parse(text):{}}catch{throw new Error(`استجابة غير صالحة من خدمة المستخدمين (${res.status})`)}
+  if(!res.ok||data?.error) throw new Error(data?.error||`فشل الطلب (${res.status})`);
+  return data;
+}
 async function load(){
   const{data:{session}}=await sb.auth.getSession();if(!session?.user){location.href='../login.html';return}
   const{data:p,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
