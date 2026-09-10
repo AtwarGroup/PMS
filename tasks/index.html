@@ -1553,12 +1553,6 @@ async function markAllNotificationsRead(){
 async function openNotification(key){
   const n=notifications.find(x=>x._key===key); if(!n)return;
 
-  try{
-    await update(ref(db,`${notificationPath(currentUser.uid)}/${key}`),{read:true});
-  }catch(error){
-    console.error('Mark notification read:',error);
-  }
-
   toggleNotifications(false);
   if(n.type==='overdue_summary'){
     homeFilterValue='OVERDUE';
@@ -1566,6 +1560,9 @@ async function openNotification(key){
     setupAssigneeFilter();
     renderTasks();
     updateVisibleCount();
+    // سياسة ATWAR ONE: الإشعار يُحذف بعد تنفيذ الإجراء المرتبط به بنجاح.
+    try{await remove(ref(db,`${notificationPath(currentUser.uid)}/${key}`))}
+    catch(error){console.error('Delete opened notification:',error)}
     return;
   }
   if(!n.ownerUid||!n.taskKey)return;
@@ -1603,6 +1600,10 @@ async function openNotification(key){
   updateStats();
   updateVisibleCount();
   renderDetails();
+
+  // لا نحذف الإشعار إلا بعد العثور على المهمة وفتح تفاصيلها فعليًا.
+  try{await remove(ref(db,`${notificationPath(currentUser.uid)}/${key}`))}
+  catch(error){console.error('Delete opened notification:',error)}
 
   requestAnimationFrame(()=>{
     const card=document.querySelector(`[data-task-key="${CSS.escape(composite)}"]`);
