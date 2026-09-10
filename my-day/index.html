@@ -60,77 +60,26 @@
 </section>
 </div>
 
-<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>Candidate 10</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
 </main></section></div>
 <script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script type="module" id="myDayFirebaseBinding">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const localDateISO=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const today=()=>localDateISO();
-const calendarDaySerial=value=>{
-  const d=value instanceof Date?value:new Date(String(value)+(String(value).length===10?'T00:00:00':''));
-  return Number.isNaN(d.getTime())?null:Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
-};
-function late(t){
-  if(!t?.end||t.status==='مكتملة')return false;
-  const end=calendarDaySerial(t.end);
-  const compare=(t.status==='بانتظار الاعتماد'&&t.submittedAt)?new Date(Number(t.submittedAt)):new Date();
-  const compareDay=calendarDaySerial(compare);
-  return end!==null&&compareDay!==null&&compareDay>end;
+<script type="module" id="myDaySupabaseBinding">
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+  }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
 }
-onAuthStateChanged(auth,async user=>{
- if(!user){location.href='../login.html';return}
- try{
-  const profileSnap=await get(ref(db,`users/${user.uid}`));
-  if(!profileSnap.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'){
-    await signOut(auth);location.href='../login.html';return;
-  }
-  const profile={uid:user.uid,...profileSnap.val()};
-  if(!['employee','manager','admin'].includes(profile.role)){await signOut(auth);location.href='../login.html';return}
-  let users=[profile];
-  if(profile.role==='manager'){
-    const us=await get(query(ref(db,'users'),orderByChild('managerUid'),equalTo(user.uid)));
-    if(us.exists())users.push(...Object.entries(us.val()).map(([uid,v])=>({uid,...v})));
-  }else if(profile.role==='admin'){
-    const us=await get(ref(db,'users'));
-    users=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[profile];
-  }
-  window.atwarSyncShellIdentity?.(profile,user);
-  const direct=users.filter(u=>u.active!==false&&u.status!=='inactive'&&u.managerUid===user.uid);
-  const ownerIds=profile.role==='admin'?users.map(u=>u.uid):profile.role==='manager'?[user.uid,...direct.map(u=>u.uid)]:[user.uid];
-  const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([k,v])=>({_key:k,_ownerUid:uid,...v})):[]}catch{return []}}));
-  const all=buckets.flat(),mine=all.filter(t=>t._ownerUid===user.uid),d=today();
-  const todayTasks=mine.filter(t=>t.status!=='مكتملة'&&(t.start===d||t.end===d));
-  const lateTasks=mine.filter(late);
-  let follows=[];
-  try{const fs=await get(ref(db,`followUpsByUser/${user.uid}`));follows=fs.exists()?Object.entries(fs.val()).map(([id,v])=>({id,...v})):[]}catch{}
-  const closeFollows=follows.filter(x=>x.status!=='done'&&(!x.date||x.date<=d));
-  const approvals=all.filter(t=>{
-    if(t.status!=='بانتظار الاعتماد'||t._ownerUid===user.uid)return false;
-    if(profile.role==='admin')return true;
-    const owner=users.find(u=>u.uid===t._ownerUid);
-    return profile.role==='manager'&&owner?.managerUid===user.uid;
-  });
-  document.getElementById('dayTaskCount').textContent=todayTasks.length;
-  document.getElementById('dayLateCount').textContent=lateTasks.length;
-  document.getElementById('dayFollowCount').textContent=closeFollows.length;
-  const ap=document.getElementById('dayApprovalCount');if(ap)ap.textContent=approvals.length;
-  const rows=[
-    ...lateTasks.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>مهمة متأخرة</small></div><span class="tag late">متأخرة</span></div>`),
-    ...todayTasks.slice(0,3).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>استحقاق اليوم</small></div><span class="tag task">مهمة</span></div>`),
-    ...closeFollows.slice(0,2).map(x=>`<div class="item"><div><b>${esc(x.title||'متابعة')}</b><small>متابعة شخصية</small></div><span class="tag follow">متابعة</span></div>`),
-    ...approvals.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title||'مهمة')}</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>`)
-  ];
-  document.getElementById('dayPriority').innerHTML=rows.length?rows.join(''):'<div class="item"><div><b>يومك واضح</b><small>لا توجد عناصر عاجلة مسجلة حالياً.</small></div></div>';
-  try{const ns=await get(ref(db,`notesByUser/${user.uid}/quickNote`));const v=ns.exists()?ns.val():null;document.getElementById('dayNote').textContent=(typeof v==='string'?v:v?.text)||'لا توجد ملاحظة محفوظة.'}catch{document.getElementById('dayNote').textContent='الملاحظة غير متاحة حالياً.'}
-  try{lucide.createIcons()}catch{}
- }catch(e){console.error('My Day:',e);document.getElementById('dayPriority').innerHTML='<div class="item"><div><b>بيانات يومك غير متاحة حالياً</b><small>أعد تحميل الصفحة بعد لحظات.</small></div></div>'}
-});
+
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};const late=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&t.due_date<today();
+const a=await authProfile('../login.html');if(a){const p=a.profile;const [tr,fr,nr]=await Promise.all([sb.from('tasks').select('*').order('due_date'),sb.from('follow_ups').select('*').eq('owner_id',p.id).order('created_at',{ascending:false}),sb.from('quick_notes').select('*').eq('owner_id',p.id).order('updated_at',{ascending:false}).limit(1)]);const all=tr.data||[],mine=all.filter(x=>x.assignee_id===p.id),d=today(),todayTasks=mine.filter(x=>x.status!=='مكتملة'&&(x.start_date===d||x.due_date===d)),lateTasks=mine.filter(late),follows=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date)||(x.follow_date||x.date)<=d)),approvals=all.filter(x=>x.status==='بانتظار الاعتماد'&&x.assignee_id!==p.id);document.getElementById('dayTaskCount').textContent=todayTasks.length;document.getElementById('dayLateCount').textContent=lateTasks.length;document.getElementById('dayFollowCount').textContent=follows.length;document.getElementById('dayApprovalCount').textContent=approvals.length;const rows=[...lateTasks.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>مهمة متأخرة</small></div><span class="tag late">متأخرة</span></div>`),...todayTasks.slice(0,3).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>استحقاق اليوم</small></div><span class="tag task">مهمة</span></div>`),...follows.slice(0,2).map(x=>`<div class="item"><div><b>${esc(x.title||'متابعة')}</b><small>متابعة شخصية</small></div><span class="tag follow">متابعة</span></div>`),...approvals.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>`)];document.getElementById('dayPriority').innerHTML=rows.join('')||'<div class="item"><div><b>يومك واضح</b><small>لا توجد عناصر عاجلة مسجلة حالياً.</small></div></div>';const n=(nr.data||[])[0],txt=n?.text??n?.note_text??n?.body??n?.content??'';document.getElementById('dayNote').textContent=txt||'لا توجد ملاحظة محفوظة.';try{lucide.createIcons()}catch{}}
 </script>
 </body></html>

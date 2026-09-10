@@ -69,7 +69,7 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>Candidate 10</span><span>Firebase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
 </main>
 
   </section>
@@ -79,7 +79,8 @@
 
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js"></script>
-<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-runtime.js"></script>
 <script src="assets/js/permissions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -94,194 +95,31 @@ document.addEventListener('DOMContentLoaded',()=>{
  });
 });
 </script>
-<script type="module" id="homeFirebaseDashboard">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function localDateISO(d=new Date()){
-  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function todayISO(){return localDateISO()}
-function parseDateOnly(v){
-  if(!v)return null;
-  const d=new Date(v+(String(v).length===10?'T00:00:00':''));
-  return Number.isNaN(d.getTime())?null:d;
-}
-function calendarDaySerial(value){
-  const d=value instanceof Date?value:parseDateOnly(value);
-  return !d||Number.isNaN(d.getTime())?null:Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
-}
-function approvalPausedDays(t){
-  const rows=(Array.isArray(t?.activity)?t.activity:Object.values(t?.activity||{})).filter(Boolean).sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
-  let submittedDay=null,paused=0;
-  for(const row of rows){const day=calendarDaySerial(new Date(Number(row.createdAt||0)));if(day===null)continue;if(row.type==='submitted')submittedDay=day;else if(row.type==='reopened'&&submittedDay!==null){paused+=Math.max(0,day-submittedDay);submittedDay=null;}}
-  return paused;
-}
-function delayDays(t){
-  const end=calendarDaySerial(t?.end); if(end===null)return 0;
-  if(t?.status==='مكتملة'&&!t?.actualEnd&&!t?.submittedAt)return 0;
-
-  let compare=null;
-  if((t?.status==='بانتظار الاعتماد'||t?.status==='مكتملة') && t?.submittedAt){
-    compare=new Date(Number(t.submittedAt));
-  }else if(t?.actualEnd){
-    compare=parseDateOnly(t.actualEnd);
-  }else{
-    compare=new Date();
+<script type="module" id="homeSupabaseDashboard">
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
   }
-
-  const compareDay=calendarDaySerial(compare);
-  return compareDay===null?0:Math.max(0,compareDay-end-approvalPausedDays(t));
-}
-function completedThisMonth(t){
-  if(t?.status!=='مكتملة')return false;
-  let d=null;
-  if(t.approvedAt)d=new Date(Number(t.approvedAt));
-  else if(t.actualEnd)d=new Date(t.actualEnd+'T00:00:00');
-  else if(t.updatedAt)d=new Date(Number(t.updatedAt));
-  if(!d||Number.isNaN(d.getTime()))return false;
-  const n=new Date();
-  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
-}
-function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=v}
-function friendly(hostId,title,small){
-  const el=document.getElementById(hostId);if(el)el.innerHTML=`<div class="home-item"><div><b>${title}</b><small>${small}</small></div></div>`;
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
 }
 
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-
-function bindDashboardCards(){
-  document.querySelectorAll('[data-task-scope]').forEach(card=>{
-    const open=()=>location.href=`tasks/index.html?scope=${encodeURIComponent(card.dataset.taskScope||'OPEN')}`;
-    card.addEventListener('click',open);
-    card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
-  });
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const late=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&t.due_date<today();const setText=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+document.querySelectorAll('[data-task-scope]').forEach(card=>{const open=()=>location.href=`tasks/index.html?scope=${encodeURIComponent(card.dataset.taskScope||'OPEN')}`;card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}})});
+const a=await authProfile('login.html');if(a){
+ const p=a.profile;const [tr,nr]=await Promise.all([sb.from('tasks').select('*').order('updated_at',{ascending:false}),sb.from('quick_notes').select('*').eq('owner_id',p.id).order('updated_at',{ascending:false}).limit(1)]);if(tr.error)console.error(tr.error);const rows=tr.data||[],mine=rows.filter(t=>t.assignee_id===p.id),indicator=p.role==='employee'?mine:rows;
+ setText('homeStatCompleted',p.role==='admin'?indicator.filter(t=>t.status==='مكتملة').length:indicator.filter(t=>{if(t.status!=='مكتملة')return false;const d=new Date(t.completed_at||t.actual_end_date||t.updated_at);const n=new Date();return !Number.isNaN(d.getTime())&&d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length);
+ setText('homeStatOpen',indicator.filter(t=>t.status!=='مكتملة').length);setText('homeStatOverdue',indicator.filter(late).length);const approvals=rows.filter(t=>t.status==='بانتظار الاعتماد'&&t.assignee_id!==p.id);setText('homeStatApproval',approvals.length);
+ const note=(nr.data||[])[0],txt=note?.text??note?.note_text??note?.body??note?.content??'';document.getElementById('homeNotesBody').innerHTML=String(txt).trim()?`<div class="home-item"><div><b>${esc(String(txt).slice(0,100))}${String(txt).length>100?'…':''}</b><small>ملاحظة محفوظة في حسابك</small></div><i data-lucide="pin"></i></div>`:'<div class="home-item"><div><b>لا توجد ملاحظات محفوظة</b><small>يمكنك إضافة ملاحظة من صفحة ملاحظاتي</small></div></div>';
+ const d=today(),todayTasks=mine.filter(t=>t.status!=='مكتملة'&&(t.start_date===d||t.due_date===d)).slice(0,5);document.getElementById('homeTodayBody').innerHTML=todayTasks.length?todayTasks.map(t=>`<div class="home-item"><div><b>${esc(t.title||'مهمة')}</b><small>${esc(t.status||'')}</small></div><span class="time">اليوم</span></div>`).join(''):'<div class="home-item"><div><b>لا توجد مهام مجدولة لك اليوم</b><small>يعرض هذا القسم مهام حسابك الشخصية</small></div></div>';
+ const attention=[];if(approvals.length)attention.push(`<div class="home-item"><div><b>طلبات بانتظار اعتمادك</b><small>تحتاج إلى إجراء</small></div><strong class="warn">${approvals.length}</strong></div>`);const myLate=mine.filter(late);if(myLate.length)attention.push(`<div class="home-item"><div><b>مهامك المتأخرة</b><small>تحتاج متابعة</small></div><strong class="danger">${myLate.length}</strong></div>`);if(p.role!=='employee'){const scoped=rows.filter(t=>t.assignee_id!==p.id&&late(t));if(scoped.length)attention.push(`<div class="home-item"><div><b>مهام متأخرة ضمن نطاقك</b><small>${p.role==='admin'?'على مستوى النظام':'لدى فريقك'}</small></div><strong class="danger">${scoped.length}</strong></div>`)}document.getElementById('homeAttentionBody').innerHTML=attention.join('')||'<div class="home-item"><div><b>لا يوجد ما يحتاج انتباهك الآن</b><small>لا توجد إجراءات أو مهام متأخرة ضمن نطاقك</small></div></div>';try{lucide.createIcons()}catch{}
 }
-bindDashboardCards();
-
-
-onAuthStateChanged(auth,async authUser=>{
-  if(!authUser){location.href='login.html';return}
-  const uid=authUser.uid;
-
-  try{
-    const profileSnap=await get(ref(db,`users/${uid}`));
-    if(!profileSnap.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'){
-      await signOut(auth);location.href='login.html';return;
-    }
-    const profile={uid,...profileSnap.val()};
-    if(!['employee','manager','admin'].includes(profile.role)){
-      await signOut(auth);location.href='login.html';return;
-    }
-
-    let users=[profile];
-    if(profile.role==='manager'){
-      const usersSnap=await get(query(ref(db,'users'),orderByChild('managerUid'),equalTo(uid)));
-      if(usersSnap.exists())users.push(...Object.entries(usersSnap.val()).map(([id,v])=>({uid:id,...v})));
-    }else if(profile.role==='admin'){
-      const usersSnap=await get(ref(db,'users'));
-      users=usersSnap.exists()?Object.entries(usersSnap.val()).map(([id,v])=>({uid:id,...v})):[profile];
-    }
-    window.atwarSyncShellIdentity?.(profile,authUser);
-
-    const directTeam=users.filter(u=>
-      u.active!==false && u.status!=='inactive' &&
-      (u.managerUid===uid||u.managerUID===uid||u.managerId===uid)
-    );
-    const ownerUids=profile.role==='admin'
-      ? users.map(u=>u.uid)
-      : profile.role==='manager'?[uid,...directTeam.map(u=>u.uid)]:[uid];
-
-    const buckets=await Promise.all([...new Set(ownerUids)].map(async ownerUid=>{
-      try{
-        const snap=await get(ref(db,`tasksByUser/${ownerUid}`));
-        return snap.exists()?Object.entries(snap.val()).map(([key,v])=>({_key:key,_ownerUid:ownerUid,...v})):[];
-      }catch(e){
-        console.warn('Task bucket unavailable',ownerUid,e);
-        return [];
-      }
-    }));
-    const merged=new Map();
-    buckets.flat().forEach(t=>merged.set(`${t._ownerUid}::${t._key}`,t));
-
-    if(profile.role==='manager'){
-      const indexSnap=await get(ref(db,`createdTaskIndex/${uid}`));
-      const indexRows=indexSnap.exists()?indexSnap.val():{};
-      await Promise.all(Object.entries(indexRows).map(async([taskKey,ownerUid])=>{
-        ownerUid=String(ownerUid||'');
-        if(!ownerUid||ownerUids.includes(ownerUid))return;
-        const taskSnap=await get(ref(db,`tasksByUser/${ownerUid}/${taskKey}`));
-        if(taskSnap.exists()&&String(taskSnap.val()?.createdByUid||'')===uid){
-          merged.set(`${ownerUid}::${taskKey}`,{_key:taskKey,_ownerUid:ownerUid,...taskSnap.val()});
-        }
-      }));
-    }
-    const visibleTasks=[...merged.values()];
-    const myTasks=visibleTasks.filter(t=>t._ownerUid===uid);
-
-    // Admin = organization-wide. Manager = direct team plus exact self-created exceptions.
-    const indicatorTasks=(profile.role==='admin'||profile.role==='manager')?visibleTasks:myTasks;
-    if(profile.role==='admin'){
-      setText('homeStatCompleted',indicatorTasks.filter(t=>t.status==='مكتملة').length);
-      const sub=document.getElementById('homeStatCompletedScope');if(sub)sub.textContent='جميع المهام';
-    }else{
-      setText('homeStatCompleted',indicatorTasks.filter(completedThisMonth).length);
-    }
-    setText('homeStatOpen',indicatorTasks.filter(t=>t.status!=='مكتملة').length);
-    setText('homeStatOverdue',indicatorTasks.filter(t=>delayDays(t)>0).length);
-
-    const approvalTasks=visibleTasks.filter(t=>{
-      if(t.status!=='بانتظار الاعتماد'||t._ownerUid===uid)return false;
-      if(profile.role==='admin')return true;
-      const owner=users.find(u=>u.uid===t._ownerUid);
-      return profile.role==='manager'&&owner?.managerUid===uid;
-    });
-    setText('homeStatApproval',approvalTasks.length);
-
-    // Notes stay personal for every role, including admin.
-    const noteHost=document.getElementById('homeNotesBody');
-    try{
-      const ns=await get(ref(db,`notesByUser/${uid}/quickNote`));
-      const raw=ns.exists()?ns.val():null,text=typeof raw==='string'?raw:(raw?.text||'');
-      noteHost.innerHTML=text.trim()
-        ? `<div class="home-item"><div><b>${esc(text.length>100?text.slice(0,100)+'…':text)}</b><small>ملاحظة محفوظة في حسابك</small></div><i data-lucide="pin"></i></div>`
-        : '<div class="home-item"><div><b>لا توجد ملاحظات محفوظة</b><small>يمكنك إضافة ملاحظة من صفحة ملاحظاتي</small></div></div>';
-    }catch(e){
-      friendly('homeNotesBody','الملاحظات غير متاحة حالياً','أعد تحميل الصفحة بعد لحظات');
-    }
-
-    // "My tasks today" always means the logged-in user's tasks, even for admin.
-    const today=todayISO();
-    const todayTasks=myTasks.filter(t=>t.status!=='مكتملة'&&(t.start===today||t.end===today)).slice(0,5);
-    const todayHost=document.getElementById('homeTodayBody');
-    todayHost.innerHTML=todayTasks.length
-      ? todayTasks.map(t=>`<div class="home-item"><div><b>${esc(t.title||'مهمة')}</b><small>${esc(t.status||'')}</small></div><span class="time">اليوم</span></div>`).join('')
-      : '<div class="home-item"><div><b>لا توجد مهام مجدولة لك اليوم</b><small>يعرض هذا القسم مهام حسابك الشخصية</small></div></div>';
-
-    const attention=[];
-    if(approvalTasks.length)attention.push(`<div class="home-item"><div><b>طلبات بانتظار اعتمادك</b><small>تحتاج إلى إجراء</small></div><strong class="warn">${approvalTasks.length}</strong></div>`);
-    const overduePersonal=myTasks.filter(t=>delayDays(t)>0);
-    if(overduePersonal.length)attention.push(`<div class="home-item"><div><b>مهامك المتأخرة</b><small>تحتاج متابعة</small></div><strong class="danger">${overduePersonal.length}</strong></div>`);
-    if(profile.role==='manager'||profile.role==='admin'){
-      const overdueScope=visibleTasks.filter(t=>t._ownerUid!==uid&&delayDays(t)>0);
-      if(overdueScope.length)attention.push(`<div class="home-item"><div><b>مهام متأخرة ضمن نطاقك</b><small>${profile.role==='admin'?'على مستوى النظام':'لدى فريقك'}</small></div><strong class="danger">${overdueScope.length}</strong></div>`);
-    }
-    document.getElementById('homeAttentionBody').innerHTML=attention.length
-      ? attention.join('')
-      : '<div class="home-item"><div><b>لا يوجد ما يحتاج انتباهك الآن</b><small>لا توجد إجراءات أو مهام متأخرة ضمن نطاقك</small></div></div>';
-    try{lucide.createIcons()}catch(e){}
-  }catch(e){
-    console.error('Dashboard sync:',e);
-    ['homeStatCompleted','homeStatOpen','homeStatOverdue','homeStatApproval'].forEach(id=>setText(id,'—'));
-    friendly('homeNotesBody','البيانات غير متاحة حالياً','أعد تحميل الصفحة بعد لحظات');
-    friendly('homeAttentionBody','البيانات غير متاحة حالياً','أعد تحميل الصفحة بعد لحظات');
-    friendly('homeTodayBody','البيانات غير متاحة حالياً','أعد تحميل الصفحة بعد لحظات');
-  }
-});
 </script>
 
 </body>

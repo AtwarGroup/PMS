@@ -174,26 +174,14 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
   <p>شارك الملاحظة مع إدارة النظام، ويفضل ذكر الصفحة والخطوة التي قمت بها وإرفاق صورة للشاشة عند الحاجة. سيتم مراجعة الملاحظات ومعالجتها ضمن عملية التطوير المستمرة.</p>
 </section>
 
-<div class="footer">ATWAR ONE • User Guide • Candidate 10</div>
+<div class="footer">ATWAR ONE • User Guide • Production 1.7C</div>
 </main>
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-onAuthStateChanged(auth,async user=>{
-  if(!user){location.replace('../login.html');return}
-  try{
-    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-      await auth.signOut().catch(()=>{});location.replace('../login.html');return
-    }
-    document.body.style.visibility='visible';
-  }catch(error){console.error('User guide access:',error);await auth.signOut().catch(()=>{});location.replace('../login.html')}
-});
-try{lucide.createIcons()}catch{}
+const sb=await window.atwarGetSupabase();
+const {data:{session}}=await sb.auth.getSession();
+if(!session?.user){location.href='../login.html'}else{const {data:p,error}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(error||!p||p.active===false||p.status==='inactive'){await sb.auth.signOut().catch(()=>{});location.href='../login.html'}else{window.atwarSyncShellIdentity?.(p,session.user);document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
 </script>
 </body>
 </html>

@@ -197,7 +197,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>Candidate 10</span>
+          <span>Production 1.7C</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -205,137 +205,27 @@
   </section>
 </div>
 
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 <script src="../assets/js/shell-components.js"></script>
 <script src="../assets/js/permissions.js"></script>
 
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const app = getApps().length ? getApps()[0] : initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-function getSession(){
-  try{
-    return JSON.parse(
-      localStorage.getItem('atwarSession') || 'null'
-    );
-  }catch{
-    return null;
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
   }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
 }
 
-function roleLabel(role){
-  return role === 'admin' ? 'مدير النظام' :
-         role === 'manager' ? 'مدير' : 'موظف';
-}
-
-function pick(obj, keys, fallback='—'){
-  for(const key of keys){
-    const value = obj?.[key];
-    if(value !== undefined && value !== null && String(value).trim() !== ''){
-      return value;
-    }
-  }
-  return fallback;
-}
-
-async function loadUserRecord(uid){
-  if(!uid) return {};
-  const snap = await get(ref(db, `users/${uid}`));
-  return snap.exists() ? snap.val() : {};
-}
-
-async function loadManagerName(managerUid){
-  if(!managerUid) return '—';
-  try{
-    const snap = await get(ref(db, `users/${managerUid}`));
-    if(!snap.exists()) return '—';
-    const manager = snap.val();
-    return pick(manager,['name','fullName','displayName'],'—');
-  }catch{
-    return '—';
-  }
-}
-
-function hasRealEmploymentProfile(record){
-  if(!record || typeof record !== 'object') return false;
-
-  // Explicit flags win when they exist.
-  if(record.profileComplete === true || record.profileReady === true || record.jobProfileReady === true){
-    return true;
-  }
-
-  // Do not consider name/email/role/title alone as a completed job profile.
-  // At least two employment-specific fields must exist.
-  const fields = [
-    record.department,
-    record.departmentName,
-    record.employeeCode,
-    record.employeeId,
-    record.employeeNumber,
-    record.managerUid,
-    record.managerId,
-    record.joinDate,
-    record.joiningDate,
-    record.hireDate,
-    record.workLocation,
-    record.branch,
-    record.employmentType,
-    record.contractType,
-    record.jobDescription,
-    record.jobDescriptionId,
-    record.kpi,
-    record.kpis
-  ];
-
-  const meaningful = fields.filter(v=>{
-    if(v === undefined || v === null) return false;
-    if(Array.isArray(v)) return v.length > 0;
-    if(typeof v === 'object') return Object.keys(v).length > 0;
-    return String(v).trim() !== '';
-  }).length;
-
-  return meaningful >= 2;
-}
-
-async function renderProfile(authUser){
-  const snap=await get(ref(db,`users/${authUser.uid}`));
-  if(!snap.exists()||snap.val()?.active===false||snap.val()?.status==='inactive'){
-    await signOut(auth);location.href='../login.html';return;
-  }
-  const profile={uid:authUser.uid,...snap.val()};
-  if(!['employee','manager','admin'].includes(profile.role)){
-    await signOut(auth);location.href='../login.html';return;
-  }
-  window.atwarSyncShellIdentity?.(profile,authUser);
-
-  // الملف الوحيد الذي تم تجهيزه واعتماده حتى الآن هو ملف المدير المالي.
-  if(authUser.uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2'){
-    location.replace('financial-manager.html');
-    return;
-  }
-
-  document.getElementById('profileLoading')?.classList.add('hidden');
-  document.getElementById('profileContent')?.classList.add('hidden');
-  document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
-  try{lucide.createIcons()}catch(e){}
-}
-
-onAuthStateChanged(auth,user=>{
-  if(!user){location.href='../login.html';return}
-  renderProfile(user).catch(error=>{
-    console.error('Profile:',error);
-    document.getElementById('profileLoading')?.classList.add('hidden');
-    document.getElementById('profileContent')?.classList.add('hidden');
-    document.getElementById('profileUnderConstruction')?.classList.remove('hidden');
-  });
-});
+const HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('../login.html');if(a){if(a.profile.firebase_uid===HAMZA_FIREBASE_UID)location.replace('financial-manager.html');else{document.getElementById('profileLoading')?.classList.add('hidden');document.getElementById('profileContent')?.classList.add('hidden');document.getElementById('profileUnderConstruction')?.classList.remove('hidden');try{lucide.createIcons()}catch{}}}
 </script>
 </body>
 </html>

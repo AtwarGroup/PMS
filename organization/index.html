@@ -2,23 +2,50 @@
 <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ATWAR ONE – الهيكل التنظيمي</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script><script src="../assets/js/shell-components.js"></script><link rel="stylesheet" href="../assets/css/shared.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script src="../assets/js/shell-components.js"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
 <style>
 .head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:18px}.head h1{font-size:30px;margin:0}.head p{font-size:12px;color:#7b8aa5;margin:5px 0 0}.summary{display:flex;gap:8px;flex-wrap:wrap}.pill{background:#fff;border:1px solid #e5edf6;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:900}.tree{display:grid;gap:14px}.dept{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:16px}.dept-title{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #edf2f7;padding-bottom:10px;margin-bottom:12px}.dept-title h2{font-size:16px;margin:0}.people{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.person{border:1px solid #e7edf5;border-radius:14px;padding:12px;background:#fbfdff}.person.manager{border-color:#bcd7f7;background:#f6faff}.name{font-size:13px;font-weight:900}.meta{font-size:10px;color:#74849a;margin-top:4px;line-height:1.7}.reports{font-size:9px;background:#eef6ff;border-radius:999px;padding:4px 7px;display:inline-block;margin-top:7px}.empty,.error{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:25px;text-align:center;color:#718096}.error{color:#b42318}@media(max-width:950px){.people{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.people{grid-template-columns:1fr}.head{display:block}.summary{margin-top:10px}}
-</style></head><body style="visibility:hidden"><div class="atwar-shell"><atwar-sidebar active="organization"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content">
+</style></head><body><div class="atwar-shell"><atwar-sidebar active="organization"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content">
 <div class="head"><div><h1>الهيكل التنظيمي</h1><p>يُبنى تلقائيًا من بيانات المستخدمين والمدير المباشر المسجلة في ATWAR ONE.</p></div><div class="summary" id="summary"></div></div><div id="state" class="empty">جاري تحميل الهيكل التنظيمي...</div><div id="tree" class="tree"></div>
-<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>Production 1.5</span><span>Live Profiles</span></footer></main></section></div>
-<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/permissions.js"></script>
+<footer class="atwar-footer"><span>ATWAR ONE • Organization</span><span>Production 1.6</span><span>Live Profiles</span></footer></main></section></div>
 <script type="module">
-import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const URL='https://mjmxebkyswuphbgsukdt.supabase.co',KEY='sb_publishable_jKrXc2HLXh6cbl5O5uyvsA_a21WaQh6';
-const sb=window.ATWAR_SUPABASE||createClient(URL,KEY);window.ATWAR_SUPABASE=sb;
+const sb=await window.atwarGetSupabase();
+const cfg=window.ATWAR_SUPABASE_CONFIG;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-async function edgeList(token){try{const r=await fetch(URL+'/functions/v1/admin-create-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':KEY},body:JSON.stringify({action:'list'})});if(!r.ok)return null;const j=await r.json();return Array.isArray(j.users)?j.users:(Array.isArray(j.profiles)?j.profiles:null)}catch{return null}}
-async function run(){const{data:{session}}=await sb.auth.getSession();if(!session?.user){location.href='../login.html';return}const{data:me,error:meErr}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(meErr||!me){throw meErr||new Error('تعذر قراءة الحساب الحالي')}window.atwarSyncShellIdentity?.(me,session.user);
-let people=null;if(me.role==='admin')people=await edgeList(session.access_token);if(!people){const{data,error}=await sb.from('profiles').select('id,full_name,email,role,job_title,department,manager_id,active,status').eq('active',true).eq('status','active').order('full_name');if(error)throw error;people=data||[]}
-people=people.filter(x=>x.active!==false&&x.status!=='inactive');const byId=new Map(people.map(x=>[x.id,x]));const depts=new Map();for(const x of people){const d=(x.department||'غير محدد').trim()||'غير محدد';if(!depts.has(d))depts.set(d,[]);depts.get(d).push(x)}
-document.getElementById('summary').innerHTML=`<span class="pill">المستخدمون ${people.length}</span><span class="pill">الإدارات ${depts.size}</span><span class="pill">المديرون ${people.filter(x=>x.role==='manager'||x.role==='admin').length}</span>`;
-const tree=document.getElementById('tree');tree.innerHTML=[...depts.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ar')).map(([d,list])=>`<section class="dept"><div class="dept-title"><h2>${esc(d)}</h2><span class="pill">${list.length} موظف</span></div><div class="people">${list.sort((a,b)=>(a.role==='admin'?-2:a.role==='manager'?-1:0)-(b.role==='admin'?-2:b.role==='manager'?-1:0)||String(a.full_name).localeCompare(String(b.full_name),'ar')).map(x=>{const mgr=byId.get(x.manager_id);const n=people.filter(y=>y.manager_id===x.id).length;return`<div class="person ${(x.role==='manager'||x.role==='admin')?'manager':''}"><div class="name">${esc(x.full_name||x.email)}</div><div class="meta">${esc(x.job_title||x.role||'')}${x.email?'<br>'+esc(x.email):''}${mgr?'<br>المدير المباشر: '+esc(mgr.full_name):''}</div>${n?`<span class="reports">${n} مرؤوس مباشر</span>`:''}</div>`}).join('')}</div></section>`).join('');document.getElementById('state').style.display='none';lucide.createIcons()}
-run().catch(e=>{console.error(e);const s=document.getElementById('state');s.className='error';s.textContent='تعذر تحميل الهيكل التنظيمي: '+(e?.message||e);document.body.style.visibility='visible'});
-</script></body></html>
+async function edgeList(token){
+  const r=await fetch(cfg.url+'/functions/v1/admin-create-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':cfg.publishableKey},body:JSON.stringify({action:'list'})});
+  const text=await r.text(); let j={}; try{j=text?JSON.parse(text):{}}catch{}
+  if(!r.ok) throw new Error(j?.error||`فشل جلب الهيكل الإداري (${r.status})`);
+  return Array.isArray(j.users)?j.users:[];
+}
+async function run(){
+  const{data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href='../login.html';return}
+  const{data:me,error:meErr}=await sb.from('profiles').select('id,full_name,email,role,job_title,department,manager_id,active,status').eq('id',session.user.id).single();
+  if(meErr||!me)throw meErr||new Error('تعذر قراءة الحساب الحالي');
+  if(me.active===false||me.status==='inactive'){await sb.auth.signOut();localStorage.removeItem('atwarSession');location.href='../login.html';return}
+  window.atwarSyncShellIdentity?.(me,session.user);
+  let people=[];
+  if(me.role==='admin') people=await edgeList(session.access_token);
+  else {
+    const{data,error}=await sb.from('profiles').select('id,full_name,email,role,job_title,department,manager_id,active,status').eq('active',true).eq('status','active').order('full_name');
+    if(error)throw error; people=data||[];
+  }
+  people=people.filter(x=>x.active!==false&&x.status!=='inactive');
+  const byId=new Map(people.map(x=>[x.id,x]));
+  const reportCount=new Map(); for(const x of people){if(x.manager_id)reportCount.set(x.manager_id,(reportCount.get(x.manager_id)||0)+1)}
+  const depts=new Map(); for(const x of people){const d=String(x.department||'غير محدد').trim()||'غير محدد';if(!depts.has(d))depts.set(d,[]);depts.get(d).push(x)}
+  document.getElementById('summary').innerHTML=`<span class="pill">المستخدمون ${people.length}</span><span class="pill">الإدارات ${depts.size}</span><span class="pill">المديرون ${people.filter(x=>x.role==='manager'||x.role==='admin').length}</span>`;
+  const tree=document.getElementById('tree');
+  tree.innerHTML=[...depts.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ar')).map(([d,list])=>`<section class="dept"><div class="dept-title"><h2>${esc(d)}</h2><span class="pill">${list.length} موظف</span></div><div class="people">${list.sort((a,b)=>(a.role==='admin'?-2:a.role==='manager'?-1:0)-(b.role==='admin'?-2:b.role==='manager'?-1:0)||String(a.full_name||'').localeCompare(String(b.full_name||''),'ar')).map(x=>{const mgr=byId.get(x.manager_id),n=reportCount.get(x.id)||0;return`<div class="person ${(x.role==='manager'||x.role==='admin')?'manager':''}"><div class="name">${esc(x.full_name||x.email)}</div><div class="meta">${esc(x.job_title||x.role||'')}${x.email?'<br>'+esc(x.email):''}${mgr?'<br>المدير المباشر: '+esc(mgr.full_name):''}</div>${n?`<span class="reports">${n} مرؤوس مباشر</span>`:''}</div>`}).join('')}</div></section>`).join('');
+  document.getElementById('state').style.display='none';
+  window.lucide?.createIcons();
+}
+run().catch(e=>{console.error('Organization:',e);const s=document.getElementById('state');s.className='error';s.textContent='تعذر تحميل الهيكل التنظيمي: '+(e?.message||e)});
+</script>
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/permissions.js"></script>
+</body></html>
