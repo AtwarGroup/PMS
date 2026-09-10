@@ -1,0 +1,18 @@
+ATWAR ONE - Production 1.1 Self Test
+Date: 2026-09-10
+
+Admin user creation integration:
+- Password field present: PASS
+- Firebase UID removed from new-user UI: PASS
+- User creation remains inside ATWAR ONE: PASS
+- Calls deployed Edge Function admin-create-user: PASS
+- Role / direct manager / status fields present: PASS
+- Admin-only access guard present: PASS
+- JavaScript syntax check for admin/users.html: PASS
+
+Project checks:
+- Broken static local href/src references: 0
+- landing.html contains one intentional dynamic template href (${system.href}); not a broken file
+- Operational Firebase SDK / Realtime Database references: 0
+
+Result: PASS

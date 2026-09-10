@@ -46,32 +46,35 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
     <div id="error" class="error">يرجى إدخال البريد الإلكتروني وكلمة المرور.</div>
 
     <div class="login-note">
-      استخدم نفس البريد الإلكتروني وكلمة المرور الخاصة بحسابك في نظام المهام.
+      تسجيل الدخول إلى ATWAR ONE عبر Supabase.
     </div>
 
-    <div style="margin-top:12px;font-size:11px;color:#7b8aa5;line-height:1.7">بعد التحقق من حسابك سيتم فتح الرئيسية وتطبيق الصلاحيات المسجلة في النظام.</div>
+    <div style="margin-top:12px;font-size:11px;color:#7b8aa5;line-height:1.7">بعد نجاح الدخول سيتم فتح الصفحة الرئيسية للنظام.</div>
 <a href="landing.html" class="back">← العودة إلى صفحة البداية</a>
   </div>
 </section>
 </div>
-<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/supabase-config.js"></script>
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js"></script>
 
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const app = getApps().length ? getApps()[0] : initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db = getDatabase(app);
+const sbConfig = window.ATWAR_SUPABASE_CONFIG;
+if(!sbConfig?.url || !sbConfig?.publishableKey) throw new Error('Supabase config unavailable');
+
+const supabase = createClient(sbConfig.url, sbConfig.publishableKey, {
+  auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+});
+window.ATWAR_SUPABASE = supabase;
 
 const emailEl = document.getElementById('email');
 const passwordEl = document.getElementById('password');
 const buttonEl = document.getElementById('loginButton');
 const errorEl = document.getElementById('error');
 let manualLoginInProgress = false;
+let redirecting = false;
 
 function roleLabel(role){
   return role === 'admin' ? 'مدير النظام' : role === 'manager' ? 'مدير' : 'موظف';
@@ -85,44 +88,49 @@ function showError(message){
   errorEl.textContent = message;
   errorEl.style.display = 'block';
 }
+function clearError(){ errorEl.style.display = 'none'; }
 
-function clearError(){
-  errorEl.style.display = 'none';
-}
+async function loadSupabaseProfile(user){
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id,firebase_uid,email,full_name,role,status,active,job_title,department,manager_id')
+    .eq('id', user.id)
+    .single();
 
-async function loadProfile(user){
-  const snap = await get(ref(db, `users/${user.uid}`));
-  if(!snap.exists()) throw new Error('profile-not-found');
-
-  const profile = { uid:user.uid, ...snap.val() };
-
-  if(profile.active === false || profile.status === 'inactive'){
-    throw new Error('account-inactive');
+  if(error || !data) {
+    console.error('Profile lookup failed:', error);
+    throw new Error('supabase-profile-not-found');
   }
-
-  if(!['employee','manager','admin'].includes(profile.role))throw new Error('invalid-role');
-  const role = profile.role;
-
-  return {
-    uid: user.uid,
-    email: user.email || profile.email || '',
-    name: profile.name || user.email || 'المستخدم',
-    title: profile.title || profile.jobTitle || profile.position || roleLabel(role),
-    role,
-    managerUid: profile.managerUid || '',
-    managerChain: (profile.managerChain && typeof profile.managerChain === 'object') ? profile.managerChain : {},
-    permissions: Array.isArray(profile.permissions) && profile.permissions.length
-      ? profile.permissions
-      : defaultPermissions(role),
-    source: 'firebase'
-  };
+  if(data.active === false || data.status === 'inactive') throw new Error('account-inactive');
+  if(!['employee','manager','admin'].includes(data.role)) throw new Error('invalid-role');
+  return data;
 }
 
 async function establishSession(user){
-  const session = await loadProfile(user);
+  const profile = await loadSupabaseProfile(user);
+  const role = profile.role;
+  const session = {
+    uid: user.id,
+    supabaseUid: user.id,
+    firebaseUid: profile.firebase_uid || '',
+    email: user.email || profile.email || '',
+    name: profile.full_name || user.email || 'المستخدم',
+    title: profile.job_title || roleLabel(role),
+    department: profile.department || '',
+    role,
+    managerId: profile.manager_id || null,
+    permissions: defaultPermissions(role),
+    source: 'supabase'
+  };
   localStorage.setItem('atwarSession', JSON.stringify(session));
   localStorage.removeItem('atwarDemoSession');
   return session;
+}
+
+function goToCheck(){
+  if(redirecting) return;
+  redirecting = true;
+  location.href = 'home.html';
 }
 
 async function login(){
@@ -139,30 +147,31 @@ async function login(){
   buttonEl.textContent = 'جاري الدخول...';
 
   try{
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const session = await establishSession(cred.user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error || !data?.user) {
+      console.error('Supabase login failed:', error);
+      throw Object.assign(new Error(error?.message || 'supabase-login-failed'), { original:error });
+    }
+    await establishSession(data.user);
+    goToCheck();
   }catch(error){
     console.error(error);
     localStorage.removeItem('atwarSession');
+    await supabase.auth.signOut().catch(()=>{});
 
-    if(error?.message === 'profile-not-found'){
-      await signOut(auth);
-      showError('الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.');
+    if(error?.message === 'supabase-profile-not-found'){
+      showError('تم تسجيل الدخول ولكن لم يتم العثور على ملف المستخدم داخل Supabase.');
     }else if(error?.message === 'account-inactive'){
-      await signOut(auth);
       showError('هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.');
     }else if(error?.message === 'invalid-role'){
-      await signOut(auth);
       showError('دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.');
     }else{
-      if(auth.currentUser) await signOut(auth).catch(()=>{});
-      const code = error?.code || '';
+      const raw=(error?.original?.message || error?.message || '').toLowerCase();
       showError(
-        code === 'auth/user-disabled' ? 'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.' :
-        code === 'auth/too-many-requests' ? 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى لاحقًا.' :
-        code === 'auth/network-request-failed' ? 'تعذر الاتصال بالخدمة. تحقق من الإنترنت ثم حاول مرة أخرى.' :
-        'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.'
+        raw.includes('invalid login credentials') ? 'بيانات الدخول غير صحيحة في Supabase.' :
+        raw.includes('rate') || raw.includes('too many') ? 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى لاحقًا.' :
+        raw.includes('network') || raw.includes('fetch') ? 'تعذر الاتصال بـ Supabase. تحقق من الإنترنت ثم حاول مرة أخرى.' :
+        'تعذر تسجيل الدخول إلى Supabase.'
       );
     }
   }finally{
@@ -176,16 +185,18 @@ buttonEl.addEventListener('click', login);
 passwordEl.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
 emailEl.addEventListener('keydown', e => { if(e.key === 'Enter') passwordEl.focus(); });
 
-onAuthStateChanged(auth, async user => {
-  if(!user || manualLoginInProgress) return;
+(async()=>{
+  if(manualLoginInProgress) return;
+  const { data:{ session } } = await supabase.auth.getSession();
+  if(!session?.user) return;
   try{
-    const session = await establishSession(user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
+    await establishSession(session.user);
+    goToCheck();
   }catch{
     localStorage.removeItem('atwarSession');
-    await signOut(auth).catch(()=>{});
+    await supabase.auth.signOut().catch(()=>{});
   }
-});
+})();
 
 lucide.createIcons();
 </script>

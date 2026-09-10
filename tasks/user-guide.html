@@ -6,6 +6,9 @@
 <title>ATWAR ONE – دليل المستخدم</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script src="../assets/js/shell-components.js"></script>
 <style>
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -47,7 +50,7 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
 }
 </style>
 </head>
-<body style="visibility:hidden">
+<body>
 <main>
 
 <div class="topbar">
@@ -174,26 +177,9 @@ main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
   <p>شارك الملاحظة مع إدارة النظام، ويفضل ذكر الصفحة والخطوة التي قمت بها وإرفاق صورة للشاشة عند الحاجة. سيتم مراجعة الملاحظات ومعالجتها ضمن عملية التطوير المستمرة.</p>
 </section>
 
-<div class="footer">ATWAR ONE • User Guide • Candidate 10</div>
+<div class="footer">ATWAR ONE • User Guide • Production 1.6</div>
 </main>
-<script src="../assets/js/firebase-config.js"></script>
-<script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-onAuthStateChanged(auth,async user=>{
-  if(!user){location.replace('../login.html');return}
-  try{
-    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-      await auth.signOut().catch(()=>{});location.replace('../login.html');return
-    }
-    document.body.style.visibility='visible';
-  }catch(error){console.error('User guide access:',error);await auth.signOut().catch(()=>{});location.replace('../login.html')}
-});
-try{lucide.createIcons()}catch{}
-</script>
+
+<script type="module">const sb=await window.atwarGetSupabase();const{data:{session}}=await sb.auth.getSession();if(!session?.user)location.href='../login.html';else{const{data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(p)window.atwarSyncShellIdentity?.(p,session.user)}</script>
 </body>
 </html>

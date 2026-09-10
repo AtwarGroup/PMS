@@ -14,7 +14,9 @@
 .primary{background:#1677ff;color:white}.secondary{background:white;color:#20364f;border:1px solid #dce6f1}
 .badge-count{font-size:9px;color:#1677ff;background:#eaf3ff;border-radius:999px;padding:3px 7px;margin-right:4px}@media(max-width:850px){.role-grid{grid-template-columns:1fr}}
 </style>
-<script src="../assets/js/firebase-config.js"></script>
+
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/shell-components.js"></script>
 </head>
 <body style="visibility:hidden">
@@ -49,30 +51,7 @@
       <a class="secondary" href="index.html">العودة لإدارة النظام</a>
     </div>
   </div>
-<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>Candidate 10</span><span>Admin Only</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>Production 1.6</span><span>Admin Only</span></footer>
 </main></section></div>
-<script type="module">
-import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-onAuthStateChanged(auth,async user=>{
-  if(!user){location.replace('../login.html');return}
-  try{
-    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.active===false||profile.status==='inactive'||profile.role!=='admin'){
-      await auth.signOut().catch(()=>{});location.replace('../login.html');return
-    }
-    window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
-    const all=await get(ref(db,'users'));
-    const rows=all.exists()?Object.values(all.val()):[];
-    document.getElementById('countEmployee').textContent=rows.filter(x=>x.role==='employee').length;
-    document.getElementById('countManager').textContent=rows.filter(x=>x.role==='manager').length;
-    document.getElementById('countAdmin').textContent=rows.filter(x=>x.role==='admin').length;
-    document.body.style.visibility='visible';
-    try{lucide.createIcons()}catch{}
-  }catch(error){console.error('Admin roles access:',error);location.replace('index.html')}
-});
-</script>
+<script type="module">import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";const c=window.ATWAR_SUPABASE_CONFIG,sb=window.ATWAR_SUPABASE||createClient(c.url,c.publishableKey);window.ATWAR_SUPABASE=sb;const{data:{session}}=await sb.auth.getSession();if(!session?.user)location.href='../login.html';else{const{data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(!p||p.role!=='admin')location.href='../home.html';else{window.atwarSyncShellIdentity?.(p,session.user);document.body.style.visibility='visible'}}</script>
 </body></html>

@@ -1,0 +1,8 @@
+ATWAR ONE Production 1.3
+Fixes admin users page and Edge Function communication.
+- Browser now calls the Edge Function explicitly with the current session JWT and publishable apikey.
+- Edge Function no longer depends on SUPABASE_ANON_KEY.
+- Caller JWT is verified server-side with auth.getUser(token).
+- Admin authorization is checked server-side against profiles.
+- Service Role key remains server-side only.
+- API errors are surfaced to the ATWAR ONE page instead of a generic functions.invoke failure.

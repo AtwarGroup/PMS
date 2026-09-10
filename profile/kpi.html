@@ -1,4 +1,6 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مؤشرات الأداء</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/shell-components.js"></script><link rel="stylesheet" href="../assets/css/shared.css"><style>.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.kpi-card{background:#fff;border:1px solid #e6edf5;border-radius:20px;padding:20px;box-shadow:0 5px 14px rgba(20,45,80,.045)}.bar{height:8px;background:#edf2f7;border-radius:999px;overflow:hidden;margin-top:12px}.fill{height:100%;background:#1677ff}</style></head><body>
 <div class="atwar-shell">
   <atwar-sidebar active="profile"></atwar-sidebar>
@@ -17,7 +19,7 @@
 <script src="../assets/js/shared.js"></script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/firebase-config.js"></script>
+
 <script src="../assets/js/permissions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -33,31 +35,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 <script type="module" id="realProfileDataBinding">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
-const host=document.getElementById('profileDataHost');
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function empty(){
- host.innerHTML=`<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">لا توجد بيانات معتمدة</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات مؤشرات الأداء المعتمدة لهذا الحساب حتى الآن.</p></div>`;
-}
-onAuthStateChanged(auth,async user=>{
- if(!user){location.href='../login.html';return}
- try{
-   const snap=await get(ref(db,`users/${user.uid}`));
-   if(!snap.exists()||snap.val()?.active===false||snap.val()?.status==='inactive'){
-     await signOut(auth);location.href='../login.html';return;
-   }
-   const record=snap.val();
-   if(!['employee','manager','admin'].includes(record.role)){await signOut(auth);location.href='../login.html';return}
-   window.atwarSyncShellIdentity?.({uid:user.uid,...record},user);
-   const data=record.kpis || record.kpi || null;
-   if(!data || (typeof data==='string'&&!data.trim()) || (typeof data==='object'&&!Object.keys(data).length)){empty();return}
-   const rows=Array.isArray(data)?data:Object.entries(data).map(([name,value])=>({name,value}));
-   host.innerHTML=`<div style="width:min(900px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">مؤشرات الأداء</h1><div style="display:grid;gap:10px">${rows.map(x=>`<div style="border:1px solid #e7edf5;border-radius:12px;padding:12px"><b>${esc(x.name||x.title||x.kpi||'مؤشر')}</b><div style="color:#607087;margin-top:5px">${esc(x.value??x.score??x.target??'—')}</div></div>`).join('')}</div></div>`;
- }catch(e){console.error(e);empty()}
-});
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const c=window.ATWAR_SUPABASE_CONFIG,sb=window.ATWAR_SUPABASE||createClient(c.url,c.publishableKey);window.ATWAR_SUPABASE=sb;
+const host=document.getElementById('profileDataHost');const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function empty(){host.innerHTML=`<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">لا توجد بيانات معتمدة</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات مؤشرات الأداء المعتمدة لهذا الحساب حتى الآن.</p></div>`}
+const {data:{session}}=await sb.auth.getSession();if(!session?.user)location.href='../login.html';else{const{data:record,error}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(error||!record)empty();else{window.atwarSyncShellIdentity?.(record,session.user);const data=record.kpis || record.kpi || null;if(!data||(typeof data==='string'&&!data.trim())||(typeof data==='object'&&!Object.keys(data).length))empty();else{const rows=Array.isArray(data)?data:Object.entries(data).map(([name,value])=>({name,value}));host.innerHTML=`<div style="width:min(900px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">مؤشرات الأداء</h1><div style="display:grid;gap:10px">${rows.map(x=>`<div style="border:1px solid #e7edf5;border-radius:12px;padding:12px"><b>${esc(x.name||x.title||x.kpi||'مؤشر')}</b><div style="color:#607087;margin-top:5px">${esc(x.value??x.score??x.target??'—')}</div></div>`).join('')}</div></div>`}}}
 </script>
 </body>
 </html>
