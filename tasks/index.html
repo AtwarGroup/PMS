@@ -784,7 +784,7 @@ function roleLabel(role){return ({admin:'مدير النظام',manager:'مدي�
 function compositeKey(t){return `${t._ownerUid}::${t._key}`}
 function selectedTask(){
   // أثناء إعادة الإسناد نفضّل النسخة المؤقتة حتى لا تتأثر لوحة التفاصيل
-  // بتتابع تحديثات Firebase على المسار القديم والجديد.
+  // بتتابع تحديثات طبقة التوافق على المسار القديم والجديد.
   if(
     transientSelectedTask &&
     compositeKey(transientSelectedTask)===selectedTaskKey
@@ -1575,7 +1575,7 @@ async function openNotification(key){
 
   let task=tasks.find(t=>compositeKey(t)===composite);
 
-  // في حال لم تصل المهمة بعد إلى الاشتراك اللحظي، اجلبها مباشرة من Firebase.
+  // في حال لم تصل المهمة بعد إلى الاشتراك اللحظي، اجلبها مباشرة من قاعدة البيانات.
   if(!task){
     try{
       const snap=await get(ref(db,`tasksByUser/${n.ownerUid}/${n.taskKey}`));
@@ -1744,7 +1744,7 @@ function subscribeVisibleTasks(){
         String(a.id).localeCompare(String(b.id),'en',{numeric:true});
     });
 
-    // أثناء إعادة الإسناد تصل عدة تحديثات من Firebase.
+    // أثناء إعادة الإسناد قد تصل عدة تحديثات من طبقة البيانات.
     // نحدّث مصفوفة tasks في الخلفية لكن لا نعيد بناء DOM حتى يكتمل النقل.
     if(isReassigningTask){
       return;
@@ -1904,7 +1904,7 @@ async function updateTaskFieldsSafely(task,changes,{activityType='',activityDeta
 }
 
 // انتقالات الحالة والعمليات المركبة تتم كـ Transaction على المهمة الحالية في الخادم.
-// إذا غيّر مستخدم آخر المهمة أثناء العملية، يعيد Firebase المحاولة على أحدث نسخة بدل الكتابة فوقها.
+// تتحقق طبقة البيانات من أحدث نسخة للمهمة قبل اعتماد التغيير.
 async function transactTask(task,allowedStatuses,mutator,{activityType='',activityDetail='',conflictMessage='تغيرت حالة المهمة من مستخدم آخر. راجع الحالة الحالية ثم أعد المحاولة.'}={}){
   const path=taskDatabasePath(task);
   if(!path)return null;
