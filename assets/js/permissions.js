@@ -68,23 +68,15 @@ function applyAtwarPermissions(){
 async function atwarLogout(){
   localStorage.removeItem('atwarSession');
   localStorage.removeItem('atwarDemoSession');
-
   try{
-    const [{ initializeApp, getApps }, { getAuth, signOut }] = await Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js')
-    ]);
-
-    const config = window.ATWAR_FIREBASE_CONFIG;
-    if(config){
-      const app = getApps().length ? getApps()[0] : initializeApp(config);
-      await signOut(getAuth(app));
+    if(window.ATWAR_SUPABASE?.auth?.signOut) await window.ATWAR_SUPABASE.auth.signOut();
+    else if(window.ATWAR_SUPABASE_CONFIG){
+      const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      const c=window.ATWAR_SUPABASE_CONFIG;
+      await createClient(c.url,c.publishableKey).auth.signOut();
     }
-  }catch(error){
-    console.warn('Firebase sign-out warning:', error);
-  }
-
-  location.href=atwarDepth()+'landing.html';
+  }catch(error){console.warn('Supabase sign-out warning:',error)}
+  location.href=atwarDepth()+'login.html';
 }
 
 document.addEventListener('DOMContentLoaded',applyAtwarPermissions);

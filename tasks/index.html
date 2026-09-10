@@ -176,7 +176,8 @@
 </style>
 
 <link rel="stylesheet" href="../assets/css/shared.css">
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 </head>
@@ -519,22 +520,10 @@
   Frozen from validated UAT build V3.21.2
 -->
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "../assets/js/supabase-firebase-compat.js";
 
-const firebaseConfig = window.ATWAR_FIREBASE_CONFIG || {
-  apiKey: "AIzaSyCgvfHsmtb0qYAMfUjV7iKmZUcJ5n_aSy4",
-  authDomain: "atwarpms.firebaseapp.com",
-  databaseURL: "https://atwarpms-default-rtdb.firebaseio.com",
-  projectId: "atwarpms",
-  storageBucket: "atwarpms.firebasestorage.app",
-  messagingSenderId: "352965627186",
-  appId: "1:352965627186:web:4da393db672e3d90c45b2b",
-  measurementId: "G-6L59HHPPJW"
-};
-
-const app=getApps().length?getApps()[0]:initializeApp(firebaseConfig);
+const compatConfig = {};
+const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
 const db=getDatabase(app);
 const auth=getAuth(app);
 
@@ -795,7 +784,7 @@ function roleLabel(role){return ({admin:'مدير النظام',manager:'مدي�
 function compositeKey(t){return `${t._ownerUid}::${t._key}`}
 function selectedTask(){
   // أثناء إعادة الإسناد نفضّل النسخة المؤقتة حتى لا تتأثر لوحة التفاصيل
-  // بتتابع تحديثات Firebase على المسار القديم والجديد.
+  // بتتابع تحديثات طبقة التوافق على المسار القديم والجديد.
   if(
     transientSelectedTask &&
     compositeKey(transientSelectedTask)===selectedTaskKey
@@ -914,9 +903,15 @@ function bindDetailsCloseButtons(){
 
 
 async function openUrlTargetTaskIfReady(){
-  if(!urlTargetTaskKey||!urlTargetOwnerUid)return false;
+  if(!urlTargetTaskKey)return false;
+  let task=null;
+  if(!urlTargetOwnerUid){
+    task=tasks.find(t=>String(t._key||t._relationalId||'')===String(urlTargetTaskKey));
+    if(task)urlTargetOwnerUid=String(task._ownerUid||task.assignUid||'');
+  }
+  if(!urlTargetOwnerUid)return false;
   const composite=`${urlTargetOwnerUid}::${urlTargetTaskKey}`;
-  let task=tasks.find(t=>compositeKey(t)===composite);
+  task=task||tasks.find(t=>compositeKey(t)===composite);
 
   if(!task){
     try{
@@ -938,6 +933,10 @@ async function openUrlTargetTaskIfReady(){
   renderTasks();
   renderDetails();
   requestAnimationFrame(()=>scrollSelectedTaskIntoView(true));
+  const openedNotificationId=new URLSearchParams(location.search).get('notification');
+  if(openedNotificationId){
+    try{const sb=await window.atwarGetSupabase();await sb.from('notifications').delete().eq('id',openedNotificationId)}catch(error){console.warn('Notification cleanup:',error)}
+  }
   urlTargetTaskKey='';
   return true;
 }
@@ -1249,7 +1248,7 @@ onAuthStateChanged(auth,async(user)=>{
   selectedTaskKey=null;
   assigneeFilterValue='ALL';
 
-  // Firebase انتهى من تهيئة Auth.
+  // Supabase Auth انتهى من تهيئة الجلسة.
   if(!user){
     showApp(false);
     return;
@@ -1321,7 +1320,7 @@ onAuthStateChanged(auth,async(user)=>{
     setTimeout(()=>checkOverdueNotifications(),1200);
 
   }catch(error){
-    console.error('Firebase database connection error:',error);
+    console.error('Supabase database connection error:',error);
 
     const msg=error?.message==='database-timeout'
       ? 'انتهت مهلة الاتصال بقاعدة البيانات. جلسة الدخول محفوظة، اضغط إعادة المحاولة.'
@@ -1554,12 +1553,6 @@ async function markAllNotificationsRead(){
 async function openNotification(key){
   const n=notifications.find(x=>x._key===key); if(!n)return;
 
-  try{
-    await update(ref(db,`${notificationPath(currentUser.uid)}/${key}`),{read:true});
-  }catch(error){
-    console.error('Mark notification read:',error);
-  }
-
   toggleNotifications(false);
   if(n.type==='overdue_summary'){
     homeFilterValue='OVERDUE';
@@ -1567,6 +1560,9 @@ async function openNotification(key){
     setupAssigneeFilter();
     renderTasks();
     updateVisibleCount();
+    // سياسة ATWAR ONE: الإشعار يُحذف بعد تنفيذ الإجراء المرتبط به بنجاح.
+    try{await remove(ref(db,`${notificationPath(currentUser.uid)}/${key}`))}
+    catch(error){console.error('Delete opened notification:',error)}
     return;
   }
   if(!n.ownerUid||!n.taskKey)return;
@@ -1579,7 +1575,7 @@ async function openNotification(key){
 
   let task=tasks.find(t=>compositeKey(t)===composite);
 
-  // في حال لم تصل المهمة بعد إلى الاشتراك اللحظي، اجلبها مباشرة من Firebase.
+  // في حال لم تصل المهمة بعد إلى الاشتراك اللحظي، اجلبها مباشرة من قاعدة البيانات.
   if(!task){
     try{
       const snap=await get(ref(db,`tasksByUser/${n.ownerUid}/${n.taskKey}`));
@@ -1604,6 +1600,10 @@ async function openNotification(key){
   updateStats();
   updateVisibleCount();
   renderDetails();
+
+  // لا نحذف الإشعار إلا بعد العثور على المهمة وفتح تفاصيلها فعليًا.
+  try{await remove(ref(db,`${notificationPath(currentUser.uid)}/${key}`))}
+  catch(error){console.error('Delete opened notification:',error)}
 
   requestAnimationFrame(()=>{
     const card=document.querySelector(`[data-task-key="${CSS.escape(composite)}"]`);
@@ -1744,7 +1744,7 @@ function subscribeVisibleTasks(){
         String(a.id).localeCompare(String(b.id),'en',{numeric:true});
     });
 
-    // أثناء إعادة الإسناد تصل عدة تحديثات من Firebase.
+    // أثناء إعادة الإسناد قد تصل عدة تحديثات من طبقة البيانات.
     // نحدّث مصفوفة tasks في الخلفية لكن لا نعيد بناء DOM حتى يكتمل النقل.
     if(isReassigningTask){
       return;
@@ -1904,7 +1904,7 @@ async function updateTaskFieldsSafely(task,changes,{activityType='',activityDeta
 }
 
 // انتقالات الحالة والعمليات المركبة تتم كـ Transaction على المهمة الحالية في الخادم.
-// إذا غيّر مستخدم آخر المهمة أثناء العملية، يعيد Firebase المحاولة على أحدث نسخة بدل الكتابة فوقها.
+// تتحقق طبقة البيانات من أحدث نسخة للمهمة قبل اعتماد التغيير.
 async function transactTask(task,allowedStatuses,mutator,{activityType='',activityDetail='',conflictMessage='تغيرت حالة المهمة من مستخدم آخر. راجع الحالة الحالية ثم أعد المحاولة.'}={}){
   const path=taskDatabasePath(task);
   if(!path)return null;
@@ -1972,8 +1972,7 @@ async function prepareTaskOperation(task,type,targetUid=''){
         abortReason='status';return;
       }
       const next={...current};
-      // Use Firebase server time so security-rule validation is independent
-      // from the browser/device clock.
+      // Compatibility bridge provides a server-safe workflow timestamp contract.
       next.operationIntent={type,token,byUid:currentUser.uid,at:serverTimestamp()};
       if(targetUid)next.operationIntent.targetUid=String(targetUid);
       next.revision=Number(current.revision||0)+1;

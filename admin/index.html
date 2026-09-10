@@ -52,27 +52,24 @@
     </a>
   </div>
 </section>
-<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>Candidate 10</span><span>إدارة النظام</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Administration</span><span>Production 1.7C</span><span>إدارة النظام</span></footer>
 </main></section></div>
-<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/permissions.js"></script>
 <script type="module">
-import { initializeApp,getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase,ref,get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-onAuthStateChanged(auth,async user=>{
-  if(!user){location.replace('../login.html');return}
-  try{
-    const snap=await get(ref(db,`users/${user.uid}`)),profile=snap.exists()?snap.val():null;
-    if(!profile||profile.active===false||profile.status==='inactive'||profile.role!=='admin'){
-      await auth.signOut().catch(()=>{});location.replace('../login.html');return
-    }
-    window.atwarSyncShellIdentity?.({...profile,uid:user.uid},user);
-    document.body.style.visibility='visible';
-    try{lucide.createIcons()}catch{}
-  }catch(error){console.error('Admin access:',error);location.replace('../home.html')}
-});
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+  }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
+}
+
+const a=await authProfile('../login.html');if(a){if(a.profile.role!=='admin')location.replace('../home.html');else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
 </script>
 </body></html>

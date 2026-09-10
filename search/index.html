@@ -31,84 +31,29 @@
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>Candidate 10</span><span>Firebase Live Search</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>Production 1.7C</span><span>Supabase Live Search</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/permissions.js"></script>
 <script type="module" id="liveSearchBinding">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG),auth=getAuth(app),db=getDatabase(app);
-const input=document.getElementById('query'),results=document.getElementById('results');
-let pages=[],people=[],tasks=[],profile=null;
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-
-function render(q=''){
- q=String(q||'').trim().toLowerCase();
- if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}
- const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));
- const peopleRows=people.filter(x=>`${x.name||''} ${x.email||''} ${x.title||x.jobTitle||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.name||x.email||'مستخدم',meta:x.title||x.jobTitle||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.uid)}`,kind:'موظف'}));
- const taskRows=tasks.filter(x=>`${x.title||''} ${x.desc||''} ${x.notes||''} ${x.assign||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assign||''}`,icon:'square-check-big',href:`../tasks/index.html?owner=${encodeURIComponent(x._ownerUid)}&task=${encodeURIComponent(x._key)}`,kind:'مهمة'}));
- const rows=[...taskRows,...peopleRows,...pageRows];
- results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';
- try{lucide.createIcons()}catch{}
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+  }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
 }
 
-onAuthStateChanged(auth,async user=>{
- if(!user){location.href='../login.html';return}
- try{
-  const profileSnap=await get(ref(db,`users/${user.uid}`));
-  if(!profileSnap.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'){
-    await signOut(auth);location.href='../login.html';return;
-  }
-  profile={uid:user.uid,...profileSnap.val()};
-  if(!['employee','manager','admin'].includes(profile.role)){await signOut(auth);location.href='../login.html';return}
-  let allUsers=[profile];
-  if(profile.role==='manager'){
-    const us=await get(query(ref(db,'users'),orderByChild('managerUid'),equalTo(user.uid)));
-    if(us.exists())allUsers.push(...Object.entries(us.val()).map(([uid,v])=>({uid,...v})));
-  }else if(profile.role==='admin'){
-    const us=await get(ref(db,'users'));
-    allUsers=us.exists()?Object.entries(us.val()).map(([uid,v])=>({uid,...v})):[profile];
-  }
-  const direct=allUsers.filter(u=>String(u.managerUid||'')===String(user.uid));
-  const visibleUsers=profile.role==='admin'?allUsers.filter(u=>u.active!==false&&u.status!=='inactive'):profile.role==='manager'?direct.filter(u=>u.active!==false&&u.status!=='inactive'):[];
-  people=visibleUsers;
-
-  const activeDirect=direct.filter(u=>u.active!==false&&u.status!=='inactive');
-  const ownerIds=profile.role==='admin'?allUsers.map(u=>u.uid):profile.role==='manager'?[user.uid,...activeDirect.map(u=>u.uid)]:[user.uid];
-  const buckets=await Promise.all([...new Set(ownerIds)].map(async uid=>{try{const q=await get(ref(db,`tasksByUser/${uid}`));return q.exists()?Object.entries(q.val()).map(([id,v])=>({_key:id,_ownerUid:uid,...v})):[]}catch{return []}}));
-  const merged=new Map();buckets.flat().forEach(t=>merged.set(`${t._ownerUid}::${t._key}`,t));
-  if(profile.role==='manager'){
-    const indexSnap=await get(ref(db,`createdTaskIndex/${user.uid}`));
-    const indexRows=indexSnap.exists()?indexSnap.val():{};
-    await Promise.all(Object.entries(indexRows).map(async([taskKey,ownerUid])=>{
-      ownerUid=String(ownerUid||'');if(!ownerUid||ownerIds.includes(ownerUid))return;
-      const taskSnap=await get(ref(db,`tasksByUser/${ownerUid}/${taskKey}`));
-      if(taskSnap.exists()&&String(taskSnap.val()?.createdByUid||'')===String(user.uid)){
-        merged.set(`${ownerUid}::${taskKey}`,{_key:taskKey,_ownerUid:ownerUid,...taskSnap.val()});
-      }
-    }));
-  }
-  tasks=[...merged.values()];
-  window.atwarSyncShellIdentity?.(profile,user);
-
-  pages=[
-   {title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},
-   {title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},
-   {title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},
-   ...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),
-   ...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])
-  ];
-
-  const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q);
- }catch(e){console.error('Search:',e);results.innerHTML='<div class="empty">البحث غير متاح حالياً، حاول مرة أخرى بعد لحظات.</div>'}
-});
-input.addEventListener('input',e=>render(e.target.value));
+const input=document.getElementById('query'),results=document.getElementById('results');let pages=[],people=[],tasks=[],profile=null;const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function render(q=''){q=String(q).trim().toLowerCase();if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));const peopleRows=people.filter(x=>`${x.full_name||''} ${x.email||''} ${x.job_title||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.full_name||x.email||'مستخدم',meta:x.job_title||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.id)}`,kind:'موظف'}));const taskRows=tasks.filter(x=>`${x.title||''} ${x.description||''} ${x.notes||''} ${x.assignee_name_snapshot||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assignee_name_snapshot||''}`,icon:'square-check-big',href:`../tasks/index.html?task=${encodeURIComponent(x.id)}`,kind:'مهمة'}));const rows=[...taskRows,...peopleRows,...pageRows];results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';try{lucide.createIcons()}catch{}}
+const a=await authProfile('../login.html');if(a){profile=a.profile;const [pr,tr]=await Promise.all([sb.from('profiles').select('id,full_name,email,role,job_title,manager_id,active,status').eq('active',true).eq('status','active').order('full_name'),sb.from('tasks').select('*').order('updated_at',{ascending:false})]);people=profile.role==='employee'?[]:(pr.data||[]).filter(x=>profile.role==='admin'||x.manager_id===profile.id);tasks=tr.data||[];pages=[{title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},{title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},{title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])];const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q)}input.addEventListener('input',e=>render(e.target.value));
 </script>
 </body></html>

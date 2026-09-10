@@ -61,48 +61,28 @@
       </section>
     </div>
 
-    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
     <script src="../assets/js/roles-config.js"></script>
     <script src="../assets/js/start-page-config.js"></script>
     <script src="../assets/js/shell-components.js"></script>
     <script src="../assets/js/permissions.js"></script>
 
     <script type="module" id="financialProfileAccessGuard">
-      import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-      import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+  }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
+}
 
-      const TARGET_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';
-      const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-      const auth=getAuth(app),db=getDatabase(app);
-
-      onAuthStateChanged(auth,async user=>{
-        if(!user){location.replace('../login.html');return}
-        try{
-          const [viewerSnap,targetSnap]=await Promise.all([
-            get(ref(db,`users/${user.uid}`)),
-            get(ref(db,`users/${TARGET_UID}`))
-          ]);
-          if(!viewerSnap.exists()||!targetSnap.exists()){location.replace('../home.html');return}
-          const viewer=viewerSnap.val();
-          const target=targetSnap.val();
-          if(viewer.active===false||viewer.status==='inactive'||target.active===false||target.status==='inactive'){
-            location.replace('../home.html');return;
-          }
-          if(!['employee','manager','admin'].includes(viewer.role)){location.replace('../login.html');return}
-          const allowed=
-            user.uid===TARGET_UID ||
-            viewer.role==='admin' ||
-            (viewer.role==='manager'&&String(target.managerUid||'')===String(user.uid));
-          if(!allowed){location.replace('../home.html');return}
-          window.atwarSyncShellIdentity?.({uid:user.uid,...viewer},user);
-          document.body.style.visibility='visible';
-        }catch(error){
-          console.error('Financial profile access:',error);
-          location.replace('../home.html');
-        }
-      });
-    </script>
+const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('../login.html');if(a){const{data:target}=await sb.from('profiles').select('id,full_name,email,manager_id,firebase_uid,active,status').eq('firebase_uid',TARGET_FIREBASE_UID).maybeSingle();const allowed=target&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));if(!allowed)location.replace('../home.html');else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
+</script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -773,7 +753,7 @@
               </main>
 
               <footer className="py-12 text-center border-t border-slate-200 mt-12 bg-white print:hidden">
-                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال • Candidate 10</p>
+                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال • Production 1.7C</p>
               </footer>
             </div>
           );

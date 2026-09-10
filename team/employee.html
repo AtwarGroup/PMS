@@ -72,7 +72,7 @@
           <p id="employeeProfileMessage" style="font-size:11px;color:#7b8aa5;line-height:1.9;margin:11px auto 0;max-width:450px">لم يتم تجهيز واعتماد الملف الوظيفي الخاص بهذا الموظف حتى الآن.</p>
         </div>
       </section>
-      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Candidate 10</span><span>Firebase Live Data</span></footer>
+      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
     </main>
   </section>
 </div>
@@ -88,7 +88,8 @@ function showEmployeeTab(name,btn){
 </script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/permissions.js"></script>
 
 <script>
@@ -99,51 +100,20 @@ document.addEventListener('DOMContentLoaded',()=>{
  });
 });
 </script>
-<script type="module" id="employeeFirebaseBinding">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-const uid=new URLSearchParams(location.search).get('uid')||'';
-const HAMZA_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';
-
-onAuthStateChanged(auth,async viewer=>{
-  if(!viewer){location.href='../login.html';return}
-  if(!uid){location.replace('index.html');return}
-  try{
-    const [viewerSnap,targetSnap]=await Promise.all([
-      get(ref(db,`users/${viewer.uid}`)),
-      get(ref(db,`users/${uid}`))
-    ]);
-    if(!viewerSnap.exists()||!targetSnap.exists()){location.replace('index.html');return}
-
-    const vp=viewerSnap.val(),target=targetSnap.val();
-    if(vp.active===false||vp.status==='inactive'||target.active===false||target.status==='inactive'){
-      location.replace('index.html');return;
-    }
-    const allowed=
-      vp.role==='admin' ||
-      (vp.role==='manager' && String(target.managerUid||'')===String(viewer.uid));
-    if(!allowed){location.replace('../home.html');return}
-
-    if(uid===HAMZA_UID){
-      location.replace('../profile/financial-manager.html');
-      return;
-    }
-
-    const name=target.name||target.email||'الموظف';
-    document.getElementById('employeeProfileMessage').textContent=
-      `لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${name} حتى الآن.`;
-    window.atwarSyncShellIdentity?.(vp,viewer);
-    document.body.style.visibility='visible';
-    try{lucide.createIcons()}catch{}
-  }catch(error){
-    console.error('Employee profile access:',error);
-    location.replace('index.html');
+<script type="module" id="employeeSupabaseBinding">
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
   }
-});
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
+}
+
+const uid=new URLSearchParams(location.search).get('uid')||'',HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';const a=await authProfile('../login.html');if(a){if(!uid)location.replace('index.html');else{const {data:target,error}=await sb.from('profiles').select('*').eq('id',uid).single();if(error||!target||target.active===false||target.status==='inactive')location.replace('index.html');else{const allowed=a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id);if(!allowed)location.replace('../home.html');else if(target.firebase_uid===HAMZA_FIREBASE_UID)location.replace('../profile/financial-manager.html');else{document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}}}
 </script>
 </body>
 </html>

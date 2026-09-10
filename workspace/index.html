@@ -50,7 +50,7 @@
     <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية محفوظة في حسابك ويمكن الرجوع إليها من أي جهاز.</p>
     <textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره..."></textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
-      <span style="font-size:9px;color:#93a0b2">يتم الحفظ في Firebase لحسابك فقط.</span>
+      <span style="font-size:9px;color:#93a0b2">يتم الحفظ في Supabase لحسابك فقط.</span>
       <button type="button" onclick="saveNote()" class="save-note">حفظ الملاحظة</button>
     </div>
     <div id="savedNotice" class="saved-notice" style="display:none">تم الحفظ</div>
@@ -64,82 +64,26 @@
     <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Candidate 10</span><span>Firebase Sync</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Production 1.7E</span><span>Supabase Sync</span></footer>
 </main></section></div>
 
-<script src="../assets/js/firebase-config.js"></script>
-<script type="module" id="workspaceFirebaseNotes">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get, set, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const app=getApps().length?getApps()[0]:initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth=getAuth(app),db=getDatabase(app);
-const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');
-let uid='',noteRef=null,followRef=null,saving=false,followUnsub=null,followData=[];
-
-function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function showNotice(text='تم الحفظ',kind='ok'){
- if(!savedNotice)return;savedNotice.textContent=text;savedNotice.style.display='block';
- savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';savedNotice.style.color=kind==='error'?'#b42318':'#087443';
- setTimeout(()=>savedNotice.style.display='none',2200);
-}
-function renderFollowups(){
- const host=document.getElementById('workspaceFollowList');if(!host)return;
- const labels={soon:'متابعة',wait:'بانتظار رد',done:'مكتملة'};
- host.innerHTML=followData.length?followData.map(x=>`<div class="follow-item">
-   <div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(x.date||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>
-   ${x.note?`<div class="follow-note">${esc(x.note)}</div>`:''}
-   <div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div>
- </div>`).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';
- host.querySelectorAll('[data-follow-done]').forEach(b=>b.addEventListener('click',async()=>{
-   try{await update(ref(db,`followUpsByUser/${uid}/${b.dataset.followDone}`),{status:'done',updatedAt:Date.now()})}
-   catch(e){console.error(e);showNotice('تعذر تحديث المتابعة.','error')}
- }));
- host.querySelectorAll('[data-follow-delete]').forEach(b=>b.addEventListener('click',async()=>{
-   try{await remove(ref(db,`followUpsByUser/${uid}/${b.dataset.followDelete}`))}
-   catch(e){console.error(e);showNotice('تعذر حذف المتابعة.','error')}
- }));
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script type="module" id="workspaceSupabaseNotes">
+const sb=await window.atwarGetSupabase();
+async function authProfile(loginPath){
+  const {data:{session},error:se}=await sb.auth.getSession();
+  if(se||!session?.user){location.href=loginPath;return null;}
+  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
+    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+  }
+  window.atwarSyncShellIdentity?.(profile,session.user);
+  return {session,user:session.user,profile};
 }
 
-onAuthStateChanged(auth,async user=>{
- if(!user){location.href='../login.html';return}
- const profileSnap=await get(ref(db,`users/${user.uid}`)).catch(()=>null);
- if(!profileSnap?.exists()||profileSnap.val()?.active===false||profileSnap.val()?.status==='inactive'||!['employee','manager','admin'].includes(profileSnap.val()?.role)){
-   await signOut(auth).catch(()=>{});location.href='../login.html';return;
- }
- window.atwarSyncShellIdentity?.({uid:user.uid,...profileSnap.val()},user);
- uid=user.uid;noteRef=ref(db,`notesByUser/${uid}/quickNote`);followRef=ref(db,`followUpsByUser/${uid}`);
- try{const snap=await get(noteRef),v=snap.exists()?snap.val():null;noteInput.value=typeof v==='string'?v:(v?.text||'')}catch{noteInput.value='';showNotice('الملاحظات غير متاحة حالياً.','error')}
- if(followUnsub)followUnsub();
- followUnsub=onValue(followRef,s=>{const raw=s.exists()?s.val():{};followData=Object.entries(raw).map(([id,v])=>({id,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));renderFollowups()},e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'});
-});
-
-window.saveNote=async function(){
- if(!uid||!noteRef||saving)return; saving=true;
- const text=String(noteInput.value||'');
- if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}
- try{await set(noteRef,{text,updatedAt:Date.now()});showNotice('تم حفظ الملاحظة ومزامنتها بنجاح')}
- catch(e){console.error(e);showNotice('لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.','error')}
- finally{saving=false}
-};
-
-const form=document.getElementById('workspaceFollowForm');
-document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form?.classList.add('show'));
-document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));
-document.getElementById('wfSave')?.addEventListener('click',async()=>{
- if(!followRef||!uid)return;
- const title=document.getElementById('wfTitle').value.trim();
- const note=document.getElementById('wfNote').value.trim();
- if(!title){showNotice('عنوان المتابعة مطلوب.','error');return}
- if(title.length>200||note.length>5000){showNotice('عنوان أو ملاحظة المتابعة تتجاوز الحد المسموح.','error');return}
- const now=Date.now(),item=push(followRef);
- try{
-   await set(item,{title,date:document.getElementById('wfDate').value||'',note,status:'soon',createdAt:now,updatedAt:now});
-   document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');
- }catch(e){console.error(e);showNotice('تعذر حفظ المتابعة.','error')}
-});
-try{lucide.createIcons()}catch{}
+const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');let profile=null,followData=[],saving=false;const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function showNotice(text='تم الحفظ',kind='ok'){if(!savedNotice)return;savedNotice.textContent=text;savedNotice.style.display='block';savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';savedNotice.style.color=kind==='error'?'#b42318':'#087443';setTimeout(()=>savedNotice.style.display='none',2200)}function fdate(x){return x.follow_date||x.date||x.due_date||''}function fnote(x){return x.note||x.notes||x.description||''}function renderFollowups(){const host=document.getElementById('workspaceFollowList'),labels={soon:'متابعة',wait:'بانتظار رد',done:'مكتملة'};host.innerHTML=followData.length?followData.map(x=>`<div class="follow-item"><div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(fdate(x)||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>${fnote(x)?`<div class="follow-note">${esc(fnote(x))}</div>`:''}<div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div></div>`).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';host.querySelectorAll('[data-follow-done]').forEach(b=>b.onclick=async()=>{const{error}=await sb.from('follow_ups').update({status:'done'}).eq('id',b.dataset.followDone);if(error)showNotice('تعذر تحديث المتابعة.','error');else await loadFollowups()});host.querySelectorAll('[data-follow-delete]').forEach(b=>b.onclick=async()=>{const{error}=await sb.from('follow_ups').delete().eq('id',b.dataset.followDelete);if(error)showNotice('تعذر حذف المتابعة.','error');else await loadFollowups()})}async function loadFollowups(){const{data,error}=await sb.from('follow_ups').select('*').eq('owner_id',profile.id).order('created_at',{ascending:false});if(error)throw error;followData=data||[];renderFollowups()}
+const a=await authProfile('../login.html');if(a){profile=a.profile;const{data:n}=await sb.from('quick_notes').select('*').eq('owner_id',profile.id).order('updated_at',{ascending:false}).limit(1);const row=(n||[])[0];noteInput.value=row?.text??row?.note_text??row?.body??row?.content??'';await loadFollowups().catch(e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'})}window.saveNote=async function(){if(!profile||saving)return;saving=true;const text=String(noteInput.value||'');if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}const{error}=await sb.rpc('workspace_save_note',{p_text:text});showNotice(error?'لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.':'تم حفظ الملاحظة ومزامنتها بنجاح',error?'error':'ok');saving=false};const form=document.getElementById('workspaceFollowForm');document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form?.classList.add('show'));document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));document.getElementById('wfSave')?.addEventListener('click',async()=>{const title=document.getElementById('wfTitle').value.trim(),note=document.getElementById('wfNote').value.trim();if(!title){showNotice('عنوان المتابعة مطلوب.','error');return}const{error}=await sb.rpc('workspace_add_followup',{p_title:title,p_follow_date:document.getElementById('wfDate').value||null,p_note:note});if(error)showNotice('تعذر حفظ المتابعة.','error');else{document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');await loadFollowups()}});try{lucide.createIcons()}catch{}
 </script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>

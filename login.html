@@ -54,140 +54,37 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
   </div>
 </section>
 </div>
-<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-runtime.js"></script>
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js"></script>
 
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const app = getApps().length ? getApps()[0] : initializeApp(window.ATWAR_FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-const emailEl = document.getElementById('email');
-const passwordEl = document.getElementById('password');
-const buttonEl = document.getElementById('loginButton');
-const errorEl = document.getElementById('error');
-let manualLoginInProgress = false;
-
-function roleLabel(role){
-  return role === 'admin' ? 'مدير النظام' : role === 'manager' ? 'مدير' : 'موظف';
-}
-
-function defaultPermissions(role){
-  return (window.ATWAR_ROLE_DEFAULT_PERMISSIONS?.[role] || ['home','tasks','profile']).slice();
-}
-
-function showError(message){
-  errorEl.textContent = message;
-  errorEl.style.display = 'block';
-}
-
-function clearError(){
-  errorEl.style.display = 'none';
-}
-
-async function loadProfile(user){
-  const snap = await get(ref(db, `users/${user.uid}`));
-  if(!snap.exists()) throw new Error('profile-not-found');
-
-  const profile = { uid:user.uid, ...snap.val() };
-
-  if(profile.active === false || profile.status === 'inactive'){
-    throw new Error('account-inactive');
-  }
-
-  if(!['employee','manager','admin'].includes(profile.role))throw new Error('invalid-role');
-  const role = profile.role;
-
-  return {
-    uid: user.uid,
-    email: user.email || profile.email || '',
-    name: profile.name || user.email || 'المستخدم',
-    title: profile.title || profile.jobTitle || profile.position || roleLabel(role),
-    role,
-    managerUid: profile.managerUid || '',
-    managerChain: (profile.managerChain && typeof profile.managerChain === 'object') ? profile.managerChain : {},
-    permissions: Array.isArray(profile.permissions) && profile.permissions.length
-      ? profile.permissions
-      : defaultPermissions(role),
-    source: 'firebase'
-  };
-}
-
+const sb=await window.atwarGetSupabase();
+const emailEl=document.getElementById('email'),passwordEl=document.getElementById('password'),buttonEl=document.getElementById('loginButton'),errorEl=document.getElementById('error');
+let manualLoginInProgress=false;
+const roleLabel=r=>r==='admin'?'مدير النظام':r==='manager'?'مدير':'موظف';
+const defaults=r=>(window.ATWAR_ROLE_DEFAULT_PERMISSIONS?.[r]||['home','tasks','profile']).slice();
+function showError(m){errorEl.textContent=m;errorEl.style.display='block'} function clearError(){errorEl.style.display='none'}
 async function establishSession(user){
-  const session = await loadProfile(user);
-  localStorage.setItem('atwarSession', JSON.stringify(session));
-  localStorage.removeItem('atwarDemoSession');
-  return session;
+  const {data:p,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(error||!p)throw new Error('profile-not-found');
+  if(p.active===false||p.status==='inactive')throw new Error('account-inactive');
+  if(!['employee','manager','admin'].includes(p.role))throw new Error('invalid-role');
+  const session={uid:p.id,email:user.email||p.email||'',name:p.full_name||user.email||'المستخدم',title:p.job_title||roleLabel(p.role),role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)&&p.permissions.length?p.permissions:defaults(p.role),source:'supabase'};
+  localStorage.setItem('atwarSession',JSON.stringify(session));localStorage.removeItem('atwarDemoSession');return session;
 }
-
 async function login(){
-  const email = emailEl.value.trim();
-  const password = passwordEl.value;
-  if(!email || !password){
-    showError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
-    return;
-  }
-
-  manualLoginInProgress = true;
-  clearError();
-  buttonEl.disabled = true;
-  buttonEl.textContent = 'جاري الدخول...';
-
-  try{
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const session = await establishSession(cred.user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
-  }catch(error){
-    console.error(error);
-    localStorage.removeItem('atwarSession');
-
-    if(error?.message === 'profile-not-found'){
-      await signOut(auth);
-      showError('الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.');
-    }else if(error?.message === 'account-inactive'){
-      await signOut(auth);
-      showError('هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.');
-    }else if(error?.message === 'invalid-role'){
-      await signOut(auth);
-      showError('دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.');
-    }else{
-      if(auth.currentUser) await signOut(auth).catch(()=>{});
-      const code = error?.code || '';
-      showError(
-        code === 'auth/user-disabled' ? 'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.' :
-        code === 'auth/too-many-requests' ? 'تم إيقاف محاولات الدخول مؤقتًا. حاول مرة أخرى لاحقًا.' :
-        code === 'auth/network-request-failed' ? 'تعذر الاتصال بالخدمة. تحقق من الإنترنت ثم حاول مرة أخرى.' :
-        'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.'
-      );
-    }
-  }finally{
-    buttonEl.disabled = false;
-    buttonEl.textContent = 'دخول';
-    manualLoginInProgress = false;
-  }
+  const email=emailEl.value.trim(),password=passwordEl.value;if(!email||!password){showError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');return}
+  manualLoginInProgress=true;clearError();buttonEl.disabled=true;buttonEl.textContent='جاري الدخول...';
+  try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const sess=await establishSession(data.user);location.href=(window.ATWAR_START_PAGE||{})[sess.role]||'home.html';}
+  catch(error){console.error(error);localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});const m=error?.message||'';showError(m==='profile-not-found'?'الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.':m==='account-inactive'?'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.':m==='invalid-role'?'دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.':m.toLowerCase().includes('invalid login')?'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.':'تعذر تسجيل الدخول. تحقق من بيانات الدخول والاتصال ثم حاول مرة أخرى.');}
+  finally{buttonEl.disabled=false;buttonEl.textContent='دخول';manualLoginInProgress=false}
 }
-
-buttonEl.addEventListener('click', login);
-passwordEl.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
-emailEl.addEventListener('keydown', e => { if(e.key === 'Enter') passwordEl.focus(); });
-
-onAuthStateChanged(auth, async user => {
-  if(!user || manualLoginInProgress) return;
-  try{
-    const session = await establishSession(user);
-    location.href = (window.ATWAR_START_PAGE || {})[session.role] || 'home.html';
-  }catch{
-    localStorage.removeItem('atwarSession');
-    await signOut(auth).catch(()=>{});
-  }
-});
-
-lucide.createIcons();
+buttonEl.addEventListener('click',login);passwordEl.addEventListener('keydown',e=>{if(e.key==='Enter')login()});emailEl.addEventListener('keydown',e=>{if(e.key==='Enter')passwordEl.focus()});
+const {data:{session}}=await sb.auth.getSession();
+if(session?.user&&!manualLoginInProgress){try{const x=await establishSession(session.user);location.href=(window.ATWAR_START_PAGE||{})[x.role]||'home.html'}catch{localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{})}}
+try{lucide.createIcons()}catch{}
 </script>
 
 <div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>

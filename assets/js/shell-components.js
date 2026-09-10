@@ -117,76 +117,50 @@
     const badge=headerEl.querySelector('[data-global-notification-badge]');
     const markAll=headerEl.querySelector('[data-global-mark-read]');
     if(!button||!panel||!list||!badge)return;
-
     headerEl.dataset.notificationsReady='1';
     button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();panel.classList.toggle('hidden')});
     panel.addEventListener('click',e=>e.stopPropagation());
     document.addEventListener('click',()=>panel.classList.add('hidden'));
-
     const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    const ago=ts=>{const d=Math.max(0,Date.now()-Number(ts||0)),m=Math.floor(d/60000);if(m<1)return'الآن';if(m<60)return`منذ ${m} د`;const h=Math.floor(m/60);return h<24?`منذ ${h} س`:`منذ ${Math.floor(h/24)} يوم`};
-
-    try{
-      let tries=0;while(!window.ATWAR_FIREBASE_CONFIG&&tries<20){await new Promise(r=>setTimeout(r,100));tries++}
-      if(!window.ATWAR_FIREBASE_CONFIG)throw new Error('Firebase config unavailable');
-
-      const appMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-      const authMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-      const dbMod=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-      const app=appMod.getApps().length?appMod.getApps()[0]:appMod.initializeApp(window.ATWAR_FIREBASE_CONFIG);
-      const auth=authMod.getAuth(app),db=dbMod.getDatabase(app);
-
-      authMod.onAuthStateChanged(auth,user=>{
-        if(!user)return;
-        const q=dbMod.query(dbMod.ref(db,`notificationsByUser/${user.uid}`),dbMod.orderByChild('createdAt'),dbMod.limitToLast(30));
-        dbMod.onValue(q,snap=>{
-          let rows=snap.exists()?Object.entries(snap.val()).map(([id,v])=>({id,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)):[];
-          // تنظيف تنبيهات التأخير القديمة الخاصة بمهام الفريق بعد اعتماد التنبيه الملخص.
-          const legacyTeamOverdue=rows.filter(x=>x.type==='overdue'&&x.ownerUid&&String(x.ownerUid)!==String(user.uid));
-          if(legacyTeamOverdue.length){
-            rows=rows.filter(x=>!legacyTeamOverdue.some(old=>old.id===x.id));
+    const ago=ts=>{if(!ts)return'';const d=Math.max(0,Date.now()-new Date(ts).getTime()),m=Math.floor(d/60000);if(m<1)return'الآن';if(m<60)return`منذ ${m} د`;const h=Math.floor(m/60);return h<24?`منذ ${h} س`:`منذ ${Math.floor(h/24)} يوم`};
+    async function refresh(){
+      try{
+        const sb=await window.atwarGetSupabase();
+        const {data:{session}}=await sb.auth.getSession();
+        if(!session?.user){list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
+        const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
+        if(error)throw error;
+        const rows=data||[];
+        badge.textContent=rows.length>99?'99+':String(rows.length);badge.classList.toggle('hidden',rows.length===0);
+        list.innerHTML=rows.length?rows.slice(0,8).map(n=>`<button type="button" data-global-notification-id="${esc(n.id)}" class="atwar-global-notification-item is-unread"><span class="atwar-global-notification-icon">🔔</span><span class="atwar-global-notification-copy"><b>${esc(n.title||n.type||'إشعار')}</b><small>${esc(n.message||n.detail||'')}</small></span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
+        list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
+          const row=rows.find(x=>String(x.id)===btn.dataset.globalNotificationId);
+          // سياسة ATWAR ONE: فتح الإشعار يحذفه بعد نجاح الوصول للعنصر المرتبط.
+          panel.classList.add('hidden');
+          if(row?.task_id){
+            location.href=`${depthPrefix}tasks/index.html?task=${encodeURIComponent(row.task_id)}&notification=${encodeURIComponent(row.id)}`;
+          }else{
+            await sb.from('notifications').delete().eq('id',row.id);
+            await refresh();
           }
-          const unread=rows.filter(x=>!x.read).length;
-          badge.textContent=unread>99?'99+':String(unread);badge.classList.toggle('hidden',unread===0);
-          list.innerHTML=rows.length?rows.slice(0,8).map(n=>`
-            <button type="button" data-global-notification-id="${esc(n.id)}" data-owner-uid="${esc(n.ownerUid||'')}" class="atwar-global-notification-item ${n.read?'':'is-unread'}">
-              <span class="atwar-global-notification-icon">${(n.type==='overdue'||n.type==='overdue_summary')?'⚠️':n.type==='approved'?'✅':n.type==='approval'?'⏳':n.type==='manager_note'?'📝':'🔔'}</span>
-              <span class="atwar-global-notification-copy"><b>${esc(n.title||'إشعار')}</b><small>${esc(n.message||'')}</small></span>
-              <span class="atwar-global-notification-time">${ago(n.createdAt)}</span>
-            </button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
-
-          list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
-            const id=btn.dataset.globalNotificationId,ownerUid=btn.dataset.ownerUid||'';
-            const row=rows.find(x=>x.id===id);
-            try{await dbMod.update(dbMod.ref(db,`notificationsByUser/${user.uid}/${id}`),{read:true})}catch{}
-            panel.classList.add('hidden');
-            if(row?.type==='overdue_summary'){
-              location.href=`${depthPrefix}tasks/index.html?scope=OVERDUE`;
-            }else if(ownerUid&&row?.taskKey){
-              location.href=`${depthPrefix}tasks/index.html?owner=${encodeURIComponent(ownerUid)}&task=${encodeURIComponent(row.taskKey)}`;
-            }else if(ownerUid){
-              location.href=`${depthPrefix}tasks/index.html?owner=${encodeURIComponent(ownerUid)}`;
-            }
-          }));
-          markAll.onclick=async()=>{const changes={};rows.filter(x=>!x.read).forEach(x=>changes[`${x.id}/read`]=true);if(Object.keys(changes).length){try{await dbMod.update(dbMod.ref(db,`notificationsByUser/${user.uid}`),changes)}catch{}}};
-        },()=>{list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>'});
-      });
-    }catch(error){
-      console.error('Global notifications:',error);
-      list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';
+        }));
+        markAll.onclick=async()=>{if(!rows.length)return;const ids=rows.map(x=>x.id);const {error:e}=await sb.from('notifications').delete().in('id',ids);if(!e)await refresh();};
+      }catch(error){console.error('Global notifications:',error);list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';}
     }
+    await refresh();
+    headerEl._atwarRefreshNotifications=refresh;
   };
 
   window.atwarSyncShellIdentity=function(profile,authUser){
     if(!profile&&!authUser)return;
     const previous=getSession()||{};
     const current={
-      uid:profile?.uid||authUser?.uid||'',
+      uid:profile?.id||profile?.uid||authUser?.id||authUser?.uid||'',
       email:profile?.email||authUser?.email||'',
-      name:profile?.name||profile?.fullName||authUser?.displayName||profile?.email||authUser?.email||'المستخدم',
+      name:profile?.full_name||profile?.name||profile?.fullName||authUser?.user_metadata?.full_name||profile?.email||authUser?.email||'المستخدم',
       role:profile?.role||'employee',
-      title:profile?.title||profile?.jobTitle||profile?.position||previous.title||'',
-      managerUid:profile?.managerUid||previous.managerUid||'',
+      title:profile?.job_title||profile?.title||profile?.jobTitle||profile?.position||previous.title||'',
+      managerId:profile?.manager_id||profile?.managerId||previous.managerId||null,
       managerChain:(profile?.managerChain&&typeof profile.managerChain==='object')?profile.managerChain:(previous.managerChain||{}),
       permissions:Array.isArray(profile?.permissions)?profile.permissions:(Array.isArray(previous.permissions)?previous.permissions:[])
     };
