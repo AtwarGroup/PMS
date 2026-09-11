@@ -1,7 +1,7 @@
 
 (function(){
   function depth(){
-    const nestedModules=['tasks','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -21,7 +21,9 @@
         <div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
         <nav class="atwar-nav">
           ${nav('home','home.html','home','الرئيسية')}
-          ${nav('tasks','tasks/index.html','square-check-big','المهام')}
+          ${nav('tasks','tasks/index.html','square-check-big','المهام النشطة')}
+          ${nav('completed','completed/index.html','archive-check','المهام المكتملة')}
+          ${nav('recurring','recurring/index.html','repeat-2','المهام الدورية','manager')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
@@ -191,6 +193,34 @@
         main.dispatchEvent(new Event('input',{bubbles:true}));
         main.dispatchEvent(new Event('change',{bubbles:true}));
       });
+    }
+    // Completed tasks counter remains useful on the active Tasks page,
+    // but the completed records themselves are no longer loaded into that page.
+    if(/\/tasks\/(?:index\.html)?$/.test(location.pathname)){
+      (async()=>{
+        try{
+          const sb=await window.atwarGetSupabase();
+          const {count,error}=await sb.from('tasks')
+            .select('id',{count:'exact',head:true})
+            .eq('status','مكتملة')
+            .is('deleted_at',null);
+          if(error)throw error;
+          const el=document.getElementById('stat-completed');
+          if(el){
+            const archiveCount=String(count||0);
+            const keepArchiveCount=()=>{if(el.textContent!==archiveCount)el.textContent=archiveCount};
+            keepArchiveCount();
+            const observer=new MutationObserver(keepArchiveCount);
+            observer.observe(el,{childList:true,characterData:true,subtree:true});
+            const card=el.closest('div.bg-white')||el.parentElement;
+            if(card){
+              card.style.cursor='pointer';
+              card.title='فتح المهام المكتملة';
+              card.addEventListener('click',()=>{location.href=depth()+'completed/index.html'});
+            }
+          }
+        }catch(error){console.warn('Completed tasks count:',error)}
+      })();
     }
     window.lucide?.createIcons();
   });

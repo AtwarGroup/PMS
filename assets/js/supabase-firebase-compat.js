@@ -62,6 +62,7 @@ function taskLegacy(t,children){
     createdAt:ms(t.created_at),updatedAt:ms(t.updated_at),startedAt:ms(t.started_at)||null,submittedAt:ms(t.submitted_at)||null,
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
     reopenedAt:ms(t.reopened_at)||null,reopenedBy:t.reopened_by_name_snapshot||'',completedAt:ms(t.completed_at)||null,
+    cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
     activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],
     _relationalId:t.id
   };
@@ -74,7 +75,11 @@ class Snap{
 }
 
 async function visibleTasks(extra=null){
-  let q=sb.from('tasks').select('*');
+  let q=sb.from('tasks').select('*').is('deleted_at',null);
+  // The main Tasks workspace is intentionally active-only.
+  // Completed/approved tasks are served from completed/index.html.
+  const isMainTasksWorkspace=/\/tasks\/(?:index\.html)?$/.test(location.pathname);
+  if(isMainTasksWorkspace && !extra?.id)q=q.neq('status','مكتملة');
   if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
   if(extra?.creator)q=q.eq('creator_id',extra.creator);
   if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);
@@ -137,11 +142,16 @@ export async function runTransaction(r,mutator){
   if(parts[0]!=='tasksByUser'||!parts[2])return {committed:false,snapshot:new Snap(null)};
   const key=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id:key});const cur=rows[0];if(!cur)return {committed:false,snapshot:new Snap(null,key)};
   const current=structuredClone(cur),next=mutator(structuredClone(current));if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
-  // operationIntent is a legacy lock marker; DB workflow/RLS remains the authoritative guard.
   const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]);
-  const patch=taskPatch(next);const {data,error}=await sb.from('tasks').update(patch).eq('id',key).select('*').single();if(error)throw error;
+  const patch=taskPatch(next);
+  const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
+  if(error){
+    if(String(error.message||'').includes('ATWAR_CONFLICT'))error.code='ATWAR_CONFLICT';
+    throw error;
+  }
+  const row=Array.isArray(data)?data[0]:data;
   if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
-  const children=await loadChildren([key]);const snapTask=taskLegacy(data,children);await emitLocal();return {committed:true,snapshot:new Snap(snapTask,key)};
+  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal();return {committed:true,snapshot:new Snap(snapTask,key)};
 }
 
 async function createOne(task,assigneeId,aliasKey){
@@ -153,7 +163,11 @@ async function rootUpdate(changes){
   const creates=taskEntries.filter(([,v])=>v&&typeof v==='object');const deletes=taskEntries.filter(([,v])=>v===null);
   // Reassignment = same task key appears as a create under new owner and delete under old owner.
   for(const [newPath,obj] of creates){const np=newPath.split('/'),alias=np[2],real=_aliases.get(alias)||alias;const matchingDelete=deletes.find(([oldPath])=>oldPath.split('/')[2]===alias);
-    if(matchingDelete){const {error}=await sb.from('tasks').update({assignee_id:np[1],assignee_name_snapshot:obj.assign||null}).eq('id',real);if(error)throw error;continue;}
+    if(matchingDelete){
+      const rows=await visibleTasks({id:real});const cur=rows[0];if(!cur)throw new Error('Task not found');
+      const {error}=await sb.rpc('update_task_safe',{p_task_id:real,p_expected_revision:Number(cur.revision||1),p_patch:{assignee_id:np[1],assignee_name_snapshot:obj.assign||null}});
+      if(error)throw error;continue;
+    }
   }
   const pureCreates=creates.filter(([newPath])=>!deletes.some(([oldPath])=>oldPath.split('/')[2]===newPath.split('/')[2]));
   if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);}
@@ -177,7 +191,12 @@ export async function update(r,changes){
     if(parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal();return}
     const ids=Object.keys(changes||{}).map(k=>k.split('/')[0]).filter(Boolean);if(ids.length){const {error}=await sb.from('notifications').delete().in('id',ids);if(error)throw error;await emitLocal()}return;
   }
-  if(parts[0]==='tasksByUser'&&parts[2]){const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;const next={...rows[0],...changes};const {error}=await sb.from('tasks').update(taskPatch(next)).eq('id',id);if(error)throw error;await emitLocal();return;}
+  if(parts[0]==='tasksByUser'&&parts[2]){
+    const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;
+    const next={...rows[0],...changes};
+    const {error}=await sb.rpc('update_task_safe',{p_task_id:id,p_expected_revision:Number(rows[0].revision||1),p_patch:taskPatch(next)});
+    if(error)throw error;await emitLocal();return;
+  }
 }
 
 export async function set(r,data){
@@ -188,4 +207,24 @@ export async function set(r,data){
 export async function remove(r){const path=pathOf(r),parts=path.split('/').filter(Boolean);if(parts[0]==='notificationsByUser'&&parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal()}}
 
 async function emitLocal(){for(const fn of [..._listeners]){try{await fn()}catch(e){console.warn('compat listener',e)}}}
-export function onValue(r,callback,errorCallback){let alive=true,busy=false;const refresh=async()=>{if(!alive||busy)return;busy=true;try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{busy=false}};_listeners.add(refresh);refresh();const timer=setInterval(refresh,15000);return ()=>{alive=false;clearInterval(timer);_listeners.delete(refresh)}}
+let _realtimeChannel=null;
+function ensureRealtime(){
+  if(_realtimeChannel)return;
+  try{
+    _realtimeChannel=sb.channel('atwar-one-compat-v18')
+      .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>emitLocal())
+      .on('postgres_changes',{event:'*',schema:'public',table:'subtasks'},()=>emitLocal())
+      .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},()=>emitLocal())
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_comments'},()=>emitLocal())
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_attachments'},()=>emitLocal())
+      .subscribe();
+  }catch(e){console.warn('Realtime unavailable; polling fallback remains active.',e)}
+}
+export function onValue(r,callback,errorCallback){
+  ensureRealtime();
+  let alive=true,busy=false;
+  const refresh=async()=>{if(!alive||busy)return;busy=true;try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{busy=false}};
+  _listeners.add(refresh);refresh();
+  const timer=setInterval(refresh,60000);
+  return ()=>{alive=false;clearInterval(timer);_listeners.delete(refresh)};
+}

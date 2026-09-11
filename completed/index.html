@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – المهام المكتملة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/shell-components.js"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+*{box-sizing:border-box}body{font-family:'Tajawal',sans-serif;background:#f5f7fb;color:#17233a}
+.archive-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
+.archive-head h1{margin:0;font-size:28px}.archive-head p{margin:5px 0 0;color:#7a899d;font-size:12px}
+.toolbar{background:#fff;border:1px solid #e4ebf3;border-radius:17px;padding:12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:9px;margin-bottom:12px}
+.toolbar input,.toolbar select{width:100%;border:1px solid #dce5ef;border-radius:10px;padding:10px 11px;font-family:inherit;background:#fff}
+.btn{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:10px 13px;font-family:inherit;font-weight:900;cursor:pointer}.btn.secondary{background:#edf3fa;color:#183b62}.btn:disabled{opacity:.45;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.stat{background:#fff;border:1px solid #e4ebf3;border-radius:15px;padding:13px}.stat small{color:#7d8ca1;font-weight:700}.stat b{display:block;font-size:22px;margin-top:4px}
+.table-card{background:#fff;border:1px solid #e4ebf3;border-radius:18px;overflow:hidden}.thead,.row{display:grid;grid-template-columns:2fr 1.05fr 1fr 1fr 1fr 1fr;gap:10px;align-items:center;padding:11px 14px}.thead{background:#f8fafc;color:#718096;font-size:10px;font-weight:900;border-bottom:1px solid #e8eef5}.row{border-bottom:1px solid #edf2f7;cursor:pointer}.row:hover{background:#f8fbff}.title{font-weight:900;font-size:13px}.sub{font-size:10px;color:#7b8aa5;margin-top:3px}.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#edf9f3;color:#157347;font-size:10px;font-weight:900}
+.empty{display:none;padding:50px;text-align:center;color:#8997aa}.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px}.pager span{font-size:11px;color:#68778c;font-weight:800}
+.modal[hidden]{display:none}.modal{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:200;display:flex;align-items:center;justify-content:center;padding:18px}.modal-box{width:min(880px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;border:1px solid #dfe7f0;box-shadow:0 24px 70px rgba(15,23,42,.22);padding:18px}.modal-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:1px solid #edf2f7;padding-bottom:12px;margin-bottom:12px}.modal-top h2{margin:0;font-size:20px}.x{border:0;background:#eef3f8;border-radius:9px;padding:8px 10px;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.field{background:#f8fafc;border:1px solid #e8eef5;border-radius:12px;padding:10px}.field small{display:block;color:#8190a4;font-size:9px;font-weight:900}.field b{display:block;margin-top:4px;font-size:12px}.section{margin-top:14px}.section h3{font-size:13px;margin:0 0 8px}.note{white-space:pre-wrap;background:#f8fafc;border:1px solid #e8eef5;border-radius:12px;padding:11px;font-size:12px;line-height:1.8}.timeline{display:grid;gap:7px}.timeline div{border-right:3px solid #d9e5f3;padding:7px 10px;background:#fbfcfe;border-radius:8px;font-size:11px}.reopen{display:none;margin-top:12px}.state{font-size:11px;margin:8px 0;color:#157347}.err{color:#b42318}
+@media(max-width:900px){.toolbar{grid-template-columns:1fr 1fr}.toolbar .wide{grid-column:1/-1}.thead{display:none}.row{grid-template-columns:1fr 1fr}.row>div:first-child{grid-column:1/-1}.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.toolbar{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.row{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<atwar-sidebar active="completed"></atwar-sidebar>
+<section class="atwar-main">
+<atwar-header></atwar-header>
+<main class="atwar-content">
+<div class="archive-head"><div><h1>المهام المكتملة</h1><p>أرشيف المهام المعتمدة والمكتملة — تحميل على دفعات للحفاظ على سرعة النظام.</p></div><a class="btn secondary" href="../tasks/index.html" style="text-decoration:none">العودة للمهام النشطة</a></div>
+
+<section class="stats">
+<div class="stat"><small>إجمالي المكتمل</small><b id="totalCount">—</b></div>
+<div class="stat"><small>المعروض في الصفحة</small><b id="pageCount">0</b></div>
+<div class="stat"><small>عدد الصفحات</small><b id="pagesCount">—</b></div>
+</section>
+
+<section class="toolbar">
+<input id="q" class="wide" placeholder="بحث في العنوان أو الوصف أو الملاحظات">
+<select id="assignee"><option value="">جميع الموظفين</option></select>
+<input id="fromDate" type="date" title="من تاريخ الإكمال">
+<input id="toDate" type="date" title="إلى تاريخ الإكمال">
+<button id="clear" class="btn secondary" type="button">مسح</button>
+</section>
+
+<section class="table-card">
+<div class="thead"><span>المهمة</span><span>المسؤول</span><span>المنشئ</span><span>تاريخ الاستحقاق</span><span>تاريخ الإكمال</span><span>اعتمد بواسطة</span></div>
+<div id="rows"></div>
+<div id="empty" class="empty">لا توجد مهام مكتملة مطابقة.</div>
+<div class="pager"><button id="prev" class="btn secondary">السابق</button><span id="pageLabel"></span><button id="next" class="btn secondary">التالي</button></div>
+</section>
+<footer class="atwar-footer"><span>ATWAR ONE • Completed Tasks</span><span>Maintenance 1.8.0</span><span>Supabase paginated archive</span></footer>
+</main>
+</section>
+</div>
+
+<div id="modal" class="modal" hidden>
+<div class="modal-box">
+<div class="modal-top"><div><h2 id="mTitle"></h2><div id="mStatus" class="sub"></div></div><button id="closeModal" class="x" type="button">✕</button></div>
+<div id="mGrid" class="grid"></div>
+<div class="section"><h3>الوصف</h3><div id="mDesc" class="note"></div></div>
+<div class="section"><h3>الملاحظات</h3><div id="mNotes" class="note"></div></div>
+<div class="section"><h3>ملاحظات المدير</h3><div id="mManagerNotes" class="note"></div></div>
+<div class="section"><h3>المهام الفرعية</h3><div id="mSubtasks" class="timeline"></div></div>
+<div class="section"><h3>التعليقات</h3><div id="mComments" class="timeline"></div></div>
+<div class="section"><h3>المرفقات</h3><div id="mAttachments" class="timeline"></div></div>
+<div class="section"><h3>سجل النشاط</h3><div id="mActivity" class="timeline"></div></div>
+<div id="reopenBox" class="reopen">
+<h3>إعادة فتح المهمة — مدير النظام فقط</h3>
+<textarea id="reopenReason" rows="3" style="width:100%;border:1px solid #dce5ef;border-radius:10px;padding:10px;font-family:inherit" placeholder="سبب إعادة فتح المهمة"></textarea>
+<button id="reopenBtn" class="btn" type="button" style="margin-top:8px">إعادة فتح المهمة</button>
+<div id="reopenState" class="state"></div>
+</div>
+</div>
+</div>
+
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script src="../assets/js/permissions.js"></script>
+<script type="module">
+const sb=await window.atwarGetSupabase();
+const PAGE_SIZE=25;
+let page=0,total=0,profile=null,currentTask=null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmt=v=>v?new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{dateStyle:'medium'}).format(new Date(v)):'—';
+const dateOnly=v=>v?String(v).slice(0,10):'—';
+
+async function auth(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.user){location.href='../login.html';return false}
+ const r=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+ if(r.error||!r.data||r.data.active===false||r.data.status!=='active'){await sb.auth.signOut().catch(()=>{});location.href='../login.html';return false}
+ profile=r.data;window.atwarSyncShellIdentity?.(profile,session.user);return true;
+}
+async function loadPeople(){
+ const r=await sb.from('profiles').select('id,full_name').eq('active',true).eq('status','active').order('full_name');
+ if(r.error)return;
+ document.getElementById('assignee').innerHTML='<option value="">جميع الموظفين</option>'+r.data.map(p=>`<option value="${p.id}">${esc(p.full_name)}</option>`).join('');
+}
+function buildQuery(countMode=false){
+ let q=sb.from('tasks').select(countMode?'id':'id,title,description,status,priority,progress,creator_id,assignee_id,creator_name_snapshot,assignee_name_snapshot,start_date,due_date,actual_end_date,notes,manager_notes,completed_at,approved_at,approved_by_name_snapshot,revision,deleted_at',{count:'exact',head:countMode})
+   .eq('status','مكتملة').is('deleted_at',null);
+ const term=document.getElementById('q').value.trim().replace(/[%,()]/g,' ');
+ const who=document.getElementById('assignee').value;
+ const from=document.getElementById('fromDate').value,to=document.getElementById('toDate').value;
+ if(term)q=q.or(`title.ilike.%${term}%,description.ilike.%${term}%,notes.ilike.%${term}%`);
+ if(who)q=q.eq('assignee_id',who);
+ if(from)q=q.gte('completed_at',from+'T00:00:00');
+ if(to)q=q.lte('completed_at',to+'T23:59:59');
+ return q;
+}
+async function load(){
+ document.getElementById('rows').innerHTML='<div style="padding:24px;text-align:center;color:#8190a4">جاري التحميل...</div>';
+ const start=page*PAGE_SIZE,end=start+PAGE_SIZE-1;
+ let q=buildQuery(false).order('completed_at',{ascending:false,nullsFirst:false}).range(start,end);
+ const r=await q;
+ if(r.error){document.getElementById('rows').innerHTML=`<div style="padding:24px;color:#b42318">${esc(r.error.message)}</div>`;return}
+ total=r.count||0;
+ const rows=r.data||[];
+ document.getElementById('totalCount').textContent=total;
+ document.getElementById('pageCount').textContent=rows.length;
+ const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+ document.getElementById('pagesCount').textContent=pages;
+ document.getElementById('pageLabel').textContent=`صفحة ${page+1} من ${pages}`;
+ document.getElementById('prev').disabled=page===0;document.getElementById('next').disabled=(page+1)>=pages;
+ document.getElementById('empty').style.display=rows.length?'none':'block';
+ document.getElementById('rows').innerHTML=rows.map(t=>`<div class="row" data-id="${t.id}">
+   <div><div class="title">${esc(t.title)}</div><div class="sub"><span class="badge">مكتملة ومعتمدة</span></div></div>
+   <div>${esc(t.assignee_name_snapshot||'—')}</div>
+   <div>${esc(t.creator_name_snapshot||'—')}</div>
+   <div>${esc(dateOnly(t.due_date))}</div>
+   <div>${esc(fmt(t.completed_at||t.approved_at))}</div>
+   <div>${esc(t.approved_by_name_snapshot||'—')}</div>
+ </div>`).join('');
+ document.querySelectorAll('.row[data-id]').forEach(x=>x.onclick=()=>openTask(x.dataset.id));
+}
+async function openTask(id){
+ const r=await sb.from('tasks').select('*').eq('id',id).eq('status','مكتملة').is('deleted_at',null).single();
+ if(r.error)return;currentTask=r.data;
+ document.getElementById('mTitle').textContent=currentTask.title||'';
+ document.getElementById('mStatus').textContent='مهمة مكتملة ومعتمدة — للقراءة فقط';
+ const fields=[
+  ['المسؤول',currentTask.assignee_name_snapshot],['المنشئ',currentTask.creator_name_snapshot],
+  ['البداية',dateOnly(currentTask.start_date)],['الاستحقاق',dateOnly(currentTask.due_date)],
+  ['الإكمال',fmt(currentTask.completed_at)],['الاعتماد',fmt(currentTask.approved_at)],
+  ['اعتمد بواسطة',currentTask.approved_by_name_snapshot||'—'],['الأولوية',currentTask.priority||'normal']
+ ];
+ document.getElementById('mGrid').innerHTML=fields.map(([k,v])=>`<div class="field"><small>${esc(k)}</small><b>${esc(v||'—')}</b></div>`).join('');
+ document.getElementById('mDesc').textContent=currentTask.description||'لا يوجد';
+ document.getElementById('mNotes').textContent=currentTask.notes||'لا يوجد';
+ document.getElementById('mManagerNotes').textContent=currentTask.manager_notes||'لا يوجد';
+
+ const [a,s,c,f]=await Promise.all([
+  sb.from('task_activity').select('*').eq('task_id',id).order('sequence_no',{ascending:true}),
+  sb.from('subtasks').select('*').eq('task_id',id).order('position',{ascending:true}),
+  sb.from('task_comments').select('*').eq('task_id',id).order('created_at',{ascending:true}),
+  sb.from('task_attachments').select('*').eq('task_id',id).order('created_at',{ascending:true})
+ ]);
+ document.getElementById('mActivity').innerHTML=(a.data||[]).map(x=>`<div><b>${esc(x.actor_name_snapshot||'النظام')}</b> — ${esc(x.detail||x.event_type||'')}<div class="sub">${esc(fmt(x.created_at))}</div></div>`).join('')||'<div>لا يوجد سجل.</div>';
+ document.getElementById('mSubtasks').innerHTML=(s.data||[]).map(x=>`<div>${x.done?'✓':'○'} ${esc(x.title)}</div>`).join('')||'<div>لا توجد مهام فرعية.</div>';
+ document.getElementById('mComments').innerHTML=(c.data||[]).map(x=>`<div><b>${esc(x.author_name_snapshot||'')}</b>: ${esc(x.body)}<div class="sub">${esc(fmt(x.created_at))}</div></div>`).join('')||'<div>لا توجد تعليقات.</div>';
+ document.getElementById('mAttachments').innerHTML=(f.data||[]).map(x=>`<div><button type="button" class="btn secondary attachment" data-path="${esc(x.storage_path)}" style="padding:6px 9px">${esc(x.file_name)}</button> <span class="sub">${x.size_bytes?Math.ceil(x.size_bytes/1024)+' KB':''}</span></div>`).join('')||'<div>لا توجد مرفقات.</div>';
+ document.querySelectorAll('.attachment').forEach(b=>b.onclick=async()=>{const z=await sb.storage.from('task-attachments').createSignedUrl(b.dataset.path,120);if(!z.error&&z.data?.signedUrl)window.open(z.data.signedUrl,'_blank','noopener')});
+ document.getElementById('reopenBox').style.display=profile?.role==='admin'?'block':'none';
+ document.getElementById('reopenReason').value='';document.getElementById('reopenState').textContent='';
+ document.getElementById('modal').hidden=false;
+}
+async function reopen(){
+ if(profile?.role!=='admin'||!currentTask)return;
+ const reason=document.getElementById('reopenReason').value.trim();
+ const st=document.getElementById('reopenState');
+ if(!reason){st.textContent='سبب إعادة الفتح مطلوب.';st.className='state err';return}
+ const b=document.getElementById('reopenBtn');b.disabled=true;st.textContent='جاري إعادة الفتح...';st.className='state';
+ const r=await sb.rpc('update_task_safe',{p_task_id:currentTask.id,p_expected_revision:currentTask.revision,p_patch:{status:'قيد التنفيذ',progress:95,reopen_reason:reason}});
+ b.disabled=false;
+ if(r.error){st.textContent=r.error.message.includes('ATWAR_CONFLICT')?'تم تعديل المهمة من مستخدم آخر. أغلق النافذة وأعد المحاولة.':r.error.message;st.className='state err';return}
+ document.getElementById('modal').hidden=true;await load();
+}
+function close(){document.getElementById('modal').hidden=true;currentTask=null}
+document.getElementById('closeModal').onclick=close;
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('modal').hidden)close()});
+document.getElementById('reopenBtn').onclick=reopen;
+document.getElementById('prev').onclick=()=>{if(page>0){page--;load()}};
+document.getElementById('next').onclick=()=>{page++;load()};
+let timer;document.getElementById('q').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{page=0;load()},300)});
+['assignee','fromDate','toDate'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{page=0;load()}));
+document.getElementById('clear').onclick=()=>{['q','fromDate','toDate'].forEach(id=>document.getElementById(id).value='');document.getElementById('assignee').value='';page=0;load()};
+if(await auth()){await loadPeople();await load();try{lucide.createIcons()}catch{}}
+</script>
+</body>
+</html>

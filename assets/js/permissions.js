@@ -11,7 +11,7 @@ function getAtwarSession(){
 const getAtwarDemoSession=getAtwarSession;
 
 function atwarDepth(){
-  const nestedModules=['tasks','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day'];
+  const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
   return nestedModules.some(name=>location.pathname.includes('/'+name+'/')) ? '../' : '';
 }
 
@@ -79,7 +79,36 @@ async function atwarLogout(){
   location.href=atwarDepth()+'login.html';
 }
 
-document.addEventListener('DOMContentLoaded',applyAtwarPermissions);
+async function verifyAtwarSessionWithSupabase(){
+  if(!window.atwarGetSupabase)return getAtwarSession();
+  try{
+    const sb=await window.atwarGetSupabase();
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session?.user){localStorage.removeItem('atwarSession');localStorage.removeItem('atwarDemoSession');return null;}
+    const {data:p,error}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+    if(error||!p||p.active===false||p.status!=='active'||!['employee','manager','admin'].includes(p.role)){
+      localStorage.removeItem('atwarSession');localStorage.removeItem('atwarDemoSession');await sb.auth.signOut().catch(()=>{});return null;
+    }
+    const old=getAtwarSession();
+    const verified={uid:p.id,email:session.user.email||p.email||'',name:p.full_name||session.user.email||'المستخدم',title:p.job_title||'',role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)?p.permissions:[],source:'supabase-verified'};
+    localStorage.setItem('atwarSession',JSON.stringify(verified));localStorage.removeItem('atwarDemoSession');
+    const changed=!old||String(old.uid)!==String(verified.uid)||old.role!==verified.role||JSON.stringify(old.permissions||[])!==JSON.stringify(verified.permissions||[]);
+    if(changed&&!sessionStorage.getItem('atwarRoleVerifiedReload')){
+      sessionStorage.setItem('atwarRoleVerifiedReload','1');location.reload();return null;
+    }
+    sessionStorage.removeItem('atwarRoleVerifiedReload');
+    return verified;
+  }catch(error){console.warn('Session verification warning:',error);return getAtwarSession();}
+}
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  const verified=await verifyAtwarSessionWithSupabase();
+  if(!verified){
+    if(!location.pathname.endsWith('login.html')&&!location.pathname.endsWith('landing.html'))location.href=atwarDepth()+'login.html';
+    return;
+  }
+  applyAtwarPermissions();
+});
 
 
 function atwarGoToStart(){

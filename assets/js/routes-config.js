@@ -2,6 +2,7 @@
 window.ATWAR_ROUTES = {
   home: 'home.html',
   tasks: 'tasks/index.html',
+  completed: 'completed/index.html',
   team: 'team/index.html',
   profile: 'profile/index.html',
   workspace: 'workspace/index.html',

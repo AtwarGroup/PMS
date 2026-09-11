@@ -5,7 +5,7 @@ window.ATWAR_ROLE_RANK = {
 };
 
 window.ATWAR_ROLE_DEFAULT_PERMISSIONS = {
-  employee: ['home','tasks','profile','workspace','follow-up','notifications','search'],
-  manager: ['home','tasks','team','profile','workspace','follow-up','notifications','search','approvals'],
-  admin: ['home','tasks','team','profile','workspace','follow-up','notifications','search','approvals','settings','users']
+  employee: ['home','tasks','completed','profile','workspace','follow-up','notifications','search'],
+  manager: ['home','tasks','completed','team','profile','workspace','follow-up','notifications','search','approvals'],
+  admin: ['home','tasks','completed','team','profile','workspace','follow-up','notifications','search','approvals','settings','users']
 };
