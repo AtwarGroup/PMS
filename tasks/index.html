@@ -554,6 +554,10 @@ let pendingAssigneeChange=null;
 let homeFilterValue='';
 let urlTargetTaskKey='';
 let urlTargetOwnerUid='';
+let completedCountsByOwner=new Map();
+let completedStatsRefreshTimer=null;
+let completedStatsLoading=false;
+let tasksInitialLoadReady=false;
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -1257,6 +1261,7 @@ onAuthStateChanged(auth,async(user)=>{
   currentProfile=null;
   users=[];
   tasks=[];
+  tasksInitialLoadReady=false;
   selectedTaskKey=null;
   assigneeFilterValue='ALL';
 
@@ -1326,6 +1331,7 @@ onAuthStateChanged(auth,async(user)=>{
     bindDetailsCloseButtons();
     bindTaskFilters();
     applyHomeDashboardFilterFromUrl();
+    await refreshCompletedTaskCounts();
     subscribeVisibleTasks();
     subscribeNotifications();
     setTimeout(()=>checkOverdueNotifications(),1200);
@@ -1361,6 +1367,31 @@ function managerTeamUsers(){
   return [];
 }
 
+async function refreshCompletedTaskCounts(){
+  if(completedStatsLoading)return;
+  const ids=visibleUsers().map(u=>String(u.uid||'')).filter(Boolean);
+  if(!ids.length){completedCountsByOwner=new Map();return;}
+  completedStatsLoading=true;
+  try{
+    const sb=await window.atwarGetSupabase();
+    const {data,error}=await sb.from('tasks').select('assignee_id').in('assignee_id',ids).eq('status','مكتملة').is('deleted_at',null);
+    if(error)throw error;
+    const counts=new Map();
+    (data||[]).forEach(row=>counts.set(String(row.assignee_id),Number(counts.get(String(row.assignee_id))||0)+1));
+    completedCountsByOwner=counts;
+    if(tasksInitialLoadReady)renderManagerDashboard();
+  }catch(error){
+    console.error('Completed task counts:',error);
+  }finally{
+    completedStatsLoading=false;
+  }
+}
+
+function scheduleCompletedTaskCountsRefresh(){
+  clearTimeout(completedStatsRefreshTimer);
+  completedStatsRefreshTimer=setTimeout(refreshCompletedTaskCounts,350);
+}
+
 function renderManagerDashboard(){
   const section=document.getElementById('managerDashboard');
   const body=document.getElementById('managerDashboardBody');
@@ -1382,10 +1413,10 @@ function renderManagerDashboard(){
   empty.classList.toggle('hidden',team.length!==0);
 
   const teamTasks=tasks.filter(t=>team.some(u=>u.uid===t._ownerUid));
-  const total=teamTasks.length;
+  const completed=team.reduce((sum,u)=>sum+Number(completedCountsByOwner.get(String(u.uid))||0),0);
+  const total=teamTasks.length+completed;
   const overdue=teamTasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
   const inProgress=teamTasks.filter(t=>t.status==='قيد التنفيذ').length;
-  const completed=teamTasks.filter(t=>t.status==='مكتملة').length;
   const completionRate=total?Math.round((completed/total)*100):0;
 
   summary.innerHTML=`
@@ -1396,8 +1427,8 @@ function renderManagerDashboard(){
 
   grid.innerHTML=team.map(u=>{
     const rows=tasks.filter(t=>t._ownerUid===u.uid);
-    const tTotal=rows.length;
-    const tDone=rows.filter(t=>t.status==='مكتملة').length;
+    const tDone=Number(completedCountsByOwner.get(String(u.uid))||0);
+    const tTotal=rows.length+tDone;
     const tProgress=rows.filter(t=>t.status==='قيد التنفيذ').length;
     const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
     const rate=tTotal?Math.round((tDone/tTotal)*100):0;
@@ -1763,6 +1794,8 @@ function subscribeVisibleTasks(){
       return;
     }
 
+    tasksInitialLoadReady=true;
+
     if(selectedTaskKey&&!selectedTask()&&!transientSelectedTask){
       selectedTaskKey=null;
     }
@@ -1771,6 +1804,7 @@ function subscribeVisibleTasks(){
     updateStats();
     renderDetails();
     renderManagerDashboard();
+    scheduleCompletedTaskCountsRefresh();
     setSaveStatus('saved');
     openUrlTargetTaskIfReady();
     checkOverdueNotifications();
