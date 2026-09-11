@@ -2514,6 +2514,26 @@ async function openTaskAttachment(path){
   }
 }
 
+async function deleteTaskAttachment(id,path,fileName){
+  const task=selectedTask();
+  if(!task||!id)return;
+  const confirmed=await appConfirm(`هل تريد حذف المرفق «${fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
+  if(!confirmed)return;
+  try{
+    const sb=await window.atwarGetSupabase();
+    const removedRow=await sb.from('task_attachments').delete().eq('id',id);
+    if(removedRow.error)throw removedRow.error;
+    const removedFile=await sb.storage.from('task-attachments').remove([path]);
+    if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
+    task.attachments=(task.attachments||[]).filter(file=>String(file.id)!==String(id));
+    renderTasks();renderDetails();
+    showToast('تم حذف المرفق.','success');
+  }catch(error){
+    console.error('Delete attachment:',error);
+    showToast(error?.message||'تعذر حذف المرفق. لا تملك الصلاحية أو أن المهمة مقفلة.','error',6000);
+  }
+}
+
 async function uploadTaskAttachment(event){
   const input=event?.target;
   const file=input?.files?.[0];
@@ -2534,7 +2554,7 @@ async function uploadTaskAttachment(event){
     const saved=await sb.from('task_attachments').insert(row).select('id,task_id,file_name,storage_path,size_bytes,created_at').single();
     if(saved.error){await sb.storage.from('task-attachments').remove([storagePath]).catch(()=>{});throw saved.error;}
     task.attachments=task.attachments||[];
-    task.attachments.unshift({id:saved.data.id,fileName:saved.data.file_name,storagePath:saved.data.storage_path,sizeBytes:Number(saved.data.size_bytes||0),createdAt:new Date(saved.data.created_at).getTime()});
+    task.attachments.unshift({id:saved.data.id,uploaderId:currentUser.uid,fileName:saved.data.file_name,storagePath:saved.data.storage_path,sizeBytes:Number(saved.data.size_bytes||0),createdAt:new Date(saved.data.created_at).getTime()});
     renderTasks();renderDetails();
     showToast('تم رفع المرفق بنجاح.','success');
   }catch(error){
@@ -3245,7 +3265,7 @@ function renderDetails(){
   document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
   const attachmentsList=document.getElementById('taskAttachmentsList');
   attachmentsList.innerHTML=attachmentCount
-    ? task.attachments.map(file=>`<button type="button" onclick="openTaskAttachment('${escapeHTML(file.storagePath)}')" class="w-full flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>`).join('')
+    ? task.attachments.map(file=>{const canDeleteAttachment=currentProfile?.role==='admin'||String(file.uploaderId||'')===String(currentUser?.uid||'');return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.storagePath)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}','${escapeHTML(file.storagePath)}','${escapeHTML(file.fileName||'المرفق')}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
     : '<div class="text-[10px] text-blue-500">لا توجد مرفقات حتى الآن.</div>';
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');
@@ -3477,6 +3497,7 @@ window.toggleSubtask=toggleSubtask;
 window.updateSelectedField=updateSelectedField;
 window.handleImport=handleImport;
 window.exportToExcel=exportToExcel;
+window.deleteTaskAttachment=deleteTaskAttachment;
 window.openTaskAttachment=openTaskAttachment;
 window.uploadTaskAttachment=uploadTaskAttachment;
 window.markAllNotificationsRead=markAllNotificationsRead;
