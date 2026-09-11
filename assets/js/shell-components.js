@@ -1,7 +1,7 @@
 
 (function(){
   function depth(){
-    const nestedModules=['tasks','completed','attachments','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -11,7 +11,9 @@
 
   class AtwarSidebar extends HTMLElement{
     connectedCallback(){
-      const d=depth(),active=this.getAttribute('active')||'',s=getSession();
+      const d=depth(),requestedActive=this.getAttribute('active')||'',s=getSession();
+      const inTaskModule=/\/(tasks|completed|recurring)\//.test(location.pathname);
+      const active=inTaskModule?'tasks':requestedActive;
       const nav=(key,path,icon,label,min='employee')=>{
         if(s && (rank[s.role]||0)<(rank[min]||0))return '';
         return `<a class="${active===key?'active':''}" href="${d}${path}">
@@ -21,6 +23,7 @@
         <div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
         <nav class="atwar-nav">
           ${nav('home','home.html','home','الرئيسية')}
+          ${nav('tasks','tasks/index.html','square-check-big','المهام')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
@@ -50,17 +53,16 @@
         if(key==='tasks')return /\/tasks\//.test(currentPath);
         if(key==='completed')return /\/completed\//.test(currentPath);
         if(key==='recurring')return /\/recurring\//.test(currentPath);
-        if(key==='attachments')return /\/attachments\//.test(currentPath);
         return false;
       };
       const recurringAllowed=!s || ['manager','admin'].includes(s.role);
-      const taskNav=`
+      const taskModuleOpen=/\/(tasks|completed|recurring)\//.test(currentPath);
+      const taskNav=taskModuleOpen?`
         <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
           <a class="${taskNavActive('completed')?'active':''}" href="${d}completed/index.html"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
           ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
-          <a class="${taskNavActive('attachments')?'active':''}" href="${d}attachments/index.html" title="المرفقات"><i data-lucide="paperclip"></i><span>المرفقات</span></a>
-        </nav>`;
+        </nav>`:'';
       const taskTools=mode==='tasks'?`
         <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="atwar-task-add"><i data-lucide="plus"></i><span>إضافة مهمة</span></button>
         <div class="atwar-task-notification-wrap">
