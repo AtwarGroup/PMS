@@ -194,6 +194,29 @@
         main.dispatchEvent(new Event('change',{bubbles:true}));
       });
     }
+    // Maintenance 1.8 hotfix: legacy task details omitted the Pending Approval option.
+    // Without this option, a task in that state renders as an apparently blank status row.
+    if(/\/tasks\/(?:index\.html)?$/.test(location.pathname)){
+      const ensurePendingApprovalStatus=()=>{
+        const select=document.getElementById('detailStatus');
+        if(!select)return false;
+        if(![...select.options].some(o=>o.value==='بانتظار الاعتماد')){
+          const completed=[...select.options].find(o=>o.value==='مكتملة');
+          const option=document.createElement('option');
+          option.value='بانتظار الاعتماد';
+          option.textContent='بانتظار الاعتماد';
+          completed?select.insertBefore(option,completed):select.appendChild(option);
+        }
+        return true;
+      };
+      if(!ensurePendingApprovalStatus()){
+        const statusObserver=new MutationObserver(()=>{
+          if(ensurePendingApprovalStatus())statusObserver.disconnect();
+        });
+        statusObserver.observe(document.documentElement,{childList:true,subtree:true});
+      }
+    }
+
     // Completed tasks counter remains useful on the active Tasks page,
     // but the completed records themselves are no longer loaded into that page.
     if(/\/tasks\/(?:index\.html)?$/.test(location.pathname)){
