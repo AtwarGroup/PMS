@@ -224,8 +224,16 @@ function ensureRealtime(){
 }
 export function onValue(r,callback,errorCallback){
   ensureRealtime();
-  let alive=true,busy=false;
-  const refresh=async()=>{if(!alive||busy)return;busy=true;try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{busy=false}};
+  let alive=true,busy=false,refreshQueued=false;
+  const refresh=async()=>{
+    if(!alive)return;
+    if(busy){refreshQueued=true;return;}
+    busy=true;
+    try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{
+      busy=false;
+      if(refreshQueued&&alive){refreshQueued=false;queueMicrotask(refresh)}
+    }
+  };
   _listeners.add(refresh);refresh();
   const timer=setInterval(refresh,60000);
   return ()=>{alive=false;clearInterval(timer);_listeners.delete(refresh)};

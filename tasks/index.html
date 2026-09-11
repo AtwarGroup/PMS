@@ -1326,7 +1326,6 @@ onAuthStateChanged(auth,async(user)=>{
     bindDetailsCloseButtons();
     bindTaskFilters();
     applyHomeDashboardFilterFromUrl();
-    renderManagerDashboard();
     subscribeVisibleTasks();
     subscribeNotifications();
     setTimeout(()=>checkOverdueNotifications(),1200);
@@ -1711,6 +1710,7 @@ function subscribeVisibleTasks(){
   const ownerData=new Map();
   const createdData=new Map();
   let createdExactUnsubs=[];
+  let renderTimer=null;
 
   const sortAndRender=()=>{
     const merged=new Map();
@@ -1777,6 +1777,13 @@ function subscribeVisibleTasks(){
   };
 
   const scoped=visibleUsers();
+  const pendingInitialOwners=new Set(scoped.map(u=>String(u.uid)));
+  const scheduleRender=()=>{
+    if(pendingInitialOwners.size)return;
+    clearTimeout(renderTimer);
+    renderTimer=setTimeout(sortAndRender,180);
+  };
+  unsubscribeTasks.push(()=>clearTimeout(renderTimer));
 
   if(!scoped.length){
     tasks=[];
@@ -1796,10 +1803,13 @@ function subscribeVisibleTasks(){
           : [];
 
         ownerData.set(u.uid,rows);
-        sortAndRender();
+        pendingInitialOwners.delete(String(u.uid));
+        scheduleRender();
       },
       error=>{
         console.error('Owner tasks listener:',error);
+        pendingInitialOwners.delete(String(u.uid));
+        scheduleRender();
         setSaveStatus('error');
       }
     );
@@ -1844,19 +1854,19 @@ function subscribeVisibleTasks(){
                 createdData.delete(mapKey);
               }
 
-              sortAndRender();
+              scheduleRender();
             },
             error=>{
               console.error('Created task listener:',error);
               createdData.delete(`${ownerUid}::${taskKey}`);
-              sortAndRender();
+              scheduleRender();
             }
           );
 
           createdExactUnsubs.push(exactUnsub);
         });
 
-        sortAndRender();
+        scheduleRender();
       },
       error=>{
         console.error('Created-task index listener:',error);
@@ -2531,8 +2541,6 @@ async function deleteTaskAttachment(id){
     const sb=await window.atwarGetSupabase();
     const removedRow=await sb.from('task_attachments').delete().eq('id',id);
     if(removedRow.error)throw removedRow.error;
-    task.attachments=(task.attachments||[]).filter(file=>String(file.id)!==String(id));
-    renderTasks();renderDetails();
     showToast('تم حذف المرفق.','success');
     try{
       const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
@@ -2565,9 +2573,6 @@ async function uploadTaskAttachment(event){
     const row={task_id:taskId,uploader_id:currentUser.uid,uploader_name_snapshot:currentProfile?.name||currentUser.email||'',file_name:file.name,storage_path:storagePath,content_type:file.type||null,size_bytes:file.size};
     const saved=await sb.from('task_attachments').insert(row).select('id,task_id,file_name,storage_path,size_bytes,created_at').single();
     if(saved.error){await sb.storage.from('task-attachments').remove([storagePath]).catch(()=>{});throw saved.error;}
-    task.attachments=task.attachments||[];
-    task.attachments.unshift({id:saved.data.id,uploaderId:currentUser.uid,fileName:saved.data.file_name,storagePath:saved.data.storage_path,sizeBytes:Number(saved.data.size_bytes||0),createdAt:new Date(saved.data.created_at).getTime()});
-    renderTasks();renderDetails();
     showToast('تم رفع المرفق بنجاح.','success');
   }catch(error){
     console.error('Upload attachment:',error);
