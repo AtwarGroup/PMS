@@ -174,7 +174,7 @@ async function rootUpdate(changes){
   const pureCreates=creates.filter(([newPath])=>!deletes.some(([oldPath])=>oldPath.split('/')[2]===newPath.split('/')[2]));
   if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);}
   else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;}
-  for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id});if(error)throw error;}
+  for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id,p_reason:null});if(error)throw error;}
   await emitLocal();
 }
 
