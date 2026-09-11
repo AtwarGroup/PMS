@@ -429,10 +429,14 @@
               <textarea id="detailDesc" rows="3" onchange="updateSelectedField('desc',this.value)" placeholder="أضف وصفًا..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
             </div>
 
-            <a id="detailAttachmentsLink" href="#" class="flex bg-blue-50 border border-blue-200 rounded-xl p-3 items-center justify-between gap-3 text-blue-700 hover:bg-blue-100 no-underline">
-              <span class="flex items-center gap-2 text-xs font-black"><span class="text-base">📎</span><span>مرفقات المهمة</span></span>
-              <span id="detailAttachmentsCount" class="min-w-7 h-7 px-2 rounded-full bg-blue-600 text-white text-[11px] font-black flex items-center justify-center">0</span>
-            </a>
+            <div id="taskAttachmentsSection" class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-xs font-black text-blue-700"><span class="text-base">📎</span><span>مرفقات المهمة</span><span id="detailAttachmentsCount" class="min-w-6 h-6 px-2 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center">0</span></div>
+                <label id="attachmentUploadLabel" for="taskAttachmentInput" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black cursor-pointer">+ إضافة مرفق</label>
+                <input id="taskAttachmentInput" type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.doc,.docx,.txt" onchange="uploadTaskAttachment(event)">
+              </div>
+              <div id="taskAttachmentsList" class="mt-2 space-y-2"></div>
+            </div>
 
             <div id="subtasksSection" class="bg-white border border-slate-200 rounded-xl p-3">
               <div class="flex items-center justify-between gap-3 mb-2">
@@ -2486,9 +2490,60 @@ function showQuickAdd(){
 
   box.classList.remove('hidden');
   requestAnimationFrame(()=>{
-    box.scrollIntoView({behavior:'smooth',block:'center'});
-    input.focus();
+    const header=document.querySelector('header');
+    const headerHeight=header?.getBoundingClientRect().height||0;
+    const boxTop=box.getBoundingClientRect().top+window.scrollY;
+    window.scrollTo({top:Math.max(0,boxTop-headerHeight-12),left:0,behavior:'smooth'});
+    setTimeout(()=>input.focus({preventScroll:true}),350);
   });
+}
+
+function safeAttachmentName(name){
+  return String(name||'file').replace(/[^\p{L}\p{N}._-]+/gu,'_').slice(-120)||'file';
+}
+
+async function openTaskAttachment(path){
+  try{
+    const sb=await window.atwarGetSupabase();
+    const {data,error}=await sb.storage.from('task-attachments').createSignedUrl(path,120);
+    if(error)throw error;
+    window.open(data.signedUrl,'_blank','noopener');
+  }catch(error){
+    console.error('Open attachment:',error);
+    showToast('تعذر فتح المرفق.','error');
+  }
+}
+
+async function uploadTaskAttachment(event){
+  const input=event?.target;
+  const file=input?.files?.[0];
+  const task=selectedTask();
+  if(!file||!task)return;
+  if(file.size>10*1024*1024){showToast('الحد الأعلى لحجم المرفق 10 ميجابايت.','warning');input.value='';return;}
+
+  const taskId=String(task._relationalId||task.id||'');
+  const label=document.getElementById('attachmentUploadLabel');
+  const originalText=label?.textContent||'+ إضافة مرفق';
+  const storagePath=`${taskId}/${crypto.randomUUID()}-${safeAttachmentName(file.name)}`;
+  try{
+    if(label){label.textContent='جاري الرفع...';label.classList.add('opacity-60','pointer-events-none')}
+    const sb=await window.atwarGetSupabase();
+    const upload=await sb.storage.from('task-attachments').upload(storagePath,file,{contentType:file.type||'application/octet-stream',upsert:false});
+    if(upload.error)throw upload.error;
+    const row={task_id:taskId,uploader_id:currentUser.uid,uploader_name_snapshot:currentProfile?.name||currentUser.email||'',file_name:file.name,storage_path:storagePath,content_type:file.type||null,size_bytes:file.size};
+    const saved=await sb.from('task_attachments').insert(row).select('id,task_id,file_name,storage_path,size_bytes,created_at').single();
+    if(saved.error){await sb.storage.from('task-attachments').remove([storagePath]).catch(()=>{});throw saved.error;}
+    task.attachments=task.attachments||[];
+    task.attachments.unshift({id:saved.data.id,fileName:saved.data.file_name,storagePath:saved.data.storage_path,sizeBytes:Number(saved.data.size_bytes||0),createdAt:new Date(saved.data.created_at).getTime()});
+    renderTasks();renderDetails();
+    showToast('تم رفع المرفق بنجاح.','success');
+  }catch(error){
+    console.error('Upload attachment:',error);
+    showToast(error?.message||'تعذر رفع المرفق. تحقق من الصلاحية ونوع الملف.','error',6000);
+  }finally{
+    input.value='';
+    if(label){label.textContent=originalText;label.classList.remove('opacity-60','pointer-events-none')}
+  }
 }
 
 function hideQuickAdd(){
@@ -3187,9 +3242,11 @@ function renderDetails(){
 
   document.getElementById('detailDesc').value=task.desc||'';
   const attachmentCount=task.attachments?.length||0;
-  const attachmentLink=document.getElementById('detailAttachmentsLink');
-  attachmentLink.href=`../attachments/index.html?task=${encodeURIComponent(task._relationalId||task.id)}`;
   document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
+  const attachmentsList=document.getElementById('taskAttachmentsList');
+  attachmentsList.innerHTML=attachmentCount
+    ? task.attachments.map(file=>`<button type="button" onclick="openTaskAttachment('${escapeHTML(file.storagePath)}')" class="w-full flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>`).join('')
+    : '<div class="text-[10px] text-blue-500">لا توجد مرفقات حتى الآن.</div>';
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');
   managerNotes.value=task.managerNotes||'';
@@ -3420,6 +3477,8 @@ window.toggleSubtask=toggleSubtask;
 window.updateSelectedField=updateSelectedField;
 window.handleImport=handleImport;
 window.exportToExcel=exportToExcel;
+window.openTaskAttachment=openTaskAttachment;
+window.uploadTaskAttachment=uploadTaskAttachment;
 window.markAllNotificationsRead=markAllNotificationsRead;
 window.toggleNotifications=toggleNotifications;
 </script>

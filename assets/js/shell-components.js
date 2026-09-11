@@ -103,15 +103,15 @@
         @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
       </style>
       <header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
-        <div class="atwar-top-brand">
+        ${mode==='tasks'?'':`<div class="atwar-top-brand">
           <div class="atwar-brand-mark"></div>
           <div class="atwar-org-title">
               <h2>نظام إدارة الأداء المؤسسي</h2>
               <p>مؤسسة أطوار للتجارة</p>
-              ${mode==='tasks'?`<span id="pageSubtitle" class="hidden"></span>`:''}
             </div>
           <div class="atwar-pm-label">Performance Management<br>System</div>
-        </div>
+        </div>`}
+        ${mode==='tasks'?`<span id="pageSubtitle" class="hidden"></span>`:''}
         ${taskNav}
         <div class="atwar-top-actions ${mode==='tasks'?'atwar-task-tools':''}">
           <div class="atwar-search"><i data-lucide="search"></i>
