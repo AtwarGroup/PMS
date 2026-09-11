@@ -429,6 +429,11 @@
               <textarea id="detailDesc" rows="3" onchange="updateSelectedField('desc',this.value)" placeholder="أضف وصفًا..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
             </div>
 
+            <a id="detailAttachmentsLink" href="#" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 items-center justify-between gap-3 text-blue-700 hover:bg-blue-100 no-underline">
+              <span class="flex items-center gap-2 text-xs font-black"><span class="text-base">📎</span><span>مرفقات المهمة</span></span>
+              <span id="detailAttachmentsCount" class="min-w-7 h-7 px-2 rounded-full bg-blue-600 text-white text-[11px] font-black flex items-center justify-center">0</span>
+            </a>
+
             <div id="subtasksSection" class="bg-white border border-slate-200 rounded-xl p-3">
               <div class="flex items-center justify-between gap-3 mb-2">
                 <div>
@@ -2797,6 +2802,7 @@ function renderTasks(){
             ${t.status==='بانتظار الاعتماد'?'<span class="text-amber-600 font-bold">بانتظار الاعتماد</span>':''}
             ${t.status==='مكتملة'?'<span class="text-emerald-600 font-bold">مكتملة</span>':''}
             ${t.managerNotes?`<span class="text-amber-700 font-bold" title="${escapeHTML(t.managerNotes)}">📝 ملاحظة مدير</span>`:''}
+            ${(t.attachments?.length||0)>0?`<span class="text-blue-700 font-black" title="مرفقات المهمة">📎 ${t.attachments.length}</span>`:''}
           </div>
         </div>
       </div>
@@ -3180,6 +3186,12 @@ function renderDetails(){
   }
 
   document.getElementById('detailDesc').value=task.desc||'';
+  const attachmentCount=task.attachments?.length||0;
+  const attachmentLink=document.getElementById('detailAttachmentsLink');
+  attachmentLink.classList.toggle('hidden',attachmentCount===0);
+  attachmentLink.classList.toggle('flex',attachmentCount>0);
+  attachmentLink.href=`../attachments/index.html?task=${encodeURIComponent(task._relationalId||task.id)}`;
+  document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');
   managerNotes.value=task.managerNotes||'';

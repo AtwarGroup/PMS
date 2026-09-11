@@ -56,7 +56,8 @@ async function load(){
 }
 function render(){
  const term=document.getElementById('q').value.trim().toLowerCase();
- const filtered=rows.filter(x=>!term||String(x.file_name||'').toLowerCase().includes(term)||String(x.task?.title||'').toLowerCase().includes(term));
+ const taskId=new URLSearchParams(location.search).get('task');
+ const filtered=rows.filter(x=>(!taskId||String(x.task_id)===String(taskId))&&(!term||String(x.file_name||'').toLowerCase().includes(term)||String(x.task?.title||'').toLowerCase().includes(term)));
  document.getElementById('list').innerHTML=filtered.length?filtered.map(x=>`<div class="row">
    <div><div class="file"><i data-lucide="paperclip"></i>${esc(x.file_name)}</div><div class="meta">${x.size_bytes?Math.ceil(x.size_bytes/1024)+' KB':''}</div></div>
    <div><b style="font-size:11px">${esc(x.task?.title||'—')}</b><div class="meta">${esc(x.task?.status||'')}</div></div>

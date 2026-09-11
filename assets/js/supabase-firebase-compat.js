@@ -41,15 +41,17 @@ function profileLegacy(p){
 
 async function loadChildren(taskIds){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
-  if(!ids.length)return {activities:new Map(),subtasks:new Map()};
-  const [ar,sr]=await Promise.all([
+  if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map()};
+  const [ar,sr,fr]=await Promise.all([
     sb.from('task_activity').select('*').in('task_id',ids).order('sequence_no',{ascending:true}),
-    sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true})
+    sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true}),
+    sb.from('task_attachments').select('id,task_id,file_name,storage_path,size_bytes,created_at').in('task_id',ids).order('created_at',{ascending:false})
   ]);
-  const activities=new Map(),subtasks=new Map();
+  const activities=new Map(),subtasks=new Map(),attachments=new Map();
   for(const a of ar.data||[]){const x={type:a.event_type||'activity',detail:a.detail||'',userUid:a.actor_id||'',userName:a.actor_name_snapshot||'',createdAt:ms(a.created_at)};(activities.get(a.task_id)||activities.set(a.task_id,[]).get(a.task_id)).push(x)}
   for(const s of sr.data||[]){const x={id:s.id,title:s.title||'',done:!!s.done,createdAt:ms(s.created_at),completedAt:ms(s.completed_at)||null};(subtasks.get(s.task_id)||subtasks.set(s.task_id,[]).get(s.task_id)).push(x)}
-  return {activities,subtasks};
+  for(const f of fr.data||[]){const x={id:f.id,fileName:f.file_name||'',storagePath:f.storage_path||'',sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at)};(attachments.get(f.task_id)||attachments.set(f.task_id,[]).get(f.task_id)).push(x)}
+  return {activities,subtasks,attachments};
 }
 
 function taskLegacy(t,children){
@@ -63,7 +65,7 @@ function taskLegacy(t,children){
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
     reopenedAt:ms(t.reopened_at)||null,reopenedBy:t.reopened_by_name_snapshot||'',completedAt:ms(t.completed_at)||null,
     cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
-    activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],
+    activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
     _relationalId:t.id
   };
 }

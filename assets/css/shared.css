@@ -602,8 +602,11 @@ atwar-sidebar,atwar-header{display:contents}
 .atwar-shell{display:grid!important;grid-template-columns:var(--atwar-sidebar-width,160px) minmax(0,1fr)!important;min-height:100vh!important}
 .atwar-main{min-width:0!important;background:var(--atwar-bg,#f4f7fb)!important}
 .atwar-sidebar{min-height:100vh!important;height:100vh!important;position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;overflow-y:auto!important}
-.atwar-topbar{position:sticky!important;top:0!important;z-index:900!important;width:100%!important;box-sizing:border-box!important}
-.atwar-top-actions{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+.atwar-topbar{position:sticky!important;top:0!important;z-index:900!important;width:100%!important;box-sizing:border-box!important;flex-wrap:nowrap!important;overflow:visible!important}
+.atwar-top-brand{flex:0 1 auto!important;min-width:0!important}
+.atwar-org-title{min-width:0!important}
+.atwar-org-title h2,.atwar-org-title p{white-space:nowrap!important}
+.atwar-top-actions{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:0 1 auto!important;flex-wrap:nowrap!important}
 .atwar-bell,.atwar-icon-btn{width:36px!important;height:36px!important;min-width:36px!important;display:grid!important;place-items:center!important;position:relative!important;border:0!important;border-radius:10px!important;background:rgba(255,255,255,.08)!important;color:#fff!important;text-decoration:none!important;cursor:pointer!important}
 .atwar-bell:hover,.atwar-icon-btn:hover{background:rgba(255,255,255,.14)!important}
 .atwar-bell svg,.atwar-icon-btn svg{width:16px!important;height:16px!important}
@@ -634,8 +637,8 @@ body.atwar-task-page #authLoadingScreen,body.atwar-task-page #loginScreen,body.a
 .atwar-profile-host .rounded-\[2rem\]{border-radius:14px!important}
 .atwar-profile-host .mb-12{margin-bottom:20px!important}
 .atwar-profile-host .mb-10{margin-bottom:18px!important}
-@media(max-width:1200px){.atwar-task-save-status{display:none!important}.atwar-task-tools .atwar-search{width:180px!important}}
-@media(max-width:1050px){.atwar-pm-label{display:none!important}.atwar-task-tools .atwar-search{display:none!important}.atwar-user{display:none!important}}
+@media(max-width:1280px){.atwar-task-save-status{display:none!important}.atwar-task-tools .atwar-search{width:180px!important}.atwar-pm-label{display:none!important}}
+@media(max-width:1120px){.atwar-task-tools .atwar-search{display:none!important}.atwar-user{display:none!important}}
 @media(max-width:1100px){.atwar-shell{grid-template-columns:68px minmax(0,1fr)!important}}
 
 

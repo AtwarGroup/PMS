@@ -90,14 +90,14 @@
         </div>`;
 
       this.innerHTML=`<style>
-        .atwar-topbar{flex-wrap:wrap}
+        .atwar-topbar{flex-wrap:nowrap}
         .atwar-header-task-nav{display:flex;align-items:center;gap:4px;padding:4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:12px;white-space:nowrap}
         .atwar-header-task-nav a{display:flex;align-items:center;gap:6px;text-decoration:none;color:#dbeafe;font-size:11px;font-weight:800;padding:8px 10px;border-radius:9px;transition:.15s ease}
         .atwar-header-task-nav a:hover{background:rgba(255,255,255,.09);color:#fff}
         .atwar-header-task-nav a.active{background:#2684ff;color:#fff}
         .atwar-header-task-nav svg{width:15px;height:15px}
         @media(max-width:1050px){
-          .atwar-header-task-nav{order:3;width:100%;overflow-x:auto;justify-content:flex-start;margin-top:4px}
+          .atwar-header-task-nav{overflow-x:auto;justify-content:flex-start}
           .atwar-header-task-nav a{flex:0 0 auto}
         }
         @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
