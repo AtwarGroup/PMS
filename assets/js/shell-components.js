@@ -245,33 +245,14 @@
       }
     }
 
-    // Completed tasks counter remains useful on the active Tasks page,
-    // but the completed records themselves are no longer loaded into that page.
     if(/\/tasks\/(?:index\.html)?$/.test(location.pathname)){
-      (async()=>{
-        try{
-          const sb=await window.atwarGetSupabase();
-          const {count,error}=await sb.from('tasks')
-            .select('id',{count:'exact',head:true})
-            .eq('status','مكتملة')
-            .is('deleted_at',null);
-          if(error)throw error;
-          const el=document.getElementById('stat-completed');
-          if(el){
-            const archiveCount=String(count||0);
-            const keepArchiveCount=()=>{if(el.textContent!==archiveCount)el.textContent=archiveCount};
-            keepArchiveCount();
-            const observer=new MutationObserver(keepArchiveCount);
-            observer.observe(el,{childList:true,characterData:true,subtree:true});
-            const card=el.closest('div.bg-white')||el.parentElement;
-            if(card){
-              card.style.cursor='pointer';
-              card.title='فتح المهام المكتملة';
-              card.addEventListener('click',()=>{location.href=depth()+'completed/index.html'});
-            }
-          }
-        }catch(error){console.warn('Completed tasks count:',error)}
-      })();
+      const el=document.getElementById('stat-completed');
+      const card=el?.closest('div.bg-white')||el?.parentElement;
+      if(card){
+        card.style.cursor='pointer';
+        card.title='فتح المهام المكتملة';
+        card.addEventListener('click',()=>{location.href=depth()+'completed/index.html'});
+      }
     }
     window.lucide?.createIcons();
   });

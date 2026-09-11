@@ -236,7 +236,7 @@
 
     <!-- Stats -->
     <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">إجمالي المهام</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
@@ -557,6 +557,7 @@ let urlTargetOwnerUid='';
 let completedCountsByOwner=new Map();
 let completedStatsRefreshTimer=null;
 let completedStatsLoading=false;
+let completedStatsRefreshQueued=false;
 let tasksInitialLoadReady=false;
 
 document.addEventListener('keydown',e=>{
@@ -1256,6 +1257,8 @@ async function loadManagerUserTree(managerUid,rootProfile){
 
 onAuthStateChanged(auth,async(user)=>{
   clearTaskListeners();
+  clearTimeout(completedStatsRefreshTimer);
+  completedStatsRefreshQueued=false;
 
   currentUser=user;
   currentProfile=null;
@@ -1368,7 +1371,7 @@ function managerTeamUsers(){
 }
 
 async function refreshCompletedTaskCounts(){
-  if(completedStatsLoading)return;
+  if(completedStatsLoading){completedStatsRefreshQueued=true;return;}
   const ids=visibleUsers().map(u=>String(u.uid||'')).filter(Boolean);
   if(!ids.length){completedCountsByOwner=new Map();return;}
   completedStatsLoading=true;
@@ -1384,6 +1387,7 @@ async function refreshCompletedTaskCounts(){
     console.error('Completed task counts:',error);
   }finally{
     completedStatsLoading=false;
+    if(completedStatsRefreshQueued){completedStatsRefreshQueued=false;scheduleCompletedTaskCountsRefresh();}
   }
 }
 
@@ -3368,7 +3372,7 @@ function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;
 
 function updateStats(){
   document.getElementById('stat-total').textContent=tasks.length;
-  document.getElementById('stat-completed').textContent=tasks.filter(t=>t.status==='مكتملة').length;
+  document.getElementById('stat-completed').textContent=[...completedCountsByOwner.values()].reduce((sum,count)=>sum+Number(count||0),0);
   document.getElementById('stat-progress').textContent=tasks.filter(t=>t.status==='قيد التنفيذ').length;
   document.getElementById('stat-pending').textContent=tasks.filter(t=>t.status==='قيد الانتظار').length;
   document.getElementById('stat-delayed').textContent=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
