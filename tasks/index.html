@@ -2498,8 +2498,9 @@ function showQuickAdd(){
   });
 }
 
-function safeAttachmentName(name){
-  return String(name||'file').replace(/[^\p{L}\p{N}._-]+/gu,'_').slice(-120)||'file';
+function safeAttachmentExtension(name){
+  const ext=String(name||'').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
+  return ext&&ext.length<=8?`.${ext}`:'';
 }
 
 function selectedAttachment(id){
@@ -2530,11 +2531,15 @@ async function deleteTaskAttachment(id){
     const sb=await window.atwarGetSupabase();
     const removedRow=await sb.from('task_attachments').delete().eq('id',id);
     if(removedRow.error)throw removedRow.error;
-    const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
-    if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
     task.attachments=(task.attachments||[]).filter(file=>String(file.id)!==String(id));
     renderTasks();renderDetails();
     showToast('تم حذف المرفق.','success');
+    try{
+      const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
+      if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
+    }catch(cleanupError){
+      console.warn('Attachment storage cleanup:',cleanupError);
+    }
   }catch(error){
     console.error('Delete attachment:',error);
     showToast(error?.message||'تعذر حذف المرفق. لا تملك الصلاحية أو أن المهمة مقفلة.','error',6000);
@@ -2551,7 +2556,7 @@ async function uploadTaskAttachment(event){
   const taskId=String(task._relationalId||task.id||'');
   const label=document.getElementById('attachmentUploadLabel');
   const originalText=label?.textContent||'+ إضافة مرفق';
-  const storagePath=`${taskId}/${crypto.randomUUID()}-${safeAttachmentName(file.name)}`;
+  const storagePath=`${taskId}/${crypto.randomUUID()}${safeAttachmentExtension(file.name)}`;
   try{
     if(label){label.textContent='جاري الرفع...';label.classList.add('opacity-60','pointer-events-none')}
     const sb=await window.atwarGetSupabase();
