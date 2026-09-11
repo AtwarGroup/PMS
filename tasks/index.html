@@ -2502,10 +2502,16 @@ function safeAttachmentName(name){
   return String(name||'file').replace(/[^\p{L}\p{N}._-]+/gu,'_').slice(-120)||'file';
 }
 
-async function openTaskAttachment(path){
+function selectedAttachment(id){
+  return (selectedTask()?.attachments||[]).find(file=>String(file.id)===String(id))||null;
+}
+
+async function openTaskAttachment(id){
+  const file=selectedAttachment(id);
+  if(!file?.storagePath){showToast('تعذر تحديد مسار المرفق.','error');return;}
   try{
     const sb=await window.atwarGetSupabase();
-    const {data,error}=await sb.storage.from('task-attachments').createSignedUrl(path,120);
+    const {data,error}=await sb.storage.from('task-attachments').createSignedUrl(file.storagePath,120);
     if(error)throw error;
     window.open(data.signedUrl,'_blank','noopener');
   }catch(error){
@@ -2514,16 +2520,17 @@ async function openTaskAttachment(path){
   }
 }
 
-async function deleteTaskAttachment(id,path,fileName){
+async function deleteTaskAttachment(id){
   const task=selectedTask();
-  if(!task||!id)return;
-  const confirmed=await appConfirm(`هل تريد حذف المرفق «${fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
+  const file=selectedAttachment(id);
+  if(!task||!file)return;
+  const confirmed=await appConfirm(`هل تريد حذف المرفق «${file.fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
   if(!confirmed)return;
   try{
     const sb=await window.atwarGetSupabase();
     const removedRow=await sb.from('task_attachments').delete().eq('id',id);
     if(removedRow.error)throw removedRow.error;
-    const removedFile=await sb.storage.from('task-attachments').remove([path]);
+    const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
     if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
     task.attachments=(task.attachments||[]).filter(file=>String(file.id)!==String(id));
     renderTasks();renderDetails();
@@ -3265,7 +3272,7 @@ function renderDetails(){
   document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
   const attachmentsList=document.getElementById('taskAttachmentsList');
   attachmentsList.innerHTML=attachmentCount
-    ? task.attachments.map(file=>{const canDeleteAttachment=currentProfile?.role==='admin'||String(file.uploaderId||'')===String(currentUser?.uid||'');return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.storagePath)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}','${escapeHTML(file.storagePath)}','${escapeHTML(file.fileName||'المرفق')}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
+    ? task.attachments.map(file=>{const canDeleteAttachment=task.status!=='مكتملة'&&(currentProfile?.role==='admin'||currentProfile?.role==='manager'||isTaskOwner(task)||String(file.uploaderId||'')===String(currentUser?.uid||''));return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.id)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
     : '<div class="text-[10px] text-blue-500">لا توجد مرفقات حتى الآن.</div>';
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');
