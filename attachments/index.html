@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – المرفقات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/shell-components.js"></script>
+<link rel="stylesheet" href="../assets/css/shared.css">
+<style>
+*{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
+.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:14px}.head h1{margin:0}.head p{font-size:11px;color:#7b8aa5;margin:5px 0 0}
+.toolbar{display:flex;gap:8px;background:#fff;border:1px solid #e4ebf3;border-radius:15px;padding:10px;margin-bottom:12px}.toolbar input{flex:1;border:1px solid #dfe7f1;border-radius:10px;padding:10px 12px;font-family:inherit}
+.card{background:#fff;border:1px solid #e4ebf3;border-radius:16px;overflow:hidden}.row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #edf2f7}.row:hover{background:#f8fbff}.file{display:flex;align-items:center;gap:8px;font-weight:900;font-size:12px}.meta{font-size:10px;color:#7b8aa5}.btn{border:0;background:#0b1d3a;color:#fff;border-radius:9px;padding:8px 11px;font-family:inherit;font-weight:900;cursor:pointer}.empty{padding:45px;text-align:center;color:#8291a5}
+@media(max-width:800px){.row{grid-template-columns:1fr 1fr}.row>div:first-child{grid-column:1/-1}}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="atwar-shell">
+<atwar-sidebar active=""></atwar-sidebar>
+<section class="atwar-main">
+<atwar-header></atwar-header>
+<main class="atwar-content">
+<div class="head"><div><h1>المرفقات</h1><p>جميع الملفات المرتبطة بالمهام التي لديك صلاحية الاطلاع عليها.</p></div></div>
+<div class="toolbar"><input id="q" placeholder="بحث باسم الملف أو المهمة"></div>
+<div class="card"><div id="list"><div class="empty">جاري تحميل المرفقات...</div></div></div>
+<footer class="atwar-footer"><span>ATWAR ONE • Attachments</span><span>Production 1.8.1</span><span>Private Storage</span></footer>
+</main></section></div>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script type="module">
+const sb=await window.atwarGetSupabase();
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmt=v=>v?new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v)):'—';
+let rows=[];
+const{data:{session}}=await sb.auth.getSession();
+if(!session?.user)location.href='../login.html';
+else{
+ const{data:p}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+ if(!p||p.active===false||p.status!=='active'){await sb.auth.signOut().catch(()=>{});location.href='../login.html'}
+ else{window.atwarSyncShellIdentity?.(p,session.user);await load()}
+}
+async function load(){
+ const a=await sb.from('task_attachments').select('*').order('created_at',{ascending:false}).limit(500);
+ if(a.error){document.getElementById('list').innerHTML=`<div class="empty">تعذر تحميل المرفقات: ${esc(a.error.message)}</div>`;return}
+ const taskIds=[...new Set((a.data||[]).map(x=>x.task_id).filter(Boolean))];
+ let tasks=new Map();
+ if(taskIds.length){
+   const t=await sb.from('tasks').select('id,title,status,assignee_name_snapshot').in('id',taskIds).is('deleted_at',null);
+   tasks=new Map((t.data||[]).map(x=>[x.id,x]));
+ }
+ rows=(a.data||[]).filter(x=>tasks.has(x.task_id)).map(x=>({...x,task:tasks.get(x.task_id)}));
+ render();
+}
+function render(){
+ const term=document.getElementById('q').value.trim().toLowerCase();
+ const filtered=rows.filter(x=>!term||String(x.file_name||'').toLowerCase().includes(term)||String(x.task?.title||'').toLowerCase().includes(term));
+ document.getElementById('list').innerHTML=filtered.length?filtered.map(x=>`<div class="row">
+   <div><div class="file"><i data-lucide="paperclip"></i>${esc(x.file_name)}</div><div class="meta">${x.size_bytes?Math.ceil(x.size_bytes/1024)+' KB':''}</div></div>
+   <div><b style="font-size:11px">${esc(x.task?.title||'—')}</b><div class="meta">${esc(x.task?.status||'')}</div></div>
+   <div class="meta">${esc(x.task?.assignee_name_snapshot||'—')}</div>
+   <div class="meta">${esc(fmt(x.created_at))}</div>
+   <button class="btn open" data-path="${esc(x.storage_path)}">فتح</button>
+ </div>`).join(''):'<div class="empty"><i data-lucide="paperclip" style="width:28px;height:28px;margin-bottom:8px"></i><div>لا توجد مرفقات مطابقة.</div></div>';
+ document.querySelectorAll('.open').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('task-attachments').createSignedUrl(b.dataset.path,120);if(r.error)alert(r.error.message);else window.open(r.data.signedUrl,'_blank','noopener')});
+ try{lucide.createIcons()}catch{}
+}
+document.getElementById('q').addEventListener('input',render);
+</script>
+</body></html>

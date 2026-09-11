@@ -1,7 +1,7 @@
 
 (function(){
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
+    const nestedModules=['tasks','completed','attachments','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -21,9 +21,6 @@
         <div class="atwar-brand"><h1>ATWAR ONE</h1><p>نظام إدارة الأداء المؤسسي</p></div>
         <nav class="atwar-nav">
           ${nav('home','home.html','home','الرئيسية')}
-          ${nav('tasks','tasks/index.html','square-check-big','المهام النشطة')}
-          ${nav('completed','completed/index.html','archive-check','المهام المكتملة')}
-          ${nav('recurring','recurring/index.html','repeat-2','المهام الدورية','manager')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
@@ -47,7 +44,23 @@
 
   class AtwarHeader extends HTMLElement{
     connectedCallback(){
-      const d=depth(),mode=this.getAttribute('mode')||'default';
+      const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession();
+      const currentPath=location.pathname;
+      const taskNavActive=key=>{
+        if(key==='tasks')return /\/tasks\//.test(currentPath);
+        if(key==='completed')return /\/completed\//.test(currentPath);
+        if(key==='recurring')return /\/recurring\//.test(currentPath);
+        if(key==='attachments')return /\/attachments\//.test(currentPath);
+        return false;
+      };
+      const recurringAllowed=!s || ['manager','admin'].includes(s.role);
+      const taskNav=`
+        <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
+          <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
+          <a class="${taskNavActive('completed')?'active':''}" href="${d}completed/index.html"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
+          ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
+          <a class="${taskNavActive('attachments')?'active':''}" href="${d}attachments/index.html" title="المرفقات"><i data-lucide="paperclip"></i><span>المرفقات</span></a>
+        </nav>`;
       const taskTools=mode==='tasks'?`
         <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="atwar-task-add"><i data-lucide="plus"></i><span>إضافة مهمة</span></button>
         <div class="atwar-task-notification-wrap">
@@ -74,7 +87,20 @@
           </div>
         </div>`;
 
-      this.innerHTML=`<header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
+      this.innerHTML=`<style>
+        .atwar-topbar{flex-wrap:wrap}
+        .atwar-header-task-nav{display:flex;align-items:center;gap:4px;padding:4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:12px;white-space:nowrap}
+        .atwar-header-task-nav a{display:flex;align-items:center;gap:6px;text-decoration:none;color:#dbeafe;font-size:11px;font-weight:800;padding:8px 10px;border-radius:9px;transition:.15s ease}
+        .atwar-header-task-nav a:hover{background:rgba(255,255,255,.09);color:#fff}
+        .atwar-header-task-nav a.active{background:#2684ff;color:#fff}
+        .atwar-header-task-nav svg{width:15px;height:15px}
+        @media(max-width:1050px){
+          .atwar-header-task-nav{order:3;width:100%;overflow-x:auto;justify-content:flex-start;margin-top:4px}
+          .atwar-header-task-nav a{flex:0 0 auto}
+        }
+        @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
+      </style>
+      <header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
         <div class="atwar-top-brand">
           <div class="atwar-brand-mark"></div>
           <div class="atwar-org-title">
@@ -84,6 +110,7 @@
             </div>
           <div class="atwar-pm-label">Performance Management<br>System</div>
         </div>
+        ${taskNav}
         <div class="atwar-top-actions ${mode==='tasks'?'atwar-task-tools':''}">
           <div class="atwar-search"><i data-lucide="search"></i>
             <input ${mode==='tasks'?'id="taskHeaderSearch"':'data-global-search'} type="text" placeholder="${mode==='tasks'?'البحث في المهام...':'ابحث في المهام، الموظفين، المستندات...'}">
@@ -97,7 +124,6 @@
           ${mode==='tasks'?`<span id="currentUserBadge" class="hidden"></span>`:''}
         </div>
       </header>`;
-      const s=getSession();
       if(s){
         this.querySelectorAll('[data-user-name]').forEach(x=>x.textContent=s.name||s.email||'المستخدم');
         this.querySelectorAll('[data-user-title]').forEach(x=>x.textContent=s.title||'');
