@@ -39,3 +39,5 @@ jobs:
         run: node tests/phase-two-information-architecture.mjs
       - name: Run phase-two unified task workspace audit
         run: node tests/phase-two-unified-tasks.mjs
+      - name: Run phase-two team boundary audit
+        run: node tests/phase-two-team-boundary.mjs
