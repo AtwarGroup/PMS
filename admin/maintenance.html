@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ATWAR ONE – صحة النظام</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script><script src="../assets/js/shell-components.js"></script><link rel="stylesheet" href="../assets/css/shared.css">
+<style>.health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric,.panel{background:#fff;border:1px solid #e3ebf5;border-radius:18px;padding:18px}.metric b{display:block;font-size:25px;color:#10233f}.metric span,.muted{font-size:10px;color:#7b8aa5}.panel{margin-top:14px}.panel h2{font-size:15px;margin:0 0 12px}.row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid #edf2f7}.row:last-child{border:0}.row-main{min-width:0}.row-main b{display:block;font-size:12px;color:#263a57}.row-main small{display:block;font-size:10px;color:#7b8aa5;margin-top:4px;overflow-wrap:anywhere}.btn{border:0;border-radius:9px;background:#176fe5;color:#fff;padding:8px 12px;font:700 11px Tajawal;cursor:pointer}.btn.light{background:#eef5ff;color:#176fe5}.empty{font-size:11px;color:#8a98ad;padding:16px;text-align:center}.danger{color:#d92d4b}.ok{color:#079455}@media(max-width:850px){.health-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.health-grid{grid-template-columns:1fr}.row{align-items:flex-start;flex-direction:column}}</style></head>
+<body data-min-role="admin" style="visibility:hidden"><div class="atwar-shell"><atwar-sidebar active="admin"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content"><section style="max-width:1100px;margin:auto;padding:18px 0 30px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px"><div><h1 style="font-size:26px;margin:0;color:#10233f">صحة النظام والصيانة</h1><p class="muted">متابعة تشغيلية مبسطة لمدير النظام</p></div><button class="btn light" id="refresh">تحديث</button></div>
+<div class="health-grid"><div class="metric"><b id="activeTasks">—</b><span>المهام النشطة</span></div><div class="metric"><b id="deletedTasks">—</b><span>سلة المحذوفات</span></div><div class="metric"><b id="failedEmails">—</b><span>رسائل تحتاج متابعة</span></div><div class="metric"><b id="recentErrors">—</b><span>أخطاء آخر 7 أيام</span></div></div>
+<section class="panel"><h2>البريد الإلكتروني</h2><div id="emailRows" class="empty">جارٍ التحميل...</div></section>
+<section class="panel"><h2>المهام المحذوفة</h2><div id="deletedRows" class="empty">جارٍ التحميل...</div></section>
+<section class="panel"><h2>أخطاء النظام الأخيرة</h2><div id="errorRows" class="empty">جارٍ التحميل...</div></section>
+<section class="panel"><h2>آخر الحركات الإدارية</h2><div id="auditRows" class="empty">جارٍ التحميل...</div></section>
+</section></main></section></div>
+<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script><script src="../assets/js/supabase-config.js"></script><script src="../assets/js/supabase-runtime.js?v=1.9.6"></script><script src="../assets/js/permissions.js"></script>
+<script type="module">
+const sb=await window.atwarGetSupabase(),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])),date=v=>v?new Date(v).toLocaleString('ar-SA'):'—';
+const {data:{session}}=await sb.auth.getSession();if(!session?.user)location.replace('../login.html');
+const {data:me}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(me?.role!=='admin')location.replace('../home.html');else{window.atwarSyncShellIdentity?.(me,session.user);document.body.style.visibility='visible'}
+async function load(){
+ const week=new Date(Date.now()-7*864e5).toISOString();
+ const [active,deleted,email,errors,audit]=await Promise.all([
+  sb.from('tasks').select('id',{count:'exact',head:true}).is('deleted_at',null),
+  sb.rpc('list_deleted_tasks'),
+  sb.from('email_notification_outbox').select('id,event_type,status,attempts,last_error,created_at,recipient_email').order('created_at',{ascending:false}).limit(30),
+  sb.from('app_error_logs').select('*').gte('created_at',week).order('created_at',{ascending:false}).limit(30),
+  sb.from('admin_audit_log').select('*').order('created_at',{ascending:false}).limit(30)
+ ]);
+ const deletedData=deleted.data||[],emailData=email.data||[],errorData=errors.data||[],auditData=audit.data||[];
+ document.getElementById('activeTasks').textContent=active.count??0;document.getElementById('deletedTasks').textContent=deletedData.length;document.getElementById('failedEmails').textContent=emailData.filter(x=>x.status==='failed'||x.status==='processing').length;document.getElementById('recentErrors').textContent=errorData.length;
+ document.getElementById('emailRows').innerHTML=emailData.length?emailData.map(x=>`<div class="row"><div class="row-main"><b class="${x.status==='sent'?'ok':x.status==='failed'?'danger':''}">${esc(x.status)} • ${esc(x.event_type)}</b><small>${esc(x.recipient_email)} • ${date(x.created_at)}${x.last_error?` • ${esc(x.last_error)}`:''}</small></div>${x.status==='failed'?`<button class="btn retry" data-id="${esc(x.id)}">إعادة المحاولة</button>`:''}</div>`).join(''):'<div class="empty">لا توجد رسائل مسجلة.</div>';
+ document.getElementById('deletedRows').innerHTML=deletedData.length?deletedData.map(x=>`<div class="row"><div class="row-main"><b>${esc(x.title)}</b><small>${esc(x.assignee_name_snapshot||'')} • حُذفت ${date(x.deleted_at)}</small></div><button class="btn restore" data-id="${esc(x.id)}">استعادة</button></div>`).join(''):'<div class="empty">سلة المحذوفات فارغة.</div>';
+ document.getElementById('errorRows').innerHTML=errorData.length?errorData.map(x=>`<div class="row"><div class="row-main"><b class="danger">${esc(x.error_type)} — ${esc(x.message)}</b><small>${esc(x.page_path)} • ${date(x.created_at)}</small></div></div>`).join(''):'<div class="empty">لا توجد أخطاء خلال آخر 7 أيام.</div>';
+ document.getElementById('auditRows').innerHTML=auditData.length?auditData.map(x=>`<div class="row"><div class="row-main"><b>${esc(x.action)}</b><small>${esc(x.actor_name_snapshot||'')} • ${esc(x.target_type||'')} • ${date(x.created_at)}</small></div></div>`).join(''):'<div class="empty">لا توجد حركات إدارية.</div>';
+ document.querySelectorAll('.restore').forEach(b=>b.onclick=async()=>{if(!confirm('استعادة المهمة؟'))return;const r=await sb.rpc('restore_task_safe',{p_task_id:b.dataset.id});if(r.error)alert(r.error.message);else load()});
+ document.querySelectorAll('.retry').forEach(b=>b.onclick=async()=>{const r=await sb.from('email_notification_outbox').update({status:'pending',attempts:0,next_attempt_at:new Date().toISOString(),last_error:null}).eq('id',b.dataset.id);if(r.error)alert(r.error.message);else{await sb.functions.invoke('send-task-email-notifications',{body:{}});load()}});
+ try{lucide.createIcons()}catch{}
+}
+document.getElementById('refresh').onclick=load;load().catch(e=>{window.atwarReportError?.(e,'maintenance_load');alert('تعذر تحميل بيانات الصيانة.')});
+</script></body></html>
