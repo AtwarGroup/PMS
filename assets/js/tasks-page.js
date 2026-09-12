@@ -1212,8 +1212,6 @@ function subscribeVisibleTasks(){
   clearTaskListeners();
 
   const ownerData=new Map();
-  const createdData=new Map();
-  let createdExactUnsubs=[];
   let renderTimer=null;
 
   const sortAndRender=()=>{
@@ -1222,11 +1220,6 @@ function subscribeVisibleTasks(){
     // المهام الكاملة المسموح برؤيتها حسب نطاق المستخدم.
     for(const rows of ownerData.values()){
       rows.forEach(t=>merged.set(compositeKey(t),t));
-    }
-
-    // مهام أنشأها المدير بنفسه لمستخدمين خارج فريقه المباشر.
-    for(const t of createdData.values()){
-      merged.set(compositeKey(t),t);
     }
 
     const needsMyApproval=(task)=>{
@@ -1299,93 +1292,31 @@ function subscribeVisibleTasks(){
     return;
   }
 
-  // 1) المسارات الكاملة المسموح بها: المستخدم نفسه، والمرؤوسون
-  // المباشرون للمدير، أو الجميع لمدير النظام.
-  scoped.forEach(u=>{
-    const unsub=onValue(
-      ref(db,`tasksByUser/${u.uid}`),
-      snapshot=>{
-        const rows=snapshot.exists()
-          ? Object.entries(snapshot.val()).map(([key,v])=>({_key:key,_ownerUid:u.uid,...v}))
-          : [];
-
-        ownerData.set(u.uid,rows);
-        pendingInitialOwners.delete(String(u.uid));
-        scheduleRender();
-      },
-      error=>{
-        console.error('Owner tasks listener:',error);
-        pendingInitialOwners.delete(String(u.uid));
-        scheduleRender();
-        setSaveStatus('error');
+  // مستمع موحد يعيد بيانات النطاق المسموح به بواسطة RLS في استعلام واحد.
+  // يمنع سباق الاستجابات وإعادة بناء الصفحة عدة مرات عند كل تعديل.
+  const unsub=onValue(
+    ref(db,'tasksByUser'),
+    snapshot=>{
+      ownerData.clear();
+      const rows=snapshot.exists()?Object.values(snapshot.val()):[];
+      for(const task of rows){
+        const ownerUid=String(task._ownerUid||task.assignUid||'');
+        if(!ownerUid)continue;
+        const ownerRows=ownerData.get(ownerUid)||[];
+        ownerRows.push({...task,_ownerUid:ownerUid});
+        ownerData.set(ownerUid,ownerRows);
       }
-    );
-
-    unsubscribeTasks.push(unsub);
-  });
-
-  // 2) المدير يرى أيضًا فقط المهام التي أنشأها بنفسه للأشخاص
-  // الموجودين أسفل فريقه المباشر، بدون كشف بقية مهامهم الشخصية.
-  if(currentProfile?.role==='manager'){
-    const indexUnsub=onValue(
-      ref(db,`createdTaskIndex/${currentUser.uid}`),
-      snapshot=>{
-        createdExactUnsubs.forEach(fn=>{try{fn()}catch{}});
-        createdExactUnsubs=[];
-        createdData.clear();
-
-        const indexRows=snapshot.exists()?snapshot.val():{};
-
-        Object.entries(indexRows).forEach(([taskKey,ownerUid])=>{
-          ownerUid=String(ownerUid||'');
-          if(!ownerUid)return;
-
-          // إذا كان صاحب المهمة ضمن النطاق المباشر فهي موجودة أصلًا في ownerData.
-          if(scoped.some(u=>String(u.uid)===ownerUid))return;
-
-          const exactUnsub=onValue(
-            ref(db,`tasksByUser/${ownerUid}/${taskKey}`),
-            taskSnap=>{
-              const mapKey=`${ownerUid}::${taskKey}`;
-
-              if(taskSnap.exists()){
-                const task={_key:taskKey,_ownerUid:ownerUid,...taskSnap.val()};
-
-                // طبقة حماية إضافية في الواجهة.
-                if(String(task.createdByUid||'')===String(currentUser.uid)){
-                  createdData.set(mapKey,task);
-                }else{
-                  createdData.delete(mapKey);
-                }
-              }else{
-                createdData.delete(mapKey);
-              }
-
-              scheduleRender();
-            },
-            error=>{
-              console.error('Created task listener:',error);
-              createdData.delete(`${ownerUid}::${taskKey}`);
-              scheduleRender();
-            }
-          );
-
-          createdExactUnsubs.push(exactUnsub);
-        });
-
-        scheduleRender();
-      },
-      error=>{
-        console.error('Created-task index listener:',error);
-      }
-    );
-
-    unsubscribeTasks.push(indexUnsub);
-    unsubscribeTasks.push(()=>{
-      createdExactUnsubs.forEach(fn=>{try{fn()}catch{}});
-      createdExactUnsubs=[];
-    });
-  }
+      pendingInitialOwners.clear();
+      scheduleRender();
+    },
+    error=>{
+      console.error('Tasks listener:',error);
+      pendingInitialOwners.clear();
+      scheduleRender();
+      setSaveStatus('error');
+    }
+  );
+  unsubscribeTasks.push(unsub);
 }
 
 function taskDatabasePath(task){

@@ -109,7 +109,7 @@ export async function get(r){
   if(parts[0]==='tasksByUser'){
     const owner=parts[1],key=parts[2];
     if(key){const rows=await visibleTasks({id:key});const t=rows.find(x=>!owner||x.assignUid===owner)||null;return new Snap(t,key)}
-    const rows=await visibleTasks(owner?{assignee:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]=t}return new Snap(out,owner||null);
+    const rows=await visibleTasks(owner?{assignee:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]={...t,_key:k,_ownerUid:t.assignUid}}return new Snap(out,owner||null);
   }
   if(parts[0]==='createdTaskIndex'&&parts[1]){const rows=await visibleTasks({creator:parts[1]}),out={};for(const t of rows)out[publicKey(t._relationalId)]=t.assignUid;return new Snap(out,parts[1])}
   if(parts[0]==='notificationsByUser'){
@@ -161,7 +161,7 @@ export async function runTransaction(r,mutator){
   const row=Array.isArray(data)?data[0]:data;
   if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
   const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal();
-  if(current.assignee_id!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
+  if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
   return {committed:true,snapshot:new Snap(snapTask,key)};
 }
 
