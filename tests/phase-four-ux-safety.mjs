@@ -6,6 +6,7 @@ const root=resolve(new URL('..',import.meta.url).pathname);
 const read=file=>readFileSync(resolve(root,file),'utf8');
 const html=read('tasks/index.html');
 const page=read('assets/js/tasks-page.js');
+const attachments=read('assets/js/task-attachments.mjs');
 
 const contracts=[
   [html,'id="quickAddSubmit"','Quick-add submit button must be addressable'],
@@ -15,9 +16,10 @@ const contracts=[
   [html,'aria-label="تفاصيل المهمة"','Task details panel must have an accessible label'],
   [page,'quickAddSubmitting','Quick-add must reject duplicate submissions'],
   [page,"submitButton.setAttribute('aria-busy','true')",'Quick-add must expose its busy state'],
-  [page,'attachmentUploadBusy','Attachment upload must reject duplicate submissions'],
-  [page,'attachmentDeleteLocks','Attachment deletion must be locked per attachment'],
-  [page,"label.setAttribute('aria-disabled','true')",'Attachment upload control must expose its disabled state']
+  [page,'createTaskAttachmentsController','Tasks page must delegate attachment operations to a focused controller'],
+  [attachments,'uploadBusy','Attachment upload must reject duplicate submissions'],
+  [attachments,'deleteLocks','Attachment deletion must be locked per attachment'],
+  [attachments,"label.setAttribute('aria-disabled','true')",'Attachment upload control must expose its disabled state']
 ];
 
 for(const [source,needle,message] of contracts)assert.ok(source.includes(needle),message);

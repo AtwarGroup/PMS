@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.6";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
+import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
@@ -30,8 +31,7 @@ let completedStatsLoading=false;
 let completedStatsRefreshQueued=false;
 let tasksInitialLoadReady=false;
 let quickAddSubmitting=false;
-let attachmentUploadBusy=false;
-const attachmentDeleteLocks=new Set();
+let taskAttachmentsController=null;
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -1812,88 +1812,23 @@ function showQuickAdd(){
   });
 }
 
-function safeAttachmentExtension(name){
-  const ext=String(name||'').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
-  return ext&&ext.length<=8?`.${ext}`:'';
-}
-
-function selectedAttachment(id){
-  return (selectedTask()?.attachments||[]).find(file=>String(file.id)===String(id))||null;
-}
-
-async function openTaskAttachment(id){
-  const file=selectedAttachment(id);
-  if(!file?.storagePath){showToast('تعذر تحديد مسار المرفق.','error');return;}
-  try{
-    const sb=await window.atwarGetSupabase();
-    const {data,error}=await sb.storage.from('task-attachments').createSignedUrl(file.storagePath,120);
-    if(error)throw error;
-    window.open(data.signedUrl,'_blank','noopener');
-  }catch(error){
-    console.error('Open attachment:',error);
-    showToast('تعذر فتح المرفق.','error');
+function getTaskAttachmentsController(){
+  if(!taskAttachmentsController){
+    taskAttachmentsController=createTaskAttachmentsController({
+      getSupabase:()=>window.atwarGetSupabase(),
+      getSelectedTask:selectedTask,
+      getCurrentUser:()=>currentUser,
+      getCurrentProfile:()=>currentProfile,
+      confirmAction:appConfirm,
+      toast:showToast
+    });
   }
+  return taskAttachmentsController;
 }
 
-async function deleteTaskAttachment(id){
-  const lockKey=String(id||'');
-  if(!lockKey||attachmentDeleteLocks.has(lockKey))return;
-  const task=selectedTask();
-  const file=selectedAttachment(id);
-  if(!task||!file)return;
-  const confirmed=await appConfirm(`هل تريد حذف المرفق «${file.fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
-  if(!confirmed)return;
-  attachmentDeleteLocks.add(lockKey);
-  try{
-    const sb=await window.atwarGetSupabase();
-    const removedRow=await sb.from('task_attachments').delete().eq('id',id);
-    if(removedRow.error)throw removedRow.error;
-    showToast('تم حذف المرفق.','success');
-    try{
-      const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
-      if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
-    }catch(cleanupError){
-      console.warn('Attachment storage cleanup:',cleanupError);
-    }
-  }catch(error){
-    console.error('Delete attachment:',error);
-    showToast(error?.message||'تعذر حذف المرفق. لا تملك الصلاحية أو أن المهمة مقفلة.','error',6000);
-  }finally{
-    attachmentDeleteLocks.delete(lockKey);
-  }
-}
-
-async function uploadTaskAttachment(event){
-  const input=event?.target;
-  const file=input?.files?.[0];
-  const task=selectedTask();
-  if(!file||!task)return;
-  if(attachmentUploadBusy){input.value='';return;}
-  if(file.size>10*1024*1024){showToast('الحد الأعلى لحجم المرفق 10 ميجابايت.','warning');input.value='';return;}
-
-  const taskId=String(task._relationalId||task.id||'');
-  const label=document.getElementById('attachmentUploadLabel');
-  const originalText=label?.textContent||'+ إضافة مرفق';
-  const storagePath=`${taskId}/${crypto.randomUUID()}${safeAttachmentExtension(file.name)}`;
-  attachmentUploadBusy=true;
-  try{
-    if(label){label.textContent='جاري الرفع...';label.setAttribute('aria-disabled','true');label.classList.add('opacity-60','pointer-events-none')}
-    const sb=await window.atwarGetSupabase();
-    const upload=await sb.storage.from('task-attachments').upload(storagePath,file,{contentType:file.type||'application/octet-stream',upsert:false});
-    if(upload.error)throw upload.error;
-    const row={task_id:taskId,uploader_id:currentUser.uid,uploader_name_snapshot:currentProfile?.name||currentUser.email||'',file_name:file.name,storage_path:storagePath,content_type:file.type||null,size_bytes:file.size};
-    const saved=await sb.from('task_attachments').insert(row).select('id,task_id,file_name,storage_path,size_bytes,created_at').single();
-    if(saved.error){await sb.storage.from('task-attachments').remove([storagePath]).catch(()=>{});throw saved.error;}
-    showToast('تم رفع المرفق بنجاح.','success');
-  }catch(error){
-    console.error('Upload attachment:',error);
-    showToast(error?.message||'تعذر رفع المرفق. تحقق من الصلاحية ونوع الملف.','error',6000);
-  }finally{
-    attachmentUploadBusy=false;
-    input.value='';
-    if(label){label.textContent=originalText;label.removeAttribute('aria-disabled');label.classList.remove('opacity-60','pointer-events-none')}
-  }
-}
+async function openTaskAttachment(id){return getTaskAttachmentsController().open(id)}
+async function deleteTaskAttachment(id){return getTaskAttachmentsController().remove(id)}
+async function uploadTaskAttachment(event){return getTaskAttachmentsController().upload(event)}
 
 function hideQuickAdd(){
   const box=document.getElementById('quickAddBox');
