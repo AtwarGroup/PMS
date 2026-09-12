@@ -18,18 +18,30 @@ jobs:
     name: System and workflow audit
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
-        with: 
+        with:
           node-version: 24
+
       - name: Run system audit
         run: node tests/system-audit.mjs
+
       - name: Run phase-one audit
         run: node tests/phase-one-audit.mjs
-      - name: Run phase-two audit
+
+      - name: Run phase-two task core audit
         run: node tests/phase-two-core.mjs
+
       - name: Run phase-three quality gate
         run: node tests/phase-three-quality-gate.mjs
+
+      - name: Run phase-four UX safety audit
+        run: node tests/phase-four-ux-safety.mjs
+
+      - name: Run phase-two information architecture audit
+        run: node tests/phase-two-information-architecture.mjs
