@@ -211,7 +211,7 @@ function applyHomeDashboardFilterFromUrl(){
   const owner=ownerRaw.toLowerCase();
   urlTargetOwnerUid=ownerRaw;
   urlTargetTaskKey=String(params.get('task')||'').trim();
-  homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL'].includes(scope)?scope:'';
+  homeFilterValue=['OPEN','COMPLETED','OVERDUE','APPROVAL','TODAY'].includes(scope)?scope:'';
 
   // Deterministic owner scope: me, a permitted UID, or ALL.
   if(owner==='me'){
@@ -2065,6 +2065,7 @@ function filteredTasks(){
     if(homeFilterValue==='OPEN' && t.status==='مكتملة')return false;
     if(homeFilterValue==='COMPLETED' && t.status!=='مكتملة')return false;
     if(homeFilterValue==='OVERDUE' && delay<=0)return false;
+    if(homeFilterValue==='TODAY' && !isToday(t.start) && !isToday(t.end))return false;
     if(homeFilterValue==='APPROVAL'){
       if(t.status!=='بانتظار الاعتماد')return false;
       if(currentProfile?.role==='manager'){
