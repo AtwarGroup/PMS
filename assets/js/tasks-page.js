@@ -1,4 +1,5 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.4";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.6";
+import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.6";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
@@ -120,150 +121,11 @@ function setSortFilter(value){
 }
 
 function sortTasksForDisplay(rows){
-  const priorityWeight={urgent:0,important:1,normal:2};
-  const allRows=[...rows];
-
-  // للموظف نحافظ على السلوك المعتاد.
-  const isManagerView=currentProfile && currentProfile.role!=='employee';
-
-  // تقسيم صريح: طلبات الاعتماد أولاً ثم بقية المهام.
-  // لا نعتمد هنا على canApproveTask أو managerUid أو قيمة manager/admin حرفياً.
-  const approvalRows=isManagerView
-    ? allRows.filter(t=>String(t.status||'').trim()==='بانتظار الاعتماد')
-    : [];
-
-  const normalRows=isManagerView
-    ? allRows.filter(t=>String(t.status||'').trim()!=='بانتظار الاعتماد')
-    : allRows;
-
-  const sortGroup=(group)=>{
-    const result=[...group];
-
-    if(sortFilterValue==='NEWEST'){
-      return result.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-    }
-
-    if(sortFilterValue==='OLDEST'){
-      return result.sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
-    }
-
-    if(sortFilterValue==='PRIORITY'){
-      return result.sort((a,b)=>
-        (priorityWeight[a.priority||'normal']??2)-(priorityWeight[b.priority||'normal']??2) ||
-        String(a.end||'9999').localeCompare(String(b.end||'9999'))
-      );
-    }
-
-    if(sortFilterValue==='DUE'){
-      return result.sort((a,b)=>
-        String(a.end||'9999').localeCompare(String(b.end||'9999'))
-      );
-    }
-
-    // في الترتيب الافتراضي نحافظ على الترتيب القادم من البيانات.
-    return result;
-  };
-
-  return [
-    ...sortGroup(approvalRows),
-    ...sortGroup(normalRows)
-  ];
+  return sortTaskRows(rows,{
+    sortFilterValue,
+    isManagerView:!!currentProfile&&currentProfile.role!=='employee'
+  });
 }
-
-function escapeHTML(value=''){
-  return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
-}
-function isActiveProfile(profile){
-  return !!profile && profile.active!==false && profile.status!=='inactive';
-}
-function localDateISO(d=new Date()){
-  if(!(d instanceof Date)||Number.isNaN(d.getTime()))return '';
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function parseDateOnly(v){
-  if(!v)return null;
-  const d=new Date(v+(String(v).length===10?'T00:00:00':''));
-  return Number.isNaN(d.getTime())?null:d;
-}
-function calendarDaySerial(value){
-  const d=value instanceof Date?value:parseDateOnly(value);
-  if(!d||Number.isNaN(d.getTime()))return null;
-  return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
-}
-function calcDuration(s,e){
-  const a=calendarDaySerial(s),b=calendarDaySerial(e); if(a===null||b===null)return 0;
-  const d=b-a; return d>=0?d+1:0;
-}
-function approvalPausedDays(activity){
-  const rows=(Array.isArray(activity)?activity:Object.values(activity||{}))
-    .filter(Boolean).sort((x,y)=>Number(x.createdAt||0)-Number(y.createdAt||0));
-  let submittedDay=null,paused=0;
-  for(const row of rows){
-    const day=calendarDaySerial(new Date(Number(row.createdAt||0)));
-    if(day===null)continue;
-    if(row.type==='submitted')submittedDay=day;
-    else if(row.type==='reopened'&&submittedDay!==null){paused+=Math.max(0,day-submittedDay);submittedDay=null;}
-  }
-  return paused;
-}
-function calcDelay(e,a,status,submittedAt,activity){
-  const end=calendarDaySerial(e); if(end===null)return 0;
-  if(status==='مكتملة'&&!a&&!submittedAt)return 0;
-
-  let compare=null;
-  if((status==='بانتظار الاعتماد'||status==='مكتملة') && submittedAt){
-    compare=new Date(Number(submittedAt));
-  }else if(a){
-    compare=parseDateOnly(a);
-  }else{
-    compare=new Date();
-  }
-
-  const compareDay=calendarDaySerial(compare);
-  return compareDay===null?0:Math.max(0,compareDay-end-approvalPausedDays(activity));
-}
-function normalizeProgress(v){return Math.max(0,Math.min(100,Number.parseInt(v||0,10)||0))}
-
-function isISODate(value){
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value||'')) && !!parseDateOnly(value);
-}
-function validateTaskFieldValue(task,field,value){
-  let normalized=typeof value==='string'?value.trim():value;
-  if(field==='title'){
-    if(!normalized)return {ok:false,message:'عنوان المهمة مطلوب.'};
-    if(String(normalized).length>200)return {ok:false,message:'عنوان المهمة يجب ألا يتجاوز 200 حرف.'};
-  }
-  if(field==='start'||field==='end'){
-    if(!isISODate(normalized))return {ok:false,message:'صيغة التاريخ غير صالحة.'};
-    const start=field==='start'?normalized:task.start;
-    const end=field==='end'?normalized:task.end;
-    if(start&&end&&String(start)>String(end))return {ok:false,message:'تاريخ الانتهاء يجب ألا يسبق تاريخ البدء.'};
-  }
-  if(field==='priority'&&!['normal','important','urgent'].includes(String(normalized))){
-    return {ok:false,message:'قيمة الأولوية غير صالحة.'};
-  }
-  const limits={desc:5000,notes:5000,managerNotes:2000};
-  if(limits[field]&&String(normalized||'').length>limits[field]){
-    return {ok:false,message:`النص يتجاوز الحد المسموح (${limits[field]} حرف).`};
-  }
-  return {ok:true,value:normalized};
-}
-
-function formatDateAR(v){
-  if(!v)return '—';
-  const d=parseDateOnly(v); if(!d)return String(v);
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-}
-function priorityLabel(v){return ({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[v]||'عادية'}
-function smartDate(v){
-  const d=parseDateOnly(v); if(!d)return '—';
-  const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0);
-  const diff=Math.round((d-now)/86400000);
-  if(diff===0)return 'اليوم'; if(diff===1)return 'غدًا'; if(diff===-1)return 'أمس';
-  return formatDateAR(v);
-}
-function isToday(v){const d=parseDateOnly(v);if(!d)return false;const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()}
-function roleLabel(role){return ({admin:'مدير النظام',manager:'مدير',employee:'موظف'})[role]||'موظف'}
 function compositeKey(t){return `${t._ownerUid}::${t._key}`}
 function selectedTask(){
   // أثناء إعادة الإسناد نفضّل النسخة المؤقتة حتى لا تتأثر لوحة التفاصيل
@@ -2261,11 +2123,6 @@ function filteredTasks(){
     return true;
   });
 }
-function statusBadge(status){
-  if(status==='مكتملة')return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">مكتملة</span>';
-  if(status==='قيد التنفيذ')return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">قيد التنفيذ</span>';
-  return '<span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">قيد الانتظار</span>';
-}
 function updateVisibleCount(){
   const el=document.getElementById('visibleCount');
   if(!el)return;
@@ -2608,11 +2465,6 @@ function buildActivityEntry(type,detail=''){
     userName:currentProfile?.name||currentUser?.email||'',
     createdAt:Date.now()
   };
-}
-function appendActivity(task,type,detail=''){
-  if(!task)return;
-  const rows=normalizeActivity(task);
-  task.activity=[...rows,buildActivityEntry(type,detail)].slice(-100);
 }
 function renderActivityLog(task){
   const list=document.getElementById('activityLogList');

@@ -1,5 +1,7 @@
 // ATWAR ONE compatibility bridge: preserves the full legacy UI contract while routing data/auth to Supabase.
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
+import {createRefreshCoordinator} from './supabase-sync.mjs?v=1.9.6';
+
 const sb = await window.atwarGetSupabase();
 
 async function dispatchQueuedTaskEmails(){
@@ -251,22 +253,14 @@ function ensureRealtime(){
 export function onValue(r,callback,errorCallback){
   ensureRealtime();
   const listenerPath=pathOf(r);
-  let alive=true,busy=false,refreshQueued=false,lastValue='';
-  const refresh=async()=>{
-    if(!alive)return;
-    if(busy){refreshQueued=true;return;}
-    busy=true;
-    try{
-      const snapshot=await get(r);
-      if(!alive)return;
-      const serialized=JSON.stringify(snapshot.val());
-      if(serialized!==lastValue){lastValue=serialized;callback(snapshot)}
-    }catch(e){if(alive)errorCallback?.(e)}finally{
-      busy=false;
-      if(refreshQueued&&alive){refreshQueued=false;queueMicrotask(refresh)}
-    }
-  };
+  const coordinator=createRefreshCoordinator({
+    load:()=>get(r),
+    serialize:snapshot=>JSON.stringify(snapshot.val()),
+    onValue:callback,
+    onError:errorCallback
+  });
+  const refresh=coordinator.refresh;
   _listeners.set(refresh,listenerPath);refresh();
   const timer=setInterval(refresh,60000);
-  return ()=>{alive=false;refreshQueued=false;clearInterval(timer);_listeners.delete(refresh)};
+  return ()=>{coordinator.dispose();clearInterval(timer);_listeners.delete(refresh)};
 }
