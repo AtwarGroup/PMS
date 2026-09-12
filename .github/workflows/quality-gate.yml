@@ -1,0 +1,35 @@
+name: ATWAR Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atwar-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: System and workflow audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run system audit
+        run: node tests/system-audit.mjs
+      - name: Run phase-one audit
+        run: node tests/phase-one-audit.mjs
+      - name: Run phase-two audit
+        run: node tests/phase-two-core.mjs
+      - name: Run phase-three quality gate
+        run: node tests/phase-three-quality-gate.mjs
