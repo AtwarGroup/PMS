@@ -8,7 +8,7 @@
 .team-grid{padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .person{border:1px solid #e6edf5;border-radius:18px;padding:18px;text-decoration:none;color:inherit;transition:.18s}.person:hover{border-color:#93c5fd;box-shadow:0 10px 24px rgba(20,45,80,.08);transform:translateY(-1px)}
 .person-head{display:flex;gap:12px;align-items:center}.person-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#eaf2ff;color:#1d4ed8;font-weight:900}.person-name{font-weight:900}.person-role{font-size:11px;color:#7b8aa5;margin-top:3px}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:15px}.metric{border-radius:12px;padding:10px;text-align:center;background:#f8fafc}.metric b{display:block;font-size:17px}.metric span{font-size:9px;color:#7b8aa5}
+.person-facts{display:grid;gap:7px;margin-top:15px}.person-fact{display:flex;justify-content:space-between;gap:10px;border-radius:10px;padding:8px 10px;background:#f8fafc;font-size:10px}.person-fact span{color:#7b8aa5}.person-fact b{color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.panel{background:#fff;border:1px solid #e6edf5;border-radius:20px;padding:20px;box-shadow:0 5px 14px rgba(20,45,80,.045)}
 @media(max-width:1200px){.team-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:850px){.team-grid,.team-bottom{grid-template-columns:1fr}.hero>div{flex-direction:column}.summary{min-width:0;width:100%}}
 </style>
@@ -21,26 +21,26 @@
 <main class="atwar-content">
   <section class="hero">
     <div style="display:flex;justify-content:space-between;gap:24px;align-items:center">
-      <div><span id="teamScopeLabel" style="display:inline-block;background:rgba(255,255,255,.1);padding:7px 12px;border-radius:999px;font-size:11px;font-weight:900">الفريق</span><h1 id="teamPageTitle" style="font-size:32px;margin:14px 0 6px">فريقي</h1><p id="teamPageSubtitle" style="margin:0;color:#cdd9e8;line-height:1.8">أعضاء الفريق والمهام وفق الهيكل الفعلي في النظام.</p></div>
-      <div class="summary"><div><b id="teamMemberCount">—</b><span>أعضاء الفريق</span></div><div><b id="teamAttentionCount" style="color:#fbbf24">—</b><span>تحتاج متابعة</span></div><div><b id="teamCompletionRate" style="color:#6ee7b7">—</b><span>نسبة الإكمال</span></div></div>
+      <div><span id="teamScopeLabel" style="display:inline-block;background:rgba(255,255,255,.1);padding:7px 12px;border-radius:999px;font-size:11px;font-weight:900">الفريق</span><h1 id="teamPageTitle" style="font-size:32px;margin:14px 0 6px">فريقي</h1><p id="teamPageSubtitle" style="margin:0;color:#cdd9e8;line-height:1.8">دليل الأشخاص وعلاقاتهم الإدارية وفق الهيكل الفعلي في النظام.</p></div>
+      <div class="summary"><div><b id="teamMemberCount">—</b><span>الفريق المباشر</span></div><div><b id="teamHierarchyCount" style="color:#bfdbfe">—</b><span>ضمن الهيكل</span></div><div><b id="teamDepartmentCount" style="color:#6ee7b7">—</b><span>الإدارات</span></div></div>
     </div>
   </section>
 
   <section style="margin-bottom:16px;background:#eef6ff;border:1px solid #d7eaff;border-radius:16px;padding:13px 16px;color:#406085;font-size:12px;font-weight:700;display:flex;align-items:center;gap:9px">
     <i data-lucide="info" style="width:16px"></i>
-    <span>صفحة الفريق هي بوابة المتابعة؛ التفاصيل الكاملة تظهر داخل ملف كل موظف: المهام، الوصف الوظيفي ومؤشرات الأداء.</span>
+    <span>هذه الصفحة للأشخاص والهيكل والملفات الوظيفية فقط. متابعة المهام ومؤشراتها متاحة من <a href="../tasks/index.html" style="color:#176fd3;font-weight:900">صفحة المهام</a>.</span>
   </section>
   <section class="team-list">
-    <div class="team-toolbar"><div><h2 style="margin:0;font-size:20px">أعضاء الفريق</h2><p style="margin:4px 0 0;color:#7b8aa5;font-size:12px">اضغط على الموظف لعرض ملفه الوظيفي ومهامه ومؤشرات الأداء.</p></div><input style="width:320px;border:1px solid #e6edf5;border-radius:12px;padding:11px 14px;font-family:inherit" id="teamSearchInput" placeholder="بحث في أعضاء الفريق..."></div>
+    <div class="team-toolbar"><div><h2 style="margin:0;font-size:20px">أعضاء الفريق</h2><p style="margin:4px 0 0;color:#7b8aa5;font-size:12px">اضغط على الموظف لعرض ملفه الوظيفي المعتمد.</p></div><input style="width:320px;border:1px solid #e6edf5;border-radius:12px;padding:11px 14px;font-family:inherit" id="teamSearchInput" placeholder="بحث بالاسم أو المسمى أو الإدارة..."></div>
     <div id="teamGrid" class="team-grid"></div>
   </section>
 
   <section class="team-bottom">
     <div class="panel"><h3>الهيكل الإداري</h3><div id="teamHierarchy" style="margin-top:12px;color:#64748b">جاري تحميل الهيكل...</div></div>
-    <div class="panel"><h3>مؤشرات الفريق</h3><div id="teamMetrics" style="margin-top:14px;color:#64748b">جاري احتساب المؤشرات...</div></div>
+    <div class="panel"><h3>الملخص التنظيمي</h3><div id="teamDirectorySummary" style="margin-top:14px;color:#64748b">جاري إعداد الملخص...</div></div>
   </section>
 
-  <footer class="atwar-footer"><span>ATWAR ONE • Team Module</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
+  <footer class="atwar-footer"><span>ATWAR ONE • People &amp; Organization</span><span>Version 1.9.15</span><span>Supabase Directory</span></footer>
 </main>
 
   </section>
@@ -61,14 +61,69 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script type="module" id="teamSupabaseBinding">
 const sb=await window.atwarGetSupabase();
-const grid=document.getElementById('teamGrid'),search=document.getElementById('teamSearchInput');let members=[],tasksByOwner=new Map(),profile=null,allUsers=[];
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const today=()=>new Date().toISOString().slice(0,10);const overdue=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&t.due_date<today();const rowsFor=uid=>tasksByOwner.get(uid)||[];
-function card(u){const rows=rowsFor(u.id),done=rows.filter(t=>t.status==='مكتملة').length,run=rows.filter(t=>t.status==='قيد التنفيذ').length,late=rows.filter(overdue).length;return `<a class="person" href="employee.html?uid=${encodeURIComponent(u.id)}"><div class="person-head"><div class="person-avatar">${esc((u.full_name||u.email||'م').trim().charAt(0))}</div><div><div class="person-name">${esc(u.full_name||u.email||'مستخدم')}</div><div class="person-role">${esc(u.job_title||u.role||'—')}</div></div></div><div class="metrics"><div class="metric"><b>${rows.length}</b><span>المهام</span></div><div class="metric"><b>${run}</b><span>قيد التنفيذ</span></div><div class="metric"><b>${late}</b><span>متأخرة</span></div></div></a>`}
-function renderMembers(){const q=String(search?.value||'').trim().toLowerCase(),filtered=members.filter(u=>!q||`${u.full_name||''} ${u.email||''} ${u.job_title||''}`.toLowerCase().includes(q));grid.innerHTML=filtered.length?filtered.map(card).join(''):'<div class="person"><div class="person-head"><div><div class="person-name">لا يوجد أعضاء مطابقون</div><div class="person-role">لا توجد بيانات ضمن نطاق هذا الحساب.</div></div></div></div>'}
-function renderHierarchy(){const host=document.getElementById('teamHierarchy');if(!host)return;const active=allUsers.filter(u=>u.active!==false&&u.status!=='inactive'),byParent=new Map();active.forEach(u=>{const key=String(u.manager_id||'ROOT');if(!byParent.has(key))byParent.set(key,[]);byParent.get(key).push(u)});const node=(u,depth=0,seen=new Set())=>{if(!u||depth>8||seen.has(u.id))return'';const next=new Set(seen);next.add(u.id);const children=byParent.get(String(u.id))||[];return `<div style="margin:${depth?7:0}px ${depth*18}px 0 0;${depth?'border-right:2px solid #dbeafe;padding-right:12px':''}"><a href="employee.html?uid=${encodeURIComponent(u.id)}" style="display:block;text-decoration:none;background:${depth?'#eff6ff':'#0b1d3a'};color:${depth?'#263b55':'#fff'};border-radius:10px;padding:10px 12px;font-weight:800">${esc(u.full_name||u.email||'مستخدم')} <span style="font-size:9px;opacity:.75">• ${esc(u.job_title||u.role||'')}</span></a>${children.map(c=>node(c,depth+1,next)).join('')}</div>`};if(profile.role==='manager'){host.innerHTML=node(profile)||'<div>لا توجد علاقات إدارية مسجلة.</div>';return}const roots=active.filter(u=>!u.manager_id||!active.some(x=>x.id===u.manager_id));host.innerHTML=roots.length?roots.map(r=>node(r)).join(''):'<div>لا توجد علاقات إدارية مسجلة.</div>'}
-function renderMetrics(){const host=document.getElementById('teamMetrics'),rows=[...tasksByOwner.values()].flat(),done=rows.filter(t=>t.status==='مكتملة').length,late=rows.filter(overdue).length,waiting=rows.filter(t=>t.status==='بانتظار الاعتماد').length,rate=rows.length?Math.round(done/rows.length*100):0;document.getElementById('teamMemberCount').textContent=members.length;document.getElementById('teamAttentionCount').textContent=late+waiting;document.getElementById('teamCompletionRate').textContent=`${rate}%`;host.innerHTML=`<div style="margin-top:12px">إجمالي المهام <b style="float:left">${rows.length}</b></div><div style="margin-top:18px">المكتملة <b style="float:left">${done}</b></div><div style="margin-top:18px">المتأخرة <b style="float:left;color:#c83c43">${late}</b></div><div style="margin-top:18px">بانتظار الاعتماد <b style="float:left;color:#b66b00">${waiting}</b></div><div style="margin-top:18px">نسبة الإكمال <b style="float:left">${rate}%</b><div style="height:8px;background:#eef2f7;border-radius:999px;margin-top:8px;overflow:hidden"><div style="width:${rate}%;height:100%;background:#1677ff"></div></div></div>`}
+const grid=document.getElementById('teamGrid'),search=document.getElementById('teamSearchInput');
+let members=[],profile=null,allUsers=[];
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const activeUsers=()=>allUsers.filter(u=>u.active!==false&&u.status!=='inactive');
+const managerName=u=>allUsers.find(x=>String(x.id)===String(u.manager_id))?.full_name||'—';
+const directReports=u=>activeUsers().filter(x=>String(x.manager_id||'')===String(u.id)).length;
+function card(u){
+  return `<a class="person" href="employee.html?uid=${encodeURIComponent(u.id)}">
+    <div class="person-head"><div class="person-avatar">${esc((u.full_name||u.email||'م').trim().charAt(0))}</div><div><div class="person-name">${esc(u.full_name||u.email||'مستخدم')}</div><div class="person-role">${esc(u.job_title||u.role||'—')}</div></div></div>
+    <div class="person-facts">
+      <div class="person-fact"><span>الإدارة</span><b>${esc(u.department||'—')}</b></div>
+      <div class="person-fact"><span>المدير المباشر</span><b>${esc(managerName(u))}</b></div>
+      ${directReports(u)?`<div class="person-fact"><span>مرؤوسون مباشرون</span><b>${directReports(u)}</b></div>`:''}
+    </div>
+  </a>`;
+}
+function renderMembers(){
+  const q=String(search?.value||'').trim().toLowerCase();
+  const filtered=members.filter(u=>!q||`${u.full_name||''} ${u.email||''} ${u.job_title||''} ${u.department||''}`.toLowerCase().includes(q));
+  grid.innerHTML=filtered.length?filtered.map(card).join(''):'<div class="person"><div class="person-head"><div><div class="person-name">لا يوجد أعضاء مطابقون</div><div class="person-role">لا توجد بيانات ضمن نطاق هذا الحساب.</div></div></div></div>';
+}
+function renderHierarchy(){
+  const host=document.getElementById('teamHierarchy');if(!host)return;
+  const active=activeUsers(),byParent=new Map();
+  active.forEach(u=>{const key=String(u.manager_id||'ROOT');if(!byParent.has(key))byParent.set(key,[]);byParent.get(key).push(u)});
+  const node=(u,depth=0,seen=new Set())=>{
+    if(!u||depth>20||seen.has(u.id))return'';
+    const next=new Set(seen);next.add(u.id);
+    const children=(byParent.get(String(u.id))||[]).sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'ar'));
+    return `<div style="margin:${depth?7:0}px ${depth*18}px 0 0;${depth?'border-right:2px solid #dbeafe;padding-right:12px':''}"><a href="employee.html?uid=${encodeURIComponent(u.id)}" style="display:block;text-decoration:none;background:${depth?'#eff6ff':'#0b1d3a'};color:${depth?'#263b55':'#fff'};border-radius:10px;padding:10px 12px;font-weight:800">${esc(u.full_name||u.email||'مستخدم')} <span style="font-size:9px;opacity:.75">• ${esc(u.job_title||u.role||'')}</span></a>${children.map(c=>node(c,depth+1,next)).join('')}</div>`;
+  };
+  if(profile.role==='manager'){host.innerHTML=node(profile)||'<div>لا توجد علاقات إدارية مسجلة.</div>';return}
+  const roots=active.filter(u=>!u.manager_id||!active.some(x=>x.id===u.manager_id));
+  host.innerHTML=roots.length?roots.map(r=>node(r)).join(''):'<div>لا توجد علاقات إدارية مسجلة.</div>';
+}
+function renderDirectorySummary(){
+  const active=activeUsers(),host=document.getElementById('teamDirectorySummary');
+  const managers=active.filter(u=>u.role==='manager').length;
+  const employees=active.filter(u=>u.role==='employee').length;
+  const departments=[...new Set(active.map(u=>String(u.department||'').trim()).filter(Boolean))];
+  document.getElementById('teamMemberCount').textContent=members.length;
+  document.getElementById('teamHierarchyCount').textContent=profile.role==='admin'?active.length:Math.max(0,active.length-1);
+  document.getElementById('teamDepartmentCount').textContent=departments.length;
+  host.innerHTML=`<div style="margin-top:12px">المديرون <b style="float:left">${managers}</b></div><div style="margin-top:18px">الموظفون <b style="float:left">${employees}</b></div><div style="margin-top:18px">الإدارات الممثلة <b style="float:left">${departments.length}</b></div><div style="margin-top:18px;color:#7b8aa5;font-size:11px;line-height:1.8">تعتمد العلاقات على حقل «المدير المباشر» في ملف المستخدم. تُدار التعديلات من إدارة المستخدمين.</div>`;
+}
 search?.addEventListener('input',renderMembers);
-const {data:{session}}=await sb.auth.getSession();if(!session?.user){location.href='../login.html'}else{const {data:p,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();if(pe||!p||p.active===false||p.status==='inactive'){await sb.auth.signOut().catch(()=>{});location.href='../login.html'}else if(!['manager','admin'].includes(p.role)){location.href='../home.html'}else{profile=p;window.atwarSyncShellIdentity?.(p,session.user);const [pr,tr]=await Promise.all([sb.from('profiles').select('*').eq('active',true).eq('status','active').order('full_name'),sb.from('tasks').select('*')]);allUsers=pr.data||[p];members=p.role==='admin'?allUsers.filter(u=>u.id!==p.id):allUsers.filter(u=>u.id!==p.id&&u.manager_id===p.id);document.getElementById('teamPageTitle').textContent=p.role==='admin'?'الفريق':'فريقي المباشر';document.getElementById('teamScopeLabel').textContent=p.role==='admin'?'نطاق النظام':p.department||'فريقي';document.getElementById('teamPageSubtitle').textContent=p.role==='admin'?'جميع المستخدمين النشطين والمهام ضمن صلاحيات مدير النظام.':'الموظفون المرتبطون بك مباشرة ومهامهم ضمن نطاق المتابعة.';tasksByOwner=new Map(members.map(u=>[u.id,(tr.data||[]).filter(t=>t.assignee_id===u.id)]));document.body.style.visibility='visible';renderMembers();renderHierarchy();renderMetrics();try{lucide.createIcons()}catch{}}}
+const {data:{session}}=await sb.auth.getSession();
+if(!session?.user){location.href='../login.html'}else{
+  const {data:p,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(pe||!p||p.active===false||p.status==='inactive'){await sb.auth.signOut().catch(()=>{});location.href='../login.html'}
+  else if(!['manager','admin'].includes(p.role)){location.href='../home.html'}
+  else{
+    profile=p;window.atwarSyncShellIdentity?.(p,session.user);
+    const {data,error}=await sb.from('profiles').select('id,email,full_name,job_title,department,role,manager_id,active,status').eq('active',true).eq('status','active').order('full_name');
+    if(error)throw error;
+    allUsers=data||[p];
+    members=p.role==='admin'?allUsers.filter(u=>u.id!==p.id):allUsers.filter(u=>u.id!==p.id&&u.manager_id===p.id);
+    document.getElementById('teamPageTitle').textContent=p.role==='admin'?'دليل الأشخاص':'فريقي المباشر';
+    document.getElementById('teamScopeLabel').textContent=p.role==='admin'?'نطاق النظام':p.department||'فريقي';
+    document.getElementById('teamPageSubtitle').textContent=p.role==='admin'?'المستخدمون النشطون وعلاقات الإشراف المعتمدة في النظام.':'الموظفون المرتبطون بك مباشرة، مع عرض التسلسل الإداري التابع لك.';
+    document.body.style.visibility='visible';renderMembers();renderHierarchy();renderDirectorySummary();try{lucide.createIcons()}catch{}
+  }
+}
 </script>
 </body>
 </html>
