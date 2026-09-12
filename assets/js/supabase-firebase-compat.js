@@ -2,6 +2,13 @@
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
 const sb = await window.atwarGetSupabase();
 
+async function dispatchQueuedTaskEmails(){
+  try{
+    const {error}=await sb.functions.invoke('send-task-email-notifications',{body:{}});
+    if(error)console.warn('Task email delivery is queued for retry.',error);
+  }catch(error){console.warn('Task email delivery is queued for retry.',error)}
+}
+
 const _apps=[{name:'ATWAR_SUPABASE_COMPAT'}];
 const _aliases=new Map();
 function publicKey(real){for(const [alias,id] of _aliases)if(String(id)===String(real))return alias;return String(real)}
@@ -153,7 +160,9 @@ export async function runTransaction(r,mutator){
   }
   const row=Array.isArray(data)?data[0]:data;
   if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
-  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal();return {committed:true,snapshot:new Snap(snapTask,key)};
+  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal();
+  if(current.assignee_id!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
+  return {committed:true,snapshot:new Snap(snapTask,key)};
 }
 
 async function createOne(task,assigneeId,aliasKey){
@@ -163,19 +172,21 @@ async function createOne(task,assigneeId,aliasKey){
 async function rootUpdate(changes){
   const entries=Object.entries(changes||{});const taskEntries=entries.filter(([k])=>k.startsWith('tasksByUser/'));
   const creates=taskEntries.filter(([,v])=>v&&typeof v==='object');const deletes=taskEntries.filter(([,v])=>v===null);
+  let shouldDispatchEmail=false;
   // Reassignment = same task key appears as a create under new owner and delete under old owner.
   for(const [newPath,obj] of creates){const np=newPath.split('/'),alias=np[2],real=_aliases.get(alias)||alias;const matchingDelete=deletes.find(([oldPath])=>oldPath.split('/')[2]===alias);
     if(matchingDelete){
       const rows=await visibleTasks({id:real});const cur=rows[0];if(!cur)throw new Error('Task not found');
       const {error}=await sb.rpc('update_task_safe',{p_task_id:real,p_expected_revision:Number(cur.revision||1),p_patch:{assignee_id:np[1],assignee_name_snapshot:obj.assign||null}});
-      if(error)throw error;continue;
+      if(error)throw error;shouldDispatchEmail=true;continue;
     }
   }
   const pureCreates=creates.filter(([newPath])=>!deletes.some(([oldPath])=>oldPath.split('/')[2]===newPath.split('/')[2]));
-  if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);}
-  else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;}
+  if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);shouldDispatchEmail=true;}
+  else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;shouldDispatchEmail=true;}
   for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id,p_reason:null});if(error)throw error;}
   await emitLocal();
+  if(shouldDispatchEmail)await dispatchQueuedTaskEmails();
 }
 
 export async function update(r,changes){
