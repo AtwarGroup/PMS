@@ -299,7 +299,7 @@
           <h2 class="font-black text-lg">المهام</h2>
           <span id="visibleCount" class="text-xs font-bold text-slate-500">0 مهام</span>
         </div>
-          <div id="quickAddBox" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
+          <div id="quickAddBox" role="region" aria-label="إضافة مهمة جديدة" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_minmax(180px,1fr)_150px_150px_auto] gap-2 items-end">
               <label class="block">
                 <span class="block text-[10px] font-bold text-slate-500 mb-1">اسم المهمة</span>
@@ -318,7 +318,7 @@
                 <input id="quickAddEnd" type="date" class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-400">
               </label>
               <div class="flex gap-2">
-                <button type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold whitespace-nowrap">إضافة المهمة</button>
+                <button id="quickAddSubmit" type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold whitespace-nowrap">إضافة المهمة</button>
                 <button type="button" onclick="hideQuickAdd()" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500" aria-label="إلغاء">×</button>
               </div>
             </div>
@@ -330,7 +330,7 @@
           <p class="text-xs mt-2">استخدم إضافة مهمة لبدء قائمة جديدة.</p>
         </div>
         <div class="quick-add p-3">
-          <button onclick="showQuickAdd()" class="w-full text-right px-4 py-3 rounded-xl hover:bg-slate-50 text-sm font-bold text-blue-700 flex items-center gap-2">
+          <button type="button" onclick="showQuickAdd()" aria-controls="quickAddBox" aria-expanded="false" class="w-full text-right px-4 py-3 rounded-xl hover:bg-slate-50 text-sm font-bold text-blue-700 flex items-center gap-2">
             <span class="text-xl leading-none">＋</span>
             <span>إضافة مهمة</span>
           </button>
@@ -338,7 +338,7 @@
       </div>
 
       <!-- Details -->
-      <aside id="detailsPanel" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden  xl:order-2">
+      <aside id="detailsPanel" aria-label="تفاصيل المهمة" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden  xl:order-2">
         <div id="noSelection" class="hidden py-16 px-6 text-center text-slate-400">
           <div class="text-4xl mb-3">☑</div>
           <p class="font-bold">اختر مهمة لعرض التفاصيل</p>
@@ -505,7 +505,7 @@
 </div>
 
   </div></section></div>
-  <div id="toastContainer" aria-live="polite"></div>
+  <div id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <div id="appDialog" onclick="if(event.target===this)document.getElementById('appDialogCancel').click()" class="hidden dialog-backdrop">
     <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
@@ -528,7 +528,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.8"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=1.9.11"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

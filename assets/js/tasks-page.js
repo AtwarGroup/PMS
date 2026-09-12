@@ -29,6 +29,9 @@ let completedStatsRefreshTimer=null;
 let completedStatsLoading=false;
 let completedStatsRefreshQueued=false;
 let tasksInitialLoadReady=false;
+let quickAddSubmitting=false;
+let attachmentUploadBusy=false;
+const attachmentDeleteLocks=new Set();
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -1799,6 +1802,7 @@ function showQuickAdd(){
   populateQuickAddAssignees();
 
   box.classList.remove('hidden');
+  document.querySelectorAll('[onclick="showQuickAdd()"]').forEach(button=>button.setAttribute('aria-expanded','true'));
   requestAnimationFrame(()=>{
     const header=document.querySelector('header');
     const headerHeight=header?.getBoundingClientRect().height||0;
@@ -1832,11 +1836,14 @@ async function openTaskAttachment(id){
 }
 
 async function deleteTaskAttachment(id){
+  const lockKey=String(id||'');
+  if(!lockKey||attachmentDeleteLocks.has(lockKey))return;
   const task=selectedTask();
   const file=selectedAttachment(id);
   if(!task||!file)return;
   const confirmed=await appConfirm(`هل تريد حذف المرفق «${file.fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
   if(!confirmed)return;
+  attachmentDeleteLocks.add(lockKey);
   try{
     const sb=await window.atwarGetSupabase();
     const removedRow=await sb.from('task_attachments').delete().eq('id',id);
@@ -1851,6 +1858,8 @@ async function deleteTaskAttachment(id){
   }catch(error){
     console.error('Delete attachment:',error);
     showToast(error?.message||'تعذر حذف المرفق. لا تملك الصلاحية أو أن المهمة مقفلة.','error',6000);
+  }finally{
+    attachmentDeleteLocks.delete(lockKey);
   }
 }
 
@@ -1859,14 +1868,16 @@ async function uploadTaskAttachment(event){
   const file=input?.files?.[0];
   const task=selectedTask();
   if(!file||!task)return;
+  if(attachmentUploadBusy){input.value='';return;}
   if(file.size>10*1024*1024){showToast('الحد الأعلى لحجم المرفق 10 ميجابايت.','warning');input.value='';return;}
 
   const taskId=String(task._relationalId||task.id||'');
   const label=document.getElementById('attachmentUploadLabel');
   const originalText=label?.textContent||'+ إضافة مرفق';
   const storagePath=`${taskId}/${crypto.randomUUID()}${safeAttachmentExtension(file.name)}`;
+  attachmentUploadBusy=true;
   try{
-    if(label){label.textContent='جاري الرفع...';label.classList.add('opacity-60','pointer-events-none')}
+    if(label){label.textContent='جاري الرفع...';label.setAttribute('aria-disabled','true');label.classList.add('opacity-60','pointer-events-none')}
     const sb=await window.atwarGetSupabase();
     const upload=await sb.storage.from('task-attachments').upload(storagePath,file,{contentType:file.type||'application/octet-stream',upsert:false});
     if(upload.error)throw upload.error;
@@ -1878,8 +1889,9 @@ async function uploadTaskAttachment(event){
     console.error('Upload attachment:',error);
     showToast(error?.message||'تعذر رفع المرفق. تحقق من الصلاحية ونوع الملف.','error',6000);
   }finally{
+    attachmentUploadBusy=false;
     input.value='';
-    if(label){label.textContent=originalText;label.classList.remove('opacity-60','pointer-events-none')}
+    if(label){label.textContent=originalText;label.removeAttribute('aria-disabled');label.classList.remove('opacity-60','pointer-events-none')}
   }
 }
 
@@ -1889,6 +1901,7 @@ function hideQuickAdd(){
   const start=document.getElementById('quickAddStart');
   const end=document.getElementById('quickAddEnd');
   if(box)box.classList.add('hidden');
+  document.querySelectorAll('[onclick="showQuickAdd()"]').forEach(button=>button.setAttribute('aria-expanded','false'));
   if(input)input.value='';
   if(start)start.value='';
   if(end){end.value='';end.removeAttribute('min');}
@@ -1927,8 +1940,18 @@ async function commitQuickAdd(){
     return;
   }
 
-  const added=await addNewTask(title,false,{ownerUid,start,end});
-  if(added)hideQuickAdd();
+  if(quickAddSubmitting)return;
+  const submitButton=document.getElementById('quickAddSubmit');
+  const originalText=submitButton?.textContent||'إضافة المهمة';
+  quickAddSubmitting=true;
+  if(submitButton){submitButton.disabled=true;submitButton.textContent='جاري الإضافة...';submitButton.setAttribute('aria-busy','true')}
+  try{
+    const added=await addNewTask(title,false,{ownerUid,start,end});
+    if(added)hideQuickAdd();
+  }finally{
+    quickAddSubmitting=false;
+    if(submitButton){submitButton.disabled=false;submitButton.textContent=originalText;submitButton.removeAttribute('aria-busy')}
+  }
 }
 
 async function addNewTask(quickTitle='',openDetails=true,options={}){
