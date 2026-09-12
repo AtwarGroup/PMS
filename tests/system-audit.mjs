@@ -4,10 +4,10 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
-const files = execFileSync('rg', ['--files', '-g', '*.html', '-g', '*.js'], { cwd: root, encoding: 'utf8' })
+const files = execFileSync('rg', ['--files', '-g', '*.html', '-g', '*.js', '-g', '*.mjs'], { cwd: root, encoding: 'utf8' })
   .trim().split('\n').filter(Boolean);
 const htmlFiles = files.filter(file => extname(file) === '.html');
-const jsFiles = files.filter(file => extname(file) === '.js');
+const jsFiles = files.filter(file => ['.js','.mjs'].includes(extname(file)));
 const failures = [];
 const temp = mkdtempSync(join(tmpdir(), 'atwar-audit-'));
 
@@ -54,7 +54,7 @@ try {
     console.error(failures.join('\n\n'));
     process.exitCode = 1;
   } else {
-    console.log(`ATWAR audit passed: ${htmlFiles.length} HTML files, ${jsFiles.length} JavaScript files.`);
+    console.log(`ATWAR audit passed: ${htmlFiles.length} HTML files, ${jsFiles.length} JavaScript modules.`);
   }
 } finally {
   rmSync(temp, { recursive: true, force: true });
