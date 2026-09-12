@@ -952,6 +952,7 @@ async function markAllNotificationsRead(){
   if(!currentUser?.uid)return;
   const unread=notifications.filter(n=>!n.read);
   if(!unread.length)return;
+  if(!confirm('هل تريد مسح جميع الإشعارات؟'))return;
   const changes={};
   unread.forEach(n=>changes[`${notificationPath(currentUser.uid)}/${n._key}/read`]=true);
   try{await update(ref(db),changes)}catch(error){console.error(error)}

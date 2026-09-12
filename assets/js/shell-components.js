@@ -71,7 +71,7 @@
             <i data-lucide="bell"></i><span id="notificationBadge" class="hidden atwar-notification-badge">0</span>
           </button>
           <div id="notificationPanel" class="hidden atwar-task-notification-panel">
-            <div class="atwar-notification-head"><b>الإشعارات</b><button onclick="markAllNotificationsRead()">تحديد الكل كمقروء</button></div>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button onclick="markAllNotificationsRead()">مسح جميع الإشعارات</button></div>
             <div id="notificationList" class="atwar-notification-list"></div>
           </div>
         </div>
@@ -84,7 +84,7 @@
             <i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span>
           </button>
           <div class="atwar-task-notification-panel hidden" data-global-notification-panel>
-            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-global-mark-read>تحديد الكل كمقروء</button></div>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-global-mark-read>مسح جميع الإشعارات</button></div>
             <div class="atwar-notification-list" data-global-notification-list><div style="padding:24px;text-align:center;font-size:10px;color:#94a3b8">جاري تحميل الإشعارات...</div></div>
             <a href="${d}notifications/index.html" style="display:block;padding:10px 14px;text-align:center;font-size:10px;font-weight:900;color:#2563eb;text-decoration:none;border-top:1px solid #eef2f7">عرض جميع الإشعارات</a>
           </div>
@@ -140,6 +140,21 @@
 
 
 
+  window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
+    if(!row)return false;
+    if(row.task_id){
+      const {data:task,error}=await sb.from('tasks').select('id,assignee_id,status,deleted_at').eq('id',row.task_id).maybeSingle();
+      if(error||!task||task.deleted_at){onError('تعذر العثور على المهمة المرتبطة بهذا الإشعار.');return false}
+      const scope=task.status==='مكتملة'?'&scope=COMPLETED':'';
+      location.href=`${depthPrefix}tasks/index.html?task=${encodeURIComponent(task.id)}&owner=${encodeURIComponent(task.assignee_id||'')}&notification=${encodeURIComponent(row.id)}${scope}`;
+      return true;
+    }
+    const {error}=await sb.from('notifications').delete().eq('id',row.id);
+    if(error){onError('تعذر مسح الإشعار الآن.');return false}
+    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:`${depthPrefix}home.html`;
+    return true;
+  };
+
   window.atwarInitGlobalNotifications=async function(headerEl,depthPrefix=''){
     if(!headerEl||headerEl.dataset.notificationsReady==='1')return;
     const button=headerEl.querySelector('[data-global-notification-button]');
@@ -168,14 +183,10 @@
           const row=rows.find(x=>String(x.id)===btn.dataset.globalNotificationId);
           // سياسة ATWAR ONE: فتح الإشعار يحذفه بعد نجاح الوصول للعنصر المرتبط.
           panel.classList.add('hidden');
-          if(row?.task_id){
-            location.href=`${depthPrefix}tasks/index.html?task=${encodeURIComponent(row.task_id)}&notification=${encodeURIComponent(row.id)}`;
-          }else{
-            await sb.from('notifications').delete().eq('id',row.id);
-            await refresh();
-          }
+          const opened=await window.atwarOpenNotificationRecord(sb,row,depthPrefix,()=>{});
+          if(!opened)await refresh();
         }));
-        markAll.onclick=async()=>{if(!rows.length)return;const ids=rows.map(x=>x.id);const {error:e}=await sb.from('notifications').delete().in('id',ids);if(!e)await refresh();};
+        markAll.onclick=async()=>{if(!rows.length||!confirm('هل تريد مسح جميع الإشعارات؟'))return;const ids=rows.map(x=>x.id);const {error:e}=await sb.from('notifications').delete().in('id',ids);if(!e)await refresh();};
       }catch(error){console.error('Global notifications:',error);list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';}
     }
     await refresh();
