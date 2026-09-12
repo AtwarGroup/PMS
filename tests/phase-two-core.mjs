@@ -1,18 +1,30 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import * as taskCore from '../assets/js/tasks-core.mjs';
 import {
   calcDelay,
   calcDuration,
+  isISODate,
   normalizeProgress,
   sortTaskRows,
   validateTaskFieldValue
 } from '../assets/js/tasks-core.mjs';
 import {createRefreshCoordinator} from '../assets/js/supabase-sync.mjs';
 
+const taskPageSource=await readFile(new URL('../assets/js/tasks-page.js',import.meta.url),'utf8');
+const coreImport=taskPageSource.match(/import\s*\{([^}]+)\}\s*from\s*["']\.\/tasks-core\.mjs[^"']*["']/);
+assert.ok(coreImport,'tasks-page.js must import the shared task core');
+for(const importedName of coreImport[1].split(',').map(value=>value.trim()).filter(Boolean)){
+  assert.equal(typeof taskCore[importedName],'function',`${importedName} must be exported by tasks-core.mjs`);
+}
+
 assert.equal(calcDuration('2026-09-10','2026-09-12'),3);
 assert.equal(calcDuration('2026-09-12','2026-09-10'),0);
 assert.equal(normalizeProgress(-5),0);
 assert.equal(normalizeProgress(130),100);
 assert.equal(normalizeProgress('55'),55);
+assert.equal(isISODate('2026-09-12'),true);
+assert.equal(isISODate('12/09/2026'),false);
 
 const fixedNow=new Date('2026-09-15T10:00:00Z');
 assert.equal(calcDelay('2026-09-12','','قيد التنفيذ',null,[],fixedNow),3);

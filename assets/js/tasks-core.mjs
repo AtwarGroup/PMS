@@ -68,7 +68,7 @@ export function normalizeProgress(value){
   return Math.max(0,Math.min(100,Number.parseInt(value||0,10)||0));
 }
 
-function isISODate(value){
+export function isISODate(value){
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value||''))&&!!parseDateOnly(value);
 }
 
