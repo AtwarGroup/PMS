@@ -1,11 +1,21 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
-const files = execFileSync('rg', ['--files', '-g', '*.html', '-g', '*.js', '-g', '*.mjs'], { cwd: root, encoding: 'utf8' })
-  .trim().split('\n').filter(Boolean);
+const ignoredDirectories=new Set(['.git','node_modules']);
+const collectFiles=(directory=root)=>readdirSync(directory,{withFileTypes:true}).flatMap(entry=>{
+  if(entry.isDirectory()){
+    if(ignoredDirectories.has(entry.name))return [];
+    return collectFiles(join(directory,entry.name));
+  }
+  const extension=extname(entry.name);
+  return ['.html','.js','.mjs'].includes(extension)
+    ? [relative(root,join(directory,entry.name))]
+    : [];
+});
+const files=collectFiles();
 const htmlFiles = files.filter(file => extname(file) === '.html');
 const jsFiles = files.filter(file => ['.js','.mjs'].includes(extname(file)));
 const failures = [];
