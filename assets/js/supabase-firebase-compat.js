@@ -12,7 +12,7 @@ async function dispatchQueuedTaskEmails(){
 const _apps=[{name:'ATWAR_SUPABASE_COMPAT'}];
 const _aliases=new Map();
 function publicKey(real){for(const [alias,id] of _aliases)if(String(id)===String(real))return alias;return String(real)}
-const _listeners=new Set();
+const _listeners=new Map();
 let _authUser=null;
 
 export function initializeApp(){return _apps[0]}
@@ -160,7 +160,7 @@ export async function runTransaction(r,mutator){
   }
   const row=Array.isArray(data)?data[0]:data;
   if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
-  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal();
+  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal('tasks');
   if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
   return {committed:true,snapshot:new Snap(snapTask,key)};
 }
@@ -185,7 +185,7 @@ async function rootUpdate(changes){
   if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);shouldDispatchEmail=true;}
   else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;shouldDispatchEmail=true;}
   for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id,p_reason:null});if(error)throw error;}
-  await emitLocal();
+  await emitLocal('tasks');
   if(shouldDispatchEmail)await dispatchQueuedTaskEmails();
 }
 
@@ -193,7 +193,7 @@ export async function update(r,changes){
   const path=pathOf(r);
   if(!path){
     const notifIds=Object.keys(changes||{}).filter(k=>k.startsWith('notificationsByUser/')).map(k=>k.split('/')[2]).filter(Boolean);
-    if(notifIds.length){const {error}=await sb.from('notifications').delete().in('id',[...new Set(notifIds)]);if(error)throw error;await emitLocal();}
+    if(notifIds.length){const {error}=await sb.from('notifications').delete().in('id',[...new Set(notifIds)]);if(error)throw error;await emitLocal('notifications');}
     const taskChanges=Object.fromEntries(Object.entries(changes||{}).filter(([k])=>k.startsWith('tasksByUser/')||k.startsWith('createdTaskIndex/')));
     if(Object.keys(taskChanges).some(k=>k.startsWith('tasksByUser/')))await rootUpdate(taskChanges);
     return;
@@ -201,14 +201,14 @@ export async function update(r,changes){
   const parts=path.split('/').filter(Boolean);
   if(parts[0]==='notificationsByUser'){
     // ATWAR ONE policy: notifications have no read flag. Marking read means deleting the row.
-    if(parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal();return}
-    const ids=Object.keys(changes||{}).map(k=>k.split('/')[0]).filter(Boolean);if(ids.length){const {error}=await sb.from('notifications').delete().in('id',ids);if(error)throw error;await emitLocal()}return;
+    if(parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal('notifications');return}
+    const ids=Object.keys(changes||{}).map(k=>k.split('/')[0]).filter(Boolean);if(ids.length){const {error}=await sb.from('notifications').delete().in('id',ids);if(error)throw error;await emitLocal('notifications')}return;
   }
   if(parts[0]==='tasksByUser'&&parts[2]){
     const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;
     const next={...rows[0],...changes};
     const {error}=await sb.rpc('update_task_safe',{p_task_id:id,p_expected_revision:Number(rows[0].revision||1),p_patch:taskPatch(next)});
-    if(error)throw error;await emitLocal();return;
+    if(error)throw error;await emitLocal('tasks');return;
   }
 }
 
@@ -217,35 +217,56 @@ export async function set(r,data){
   if(parts[0]==='notificationsByUser')return; // DB triggers create operational notifications.
   if(parts[0]==='tasksByUser'&&parts[2])return rootUpdate({[path]:data});
 }
-export async function remove(r){const path=pathOf(r),parts=path.split('/').filter(Boolean);if(parts[0]==='notificationsByUser'&&parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal()}}
+export async function remove(r){const path=pathOf(r),parts=path.split('/').filter(Boolean);if(parts[0]==='notificationsByUser'&&parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal('notifications')}}
 
-async function emitLocal(){for(const fn of [..._listeners]){try{await fn()}catch(e){console.warn('compat listener',e)}}}
+function listenerAccepts(path,scope){
+  if(scope==='all')return true;
+  if(path==='tasksByUser'||path.startsWith('tasksByUser/')||path.startsWith('createdTaskIndex/'))return scope==='tasks';
+  if(path==='users'||path.startsWith('users/'))return scope==='profiles';
+  if(path.startsWith('notificationsByUser'))return scope==='notifications';
+  return true;
+}
+async function emitLocal(scope='all'){
+  const jobs=[];
+  for(const [fn,path] of _listeners){
+    if(listenerAccepts(path,scope))jobs.push(fn());
+  }
+  const results=await Promise.allSettled(jobs);
+  for(const result of results)if(result.status==='rejected')console.warn('compat listener',result.reason);
+}
 let _realtimeChannel=null;
 function ensureRealtime(){
   if(_realtimeChannel)return;
   try{
     _realtimeChannel=sb.channel('atwar-one-compat-v18')
-      .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>emitLocal())
-      .on('postgres_changes',{event:'*',schema:'public',table:'subtasks'},()=>emitLocal())
-      .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},()=>emitLocal())
-      .on('postgres_changes',{event:'*',schema:'public',table:'task_comments'},()=>emitLocal())
-      .on('postgres_changes',{event:'*',schema:'public',table:'task_attachments'},()=>emitLocal())
+      .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'subtasks'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_activity'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_attachments'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},()=>emitLocal('notifications'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},()=>emitLocal('profiles'))
       .subscribe();
   }catch(e){console.warn('Realtime unavailable; polling fallback remains active.',e)}
 }
 export function onValue(r,callback,errorCallback){
   ensureRealtime();
-  let alive=true,busy=false,refreshQueued=false;
+  const listenerPath=pathOf(r);
+  let alive=true,busy=false,refreshQueued=false,lastValue='';
   const refresh=async()=>{
     if(!alive)return;
     if(busy){refreshQueued=true;return;}
     busy=true;
-    try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{
+    try{
+      const snapshot=await get(r);
+      if(!alive)return;
+      const serialized=JSON.stringify(snapshot.val());
+      if(serialized!==lastValue){lastValue=serialized;callback(snapshot)}
+    }catch(e){if(alive)errorCallback?.(e)}finally{
       busy=false;
       if(refreshQueued&&alive){refreshQueued=false;queueMicrotask(refresh)}
     }
   };
-  _listeners.add(refresh);refresh();
+  _listeners.set(refresh,listenerPath);refresh();
   const timer=setInterval(refresh,60000);
-  return ()=>{alive=false;clearInterval(timer);_listeners.delete(refresh)};
+  return ()=>{alive=false;refreshQueued=false;clearInterval(timer);_listeners.delete(refresh)};
 }
