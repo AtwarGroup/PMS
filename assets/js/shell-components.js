@@ -50,8 +50,9 @@
       const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession();
       const currentPath=location.pathname;
       const taskNavActive=key=>{
-        if(key==='tasks')return /\/tasks\//.test(currentPath);
-        if(key==='completed')return /\/completed\//.test(currentPath);
+        const completedScope=/\/tasks\//.test(currentPath)&&String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
+        if(key==='tasks')return /\/tasks\//.test(currentPath)&&!completedScope;
+        if(key==='completed')return /\/completed\//.test(currentPath)||completedScope;
         if(key==='recurring')return /\/recurring\//.test(currentPath);
         return false;
       };
@@ -60,7 +61,7 @@
       const taskNav=taskModuleOpen?`
         <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
-          <a class="${taskNavActive('completed')?'active':''}" href="${d}completed/index.html"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
+          <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
           ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
         </nav>`:'';
       const taskTools=mode==='tasks'?`
@@ -251,7 +252,7 @@
       if(card){
         card.style.cursor='pointer';
         card.title='فتح المهام المكتملة';
-        card.addEventListener('click',()=>{location.href=depth()+'completed/index.html'});
+        card.addEventListener('click',()=>{location.href=depth()+'tasks/index.html?scope=COMPLETED'});
       }
     }
     window.lucide?.createIcons();

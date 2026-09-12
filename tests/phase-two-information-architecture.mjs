@@ -7,7 +7,9 @@ const read=file=>readFileSync(resolve(root,file),'utf8');
 const start=read('assets/js/start-page-config.js');
 const home=read('home.html');
 const myDay=read('my-day/index.html');
+const completed=read('completed/index.html');
 const tasks=read('assets/js/tasks-page.js');
+const routes=read('assets/js/routes-config.js');
 const workspace=read('workspace/index.html');
 const team=read('team/index.html');
 
@@ -19,6 +21,8 @@ const contracts=[
   [home,'id="homeFollowupCount"','Home must show a follow-up count instead of personal content'],
   [home,'id="homeTeamCount"','Home must link managers to the people directory'],
   [myDay,'tasks/index.html?scope=TODAY&amp;owner=me','Legacy My Day route must preserve links through the canonical task view'],
+  [completed,'../tasks/index.html?scope=COMPLETED','Legacy completed route must redirect to the canonical task archive'],
+  [routes,"completed: 'tasks/index.html?scope=COMPLETED'",'Route registry must point completed tasks to the canonical task archive'],
   [tasks,"'APPROVAL','TODAY'",'Canonical task page must accept the TODAY scope'],
   [tasks,"homeFilterValue==='TODAY'",'Canonical task page must enforce the TODAY scope'],
   [workspace,'id="personalNote"','Personal notes must remain in My Workspace'],

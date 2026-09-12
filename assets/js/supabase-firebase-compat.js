@@ -87,10 +87,13 @@ class Snap{
 
 async function visibleTasks(extra=null){
   let q=sb.from('tasks').select('*').is('deleted_at',null);
-  // The main Tasks workspace is intentionally active-only.
-  // Completed/approved tasks are served from completed/index.html.
+  // The canonical Tasks workspace serves one scope at a time so active work
+  // stays fast while the completed archive uses the same details experience.
   const isMainTasksWorkspace=/\/tasks\/(?:index\.html)?$/.test(location.pathname);
-  if(isMainTasksWorkspace && !extra?.id)q=q.neq('status','مكتملة');
+  const requestedScope=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase();
+  if(isMainTasksWorkspace && !extra?.id){
+    q=requestedScope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة');
+  }
   if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
   if(extra?.creator)q=q.eq('creator_id',extra.creator);
   if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);

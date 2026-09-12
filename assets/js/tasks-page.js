@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.6";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.14";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -32,6 +32,10 @@ let completedStatsRefreshQueued=false;
 let tasksInitialLoadReady=false;
 let quickAddSubmitting=false;
 let taskAttachmentsController=null;
+
+function isCompletedArchiveView(){
+  return String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
+}
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
@@ -232,6 +236,12 @@ function bindTaskFilters(){
   document.querySelectorAll('#quickFilters .qf').forEach(btn=>btn.addEventListener('click',()=>setQuickFilter(btn.dataset.filter||'ALL')));
   document.getElementById('sortFilter')?.addEventListener('change',e=>setSortFilter(e.target.value));
   document.getElementById('assigneeFilter')?.addEventListener('change',e=>setAssigneeFilter(e.target.value));
+  ['completedFromDate','completedToDate'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('change',()=>{
+      renderTasks();
+      updateVisibleCount();
+    });
+  });
   document.getElementById('teamFilterAllButton')?.addEventListener('click',()=>filterByTeamMember('ALL'));
   document.getElementById('teamMembersGrid')?.addEventListener('click',e=>{
     const btn=e.target.closest('[data-team-filter-uid]');
@@ -516,6 +526,22 @@ function applyRoleUI(){
   document.getElementById('importLabel').classList.toggle('hidden',isEmployee);
   document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTasks());
 }
+
+function applyTaskScopeUI(){
+  const archive=isCompletedArchiveView();
+  document.getElementById('addTaskButton')?.classList.toggle('hidden',archive);
+  document.getElementById('importLabel')?.classList.toggle('hidden',archive||currentProfile?.role==='employee');
+  document.getElementById('managerDashboard')?.classList.toggle('hidden',archive||!isManagerRole());
+  document.getElementById('completedDateFilters')?.classList.toggle('hidden',!archive);
+  const totalLabel=document.getElementById('statTotalLabel');
+  if(totalLabel)totalLabel.textContent=archive?'إجمالي المهام المكتملة':'إجمالي المهام النشطة';
+  const subtitle=document.getElementById('pageSubtitle');
+  if(archive&&subtitle)subtitle.textContent='أرشيف المهام المكتملة — للقراءة فقط، وإعادة الفتح لمدير النظام';
+  if(archive){
+    document.getElementById('statusFilter').value='ALL';
+    document.querySelectorAll('.qf').forEach(button=>button.classList.toggle('active',button.dataset.filter==='ALL'));
+  }
+}
 function excelDateToISO(v){
   if(!v)return '';
   if(v instanceof Date&&!Number.isNaN(v.getTime()))return localDateISO(v);
@@ -664,6 +690,7 @@ onAuthStateChanged(auth,async(user)=>{
           ? 'مهامك وفريقك المباشر، مع المهام التي أنشأتها لغير المباشرين'
           : 'مهامك الشخصية';
     applyRoleUI();
+    applyTaskScopeUI();
     showApp(true);
     bindDetailsCloseButtons();
     bindTaskFilters();
@@ -739,7 +766,7 @@ function renderManagerDashboard(){
   const toggleText=document.getElementById('managerDashboardToggleText');
   if(!section||!body||!summary||!grid||!empty)return;
 
-  const allowed=currentProfile && (currentProfile.role==='manager'||currentProfile.role==='admin');
+  const allowed=!isCompletedArchiveView() && currentProfile && (currentProfile.role==='manager'||currentProfile.role==='admin');
   section.classList.toggle('hidden',!allowed);
   if(!allowed)return;
 
@@ -1750,6 +1777,10 @@ function toggleMoreMenu(force){
   m.classList.toggle('hidden',!show);
 }
 function setQuickFilter(v){
+  if(v==='مكتملة'&&!isCompletedArchiveView()){
+    location.href='index.html?scope=COMPLETED';
+    return;
+  }
   const s=document.getElementById('statusFilter');
   if(!s)return;
   homeFilterValue='';
@@ -2049,6 +2080,8 @@ function filteredTasks(){
   const search=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
   const status=(document.getElementById('statusFilter')?.value||'ALL').trim();
   const assignee=String(assigneeFilterValue||'ALL').trim();
+  const completedFrom=String(document.getElementById('completedFromDate')?.value||'');
+  const completedTo=String(document.getElementById('completedToDate')?.value||'');
   return tasks.filter(t=>{
     if(assignee!=='ALL'){
       if(assignee==='__MY_TASKS__'){
@@ -2078,6 +2111,11 @@ function filteredTasks(){
     if(status==='DELAYED'&&delay<=0)return false;
     if(status==='TODAY'&&!isToday(t.start)&&!isToday(t.end))return false;
     if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&String(t.status||'').trim()!==String(status).trim())return false;
+    if(isCompletedArchiveView()&&(completedFrom||completedTo)){
+      const completedDate=t.completedAt?localDateISO(new Date(t.completedAt)):'';
+      if(completedFrom&&(!completedDate||completedDate<completedFrom))return false;
+      if(completedTo&&(!completedDate||completedDate>completedTo))return false;
+    }
     if(search&&!`${t.title||''} ${t.desc||''} ${t.notes||''} ${t.assign||''} ${priorityLabel(t.priority)}`.toLowerCase().includes(search))return false;
     return true;
   });

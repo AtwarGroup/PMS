@@ -236,7 +236,7 @@
 
     <!-- Stats -->
     <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p id="statTotalLabel" class="text-[11px] font-bold text-slate-500">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
       <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
@@ -285,6 +285,10 @@
       <select id="assigneeFilter" class="hidden border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
         <option value="ALL">كل المسؤولين</option>
       </select>
+      <div id="completedDateFilters" class="hidden flex items-center gap-1.5">
+        <input id="completedFromDate" type="date" title="الإكمال من تاريخ" aria-label="تاريخ بداية الإكمال" class="border border-slate-200 rounded-xl px-2 py-2 text-xs bg-white">
+        <input id="completedToDate" type="date" title="الإكمال إلى تاريخ" aria-label="تاريخ نهاية الإكمال" class="border border-slate-200 rounded-xl px-2 py-2 text-xs bg-white">
+      </div>
       <select id="statusFilter" class="hidden">
         <option value="ALL">الكل</option><option value="TODAY">اليوم</option><option value="DELAYED">متأخرة</option>
         <option value="قيد التنفيذ">قيد التنفيذ</option><option value="بانتظار الاعتماد">بانتظار الاعتماد</option>
@@ -528,7 +532,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.13"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=1.9.14"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>
