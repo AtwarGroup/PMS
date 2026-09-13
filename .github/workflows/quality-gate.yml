@@ -33,6 +33,8 @@ jobs:
         run: node tests/phase-two-core.mjs
       - name: Run phase-three quality gate
         run: node tests/phase-three-quality-gate.mjs
+      - name: Run job-library governance audit
+        run: node tests/job-library-governance.mjs
       - name: Run phase-four UX safety audit
         run: node tests/phase-four-ux-safety.mjs
       - name: Run phase-two information architecture audit
