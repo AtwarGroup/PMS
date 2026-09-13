@@ -7,6 +7,7 @@ window.ATWAR_ROUTES = {
   profile: 'profile/index.html',
   workspace: 'workspace/index.html',
   organization: 'organization/index.html',
+  jobLibrary: 'job-library/index.html',
   myDay: 'my-day/index.html',
   admin: 'admin/index.html',
   landing: 'landing.html',

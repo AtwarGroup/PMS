@@ -11,7 +11,7 @@ function getAtwarSession(){
 const getAtwarDemoSession=getAtwarSession;
 
 function atwarDepth(){
-  const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','my-day','recurring'];
+  const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring'];
   return nestedModules.some(name=>location.pathname.includes('/'+name+'/')) ? '../' : '';
 }
 

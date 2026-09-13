@@ -36,6 +36,14 @@
       "status": "conditional"
     },
     {
+      "id": "job-library",
+      "path": "job-library/index.html",
+      "minRole": "manager",
+      "status": "stable",
+      "navigation": "primary",
+      "label": "مكتبة الوظائف"
+    },
+    {
       "id": "kpi",
       "path": "profile/kpi.html",
       "minRole": "employee",
