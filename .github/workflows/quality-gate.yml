@@ -45,3 +45,5 @@ jobs:
         run: node tests/phase-two-workspace-notifications.mjs
       - name: Run phase-two closeout audit
         run: node tests/phase-two-closeout.mjs
+      - name: Run phase-three shared relations foundation audit
+        run: node tests/phase-three-work-engine-foundation.mjs
