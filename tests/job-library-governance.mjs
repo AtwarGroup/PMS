@@ -21,6 +21,6 @@ assert.doesNotMatch(sql,/service_role/i,'Frontend migration must not expose serv
 assert.equal(data.jobs.length,56,'The reviewed library must contain all 56 jobs');
 assert.equal(new Set(data.jobs.map(x=>x.job_code)).size,56,'Job codes must be unique');
 assert.ok(data.jobs.every(x=>x.purpose&&x.content.responsibilities.length&&x.content.authorities.length),'Every job must have purpose, responsibilities and authorities');
-assert.match(page,/إرسال للمدير/);assert.match(page,/موافقة المدير/);assert.match(page,/إعادة للتعديل/);assert.match(page,/اعتماد ونشر/);assert.match(page,/job_description_comments/);
+assert.match(page,/إرسال للمدير/);assert.match(page,/إكمال المراجعة/);assert.match(page,/مقارنة المقترحات/);assert.match(page,/اعتماد ونشر/);assert.match(page,/job_description_comments/);
 assert.match(profile,/published_snapshot/,'Employee page must render only a published snapshot');
 console.log(`Job-library governance audit passed: ${data.jobs.length} jobs, ${data.jobs.reduce((n,x)=>n+x.content.responsibilities.length,0)} responsibilities.`);
