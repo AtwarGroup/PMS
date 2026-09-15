@@ -45,6 +45,8 @@ jobs:
         run: node tests/job-library-matching-portal.mjs
       - name: Run current HR roles and selective update audit
         run: node tests/hr-current-roles.mjs
+      - name: Run login and authenticated-startup no-flash audit
+        run: node tests/login-no-flash.mjs
       - name: Run phase-four UX safety audit
         run: node tests/phase-four-ux-safety.mjs
       - name: Run phase-two information architecture audit
@@ -57,5 +59,4 @@ jobs:
         run: node tests/phase-two-workspace-notifications.mjs
       - name: Run phase-two closeout audit
         run: node tests/phase-two-closeout.mjs
-      - name: Run phase-three shared relations foundation audit
-        run: node tests/phase-three-work-engine-foundation.mjs
+      - name: Run p
