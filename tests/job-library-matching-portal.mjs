@@ -13,6 +13,7 @@ const adminGov=library.jobs.find(job=>job.job_code==='JOB-035');
 assert.ok(business.aliases.includes('مشرف تطوير الاعمال'),'Business-development title must match without hamza');
 assert.ok(adminGov.aliases.includes('أختصاصي شئون إدارية وحكومية'),'Legacy profile spelling must map to the governed role');
 assert.ok(adminGov.aliases.includes('أخصائي شؤون إدارية وحكومية'),'Correct spelling must map to the governed role');
+assert.equal(adminGov.title,'مسؤول الشؤون الإدارية والعلاقات الحكومية','The current HR source title must be canonical');
 assert.match(page,/normalizeArabic/,'Arabic titles must not rely on literal matching');
 assert.match(page,/normalizeArabic\(title\)===profileTitle/,'Suggestions must compare normalized titles and aliases');
 assert.match(systems,/https:\/\/app\.powerbi\.com\/home\?experience=power-bi/,'Power BI portal URL is required');

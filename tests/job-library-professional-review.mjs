@@ -10,7 +10,7 @@ const reviewJs = read('assets/js/job-review-page.js');
 const reviewCss = read('assets/css/job-review.css');
 const indexJs = read('assets/js/job-library-page.js');
 
-assert.equal(library.jobs.length,56,'Professional library must preserve all 56 jobs');
+assert.equal(library.jobs.length,57,'Professional library must preserve all 57 jobs');
 for (const job of library.jobs) {
   const content = job.content || {};
   assert.ok((job.purpose || '').trim().length >= 40,`${job.job_code} needs a clear purpose`);
@@ -33,7 +33,7 @@ assert.match(reviewJs,/اقتراح تعديل/);
 assert.match(reviewJs,/دون تغيير النسخة الرئيسية/);
 assert.match(reviewJs,/النسخة المنشورة للموظف دون تغيير/);
 assert.match(indexJs,/prepareProfessionalDrafts/,'Admin must explicitly prepare reviewed drafts');
-assert.match(indexJs,/published_snapshot|النسخة المنشورة/,'Professional sync must preserve the published employee snapshot');
+assert.match(indexJs,/published_snapshot|النسخ? المنشورة/,'Professional sync must preserve the published employee snapshot');
 assert.doesNotMatch(reviewCss,/position:fixed[^}]*inset:0/,'The new review must not be a full-screen modal');
 
 const responsibilities = library.jobs.reduce((sum,job) => sum + job.content.responsibilities.length,0);
