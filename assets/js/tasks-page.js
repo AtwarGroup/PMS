@@ -399,7 +399,13 @@ function canReassignTaskTo(task,uid){
   if(String(target.managerUid||'')===String(currentUser.uid))return true;
   return isDescendantOf(target,currentUser.uid) && String(task.createdByUid||'')===String(currentUser.uid);
 }
-function canDeleteTasks(){return currentProfile&&(currentProfile.role==='admin'||currentProfile.role==='manager')}
+function canDeleteTask(task){
+  if(!task||!currentProfile||!currentUser)return false;
+  if(currentProfile.role==='admin')return true;
+  return currentProfile.role==='manager' &&
+    task.status!=='مكتملة' &&
+    String(task.createdByUid||'')===String(currentUser.uid||'');
+}
 
 function canApproveTask(task){
   if(!task||!currentProfile||!currentUser)return false;
@@ -524,7 +530,7 @@ function withTimeout(promise,ms=8000){
 function applyRoleUI(){
   const isEmployee=currentProfile?.role==='employee';
   document.getElementById('importLabel').classList.toggle('hidden',isEmployee);
-  document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTasks());
+  document.getElementById('deleteSelectedButton').classList.add('hidden');
 }
 
 function applyTaskScopeUI(){
@@ -1991,15 +1997,10 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
   }
 }
 async function deleteSelectedTask(){
-  if(!canDeleteTasks()){
-    showToast('حذف المهام متاح للمدير ومدير النظام فقط.','error');
-    return;
-  }
-
   const task=selectedTask();
   if(!task)return;
-  if(task.status==='مكتملة' && currentProfile?.role!=='admin'){
-    showToast('المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.','error');
+  if(!canDeleteTask(task)){
+    showToast(task.status==='مكتملة'?'المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.':'لا يمكن للمدير حذف مهمة لم ينشئها.','error');
     return;
   }
 
@@ -2015,6 +2016,7 @@ async function deleteSelectedTask(){
       prepared=await prepareTaskOperation(task,'delete');
       if(!prepared){setSaveStatus('saved');return;}
       const locked=prepared.task;
+      if(!canDeleteTask(locked))throw new Error('ATWAR_DELETE_FORBIDDEN');
       const changes={
         [`tasksByUser/${locked._ownerUid}/${locked._key}`]:null
       };
@@ -2613,7 +2615,7 @@ function renderDetails(){
   }else{
     assigneeBox.innerHTML=`<div class="font-bold text-sm text-blue-700">${escapeHTML(task.assign||currentProfile.name||'')}</div>`;
   }
-  document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTasks());
+  document.getElementById('deleteSelectedButton').classList.toggle('hidden',!canDeleteTask(task));
   applyTaskFieldPermissions(task);
   renderSubtasks(task);
   renderActivityLog(task);
