@@ -154,20 +154,27 @@ async function reconcileSubtasks(taskId,nextItems){
 export async function runTransaction(r,mutator){
   const path=pathOf(r),parts=path.split('/').filter(Boolean);
   if(parts[0]!=='tasksByUser'||!parts[2])return {committed:false,snapshot:new Snap(null)};
-  const key=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id:key});const cur=rows[0];if(!cur)return {committed:false,snapshot:new Snap(null,key)};
-  const current=structuredClone(cur),next=mutator(structuredClone(current));if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
-  const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]);
-  const patch=taskPatch(next);
-  const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
-  if(error){
-    if(String(error.message||'').includes('ATWAR_CONFLICT'))error.code='ATWAR_CONFLICT';
-    throw error;
+  const key=_aliases.get(parts[2])||parts[2];
+  for(let attempt=0;attempt<2;attempt++){
+    const rows=await visibleTasks({id:key}),cur=rows[0];
+    if(!cur)return {committed:false,snapshot:new Snap(null,key)};
+    const current=structuredClone(cur),next=mutator(structuredClone(current));
+    if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
+    const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]),patch=taskPatch(next);
+    const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
+    if(error){
+      const conflict=String(error.message||'').includes('ATWAR_CONFLICT');
+      if(conflict&&attempt===0)continue;
+      if(conflict)error.code='ATWAR_CONFLICT';
+      throw error;
+    }
+    const row=Array.isArray(data)?data[0]:data;
+    if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
+    const children=await loadChildren([key]),snapTask=taskLegacy(row,children);await emitLocal('tasks');
+    if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
+    return {committed:true,snapshot:new Snap(snapTask,key)};
   }
-  const row=Array.isArray(data)?data[0]:data;
-  if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
-  const children=await loadChildren([key]);const snapTask=taskLegacy(row,children);await emitLocal('tasks');
-  if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
-  return {committed:true,snapshot:new Snap(snapTask,key)};
+  return {committed:false,snapshot:new Snap(null,key)};
 }
 
 async function createOne(task,assigneeId,aliasKey){

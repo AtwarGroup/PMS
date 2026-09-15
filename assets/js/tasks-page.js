@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.14";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.19";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -402,8 +402,7 @@ function canReassignTaskTo(task,uid){
 function canDeleteTask(task){
   if(!task||!currentProfile||!currentUser)return false;
   if(currentProfile.role==='admin')return true;
-  return currentProfile.role==='manager' &&
-    task.status!=='مكتملة' &&
+  return task.status!=='مكتملة' &&
     String(task.createdByUid||'')===String(currentUser.uid||'');
 }
 
@@ -2000,7 +1999,7 @@ async function deleteSelectedTask(){
   const task=selectedTask();
   if(!task)return;
   if(!canDeleteTask(task)){
-    showToast(task.status==='مكتملة'?'المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.':'لا يمكن للمدير حذف مهمة لم ينشئها.','error');
+    showToast(task.status==='مكتملة'?'المهمة المكتملة لا يمكن حذفها إلا بواسطة مدير النظام.':'يمكنك حذف المهام التي أنشأتها بنفسك فقط.','error');
     return;
   }
 
