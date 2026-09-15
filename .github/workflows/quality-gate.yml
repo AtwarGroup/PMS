@@ -51,6 +51,8 @@ jobs:
         run: node tests/task-delete-ownership.mjs
       - name: Run task update conflict retry and creator deletion audit
         run: node tests/task-update-conflict-retry.mjs
+      - name: Run minimal task patch and protected manager-note audit
+        run: node tests/task-minimal-patch.mjs
       - name: Run phase-four UX safety audit
         run: node tests/phase-four-ux-safety.mjs
       - name: Run phase-two information architecture audit
