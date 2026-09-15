@@ -93,9 +93,7 @@ async function verifyAtwarSessionWithSupabase(){
     const verified={uid:p.id,email:session.user.email||p.email||'',name:p.full_name||session.user.email||'المستخدم',title:p.job_title||'',role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)?p.permissions:[],source:'supabase-verified'};
     localStorage.setItem('atwarSession',JSON.stringify(verified));localStorage.removeItem('atwarDemoSession');
     const changed=!old||String(old.uid)!==String(verified.uid)||old.role!==verified.role||JSON.stringify(old.permissions||[])!==JSON.stringify(verified.permissions||[]);
-    if(changed&&!sessionStorage.getItem('atwarRoleVerifiedReload')){
-      sessionStorage.setItem('atwarRoleVerifiedReload','1');location.reload();return null;
-    }
+    if(changed)window.atwarSyncShellIdentity?.(p,session.user);
     sessionStorage.removeItem('atwarRoleVerifiedReload');
     return verified;
   }catch(error){console.warn('Session verification warning:',error);return getAtwarSession();}

@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:'Tajawal',sans-serif;background:#f4f7fb;min-height:100vh;color:#17233a}
+*{box-sizing:border-box}body{margin:0;font-family:'Tajawal',sans-serif;background:#f4f7fb;min-height:100vh;color:#17233a}body.auth-pending .page{visibility:hidden}.auth-loading{position:fixed;inset:0;z-index:1000;display:none;place-items:center;background:linear-gradient(135deg,#07182f,#0c274a 55%,#0d3562);color:#fff}.auth-pending .auth-loading{display:grid}.auth-loading div{text-align:center}.auth-loading i{width:34px;height:34px;margin-bottom:14px}.auth-loading p{margin:0;color:#c4d1e2;font-size:13px;font-weight:700}
 .page{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr}
 .visual{background:linear-gradient(135deg,#07182f,#0c274a 55%,#0d3562);color:#fff;padding:54px;display:flex;flex-direction:column;justify-content:center}
 .visual h1{font-size:42px;margin:0 0 16px}.visual p{color:#c4d1e2;line-height:1.9;max-width:600px}
@@ -25,7 +25,8 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
 @media(max-width:900px){.page{grid-template-columns:1fr}.visual{display:none}}
 </style>
 </head>
-<body>
+<body class="auth-pending">
+<div id="authLoading" class="auth-loading" role="status" aria-live="polite"><div><i data-lucide="shield-check"></i><p>جاري التحقق من جلسة الدخول...</p></div></div>
 <div class="page">
 <section class="visual">
   <div style="width:70px;height:70px;border-radius:22px;background:linear-gradient(135deg,#1476e8,#25a8ff);display:grid;place-items:center;margin-bottom:24px"><i data-lucide="building-2" style="width:34px;height:34px"></i></div>
@@ -77,13 +78,13 @@ async function establishSession(user){
 async function login(){
   const email=emailEl.value.trim(),password=passwordEl.value;if(!email||!password){showError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');return}
   manualLoginInProgress=true;clearError();buttonEl.disabled=true;buttonEl.textContent='جاري الدخول...';
-  try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const sess=await establishSession(data.user);location.href=(window.ATWAR_START_PAGE||{})[sess.role]||'home.html';}
+  try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const sess=await establishSession(data.user);location.replace((window.ATWAR_START_PAGE||{})[sess.role]||'home.html');}
   catch(error){console.error(error);localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});const m=error?.message||'';showError(m==='profile-not-found'?'الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.':m==='account-inactive'?'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.':m==='invalid-role'?'دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.':m.toLowerCase().includes('invalid login')?'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.':'تعذر تسجيل الدخول. تحقق من بيانات الدخول والاتصال ثم حاول مرة أخرى.');}
   finally{buttonEl.disabled=false;buttonEl.textContent='دخول';manualLoginInProgress=false}
 }
 buttonEl.addEventListener('click',login);passwordEl.addEventListener('keydown',e=>{if(e.key==='Enter')login()});emailEl.addEventListener('keydown',e=>{if(e.key==='Enter')passwordEl.focus()});
 const {data:{session}}=await sb.auth.getSession();
-if(session?.user&&!manualLoginInProgress){try{const x=await establishSession(session.user);location.href=(window.ATWAR_START_PAGE||{})[x.role]||'home.html'}catch{localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{})}}
+if(session?.user&&!manualLoginInProgress){try{const x=await establishSession(session.user);location.replace((window.ATWAR_START_PAGE||{})[x.role]||'home.html')}catch{localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});document.body.classList.remove('auth-pending')}}else document.body.classList.remove('auth-pending');
 try{lucide.createIcons()}catch{}
 </script>
 
