@@ -131,12 +131,12 @@ export async function signInWithEmailAndPassword(_auth,email,password){const {da
 export async function signOut(){await sb.auth.signOut();_authUser=null}
 export function onAuthStateChanged(_auth,cb){let dead=false;currentAuthUser().then(u=>{if(!dead)cb(u)});const {data:{subscription}}=sb.auth.onAuthStateChange((_e,s)=>{if(dead)return;_authUser=s?.user?{uid:s.user.id,id:s.user.id,email:s.user.email||''}:null;cb(_authUser)});return ()=>{dead=true;subscription?.unsubscribe?.()}}
 
-function taskPatch(next){
+function taskPatch(next,previous=null){
   const p={};
-  const add=(k,v)=>{if(v!==undefined)p[k]=v};
-  add('title',next.title);add('description',next.desc);add('task_type',next.type||'task');add('status',next.status);add('priority',next.priority);add('progress',Number(next.progress||0));
-  add('start_date',dateOnly(next.start));add('due_date',dateOnly(next.end));add('actual_end_date',dateOnly(next.actualEnd));add('notes',next.notes??'');add('manager_notes',next.managerNotes??'');add('reopen_reason',next.reopenReason??null);
-  add('started_at',iso(next.startedAt));add('submitted_at',iso(next.submittedAt));add('approved_at',iso(next.approvedAt));add('approved_by_name_snapshot',next.approvedBy||null);add('returned_at',iso(next.returnedAt));add('returned_by_name_snapshot',next.returnedBy||null);add('reopened_at',iso(next.reopenedAt));add('reopened_by_name_snapshot',next.reopenedBy||null);add('completed_at',iso(next.completedAt));
+  const add=(k,v,old)=>{if(v!==undefined&&(!previous||JSON.stringify(v)!==JSON.stringify(old)))p[k]=v};
+  add('title',next.title,previous?.title);add('description',next.desc,previous?.desc);add('task_type',next.type||'task',previous?.type||'task');add('status',next.status,previous?.status);add('priority',next.priority,previous?.priority);add('progress',Number(next.progress||0),Number(previous?.progress||0));
+  add('start_date',dateOnly(next.start),dateOnly(previous?.start));add('due_date',dateOnly(next.end),dateOnly(previous?.end));add('actual_end_date',dateOnly(next.actualEnd),dateOnly(previous?.actualEnd));add('notes',next.notes??'',previous?.notes??'');add('manager_notes',next.managerNotes??'',previous?.managerNotes??'');add('reopen_reason',next.reopenReason??null,previous?.reopenReason??null);
+  add('started_at',iso(next.startedAt),iso(previous?.startedAt));add('submitted_at',iso(next.submittedAt),iso(previous?.submittedAt));add('approved_at',iso(next.approvedAt),iso(previous?.approvedAt));add('approved_by_name_snapshot',next.approvedBy||null,previous?.approvedBy||null);add('returned_at',iso(next.returnedAt),iso(previous?.returnedAt));add('returned_by_name_snapshot',next.returnedBy||null,previous?.returnedBy||null);add('reopened_at',iso(next.reopenedAt),iso(previous?.reopenedAt));add('reopened_by_name_snapshot',next.reopenedBy||null,previous?.reopenedBy||null);add('completed_at',iso(next.completedAt),iso(previous?.completedAt));
   return p;
 }
 
@@ -160,7 +160,7 @@ export async function runTransaction(r,mutator){
     if(!cur)return {committed:false,snapshot:new Snap(null,key)};
     const current=structuredClone(cur),next=mutator(structuredClone(current));
     if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
-    const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]),patch=taskPatch(next);
+    const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]),patch=taskPatch(next,current);
     const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
     if(error){
       const conflict=String(error.message||'').includes('ATWAR_CONFLICT');
@@ -219,7 +219,7 @@ export async function update(r,changes){
   if(parts[0]==='tasksByUser'&&parts[2]){
     const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;
     const next={...rows[0],...changes};
-    const {error}=await sb.rpc('update_task_safe',{p_task_id:id,p_expected_revision:Number(rows[0].revision||1),p_patch:taskPatch(next)});
+    const {error}=await sb.rpc('update_task_safe',{p_task_id:id,p_expected_revision:Number(rows[0].revision||1),p_patch:taskPatch(next,rows[0])});
     if(error)throw error;await emitLocal('tasks');return;
   }
 }
