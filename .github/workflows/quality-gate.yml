@@ -43,6 +43,8 @@ jobs:
         run: node tests/job-library-professional-review.mjs
       - name: Run Arabic job-title matching and Power BI portal audit
         run: node tests/job-library-matching-portal.mjs
+      - name: Run current HR roles and selective update audit
+        run: node tests/hr-current-roles.mjs
       - name: Run phase-four UX safety audit
         run: node tests/phase-four-ux-safety.mjs
       - name: Run phase-two information architecture audit
