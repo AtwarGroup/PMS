@@ -128,7 +128,14 @@
           "skills": "مهارات تواصل قوية لتوضيح النتائج والتوصيات للإدارة وفرق العمل الأخرى.؛ مهارات حل المشكلات.؛ معرفة جيدة بمنتجات الشركة وخدمات العملاء.؛ مهارات تواصل فعالة مع الفرق ذات العلاقة؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -144,7 +151,16 @@
       ],
       "content": {
         "responsibilities": [
-          "تعريف وإضافة و توثيق و متابعة الحضور والانصراف لجميع الموظفين في الشركة"
+          "تعريف وإضافة و توثيق و متابعة الحضور والانصراف لجميع الموظفين في الشركة",
+          "إدارة دورة علاقات الموظفين من استقبال الطلب أو الشكوى حتى التوثيق والإغلاق مع المحافظة على السرية والحياد.",
+          "مراجعة عقود العمل والقرارات والمخاطبات الإدارية والتأكد من توافقها مع الأنظمة والسياسات المعتمدة قبل رفعها للاعتماد.",
+          "متابعة القضايا والمطالبات العمالية مع المستشار القانوني وتجهيز المستندات والوقائع والمواعيد النظامية.",
+          "إدارة إجراءات التحقيق والمخالفات والجزاءات وفق التسلسل النظامي وتوثيق الإفادات والنتائج دون إصدار قرار خارج الصلاحية.",
+          "متابعة مدد العقود وفترات التجربة والإجازات وإنهاء الخدمات والتنبيه بالاستحقاقات والمخاطر قبل مواعيدها.",
+          "التنسيق مع الشؤون الحكومية بشأن التأشيرات والإقامات ونقل الخدمات والتوطين وما يرتبط بحالة الموظف النظامية.",
+          "تحليل أسباب الشكاوى والنزاعات المتكررة واقتراح إجراءات وقائية وتحديثات للسياسات والنماذج.",
+          "تقديم الرأي المهني للإدارة في حالات الموظفين مع عرض الوقائع والبدائل والأثر النظامي والتشغيلي.",
+          "تحديث ملفات الموظفين والسجلات القانونية وربط كل معاملة بمستنداتها وموافقاتها داخل النظام."
         ],
         "authorities": [
           {
@@ -243,7 +259,14 @@
           "skills": "• يفضل من لديه شهادة أو دورات معتمدة في الموارد البشرية. • إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • خلفية جيده في مجالات التعيين والأجور والتخطيط التنظيمي وعلاقات الموظفين والتدريب ورفع مستوى الولاء الوظيفي.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -378,7 +401,14 @@
           "skills": "معرفة جيدة بعمليات الشراء الدولية والمحلية.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ القدرة على العمل بشكل مستقل وجزء من فريق.؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -504,7 +534,14 @@
           "skills": "مهارات قيادية ممتازة. مهارات تحليلية قوية. مهارات حل المشكلات. مهارات اتخاذ القرارات. مهارات تواصل ممتازة. مهارات كتابة ممتازة. معرفة واسعة بالقوانين واللوائح المتعلقة بالأعمال التجارية. مهارات استخدام الحاسب الآلي. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -639,7 +676,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تواصل ممتازة مكتوبة وشفوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -764,7 +808,14 @@
           "skills": "معرفة بالقوانين واللوائح المتعلقة بالمستودعات والتوصيل.؛ مهارات إشرافية ممتازة.؛ مهارات تواصل ممتازة.؛ مهارات حل المشكلات.؛ مهارات تنظيمية ممتازة.؛ القدرة على العمل تحت الضغط.؛ معرفة جيدة بنظم إدارة المخزون.؛ اللياقة البدنية للقيام بأعمال التحميل والتنزيل.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -881,7 +932,14 @@
           "skills": "مهارات تواصل ممتازة شفهية وكتابية. مهارات شخصية قوية، بما في ذلك القدرة على العمل بشكل مستقل وكجزء من فريق. معرفة بمنتجات مواد البناء ميزة إضافية. القدرة على استخدام برامج الكمبيوتر الأساسية. الشغف بتقديم خدمة عملاء ممتازة.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1012,7 +1070,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تواصل ممتازة مكتوبة وشفوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1135,7 +1200,14 @@
           "skills": "- استخدام تطبيقات تقنية المعلومات بكفاءة عالية. - البراعة والدقة والمهنية في العمل . - التمتع بالجدارات والقدرات التالية: ( فهم طبيعة الأعمال. - المهنية في العمل.- المعرفة بالتفاصيل.-التواصل الشفوي.-إدارة قواعد المعلومات. -العمل بروح الفريق).؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1250,7 +1322,14 @@
           "skills": "القدرة على أداء المهام الروتينية بكفاءة. مهارات تنظيمية جيدة وقدرة على إدارة الوقت بشكل فعال. القدرة على العمل بشكل مستقل وتحت إشراف محدود. مهارات جيدة في التعامل مع الآخرين وتقديم خدمة عملاء متميزة.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1365,7 +1444,14 @@
           "skills": "لياقة بدنية جيدة. قدرة على العمل تحت ضغط. مهارات تواصل جيدة. مهارات تنظيمية جيدة. الدقة والانتباه للتفاصيل. المسؤولية والموثوقية. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1483,7 +1569,14 @@
           "skills": "مهارات فنية قوية في تركيب وصيانة الأجهزة والمعدات. القدرة على تشخيص المشكلات الفنية وحلها. مهارات جيدة في التواصل والتفاعل مع العملاء. القدرة على قراءة وفهم المخططات الفنية والتعليمات.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1621,7 +1714,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تواصل ممتازة مكتوبة وشفوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1748,7 +1848,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1871,7 +1978,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -1996,7 +2110,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تواصل ممتازة مكتوبة وشفوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2119,7 +2240,14 @@
           "skills": "• إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • مهارات تواصل قوية لتوضيح النتائج والتوصيات للإدارة وفرق العمل الأخرى. • القدرة على العمل ضمن فريق وتحت ضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2242,7 +2370,14 @@
           "skills": "معرفة قوية بلغات البرمجة المختلفة، مثل Java و Python و C++. مهارات تحليلية قوية. مهارات حل المشكلات. مهارات تواصل جيدة. مهارات تنظيمية جيدة. الدقة والانتباه للتفاصيل. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2260,7 +2395,9 @@
           "تنظيم وصيانة قواعد البيانات لضمان سهولة الوصول إلى المعلومات والبيانات المطلوبة.",
           "التأكد من تكامل البيانات وتوحيد الصيغ والمعايير المستخدمة.",
           "مراجعة البيانات المدخلة للتحقق من دقتها واكتمالها.",
-          "إجراء التصحيحات اللازمة للبيانات غير الصحيحة أو غير المكتملة."
+          "إجراء التصحيحات اللازمة للبيانات غير الصحيحة أو غير المكتملة.",
+          "مطابقة البيانات المدخلة مع المستند المصدر قبل الحفظ والإبلاغ عن أي نقص أو تعارض بدل افتراض القيمة.",
+          "حماية سرية البيانات وعدم نسخها أو تصديرها أو مشاركتها خارج القنوات والصلاحيات المعتمدة."
         ],
         "authorities": [
           {
@@ -2351,7 +2488,14 @@
           "skills": "عرفة جيدة ببرامج الكمبيوتر والبرامج المكتبية، مثل Microsoft Office. مهارات تحليلية قوية. مهارات تنظيمية ممتازة. مهارات تواصل جيدة. الدقة والانتباه للتفاصيل. المسؤولية والموثوقية. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2475,7 +2619,14 @@
           "skills": "مهارات ممتازة في التفاوض والاتصال. قدرة عالية على التخطيط والتنظيم وإدارة الوقت. معرفة جيدة بأنظمة إدارة المخزون والبرامج ذات الصلة. مهارات قيادية وقدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2598,7 +2749,14 @@
           "skills": "مهارات تحليلية قوية ومهارات حل المشكلات. مهارات تواصل ممتازة شفهية وكتابية. مهارات تنظيمية ممتازة ومهارات إدارة الوقت. إتقان استخدام برامج الكمبيوتر ذات الصلة، مثل Microsoft Office و CRM. مهارات قيادة قوية ومهارات التحفيز.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2721,7 +2879,14 @@
           "skills": "خبرة واسعة في تحسين محركات البحث (SEO)، والإعلان عبر الإنترنت، والتسويق بالمحتوى، والتسويق عبر وسائل التواصل الاجتماعي، والبريد الإلكتروني. مهارات تحليلية قوية ومهارات حل المشكلات. مهارات تواصل ممتازة شفهية وكتابية. مهارات تنظيمية ممتازة ومهارات إدارة الوقت. إتقان استخدام برامج وأدوات التسويق الرقمي ذات الصلة. مهارات قيادة قوية ومهارات التحفيز. الشغف؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2844,7 +3009,14 @@
           "skills": "مهارات إشرافية ممتازة.؛ مهارات تواصل قوية لتوضيح النتائج والتوصيات للإدارة وفرق العمل الأخرى.؛ مهارات حل المشكلات.؛ الدقة والاهتمام بالتفاصيل في التخطيط وإعداد التقارير.؛ مهارات تواصل فعالة مع الفرق ذات العلاقة؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -2980,7 +3152,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالقوانين واللوائح المتعلقة بالعمليات التشغيلية.؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3103,7 +3282,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بسوق مواد البناء في المملكة العربية السعودية.؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3238,7 +3424,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بسوق مواد البناء في المملكة العربية السعودية.؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3363,7 +3556,14 @@
           "skills": "مهارات تواصل ممتازة شفهية وكتابية.؛ مهارات إقناع قوية وقدرة على التأثير على العملاء.؛ معرفة واسعة بمنتجات مواد البناء وصناعة البناء.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تنظيمية ممتازة ومهارات إدارة الوقت.؛ خبرة في استخدام برامج الكمبيوتر ذات الصلة،؛ خبرة سابقة في مجال اكسسوارات الأبواب ميزة إضافية؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3486,7 +3686,14 @@
           "skills": "معرفة جيدة بنظم إدارة المخزون الإلكترونية. مهارات تنظيمية ممتازة. مهارات تحليلية قوية. مهارات حل المشكلات. مهارات تواصل ممتازة. مهارات استخدام الحاسب الآلي. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3603,7 +3810,14 @@
           "skills": "معرفة جيدة بنظم إدارة المخزون. مهارات تنظيمية جيدة. مهارات تحليلية قوية. مهارات حل المشكلات. مهارات تواصل جيدة. مهارات استخدام الحاسب الآلي. القدرة على العمل بشكل مستقل وجزء من فريق. اللياقة البدنية للقيام بأعمال التحميل والتنزيل.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3714,7 +3928,14 @@
           "skills": "مهارات تواصل جيدة شفهية وكتابية. مهارات شخصية قوية، بما في ذلك القدرة على العمل بشكل مستقل وكجزء من فريق. القدرة على استخدام برامج الكمبيوتر الأساسية. الشغف بتقديم خدمة عملاء ممتازة. الاستعداد للتعلم والنمو.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3836,7 +4057,14 @@
           "skills": "• يفضل من لديه شهادة أو دورات معتمدة في الموارد البشرية. • إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • خلفية جيده في مجالات التعيين والأجور والتخطيط التنظيمي وعلاقات الموظفين والتدريب ورفع مستوى الولاء الوظيفي.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -3956,7 +4184,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة واسعة بالمبادئ المحاسبية والمالية.؛ القدرة على العمل تحت الضغط.؛ معرفة بالقوانين واللوائح المالية المعمول بها؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4087,7 +4322,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة في قطاع مواد البناء؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4215,7 +4457,14 @@
           "skills": "معرفة جيدة بمنتجات الشركة وأنظمة التركيب.؛ مهارات إشرافية ممتازة.؛ مهارات تواصل ممتازة.؛ مهارات حل المشكلات.؛ مهارات تنظيمية ممتازة.؛ القدرة على العمل تحت الضغط.؛ الصبر والهدوء.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4341,7 +4590,14 @@
           "skills": "• يفضل من لديه شهادة أو دورات معتمدة في الموارد البشرية. • إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • خلفية جيده في مجالات التعيين والأجور والتخطيط التنظيمي وعلاقات الموظفين والتدريب ورفع مستوى الولاء الوظيفي.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4470,7 +4726,14 @@
           "skills": "معرفة بالقوانين واللوائح المتعلقة بالمستودعات والتوصيل.؛ مهارات إشرافية ممتازة.؛ مهارات تواصل ممتازة.؛ مهارات حل المشكلات.؛ مهارات تنظيمية ممتازة.؛ القدرة على العمل تحت الضغط.؛ القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4601,7 +4864,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ معرفة بالقوانين واللوائح المتعلقة بالشراء.؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4736,7 +5006,14 @@
           "skills": "مهارات ممتازة في التواصل والتفاوض. مهارات تحليلية قوية ومهارات حل المشكلات. معرفة جيدة ببرامج الكمبيوتر المتعلقة بالتخطيط. مهارات قيادية ممتازة. قدرة على العمل بشكل مستقل وضمن فريق. قدرة على تحمل الضغوط والعمل في بيئة سريعة الخطى.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4859,7 +5136,14 @@
           "skills": "القدرة على اكتشاف المشكلات الفنية في الأجهزة والشبكات وتشخيص أسبابها بسرعة؛ تنظيم الأعمال اليومية وتوثيق كل حالة بشكل واضح لضمان المتابعة؛ التعامل بفعالية مع الطلبات المتعددة، وتحديد الحالات العاجلة؛ التفكير المنطقي والسريع لحل المواقف الطارئة؛ القدرة على العمل تحت الضغط.؛ إعداد مستندات فنية واضحة وسهلة الفهم لكل مشروع أو نظام؛ اختبار الأداء والوظائف واكتشاف الأخطاء؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -4982,7 +5266,14 @@
           "skills": "عرفة جيدة بمنتجات الشركة وخدمات العملاء. مهارات إشرافية ممتازة. مهارات تواصل ممتازة. مهارات حل المشكلات. مهارات تحليلية قوية. مهارات تنظيمية ممتازة. مهارات استخدام الحاسب الآلي. القدرة على العمل بشكل مستقل وجزء من فريق. الصبر والهدوء.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5108,7 +5399,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ خبرة سابقة في مجال اكسسوارات الأبواب ميزة إضافية؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5243,7 +5541,14 @@
           "skills": "مهارات قيادية ممتازة.؛ مهارات تفاوض ممتازة.؛ مهارات تحليلية قوية.؛ مهارات حل المشكلات.؛ مهارات تواصل ممتازة.؛ مهارات استخدام الحاسب الآلي متقدمة.؛ خبرة سابقة في مجال اكسسوارات الأبواب ميزة إضافية؛ القدرة على العمل تحت الضغط.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5366,7 +5671,14 @@
           "skills": "معرفة قوية ببرامج التصميم المختلفة، مثل Adobe Photoshop و Illustrator و InDesign. مهارات فنية ممتازة. مهارات تحليلية قوية. مهارات تواصل جيدة. مهارات تنظيمية جيدة. الدقة والانتباه للتفاصيل. الإبداع والابتكار. القدرة على العمل بشكل مستقل وجزء من فريق.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5483,7 +5795,14 @@
           "skills": "مهارات تواصل ممتازة شفهية وكتابية.؛ مهارات إقناع قوية وقدرة على التأثير على العملاء.؛ معرفة واسعة بمنتجات مواد البناء وصناعة البناء.؛ مهارات تحليلية قوية ومهارات حل المشكلات.؛ مهارات تنظيمية ممتازة ومهارات إدارة الوقت.؛ خبرة في استخدام برامج الكمبيوتر ذات الصلة، مثل CRM و Microsoft Office.؛ خبرة سابقة في مجال اكسسوارات الأبواب ميزة إضافية؛ رخصة قيادة سارية المفعول.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5606,7 +5925,14 @@
           "skills": "• يفضل من لديه شهادة أو دورات معتمدة في الموارد البشرية. • إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • خلفية جيده في مجالات التعيين والأجور والتخطيط التنظيمي وعلاقات الموظفين والتدريب ورفع مستوى الولاء الوظيفي.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5726,7 +6052,14 @@
           "skills": "• يفضل من لديه شهادة أو دورات معتمدة في الموارد البشرية. • إجادة اللغة الإنجليزية. • مهارات ممتازة في الحاسب الالي. • خلفية جيده في مجالات التعيين والأجور والتخطيط التنظيمي وعلاقات الموظفين والتدريب ورفع مستوى الولاء الوظيفي.؛"
         },
         "source": "ATWAR ONE Job Library Review v0.1",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5749,7 +6082,10 @@
           "قيادة المركبة والالتزام بالمسار والأنظمة المرورية وتعليمات السلامة.",
           "تسليم البضاعة للعميل واستكمال التوقيع والصورة وإثبات التسليم.",
           "توثيق حالات التأخير أو النقص أو الرفض أو الخطأ في التحميل فور حدوثها.",
-          "إعادة المرتجعات والمستندات والعهد وتسوية الرحلة مع المسؤول المختص."
+          "إعادة المرتجعات والمستندات والعهد وتسوية الرحلة مع المسؤول المختص.",
+          "تنفيذ مسار الرحلة وترتيب نقاط التسليم المعتمد وتحديث حالة كل نقطة في وقتها دون إغلاق التسليم قبل اكتماله.",
+          "توثيق إثبات التسليم بالتوقيع والصورة أو رمز التحقق وإعادة المستندات والمتحصلات والعهد وفق الإجراء.",
+          "فحص المركبة والحمولة قبل الانطلاق والإبلاغ فورًا عن الأعطال أو النقص أو خطأ التحميل أو تعذر التسليم."
         ],
         "authorities": [
           {
@@ -5840,7 +6176,14 @@
           "skills": "القيادة الآمنة، معرفة الطرق، استخدام تطبيقات الخرائط، والتعامل مع مستندات التسليم"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5860,7 +6203,10 @@
           "المحافظة على نظافة وترتيب الأدوات والموقع بعد إنجاز العمل.",
           "الإبلاغ عن النواقص أو الأعطال أو المخاطر التي تتم ملاحظتها.",
           "الالتزام بتعليمات السلامة وعدم استخدام معدات دون تدريب.",
-          "مساندة الفرق التشغيلية في الأعمال غير التخصصية المصرح بها."
+          "مساندة الفرق التشغيلية في الأعمال غير التخصصية المصرح بها.",
+          "تنفيذ أعمال الخدمات العامة والنقل الداخلي البسيط وفق تعليمات السلامة والمحافظة على ممتلكات المنشأة.",
+          "الإبلاغ عن الأعطال والمخاطر وملاحظات النظافة أو السلامة وعدم معالجة الأعمال الفنية خارج التأهيل.",
+          "المساندة في تجهيز المواقع والفعاليات ونقل المواد مع توثيق استلام وتسليم العهد عند الحاجة."
         ],
         "authorities": [
           {
@@ -5951,7 +6297,14 @@
           "skills": "الالتزام، السلامة، العمل الجماعي، والمحافظة على الأدوات"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -5972,7 +6325,10 @@
           "مراجعة عمليات البيع والمرتجعات والخصومات والاستثناءات اليومية.",
           "تنفيذ الجرد الدوري والتحقق من الفروقات ورفعها لمدير المعرض.",
           "متابعة تحقيق المستهدفات اليومية وتوجيه البائعين.",
-          "رفع تقرير نهاية الوردية والمخاطر والملاحظات التشغيلية."
+          "رفع تقرير نهاية الوردية والمخاطر والملاحظات التشغيلية.",
+          "متابعة جاهزية المعرض والواجهة والعينات والأسعار والمواد التعريفية قبل الافتتاح وخلال ساعات العمل.",
+          "مراجعة التحويلات البنكية والخصومات والاستثناءات وفق مسارات الاعتماد قبل إقفال عملية البيع.",
+          "متابعة مخزون المعرض والتحويلات والجرد والفروقات ورفع احتياجات إعادة التزويد أو المعالجة."
         ],
         "authorities": [
           {
@@ -6063,7 +6419,14 @@
           "skills": "إدارة الفريق، خدمة العملاء، نقاط البيع، والجرد"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6082,7 +6445,10 @@
           "تنسيق التعارضات بين الفرق والإدارات المرتبطة بالعمل.",
           "توثيق التأخيرات والأعطال والاستثناءات والإجراءات المتخذة.",
           "مراجعة إقفال أوامر العمل والتحقق من اكتمال الإثباتات.",
-          "رفع تقارير الأداء والمخاطر لمدير العمليات."
+          "رفع تقارير الأداء والمخاطر لمدير العمليات.",
+          "متابعة تنفيذ خطط التشغيل اليومية وتوزيع الموارد ومعالجة التعارض بين المبيعات والمستودعات والتوصيل والتركيبات.",
+          "مراقبة مؤشرات التأخير والأخطاء وإعادة العمل ورفع الحالات المؤثرة مع السبب والإجراء التصحيحي.",
+          "التأكد من إقفال الرحلات وأوامر التسليم والخدمات بعد اكتمال المستندات والتسويات وليس بمجرد انتهاء التنفيذ الميداني."
         ],
         "authorities": [
           {
@@ -6173,7 +6539,14 @@
           "skills": "التخطيط اليومي، حل المشكلات، السلامة، وإدارة الفرق"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6192,7 +6565,10 @@
           "تنسيق فرق المستودع والتوصيل ومتابعة الإنتاجية والانضباط.",
           "مراقبة الأصناف البطيئة أو التالفة أو القريبة من الخطر ورفعها.",
           "مراجعة إقفال الحركات اليومية وتقارير الاستثناءات.",
-          "القيام بمهام مدير المستودع عند وجود تكليف موثق."
+          "القيام بمهام مدير المستودع عند وجود تكليف موثق.",
+          "إدارة العمليات اليومية للمستودع عند غياب المدير ضمن التفويض المعتمد مع توثيق القرارات والاستثناءات.",
+          "متابعة دقة الاستلام والتخزين والالتقاط والتحميل والتحويل بين المواقع ومعالجة الاختلافات قبل الإقفال.",
+          "مراجعة الجرد الدوري والفروقات والأصناف الراكدة أو التالفة ورفع التوصيات بالأسباب والإجراءات."
         ],
         "authorities": [
           {
@@ -6283,7 +6659,14 @@
           "skills": "إدارة المخزون، الإشراف، الجرد، السلامة، واستخدام النظام"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6302,7 +6685,10 @@
           "إعداد أوامر الشراء والعقود والمستندات اللازمة للاعتماد.",
           "متابعة الإنتاج والشحن والتخليص ومواعيد الوصول مع الأطراف المعنية.",
           "تحديث التكلفة المتوقعة وتوثيق الانحرافات والمطالبات.",
-          "تقييم أداء الموردين الدوليين وحفظ السجلات والمراسلات."
+          "تقييم أداء الموردين الدوليين وحفظ السجلات والمراسلات.",
+          "متابعة الشحنات الدولية ووثائق الشحن والتأمين والتخليص ومواعيد الوصول وربطها بأوامر الشراء.",
+          "مراجعة التكلفة الكلية للاستيراد وشروط التجارة والدفع والعملة قبل التوصية بالمورد أو الطلب.",
+          "التنسيق مع هيئة المواصفات والجهات ذات العلاقة لاستكمال المطابقة والتسجيل والمتطلبات النظامية قبل الشحن."
         ],
         "authorities": [
           {
@@ -6393,7 +6779,14 @@
           "skills": "التفاوض، Incoterms، المستندات التجارية، تحليل التكلفة، والإنجليزية"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6411,7 +6804,11 @@
           "جمع ومراجعة أولية للفواتير وقوائم التعبئة وشهادات المنشأ.",
           "التنسيق مع شركات الشحن والتخليص بشأن المواعيد والمستندات.",
           "حفظ المراسلات والملفات وربطها بأمر الشراء الصحيح.",
-          "إبلاغ الأخصائي بأي تأخير أو اختلاف أو مستند ناقص."
+          "إبلاغ الأخصائي بأي تأخير أو اختلاف أو مستند ناقص.",
+          "تحديث سجل أوامر الشراء الدولية والشحنات والمستندات والمواعيد وإظهار الحالات المتأخرة أو الناقصة.",
+          "تنسيق عينات المنتجات وشهادات المطابقة والفواتير وقوائم التعبئة وبوالص الشحن مع المورد والجهات الداخلية.",
+          "مطابقة بيانات الشحنة مع أمر الشراء قبل تسليم الملف للتخليص أو المالية وعدم تعديل الشروط دون اعتماد.",
+          "متابعة الموردين للحصول على المستندات والتحديثات وتوثيق المراسلات والوعود داخل النظام."
         ],
         "authorities": [
           {
@@ -6502,7 +6899,14 @@
           "skills": "المتابعة، تنظيم الملفات، المراسلات، Excel، والإنجليزية"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6520,7 +6924,11 @@
           "تنسيق التجارب والمبادرات مع المبيعات والتسويق والعمليات والمالية.",
           "متابعة مؤشرات المبادرة ومقارنة النتائج بالفرضيات المعتمدة.",
           "توثيق القرارات والالتزامات والمتطلبات بين الأطراف.",
-          "رفع توصية الاستمرار أو التعديل أو الإيقاف لصاحب القرار."
+          "رفع توصية الاستمرار أو التعديل أو الإيقاف لصاحب القرار.",
+          "بناء سجل موحد للفرص والمبادرات يوضح الفرضية والجدوى والمالك والقرار والمرحلة التالية.",
+          "تحويل الفرص المعتمدة إلى تجارب محدودة ذات مؤشرات نجاح وتكلفة ومدة واضحة قبل التوسع.",
+          "تنسيق المبادرات المشتركة بين الإدارات والشركاء ومتابعة القرارات والاعتماديات والمخاطر حتى الإغلاق.",
+          "قياس أثر المبادرات بعد التنفيذ ومقارنة النتائج بالجدوى المعتمدة واقتراح الاستمرار أو التعديل أو الإيقاف."
         ],
         "authorities": [
           {
@@ -6611,7 +7019,14 @@
           "skills": "تحليل الفرص، إعداد دراسات الجدوى، إدارة أصحاب المصلحة، والعرض التنفيذي"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6629,7 +7044,10 @@
           "تحديث سجلات المتابعة ومواعيد الإجراءات والاستحقاقات.",
           "تنسيق الاجتماعات والمقابلات المتعلقة بعلاقات الموظفين.",
           "توثيق الملاحظات والقرارات وربطها بملف الموظف وفق السرية.",
-          "تصعيد الشكاوى أو الحالات الحساسة للأخصائي أو مسؤول الموارد البشرية."
+          "تصعيد الشكاوى أو الحالات الحساسة للأخصائي أو مسؤول الموارد البشرية.",
+          "متابعة تنفيذ قرارات الموظفين بعد اعتمادها والتأكد من انعكاسها في السجلات والأنظمة والرواتب عند ارتباطها.",
+          "إعداد كشف دوري بالطلبات المتأخرة والعقود وفترات التجربة والاستحقاقات التي تحتاج إجراءً أو قرارًا.",
+          "مراجعة اكتمال ملف المعاملة قبل الإغلاق وحفظ المراسلات والموافقات وفق تصنيف موحد وسري."
         ],
         "authorities": [
           {
@@ -6720,7 +7138,14 @@
           "skills": "التواصل، السرية، تنظيم الملفات، الأنظمة المكتبية، والمتابعة"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     },
     {
@@ -6739,7 +7164,9 @@
           "توثيق سبب العطل والحل والإجراءات داخل تذكرة الخدمة.",
           "متابعة قطع الغيار والصيانة الخارجية والعهد التقنية.",
           "تصعيد الأعطال المتكررة أو الأمنية أو المؤثرة للمشرف.",
-          "إعداد مواد إرشادية للحلول المتكررة ودعم المستخدمين."
+          "إعداد مواد إرشادية للحلول المتكررة ودعم المستخدمين.",
+          "إدارة دورة حياة العهد التقنية من التجهيز والتسليم حتى الاسترجاع والفحص والتحديث في سجل الأصول.",
+          "تنفيذ طلبات الوصول المعتمدة وفق مبدأ أقل صلاحية ومراجعة الإلغاء أو التعديل عند انتقال الموظف أو انتهاء خدمته."
         ],
         "authorities": [
           {
@@ -6830,7 +7257,14 @@
           "skills": "استكشاف الأعطال، الشبكات الأساسية، إدارة الحسابات، التواصل، والتوثيق"
         },
         "source": "قائمة الوظائف الحالية 13-09-2026",
-        "imported_status": "مسودة مهنية للاعتماد"
+        "imported_status": "مسودة مهنية مراجعة للاعتماد",
+        "review_metadata": {
+          "edition": "professional-review-2026-09",
+          "reviewed_at": "2026-09-15",
+          "standard": "purpose-responsibilities-authorities-kpis-reports-qualifications",
+          "manager_source": "profiles.manager_id",
+          "publication_rule": "admin-after-direct-manager-review"
+        }
       }
     }
   ]
