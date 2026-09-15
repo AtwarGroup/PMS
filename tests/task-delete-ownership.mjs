@@ -17,4 +17,7 @@ assert.match(sql,/before update of deleted_at on public\.tasks/i,'Soft deletion 
 assert.match(sql,/before delete on public\.tasks/i,'Hard deletion must be protected in the database');
 assert.match(sql,/v_task\.creator_id = v_uid/i,'The database must enforce creator ownership for non-admin users');
 assert.match(sql,/v_task\.status <> 'مكتملة'/,'Completed tasks must remain admin-only');
+assert.match(sql,/v_role not in \('employee','manager','admin'\)/,'The safe delete RPC must accept every active application role');
+assert.match(sql,/v_task\.creator_id<>v_actor or v_task\.status='مكتملة'/,'The safe delete RPC must enforce creator ownership and completed-task protection');
+assert.match(sql,/grant execute on function private\.can_delete_task\(uuid\) to authenticated/,'RLS must be able to evaluate the delete helper');
 console.log('Task deletion ownership audit passed.');
