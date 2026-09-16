@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const workflow=readFileSync(new URL('../.github/workflows/weekly-backup.yml',import.meta.url),'utf8');
+const storage=readFileSync(new URL('../scripts/backup/download-supabase-storage.mjs',import.meta.url),'utf8');
+const verify=readFileSync(new URL('../scripts/backup/verify-backup.sh',import.meta.url),'utf8');
+assert.match(workflow,/cron: '0 23 \* \* 4'/,'Backup must run Friday 02:00 Asia/Riyadh');
+assert.match(workflow,/pg_dump[\s\S]*database\.dump/,'Database must be included');
+assert.match(workflow,/download-supabase-storage\.mjs/,'Storage files must be included');
+assert.match(workflow,/git archive[\s\S]*source\.tar\.gz/,'Production source must be included');
+assert.match(workflow,/cipher-algo AES256/,'Backup must be encrypted before upload');
+assert.match(workflow,/tail -n \+13/,'Only the latest 12 weekly backups must be retained');
+assert.match(workflow,/RCLONE_CONFIG_GDRIVE_IMPERSONATE/,'Google Workspace impersonation must be used');
+assert.match(storage,/storage-manifest\.json/,'Storage backup must produce a manifest');
+assert.match(verify,/pg_restore --list/,'Database archive must be verified before upload');
+console.log('Weekly encrypted multi-layer backup configuration audit passed.');
