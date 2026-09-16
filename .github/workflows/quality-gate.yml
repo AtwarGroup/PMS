@@ -55,6 +55,8 @@ jobs:
         run: node tests/task-minimal-patch.mjs
       - name: Run phase-four UX safety audit
         run: node tests/phase-four-ux-safety.mjs
+      - name: Run unified UI design-system audit
+        run: node tests/ui-design-system.mjs
       - name: Run phase-two information architecture audit
         run: node tests/phase-two-information-architecture.mjs
       - name: Run phase-two unified task workspace audit
