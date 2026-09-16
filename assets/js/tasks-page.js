@@ -32,6 +32,7 @@ let completedStatsRefreshQueued=false;
 let tasksInitialLoadReady=false;
 let quickAddSubmitting=false;
 let taskAttachmentsController=null;
+let taskViewMode='LIST';
 
 function isCompletedArchiveView(){
   return String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
@@ -530,6 +531,9 @@ function applyRoleUI(){
   const isEmployee=currentProfile?.role==='employee';
   document.getElementById('importLabel').classList.toggle('hidden',isEmployee);
   document.getElementById('deleteSelectedButton').classList.add('hidden');
+  const saved=String(localStorage.getItem('atwarTaskViewMode')||'').toUpperCase();
+  const preferred=['LIST','KANBAN'].includes(saved)?saved:(isEmployee?'LIST':'KANBAN');
+  setTaskViewMode(isCompletedArchiveView()?'LIST':preferred,false);
 }
 
 function applyTaskScopeUI(){
@@ -543,6 +547,8 @@ function applyTaskScopeUI(){
   const subtitle=document.getElementById('pageSubtitle');
   if(archive&&subtitle)subtitle.textContent='أرشيف المهام المكتملة — للقراءة فقط، وإعادة الفتح لمدير النظام';
   if(archive){
+    setTaskViewMode('LIST',false);
+    document.getElementById('taskViewSwitch')?.classList.add('hidden');
     document.getElementById('statusFilter').value='ALL';
     document.querySelectorAll('.qf').forEach(button=>button.classList.toggle('active',button.dataset.filter==='ALL'));
   }
@@ -1818,6 +1824,7 @@ function populateQuickAddAssignees(){
 }
 
 function showQuickAdd(){
+  if(taskViewMode==='KANBAN')setTaskViewMode('LIST');
   const box=document.getElementById('quickAddBox');
   const input=document.getElementById('quickAddInput');
   const start=document.getElementById('quickAddStart');
@@ -2128,6 +2135,62 @@ function updateVisibleCount(){
   const rows=filteredTasks();
   el.textContent=rows.length===tasks.length?`${tasks.length} مهام`:`${rows.length} من ${tasks.length}`;
 }
+
+function setTaskViewMode(mode,persist=true){
+  const next=isCompletedArchiveView()?'LIST':(String(mode).toUpperCase()==='KANBAN'?'KANBAN':'LIST');
+  taskViewMode=next;
+  if(persist)localStorage.setItem('atwarTaskViewMode',next);
+  document.getElementById('listViewButton')?.classList.toggle('active',next==='LIST');
+  document.getElementById('kanbanViewButton')?.classList.toggle('active',next==='KANBAN');
+  document.getElementById('taskListPanel')?.classList.toggle('hidden',next!=='LIST');
+  document.getElementById('kanbanView')?.classList.toggle('hidden',next!=='KANBAN');
+  if(tasksInitialLoadReady)renderTasks();
+}
+
+function selectTaskFromBoard(task){
+  if(!task)return;
+  selectedTaskKey=compositeKey(task);
+  renderTasks();
+  renderDetails();
+  setTimeout(()=>document.getElementById('detailsPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),0);
+}
+
+async function handleKanbanDrop(taskKey,targetStatus){
+  const task=tasks.find(t=>compositeKey(t)===taskKey);
+  if(!task||task.status===targetStatus)return;
+  selectedTaskKey=taskKey;
+  if(task.status==='قيد الانتظار'&&targetStatus==='قيد التنفيذ')return startSelectedTask();
+  if(task.status==='قيد التنفيذ'&&targetStatus==='بانتظار الاعتماد')return completeSelectedTask();
+  if(task.status==='بانتظار الاعتماد'&&targetStatus==='مكتملة')return approveSelectedTask();
+  if(task.status==='بانتظار الاعتماد'&&targetStatus==='قيد التنفيذ')return returnTaskForCorrection();
+  showToast('هذا الانتقال غير مسموح ضمن دورة اعتماد المهمة.','warning');
+}
+
+function renderKanban(rows){
+  const host=document.getElementById('kanbanBoard');if(!host)return;
+  const columns=[['قيد الانتظار','قيد الانتظار','#64748b'],['قيد التنفيذ','قيد التنفيذ','#2563eb'],['بانتظار الاعتماد','بانتظار الاعتماد','#d97706'],['مكتملة','مكتملة','#139c68']];
+  host.innerHTML=columns.map(([status,label,color])=>{
+    const columnRows=status==='مكتملة'?[]:rows.filter(t=>String(t.status||'')===status);
+    const cards=columnRows.map(t=>{
+      const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="true" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div><div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+    }).join('');
+    const archive=status==='مكتملة'?`<div class="kanban-archive-link"><div><b>المهام المكتملة محفوظة في الأرشيف</b><br><a href="index.html?scope=COMPLETED">فتح أرشيف المهام المكتملة</a></div></div>`:cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>';
+    return `<section class="kanban-column"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${status==='مكتملة'?'—':columnRows.length}</span></header><div class="kanban-column-body" data-kanban-status="${status}">${archive}</div></section>`;
+  }).join('');
+  host.querySelectorAll('[data-kanban-task]').forEach(card=>{
+    const task=tasks.find(t=>compositeKey(t)===card.dataset.kanbanTask);
+    card.onclick=()=>selectTaskFromBoard(task);
+    card.ondragstart=e=>{card.classList.add('dragging');e.dataTransfer.setData('text/plain',card.dataset.kanbanTask);e.dataTransfer.effectAllowed='move'};
+    card.ondragend=()=>card.classList.remove('dragging');
+  });
+  host.querySelectorAll('[data-kanban-status]').forEach(column=>{
+    column.ondragover=e=>{e.preventDefault();column.classList.add('drag-over');e.dataTransfer.dropEffect='move'};
+    column.ondragleave=()=>column.classList.remove('drag-over');
+    column.ondrop=e=>{e.preventDefault();column.classList.remove('drag-over');handleKanbanDrop(e.dataTransfer.getData('text/plain'),column.dataset.kanbanStatus)};
+  });
+}
+
 function renderTasks(){
   setupAssigneeFilter();
   const box=document.getElementById('tasksList'),rows=sortTasksForDisplay(filteredTasks());
@@ -2197,6 +2260,7 @@ function renderTasks(){
     btn.onclick=async(e)=>{e.stopPropagation();await toggleCompleteByKey(key)};
     box.appendChild(card);
   });
+  renderKanban(rows);
 }
 
 
@@ -2768,6 +2832,7 @@ Object.assign(window,{
   completeSelectedTask,
   approveSelectedTask,
   setSortFilter,
+  setTaskViewMode,
   updateRangeVisual,
   addSubtask,
   cancelNewSubtask,
@@ -2795,6 +2860,7 @@ window.saveNewSubtask=saveNewSubtask;
 window.setAssigneeFilter=setAssigneeFilter;
 window.setQuickFilter=setQuickFilter;
 window.setSortFilter=setSortFilter;
+window.setTaskViewMode=setTaskViewMode;
 window.showQuickAdd=showQuickAdd;
 window.startSelectedTask=startSelectedTask;
 window.toggleActivityLog=toggleActivityLog;

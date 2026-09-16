@@ -28,6 +28,7 @@
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
+          ${nav('security','profile/security.html','key-round','كلمة المرور')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">

@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=1.9.16"></script>
+<script src="../assets/js/shell-components.js?v=1.9.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -80,6 +80,23 @@
       position:fixed;inset:0;z-index:115;background:rgba(15,23,42,.45);
       backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;
     }
+    .view-switch{display:flex;gap:4px;padding:4px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+    .view-switch button{min-height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#64748b;font-weight:800;font-size:11px}
+    .view-switch button.active{background:#fff;color:#1769e0;box-shadow:0 2px 7px rgba(15,23,42,.08)}
+    .kanban-board{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;align-items:start;overflow-x:auto;padding-bottom:6px}
+    .kanban-column{min-width:220px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
+    .kanban-column-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:900}
+    .kanban-column-count{min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#edf2f7;color:#475569;display:grid;place-items:center;font-size:10px}
+    .kanban-column-body{min-height:300px;padding:10px;display:grid;align-content:start;gap:9px}
+    .kanban-column-body.drag-over{background:#eaf3ff;box-shadow:inset 0 0 0 2px #60a5fa}
+    .kanban-card{background:#fff;border:1px solid #e2e8f0;border-radius:13px;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(15,23,42,.035)}
+    .kanban-card:hover{border-color:#93c5fd;box-shadow:0 7px 18px rgba(15,23,42,.08)}
+    .kanban-card.dragging{opacity:.45}
+    .kanban-card-title{font-size:13px;font-weight:900;line-height:1.6;color:#1e293b}
+    .kanban-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:#64748b;font-size:10px}
+    .kanban-progress{height:5px;margin-top:10px;border-radius:99px;background:#e2e8f0;overflow:hidden}.kanban-progress span{display:block;height:100%;background:#2f6fed}
+    .kanban-archive-link{display:grid;place-items:center;min-height:250px;padding:20px;text-align:center;color:#64748b;font-size:11px;line-height:1.8}.kanban-archive-link a{color:#1769e0;font-weight:900;text-decoration:none}
+    @media(max-width:900px){.kanban-board{grid-template-columns:repeat(4,280px)}}
     input[type=range]{
       -webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
       background:linear-gradient(to left,#2563eb 0%,#2563eb var(--range-progress,0%),#e2e8f0 var(--range-progress,0%),#e2e8f0 100%);
@@ -275,6 +292,10 @@
         <button type="button" data-filter="قيد التنفيذ" class="qf">قيد التنفيذ</button>
         <button type="button" data-filter="مكتملة" class="qf">مكتملة</button>
       </div>
+      <div id="taskViewSwitch" class="view-switch" aria-label="طريقة عرض المهام">
+        <button id="listViewButton" type="button" onclick="setTaskViewMode('LIST')">قائمة</button>
+        <button id="kanbanViewButton" type="button" onclick="setTaskViewMode('KANBAN')">Kanban</button>
+      </div>
       <select id="sortFilter" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
         <option value="DEFAULT">الترتيب الافتراضي</option>
         <option value="NEWEST">الأحدث</option>
@@ -294,6 +315,10 @@
         <option value="قيد التنفيذ">قيد التنفيذ</option><option value="بانتظار الاعتماد">بانتظار الاعتماد</option>
                   <option value="مكتملة">مكتملة</option>
       </select>
+    </section>
+
+    <section id="kanbanView" class="hidden" aria-label="لوحة كانبان للمهام">
+      <div id="kanbanBoard" class="kanban-board"></div>
     </section>
 
     <!-- To Do layout -->
@@ -532,7 +557,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.20"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=1.9.21"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>
