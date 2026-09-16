@@ -12,7 +12,7 @@ assert.match(page,/if\(currentProfile\.role==='admin'\)return true;[\s\S]*task\.
 assert.match(page,/if\(!canDeleteTask\(locked\)\)throw/,'Deletion permission must be rechecked on the locked task');
 assert.match(page,/يمكنك حذف المهام التي أنشأتها بنفسك فقط/,'The denial must explain the ownership rule');
 assert.doesNotMatch(page,/function canDeleteTasks\(\)/,'Role-only deletion permission must be retired');
-assert.match(html,/tasks-page\.js\?v=1\.9\.21/,'The task page must invalidate the cached module');
+assert.match(html,/tasks-page\.js\?v=1\.9\.22/,'The task page must invalidate the cached module');
 assert.match(sql,/before update of deleted_at on public\.tasks/i,'Soft deletion must be protected in the database');
 assert.match(sql,/before delete on public\.tasks/i,'Hard deletion must be protected in the database');
 assert.match(sql,/v_task\.creator_id = v_uid/i,'The database must enforce creator ownership for non-admin users');

@@ -95,7 +95,10 @@
     .kanban-card-title{font-size:13px;font-weight:900;line-height:1.6;color:#1e293b}
     .kanban-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:#64748b;font-size:10px}
     .kanban-progress{height:5px;margin-top:10px;border-radius:99px;background:#e2e8f0;overflow:hidden}.kanban-progress span{display:block;height:100%;background:#2f6fed}
-    .kanban-archive-link{display:grid;place-items:center;min-height:250px;padding:20px;text-align:center;color:#64748b;font-size:11px;line-height:1.8}.kanban-archive-link a{color:#1769e0;font-weight:900;text-decoration:none}
+    .kanban-column-overdue{background:#fff7f7;border-color:#fecaca}.kanban-column-overdue .kanban-column-head{background:#fff1f2;border-color:#fecaca}.kanban-column-overdue .kanban-column-count{background:#fee2e2;color:#be123c}
+    .kanban-column-overdue .kanban-card{border-color:#fecaca}.kanban-column-overdue .kanban-progress span{background:#e11d48}
+    .task-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}.task-filter-bar #searchInput{flex:1 1 300px;min-width:220px}.task-filter-bar #quickFilters{flex:0 1 auto;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.task-filter-bar select,.task-filter-bar .view-switch{flex:0 0 auto}
+    @media(max-width:1200px){.task-filter-bar{flex-wrap:wrap}.task-filter-bar #searchInput{flex-basis:100%}.task-filter-bar #quickFilters{flex:1 1 auto}}
     @media(max-width:900px){.kanban-board{grid-template-columns:repeat(4,280px)}}
     input[type=range]{
       -webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
@@ -283,18 +286,18 @@
     </section>
 
     <!-- Filters -->
-    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 flex flex-col md:flex-row items-center gap-3 justify-between">
+    <section class="task-filter-bar bg-white border border-slate-200 rounded-2xl shadow-sm p-3">
       <input id="searchInput" type="text" placeholder="🔍 بحث في المهام..." class="w-full md:w-[420px] border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
       <div class="flex flex-wrap gap-1.5" id="quickFilters">
         <button type="button" data-filter="ALL" class="qf active">الكل</button>
         <button type="button" data-filter="TODAY" class="qf">اليوم</button>
         <button type="button" data-filter="DELAYED" class="qf">متأخرة</button>
         <button type="button" data-filter="قيد التنفيذ" class="qf">قيد التنفيذ</button>
-        <button type="button" data-filter="مكتملة" class="qf">مكتملة</button>
+        <button type="button" data-filter="بانتظار الاعتماد" class="qf">بانتظار الاعتماد</button>
       </div>
       <div id="taskViewSwitch" class="view-switch" aria-label="طريقة عرض المهام">
         <button id="listViewButton" type="button" onclick="setTaskViewMode('LIST')">قائمة</button>
-        <button id="kanbanViewButton" type="button" onclick="setTaskViewMode('KANBAN')">Kanban</button>
+        <button id="kanbanViewButton" type="button" onclick="setTaskViewMode('KANBAN')">كانبان</button>
       </div>
       <select id="sortFilter" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white font-bold text-slate-700">
         <option value="DEFAULT">الترتيب الافتراضي</option>
@@ -557,7 +560,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.21"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=1.9.22"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

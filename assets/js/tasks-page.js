@@ -2168,20 +2168,25 @@ async function handleKanbanDrop(taskKey,targetStatus){
 
 function renderKanban(rows){
   const host=document.getElementById('kanbanBoard');if(!host)return;
-  const columns=[['قيد الانتظار','قيد الانتظار','#64748b'],['قيد التنفيذ','قيد التنفيذ','#2563eb'],['بانتظار الاعتماد','بانتظار الاعتماد','#d97706'],['مكتملة','مكتملة','#139c68']];
-  host.innerHTML=columns.map(([status,label,color])=>{
-    const columnRows=status==='مكتملة'?[]:rows.filter(t=>String(t.status||'')===status);
+  const isOverdue=t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
+  const columns=[
+    {status:'قيد الانتظار',label:'قيد الانتظار',color:'#64748b'},
+    {status:'قيد التنفيذ',label:'قيد التنفيذ',color:'#2563eb'},
+    {status:'بانتظار الاعتماد',label:'بانتظار الاعتماد',color:'#d97706'},
+    {status:'OVERDUE',label:'متأخرة',color:'#e11d48',smart:true}
+  ];
+  host.innerHTML=columns.map(({status,label,color,smart})=>{
+    const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
       const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
-      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="true" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div><div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div><div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
-    const archive=status==='مكتملة'?`<div class="kanban-archive-link"><div><b>المهام المكتملة محفوظة في الأرشيف</b><br><a href="index.html?scope=COMPLETED">فتح أرشيف المهام المكتملة</a></div></div>`:cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>';
-    return `<section class="kanban-column"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${status==='مكتملة'?'—':columnRows.length}</span></header><div class="kanban-column-body" data-kanban-status="${status}">${archive}</div></section>`;
+    return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
   }).join('');
   host.querySelectorAll('[data-kanban-task]').forEach(card=>{
     const task=tasks.find(t=>compositeKey(t)===card.dataset.kanbanTask);
     card.onclick=()=>selectTaskFromBoard(task);
-    card.ondragstart=e=>{card.classList.add('dragging');e.dataTransfer.setData('text/plain',card.dataset.kanbanTask);e.dataTransfer.effectAllowed='move'};
+    card.ondragstart=e=>{if(card.getAttribute('draggable')!=='true'){e.preventDefault();return}card.classList.add('dragging');e.dataTransfer.setData('text/plain',card.dataset.kanbanTask);e.dataTransfer.effectAllowed='move'};
     card.ondragend=()=>card.classList.remove('dragging');
   });
   host.querySelectorAll('[data-kanban-status]').forEach(column=>{
