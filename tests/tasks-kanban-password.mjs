@@ -15,9 +15,14 @@ assert.match(logic,/task\.status==='قيد التنفيذ'&&targetStatus==='با
 assert.match(logic,/status:'OVERDUE',label:'متأخرة'[\s\S]*smart:true/,'Kanban must use an automatic overdue column instead of a completed column');
 assert.match(logic,/smart\?rows\.filter\(isOverdue\)/,'Overdue tasks must be collected automatically');
 assert.match(logic,/String\(t\.status\|\|''\)===status&&!isOverdue\(t\)/,'Overdue tasks must not be duplicated in workflow columns');
+assert.match(logic,/!\['مكتملة','بانتظار الاعتماد'\]\.includes\(t\.status\)/,'Pending approval tasks must stay in the approval column even after their due date');
+assert.match(page,/id="detailsBackdrop"/,'Kanban details must open in an overlay drawer');
+assert.match(logic,/atwar-task-drawer-open/,'The task drawer must control page scrolling while open');
 assert.match(logic,/هذا الانتقال غير مسموح ضمن دورة اعتماد المهمة/,'Invalid drag transitions must be rejected');
 assert.match(security,/current_password:current,password:newPassword/,'Password change must validate the current password');
 assert.match(security,/signOut\(\{scope:'global'\}\)/,'Password change must sign out all sessions');
 assert.match(security,/newPassword\.length<8/,'Password change must enforce a minimum length');
 assert.match(shell,/profile\/security\.html[\s\S]*كلمة المرور/,'Password page must be reachable from the shared navigation');
+assert.doesNotMatch(shell,/nav\('security'/,'Password change must not appear in the main sidebar');
+assert.match(shell,/atwar-account-trigger[\s\S]*atwar-account-menu/,'The user name must open an account menu');
 console.log('Kanban workflow and self-service password audit passed.');

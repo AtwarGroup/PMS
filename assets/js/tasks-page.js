@@ -55,7 +55,9 @@ document.addEventListener('keydown',e=>{
   const moreMenu=document.getElementById('moreMenu');
   if(moreMenu && !moreMenu.classList.contains('hidden')){
     toggleMoreMenu(false);
+    return;
   }
+  if(taskViewMode==='KANBAN'&&selectedTaskKey)closeDetailsKeepPosition();
 });
 
 
@@ -186,6 +188,7 @@ function scrollDetailsIntoViewIfNeeded(){
 
 
 async function closeDetailsKeepPosition(){
+  const wasKanban=taskViewMode==='KANBAN';
   if(pendingAssigneeChange){
     const saved=await commitPendingAssigneeChange();
     if(!saved)return;
@@ -203,7 +206,7 @@ async function closeDetailsKeepPosition(){
   renderTasks();
   renderDetails();
 
-  requestAnimationFrame(()=>{
+  if(!wasKanban)requestAnimationFrame(()=>{
     window.scrollTo({top:0,left:0,behavior:'smooth'});
   });
 }
@@ -258,6 +261,7 @@ function bindDetailsCloseButtons(){
   };
   document.getElementById('detailsCloseX')?.addEventListener('click',handler);
   document.getElementById('detailsCloseDone')?.addEventListener('click',handler);
+  document.getElementById('detailsBackdrop')?.addEventListener('click',handler);
 }
 
 
@@ -2144,7 +2148,8 @@ function setTaskViewMode(mode,persist=true){
   document.getElementById('kanbanViewButton')?.classList.toggle('active',next==='KANBAN');
   document.getElementById('taskListPanel')?.classList.toggle('hidden',next!=='LIST');
   document.getElementById('kanbanView')?.classList.toggle('hidden',next!=='KANBAN');
-  if(tasksInitialLoadReady)renderTasks();
+  document.body.classList.toggle('atwar-kanban-mode',next==='KANBAN');
+  if(tasksInitialLoadReady){renderTasks();renderDetails()}
 }
 
 function selectTaskFromBoard(task){
@@ -2152,7 +2157,6 @@ function selectTaskFromBoard(task){
   selectedTaskKey=compositeKey(task);
   renderTasks();
   renderDetails();
-  setTimeout(()=>document.getElementById('detailsPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),0);
 }
 
 async function handleKanbanDrop(taskKey,targetStatus){
@@ -2168,7 +2172,7 @@ async function handleKanbanDrop(taskKey,targetStatus){
 
 function renderKanban(rows){
   const host=document.getElementById('kanbanBoard');if(!host)return;
-  const isOverdue=t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
+  const isOverdue=t=>!['مكتملة','بانتظار الاعتماد'].includes(t.status)&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
   const columns=[
     {status:'قيد الانتظار',label:'قيد الانتظار',color:'#64748b'},
     {status:'قيد التنفيذ',label:'قيد التنفيذ',color:'#2563eb'},
@@ -2572,6 +2576,9 @@ function renderDetails(){
   const grid=document.getElementById('workspaceGrid');
   panel.classList.toggle('hidden',!task);
   grid.classList.toggle('details-closed',!task);
+  const drawerOpen=Boolean(task)&&taskViewMode==='KANBAN';
+  document.getElementById('detailsBackdrop')?.classList.toggle('hidden',!drawerOpen);
+  document.body.classList.toggle('atwar-task-drawer-open',drawerOpen);
   document.getElementById('noSelection').classList.add('hidden');
   document.getElementById('taskDetails').classList.toggle('hidden',!task);
   if(!task)return;

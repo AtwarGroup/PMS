@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=1.9.17"></script>
+<script src="../assets/js/shell-components.js?v=1.9.18"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -97,6 +97,9 @@
     .kanban-progress{height:5px;margin-top:10px;border-radius:99px;background:#e2e8f0;overflow:hidden}.kanban-progress span{display:block;height:100%;background:#2f6fed}
     .kanban-column-overdue{background:#fff7f7;border-color:#fecaca}.kanban-column-overdue .kanban-column-head{background:#fff1f2;border-color:#fecaca}.kanban-column-overdue .kanban-column-count{background:#fee2e2;color:#be123c}
     .kanban-column-overdue .kanban-card{border-color:#fecaca}.kanban-column-overdue .kanban-progress span{background:#e11d48}
+    #detailsBackdrop{position:fixed;inset:var(--atwar-header-height,72px) 0 0 0;background:rgba(15,23,42,.32);backdrop-filter:blur(2px);z-index:810}
+    body.atwar-kanban-mode #detailsPanel:not(.hidden){position:fixed!important;top:calc(var(--atwar-header-height,72px) + 12px);bottom:12px;left:12px;width:min(440px,calc(100vw - 24px))!important;max-height:none;overflow-y:auto;z-index:820;border-radius:18px!important;box-shadow:0 24px 70px rgba(15,23,42,.28)!important}
+    body.atwar-task-drawer-open{overflow:hidden}body.atwar-kanban-mode #kanbanView{max-height:calc(100vh - 250px);overflow:auto}
     .task-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}.task-filter-bar #searchInput{flex:1 1 300px;min-width:220px}.task-filter-bar #quickFilters{flex:0 1 auto;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.task-filter-bar select,.task-filter-bar .view-switch{flex:0 0 auto}
     @media(max-width:1200px){.task-filter-bar{flex-wrap:wrap}.task-filter-bar #searchInput{flex-basis:100%}.task-filter-bar #quickFilters{flex:1 1 auto}}
     @media(max-width:900px){.kanban-board{grid-template-columns:repeat(4,280px)}}
@@ -369,6 +372,7 @@
         </div>
       </div>
 
+      <div id="detailsBackdrop" class="hidden" aria-hidden="true"></div>
       <!-- Details -->
       <aside id="detailsPanel" aria-label="تفاصيل المهمة" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden  xl:order-2">
         <div id="noSelection" class="hidden py-16 px-6 text-center text-slate-400">
@@ -560,7 +564,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.22"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=1.9.23"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

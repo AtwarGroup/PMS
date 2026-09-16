@@ -28,7 +28,6 @@
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
-          ${nav('security','profile/security.html','key-round','كلمة المرور')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">
@@ -99,6 +98,15 @@
         .atwar-header-task-nav a:hover{background:rgba(255,255,255,.09);color:#fff}
         .atwar-header-task-nav a.active{background:#2684ff;color:#fff}
         .atwar-header-task-nav svg{width:15px;height:15px}
+        .atwar-account-wrap{position:relative;flex:0 0 auto}
+        .atwar-account-trigger{border:0;background:transparent;color:inherit;cursor:pointer;padding:4px 6px!important;min-height:44px!important;border-radius:12px!important}
+        .atwar-account-trigger:hover,.atwar-account-trigger[aria-expanded="true"]{background:rgba(255,255,255,.08)}
+        .atwar-account-menu{position:absolute;left:0;top:calc(100% + 10px);width:280px;background:#fff;color:#24364b;border:1px solid #dfe7f0;border-radius:16px;box-shadow:0 22px 55px rgba(15,23,42,.22);overflow:hidden;z-index:1300;text-align:right}
+        .atwar-account-summary{display:flex;align-items:center;gap:11px;padding:15px;border-bottom:1px solid #edf2f7;background:#f8fafc}
+        .atwar-account-summary .atwar-avatar{background:#e8f2ff!important;color:#1769e0!important}
+        .atwar-account-copy{min-width:0}.atwar-account-copy b,.atwar-account-copy span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.atwar-account-copy b{font-size:12px}.atwar-account-copy span{font-size:10px;color:#64748b;margin-top:3px}
+        .atwar-account-links{padding:7px}.atwar-account-links a,.atwar-account-links button{width:100%;min-height:40px!important;display:flex;align-items:center;gap:10px;padding:9px 11px!important;border:0;background:transparent;color:#334155;text-decoration:none;font-size:11px!important;font-weight:800;text-align:right;cursor:pointer;border-radius:9px!important}
+        .atwar-account-links a:hover,.atwar-account-links button:hover{background:#f1f5f9}.atwar-account-links svg{width:16px;height:16px;color:#64748b}.atwar-account-links .danger{color:#dc2626;border-top:1px solid #edf2f7;margin-top:5px;border-radius:0!important}.atwar-account-links .danger svg{color:#dc2626}
         @media(max-width:1050px){
           .atwar-header-task-nav{overflow-x:auto;justify-content:flex-start}
           .atwar-header-task-nav a{flex:0 0 auto}
@@ -122,9 +130,23 @@
           </div>
           ${taskTools}
           ${mode==='tasks'?`<span id="saveStatus" class="atwar-task-save-status">☁️ تم الحفظ</span>`:''}
-          <div class="atwar-user">
-            <div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div>
-            <div class="atwar-avatar">أ</div>
+          <div class="atwar-account-wrap">
+            <button type="button" class="atwar-user atwar-account-trigger" aria-haspopup="menu" aria-expanded="false" title="الحساب الشخصي">
+              <div><div class="atwar-user-name" data-user-name>المستخدم</div><div class="atwar-user-role" data-user-title></div></div>
+              <div class="atwar-avatar">أ</div>
+              <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="atwar-account-menu hidden" role="menu">
+              <div class="atwar-account-summary">
+                <div class="atwar-avatar">أ</div>
+                <div class="atwar-account-copy"><b data-user-name>المستخدم</b><span data-user-title>المسمى الوظيفي</span></div>
+              </div>
+              <div class="atwar-account-links">
+                <a href="${d}profile/index.html" role="menuitem"><i data-lucide="circle-user-round"></i><span>الملف التعريفي</span></a>
+                <a href="${d}profile/security.html" role="menuitem"><i data-lucide="key-round"></i><span>تغيير كلمة المرور</span></a>
+                <button type="button" class="danger atwar-account-logout" role="menuitem"><i data-lucide="log-out"></i><span>تسجيل الخروج</span></button>
+              </div>
+            </div>
           </div>
           ${mode==='tasks'?`<span id="currentUserBadge" class="hidden"></span>`:''}
         </div>
@@ -136,6 +158,20 @@
         if(av)av.textContent=(s.name||s.email||'م').trim().charAt(0);
       }
       window.lucide?.createIcons();
+      const accountTrigger=this.querySelector('.atwar-account-trigger');
+      const accountMenu=this.querySelector('.atwar-account-menu');
+      accountTrigger?.addEventListener('click',event=>{
+        event.preventDefault();event.stopPropagation();
+        const open=accountMenu?.classList.toggle('hidden')===false;
+        accountTrigger.setAttribute('aria-expanded',String(open));
+      });
+      accountMenu?.addEventListener('click',event=>event.stopPropagation());
+      document.addEventListener('click',()=>{accountMenu?.classList.add('hidden');accountTrigger?.setAttribute('aria-expanded','false')});
+      this.querySelector('.atwar-account-logout')?.addEventListener('click',()=>{
+        if(typeof window.atwarLogout==='function')window.atwarLogout();
+        else if(typeof window.logoutUser==='function')window.logoutUser();
+        else location.href=d+'landing.html';
+      });
       if(mode!=='tasks')setTimeout(()=>window.atwarInitGlobalNotifications?.(this,d),0);
     }
   }
