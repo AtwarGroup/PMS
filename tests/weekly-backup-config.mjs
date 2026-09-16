@@ -8,6 +8,7 @@ const cname=readFileSync(new URL('../CNAME',import.meta.url),'utf8').trim();
 const guide=readFileSync(new URL('../WEEKLY_BACKUP_GMAIL_AR.md',import.meta.url),'utf8');
 assert.match(workflow,/cron: '0 23 \* \* 4'/,'Backup must run Friday 02:00 Asia/Riyadh');
 assert.match(workflow,/pg_dump[\s\S]*database\.dump/,'Database must be included');
+assert.match(workflow,/postgres:17\.6[\s\S]*pg_dump --version/,'PostgreSQL 17 client must match the Supabase PostgreSQL 17 server');
 assert.match(workflow,/download-supabase-storage\.mjs/,'Storage files must be included');
 assert.match(workflow,/git archive[\s\S]*source\.tar\.gz/,'Production source must be included');
 assert.match(workflow,/cipher-algo AES256/,'Backup must be encrypted before upload');
@@ -15,7 +16,7 @@ assert.match(workflow,/tail -n \+13/,'Only the latest 12 weekly backups must be 
 assert.match(workflow,/RCLONE_CONFIG_BASE64/,'Personal Google Drive OAuth configuration must come from an encrypted GitHub secret');
 assert.doesNotMatch(workflow,/SERVICE_ACCOUNT|IMPERSONATE/,'The Gmail workflow must not retain Workspace service-account impersonation');
 assert.match(storage,/storage-manifest\.json/,'Storage backup must produce a manifest');
-assert.match(verify,/pg_restore --list/,'Database archive must be verified before upload');
+assert.match(verify,/postgres:17\.6 pg_restore --list/,'Database archive must be verified with PostgreSQL 17 before upload');
 assert.match(privacy,/drive\.file[\s\S]*AES/,'Public privacy policy must disclose the limited Drive scope and backup encryption');
 assert.equal(cname,'one.atwargroup.com','GitHub Pages custom domain must be preserved in deployments');
 assert.match(guide,/https:\/\/one\.atwargroup\.com\/[\s\S]*https:\/\/one\.atwargroup\.com\/privacy\.html/,'OAuth branding URLs must use the production custom domain');
