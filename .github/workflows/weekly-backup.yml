@@ -43,8 +43,9 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client rclone gnupg
-          pg_dump --version
+          sudo apt-get install -y rclone gnupg
+          docker pull postgres:17.6
+          docker run --rm postgres:17.6 pg_dump --version
           rclone version
 
       - name: Create complete backup
@@ -58,8 +59,13 @@ jobs:
           mkdir -p "$work/storage"
           chmod 700 "$work"
 
-          pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --no-privileges --file="$work/database.dump"
-          pg_dumpall --dbname="$SUPABASE_DB_URL" --roles-only --no-role-passwords > "$work/roles.sql"
+          docker run --rm \
+            --volume "$work:/backup" \
+            postgres:17.6 \
+            pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --no-privileges --file=/backup/database.dump
+          docker run --rm \
+            postgres:17.6 \
+            pg_dumpall --dbname="$SUPABASE_DB_URL" --roles-only --no-role-passwords > "$work/roles.sql"
           node scripts/backup/download-supabase-storage.mjs "$work/storage"
           git archive --format=tar.gz --output="$work/source.tar.gz" HEAD
           {
