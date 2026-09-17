@@ -16,6 +16,8 @@ assert.match(workflow,/tail -n \+13/,'Only the latest 12 weekly backups must be 
 assert.match(workflow,/RCLONE_CONFIG_BASE64/,'Personal Google Drive OAuth configuration must come from an encrypted GitHub secret');
 assert.doesNotMatch(workflow,/SERVICE_ACCOUNT|IMPERSONATE/,'The Gmail workflow must not retain Workspace service-account impersonation');
 assert.match(storage,/storage-manifest\.json/,'Storage backup must produce a manifest');
+assert.match(storage,/new URL\(raw\)[\s\S]*parsed\.origin/,'Storage API requests must normalize SUPABASE_URL to its origin and ignore accidental REST paths');
+assert.ok(!storage.includes(".replace(/\\/$/,'')"),'Storage URL normalization must not rely on trimming only one trailing slash');
 assert.match(verify,/postgres:17\.6 pg_restore --list/,'Database archive must be verified with PostgreSQL 17 before upload');
 assert.match(privacy,/drive\.file[\s\S]*AES/,'Public privacy policy must disclose the limited Drive scope and backup encryption');
 assert.equal(cname,'one.atwargroup.com','GitHub Pages custom domain must be preserved in deployments');

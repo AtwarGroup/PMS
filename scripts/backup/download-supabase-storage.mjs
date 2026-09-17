@@ -4,10 +4,18 @@ import {pipeline} from 'node:stream/promises';
 import {Readable} from 'node:stream';
 import path from 'node:path';
 
-const base=String(process.env.SUPABASE_URL||'').replace(/\/$/,'');
+const normalizeSupabaseOrigin=value=>{
+  const raw=String(value||'').trim();
+  if(!raw)throw new Error('SUPABASE_URL is required');
+  let parsed;
+  try{parsed=new URL(raw);}catch{throw new Error('SUPABASE_URL must be a valid absolute URL');}
+  if(!['https:','http:'].includes(parsed.protocol))throw new Error('SUPABASE_URL must use HTTP or HTTPS');
+  return parsed.origin;
+};
+const base=normalizeSupabaseOrigin(process.env.SUPABASE_URL);
 const key=String(process.env.SUPABASE_SERVICE_ROLE_KEY||'');
 const destination=path.resolve(process.argv[2]||'backup/storage');
-if(!base||!key)throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+if(!key)throw new Error('SUPABASE_SERVICE_ROLE_KEY is required');
 
 const headers={apikey:key,Authorization:`Bearer ${key}`};
 const safeSegment=value=>{
