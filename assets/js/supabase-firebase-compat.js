@@ -189,7 +189,7 @@ async function rootUpdate(changes){
   for(const [newPath,obj] of creates){const np=newPath.split('/'),alias=np[2],real=_aliases.get(alias)||alias;const matchingDelete=deletes.find(([oldPath])=>oldPath.split('/')[2]===alias);
     if(matchingDelete){
       const rows=await visibleTasks({id:real});const cur=rows[0];if(!cur)throw new Error('Task not found');
-      const {error}=await sb.rpc('update_task_safe',{p_task_id:real,p_expected_revision:Number(cur.revision||1),p_patch:{assignee_id:np[1],assignee_name_snapshot:obj.assign||null}});
+      const {error}=await sb.rpc('delegate_task_safe',{p_task_id:real,p_target_id:np[1],p_expected_revision:Number(cur.revision||1)});
       if(error)throw error;shouldDispatchEmail=true;continue;
     }
   }

@@ -1,5 +1,10 @@
 
 (function(){
+  if(!document.querySelector('link[rel~="icon"]')){
+    const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
+    icon.href=new URL('../../favicon.svg',document.currentScript?.src||location.href).href;
+    document.head.append(icon);
+  }
   function depth(){
     const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';

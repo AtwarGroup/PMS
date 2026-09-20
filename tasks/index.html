@@ -438,6 +438,11 @@
                   <div id="detailDelay" class="mt-1 text-sm font-black text-slate-800">0 يوم</div>
                 </div>
               </div>
+              <div id="rescheduleRequestBox" class="hidden px-3 py-2.5 border-t border-blue-100 bg-blue-50/60">
+                <button id="requestRescheduleButton" type="button" onclick="requestSelectedTaskReschedule()" class="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-[11px] font-black text-blue-700 hover:bg-blue-50">طلب إعادة جدولة من منشئ المهمة</button>
+                <div id="rescheduleRequestHint" class="mt-1 text-[10px] text-blue-600"></div>
+              </div>
+              <div id="rescheduleDecisionBox" class="hidden px-3 py-2.5 border-t border-amber-100 bg-amber-50/70"></div>
             </div>
 
             <div id="taskWorkflowActions" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3">

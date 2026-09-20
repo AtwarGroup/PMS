@@ -28,7 +28,7 @@ async function adminApi(body) {
 }
 
 function managerReviewing() {
-  return me.role === 'manager' && job.reviewer_id === me.id && ['IN_REVIEW','CHANGES_REQUESTED'].includes(job.status);
+  return me.role !== 'admin' && job.reviewer_id === me.id && ['IN_REVIEW','CHANGES_REQUESTED'].includes(job.status);
 }
 
 function quality() {
@@ -45,7 +45,7 @@ function quality() {
 }
 
 function reviewerResolution() {
-  if (me.role === 'manager') {
+  if (me.role !== 'admin') {
     return job.reviewer_id === me.id
       ? {state:'', text:'أنت المدير المباشر المكلّف بمراجعة هذه الوظيفة، ويمكنك اقتراح تعديل أو حذف أو إضافة دون تغيير النسخة الرئيسية.'}
       : {state:'danger', text:'هذه الوظيفة ليست ضمن نطاق مراجعتك الحالي.'};
@@ -287,7 +287,7 @@ async function boot() {
   if (!session?.user) return location.href = '../login.html';
   const profile = await sb.from('profiles').select('id,full_name,email,role,job_title,department,manager_id,active,status').eq('id',session.user.id).single();
   me = profile.data;
-  if (!me || !['admin','manager'].includes(me.role)) return location.href = '../profile/job-description.html';
+  if (!me) return location.href = '../profile/job-description.html';
   window.atwarSyncShellIdentity?.(me,session.user);
   if (me.role === 'admin') {
     const result = await adminApi({action:'list'});
@@ -298,6 +298,7 @@ async function boot() {
   const response = await sb.from('job_descriptions').select('*').eq('id',id).maybeSingle();
   if (response.error || !response.data) throw new Error(response.error?.message || 'الوصف غير موجود أو غير متاح');
   job = response.data;
+  if (me.role !== 'admin' && job.reviewer_id !== me.id) return location.href = '../profile/job-description.html';
   await loadRelated();
   byId('reviewState').hidden = true;
   byId('reviewApp').hidden = false;

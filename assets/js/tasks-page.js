@@ -347,7 +347,7 @@ function isDescendantOf(userOrUid,managerUid){
 function visibleUsers(){
   if(!currentProfile||!currentUser)return [];
 
-  if(currentProfile.role==='admin'){
+  if(currentProfile.role==='admin'||(currentProfile.permissions||[]).includes('tasks.read_all')){
     return users.filter(isActiveProfile);
   }
 
@@ -396,16 +396,19 @@ function canManageUser(uid){
 }
 function canReassignTaskTo(task,uid){
   if(!task||!currentProfile||!currentUser)return false;
+  if(isExecutiveReadOnlyTask(task))return false;
   const target=getUserByUid(uid);
   if(!target||!isActiveProfile(target))return false;
   if(currentProfile.role==='admin')return true;
   if(currentProfile.role!=='manager')return false;
   if(String(uid)===String(currentUser.uid))return true;
-  if(String(target.managerUid||'')===String(currentUser.uid))return true;
-  return isDescendantOf(target,currentUser.uid) && String(task.createdByUid||'')===String(currentUser.uid);
+  // المدير يستطيع تفويض أي مهمة واقعة تحت مسؤوليته إلى أي موظف في شجرته،
+  // سواء أنشأ المهمة بنفسه أو استلمها من مديره الأعلى.
+  return isDescendantOf(target,currentUser.uid);
 }
 function canDeleteTask(task){
   if(!task||!currentProfile||!currentUser)return false;
+  if(isExecutiveReadOnlyTask(task))return false;
   if(currentProfile.role==='admin')return true;
   return task.status!=='مكتملة' &&
     String(task.createdByUid||'')===String(currentUser.uid||'');
@@ -413,6 +416,7 @@ function canDeleteTask(task){
 
 function canApproveTask(task){
   if(!task||!currentProfile||!currentUser)return false;
+  if(isExecutiveReadOnlyTask(task))return false;
 
   const taskOwnerUid=String(task._ownerUid||task.assignUid||'');
   if(taskOwnerUid && taskOwnerUid===String(currentUser.uid||''))return false;
@@ -447,8 +451,16 @@ function isManagerRole(){
 function isTaskOwner(task){
   return !!task && String(task._ownerUid||'')===String(currentUser?.uid||'');
 }
+function isExecutiveReadOnlyTask(task){
+  if(!(currentProfile?.permissions||[]).includes('tasks.read_all')||currentProfile?.role==='admin')return false;
+  const owner=getUserByUid(task?._ownerUid||task?.assignUid||'');
+  return !isTaskOwner(task)
+    && String(task?.createdByUid||'')!==String(currentUser?.uid||'')
+    && String(owner?.managerUid||'')!==String(currentUser?.uid||'');
+}
 function canEditTaskField(task,field){
   if(!task||!currentProfile)return false;
+  if(isExecutiveReadOnlyTask(task))return false;
 
   const status=String(task.status||'قيد الانتظار');
 
@@ -471,6 +483,13 @@ function canEditTaskField(task,field){
   // ملاحظات المدير: المدير/مدير النظام فقط.
   if(field==='managerNotes'){
     return isManagerRole();
+  }
+
+  // تاريخا البداية والنهاية يتبعان منشئ المهمة، لا رتبة المكلّف بها.
+  // إذا أسند مدير مهمة إلى مدير تابع له يبقى المنشئ وحده صاحب تعديل التاريخ،
+  // مع صلاحية مدير النظام لمعالجة الحالات الاستثنائية.
+  if((field==='start'||field==='end') && currentProfile.role!=='admin'){
+    return String(task.createdByUid||'')===String(currentUser?.uid||'');
   }
 
   // الموظف لا يعدل بيانات المهمة إلا إذا كان صاحبها.
@@ -694,6 +713,10 @@ onAuthStateChanged(auth,async(user)=>{
     const me=users.find(u=>u.uid===user.uid);
     if(me)currentProfile=me;
     window.atwarSyncShellIdentity?.(currentProfile,user);
+    const executiveRead=(currentProfile.permissions||[]).includes('tasks.read_all');
+    if(executiveRead&&currentProfile.role!=='admin'){
+      window.ATWAR_SUPABASE.rpc('record_executive_task_access',{p_user_agent:navigator.userAgent}).then(({error})=>error&&console.warn('Executive access audit:',error));
+    }
 
     document.getElementById('currentUserBadge').textContent=
       `👤 ${currentProfile.name||user.email} • ${roleLabel(currentProfile.role)}`;
@@ -701,6 +724,8 @@ onAuthStateChanged(auth,async(user)=>{
     const pageSubtitleNode=document.getElementById('pageSubtitle'); if(pageSubtitleNode) pageSubtitleNode.textContent=
       currentProfile.role==='admin'
         ? 'عرض جميع المهام'
+        : executiveRead
+          ? 'اطلاع تنفيذي للقراءة فقط على جميع مهام المؤسسة'
         : currentProfile.role==='manager'
           ? 'مهامك وفريقك المباشر، مع المهام التي أنشأتها لغير المباشرين'
           : 'مهامك الشخصية';
@@ -1571,6 +1596,54 @@ async function updateTaskField(task,f,v){
   }
 }
 
+async function requestSelectedTaskReschedule(){
+  const task=selectedTask();
+  if(!task||!isTaskOwner(task)||String(task.createdByUid||'')===String(currentUser?.uid||''))return;
+  const start=prompt('تاريخ البداية المقترح (YYYY-MM-DD):',task.start||'');
+  if(start===null)return;
+  const end=prompt('تاريخ النهاية المقترح (YYYY-MM-DD):',task.end||'');
+  if(end===null)return;
+  const reason=prompt('اذكر سبب طلب إعادة الجدولة:','');
+  if(!reason||reason.trim().length<3)return showToast('سبب إعادة الجدولة مطلوب.','warning');
+  if(start&&end&&end<start)return showToast('تاريخ النهاية المقترح يجب ألا يسبق تاريخ البداية.','warning');
+  const button=document.getElementById('requestRescheduleButton');
+  if(button)button.disabled=true;
+  try{
+    const {error}=await window.ATWAR_SUPABASE.rpc('request_task_reschedule',{
+      p_task_id:task._relationalId||task._key,
+      p_start_date:start||null,
+      p_due_date:end||null,
+      p_reason:reason.trim()
+    });
+    if(error)throw error;
+    showToast('تم إرسال طلب إعادة الجدولة إلى منشئ المهمة.','success',5000);
+    const hint=document.getElementById('rescheduleRequestHint');if(hint)hint.textContent='الطلب بانتظار قرار منشئ المهمة.';
+  }catch(error){
+    console.error('Reschedule request:',error);
+    const duplicate=String(error?.message||'').includes('task_reschedule_one_pending_idx');
+    showToast(duplicate?'يوجد طلب إعادة جدولة معلق لهذه المهمة.':'تعذر إرسال طلب إعادة الجدولة.','error',5000);
+    if(button)button.disabled=false;
+  }
+}
+
+async function loadReschedulePanel(task){
+  const box=document.getElementById('rescheduleDecisionBox');if(!box)return;
+  box.classList.add('hidden');box.innerHTML='';
+  if(String(task.createdByUid||'')!==String(currentUser?.uid||'')&&currentProfile?.role!=='admin')return;
+  const {data,error}=await window.ATWAR_SUPABASE.from('task_reschedule_requests').select('*').eq('task_id',task._relationalId||task._key).eq('status','PENDING').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(error||!data)return;
+  box.innerHTML=`<div class="text-xs font-black text-amber-800">طلب إعادة جدولة معلق</div><div class="mt-1 text-[11px] leading-5 text-amber-700">من ${escapeHTML(data.current_start_date||'—')} / ${escapeHTML(data.current_due_date||'—')} إلى ${escapeHTML(data.proposed_start_date||'—')} / ${escapeHTML(data.proposed_due_date||'—')}<br><b>السبب:</b> ${escapeHTML(data.reason||'')}</div><div class="mt-2 flex gap-2"><button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black text-white" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',true)">موافقة وتعديل التواريخ</button><button type="button" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-[11px] font-black text-rose-700" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',false)">رفض</button></div>`;
+  box.classList.remove('hidden');
+}
+async function decideSelectedTaskReschedule(requestId,approve){
+  const note=prompt(approve?'ملاحظة الموافقة (اختياري):':'اذكر سبب الرفض:','');if(note===null)return;
+  if(!approve&&note.trim().length<2)return showToast('سبب الرفض مطلوب.','warning');
+  const {error}=await window.ATWAR_SUPABASE.rpc('decide_task_reschedule',{p_request_id:requestId,p_approve:approve,p_note:note.trim()||null});
+  if(error)return showToast('تعذر تسجيل القرار: '+error.message,'error',5000);
+  showToast(approve?'تمت الموافقة وتحديث تواريخ المهمة.':'تم رفض طلب إعادة الجدولة.','success',5000);
+  renderDetails();
+}
+
 async function startSelectedTask(){
   const task=selectedTask();
   if(!task)return;
@@ -2294,7 +2367,9 @@ function applyTaskFieldPermissions(task){
     el.classList.toggle('opacity-60',!allowed);
     el.classList.toggle('cursor-not-allowed',!allowed);
     if(!allowed && (el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT')){
-      el.title='هذا الحقل للقراءة فقط في حالة المهمة الحالية';
+      el.title=(field==='start'||field==='end')&&String(task.createdByUid||'')!==String(currentUser?.uid||'')
+        ?'تاريخ المهمة يحدده منشئها فقط'
+        :'هذا الحقل للقراءة فقط في حالة المهمة الحالية';
     }else{
       el.removeAttribute('title');
     }
@@ -2610,6 +2685,13 @@ function renderDetails(){
   document.getElementById('detailPriority').value=task.priority||'normal';
   document.getElementById('detailStart').value=task.start||'';
   document.getElementById('detailEnd').value=task.end||'';
+  const rescheduleBox=document.getElementById('rescheduleRequestBox');
+  const mayRequestReschedule=isTaskOwner(task)
+    && String(task.createdByUid||'')!==String(currentUser?.uid||'')
+    && !['بانتظار الاعتماد','مكتملة'].includes(String(task.status||''));
+  rescheduleBox?.classList.toggle('hidden',!mayRequestReschedule);
+  const rescheduleHint=document.getElementById('rescheduleRequestHint');if(rescheduleHint)rescheduleHint.textContent='ستبقى التواريخ الحالية كما هي حتى موافقة منشئ المهمة.';
+  loadReschedulePanel(task);
   document.getElementById('detailProgress').value=normalizeProgress(task.progress);
   document.getElementById('progressText').textContent=`${normalizeProgress(task.progress)}%`;
   updateRangeVisual(document.getElementById('detailProgress'));
@@ -2879,6 +2961,8 @@ window.toggleActivityLog=toggleActivityLog;
 window.toggleManagerDashboard=toggleManagerDashboard;
 window.toggleSubtask=toggleSubtask;
 window.updateSelectedField=updateSelectedField;
+window.requestSelectedTaskReschedule=requestSelectedTaskReschedule;
+window.decideSelectedTaskReschedule=decideSelectedTaskReschedule;
 window.handleImport=handleImport;
 window.exportToExcel=exportToExcel;
 window.deleteTaskAttachment=deleteTaskAttachment;
