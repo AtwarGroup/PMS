@@ -41,12 +41,12 @@ async function transition(status,note=false){if(status==='IN_REVIEW'&&!current.r
 async function showComments(){el('editorBody').innerHTML='<section class="section-card"><h3>ملاحظات المراجعة</h3><div id="comments" class="comments">جاري التحميل...</div><div class="comment-compose"><input id="commentBody" placeholder="أضف ملاحظة واضحة"><button id="commentBtn" class="jl-btn">إضافة</button></div></section>';const r=await sb.from('job_description_comments').select('*').eq('job_description_id',current.id).order('created_at');el('comments').innerHTML=(r.data||[]).map(x=>`<div class="comment">${esc(x.body)}<div class="subtle">${new Date(x.created_at).toLocaleString('ar-SA')}</div></div>`).join('')||'<div class="subtle">لا توجد ملاحظات.</div>';el('commentBtn').onclick=async()=>{const body=el('commentBody').value.trim();if(body.length<2)return;const x=await sb.from('job_description_comments').insert({job_description_id:current.id,author_id:me.id,body});if(x.error)return toast(x.error.message);showComments()}}
 async function importLibrary(){if(!confirm('سيتم إضافة الوظائف الناقصة وتحديث الأسماء البديلة فقط، دون تغيير أي وصف أو موافقة موجودة. متابعة؟'))return;const src=await fetch('data/atwar-job-library-v1.json').then(r=>r.json()),old=new Map(jobs.map(j=>[j.job_code,j]));for(const j of src.jobs){const found=old.get(j.job_code);if(found){const r=await sb.from('job_descriptions').update({aliases:j.aliases||[],updated_by:me.id}).eq('id',found.id);if(r.error)throw r.error}else{const r=await sb.from('job_descriptions').insert({...j,status:'DRAFT',reviewer_id:null,created_by:me.id,updated_by:me.id});if(r.error)throw r.error}}toast('تمت إضافة الناقص دون المساس بالمراجعات الحالية');await load()}
 async function prepareProfessionalDrafts(){
-  if(!confirm('سيتم تطبيق تحديثات المحتوى الجديدة فقط وتحويل الوظائف المتأثرة إلى مسودة للمراجعة. النسخ المنشورة للموظفين ستبقى كما هي حتى الاعتماد والنشر. متابعة؟'))return;
-  const [base,approved]=await Promise.all([
-    fetch('data/atwar-job-library-v1.json').then(r=>r.json()),
-    fetch('data/approved-role-updates-2026-09-20.json').then(r=>r.json())
-  ]);
-  const source=new Map([...base.jobs,...approved.jobs].map(job=>[job.job_code,job]));
+  if(!confirm('سيتم تطبيق تحديثات المحتوى الجديدة فقط على المدير المالي، مشرف المشتريات والمخزون، ومدير العمليات وتحويلها إلى مسودات للمراجعة. النسخ المنشورة للموظفين ستبقى كما هي حتى الاعتماد والنشر. متابعة؟'))return;
+  const response=await fetch('data/approved-role-updates-2026-09-20.json',{cache:'no-store'});
+  if(!response.ok)throw new Error('ملف تحديث الأوصاف الثلاثة غير موجود في الموقع. ارفع مجلد job-library/data من حزمة التصحيح.');
+  const approved=await response.json();
+  const source=new Map((approved.jobs||[]).map(job=>[job.job_code,job]));
+  if(source.size!==3)throw new Error('ملف تحديث الأوصاف غير مكتمل؛ يجب أن يحتوي على الوظائف الثلاثة.');
   let updated=0,created=0;
   for(const reviewed of source.values()){
     const currentJob=jobs.find(job=>job.job_code===reviewed.job_code||normalizeArabic(job.title)===normalizeArabic(reviewed.title));
@@ -59,7 +59,7 @@ async function prepareProfessionalDrafts(){
     if(response.error)throw response.error;
     currentJob?updated++:created++;
   }
-  toast(updated||created?`تم تجهيز ${updated} مسودة محدثة وإضافة ${created} وظيفة جديدة؛ النسخ المنشورة لم تتغير`:'لا توجد تحديثات محتوى جديدة');
+  toast(updated||created?`تم تحديث ${updated} وصف وإضافة ${created} وصف من الملفات المعتمدة؛ افتح كل مسودة وراجعها قبل الإرسال`:'الأوصاف الثلاثة مطابقة بالفعل لآخر ملفات معتمدة');
   await load();
 }
 document.querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===x));el('libraryView').hidden=x.dataset.view!=='library';el('assignmentsView').hidden=x.dataset.view!=='assignments'});el('search').oninput=renderJobs;el('statusFilter').onchange=renderJobs;el('employeeSearch').oninput=renderAssignments;el('assignmentFilter').onchange=renderAssignments;el('closeBtn').onclick=()=>el('workspace').hidden=true;el('importBtn').onclick=()=>importLibrary().catch(e=>toast(e.message));el('reviewDraftBtn').onclick=()=>prepareProfessionalDrafts().catch(e=>toast(e.message));boot().catch(e=>{console.error(e);document.body.style.visibility='visible';el('state').textContent='تعذر التشغيل: '+e.message});
