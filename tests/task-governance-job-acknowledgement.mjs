@@ -51,6 +51,7 @@ assert.match(executivePage,/الاطلاع التنفيذي/,'Executive all-task
 assert.match(executivePage,/record_executive_task_access/,'Opening the executive page must be audited');
 assert.match(executivePage,/statusFilter=document\.getElementById\('status'\)/,'Executive filters must not collide with the browser status global');
 assert.doesNotMatch(executivePage,/\bstatus\.innerHTML/,'Executive page must not use the reserved browser status global');
+assert.match(tasks,/scopedUidSet\.has\(ownerUid\)/,'The regular task workspace must exclude executive-only rows returned by RLS');
 assert.match(library,/me\.role!==['"]admin['"]&&current\.reviewer_id===me\.id/,'Any assigned non-admin reviewer may review');
 assert.match(library,/actualEdition!==sourceEdition\|\|actualResponsibilities!==expectedResponsibilities/,'Approved description import must verify the persisted edition and responsibility count');
 assert.match(review,/job\.reviewer_id !== me\.id/,'Unassigned employees must remain excluded from review');

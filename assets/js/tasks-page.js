@@ -1211,6 +1211,7 @@ function subscribeVisibleTasks(){
   };
 
   const scoped=visibleUsers();
+  const scopedUidSet=new Set(scoped.map(u=>String(u.uid||'')).filter(Boolean));
   const pendingInitialOwners=new Set(scoped.map(u=>String(u.uid)));
   const scheduleRender=()=>{
     if(pendingInitialOwners.size)return;
@@ -1235,7 +1236,10 @@ function subscribeVisibleTasks(){
       const rows=snapshot.exists()?Object.values(snapshot.val()):[];
       for(const task of rows){
         const ownerUid=String(task._ownerUid||task.assignUid||'');
-        if(!ownerUid)continue;
+        // صلاحية tasks.read_all مخصصة لصفحة «الاطلاع التنفيذي» فقط.
+        // مساحة المهام التشغيلية تظل مقيدة بالمستخدم وفريقه المباشر حتى لو
+        // أعادت RLS صفوفًا إضافية لحامل الصلاحية التنفيذية.
+        if(!ownerUid||!scopedUidSet.has(ownerUid))continue;
         const ownerRows=ownerData.get(ownerUid)||[];
         ownerRows.push({...task,_ownerUid:ownerUid});
         ownerData.set(ownerUid,ownerRows);
