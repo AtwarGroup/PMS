@@ -9,6 +9,7 @@ const taskHtml=read('tasks/index.html');
 const governance=read('supabase/migrations/20260920_task_governance_reschedule_executive_scope.sql');
 const acknowledgement=read('supabase/migrations/20260917_task_date_ownership_and_job_acknowledgements.sql');
 const profile=read('assets/js/job-profile-page.js');
+const profileIndex=read('profile/index.html');
 const email=read('supabase/functions/send-job-acknowledgement/index.ts');
 const library=read('assets/js/job-library-page.js');
 const review=read('assets/js/job-review-page.js');
@@ -28,14 +29,19 @@ assert.match(governance,/v_task\.assignee_id=v_uid and private\.manages_user\(p_
 assert.match(profile,/type="checkbox"/,'Job acknowledgement must require a checkbox');
 assert.match(profile,/acknowledge_job_description/,'Acknowledgement must be stored through the governed RPC');
 assert.match(profile,/send-job-acknowledgement/,'Acknowledgement PDF must invoke the email function');
+assert.match(profileIndex,/employee_job_assignments/,'My Profile must resolve the signed-in employee job assignment');
+assert.match(profileIndex,/hasPublishedJob/,'My Profile must reveal a published linked job description');
+assert.doesNotMatch(profileIndex,/else\{document\.getElementById\('profileLoading'\).*profileUnderConstruction/s,'My Profile must not be restricted to one hard-coded employee');
 assert.match(email,/HR_EMAIL[\s\S]*hr@tiradorstores\.com/,'HR must receive the acknowledgement');
 assert.match(email,/attachments:\[\{filename:/,'Email must contain the PDF attachment');
 assert.match(acknowledgement,/unique\(profile_id,job_description_id,job_revision\)/,'One acknowledgement per employee and published revision is required');
 
 assert.match(governance,/tasks\.read_all/,'Executive task access must be a separate permission');
+assert.match(governance,/add column if not exists permissions text\[\]/,'The migration must support profile tables created before permissions existed');
 assert.match(tasks,/isExecutiveReadOnlyTask/,'Executive cross-organization access must remain read-only');
 assert.match(governance,/executive_task_access_log/,'Executive access must be audited');
 assert.match(library,/me\.role!==['"]admin['"]&&current\.reviewer_id===me\.id/,'Any assigned non-admin reviewer may review');
+assert.match(library,/actualEdition!==sourceEdition\|\|actualResponsibilities!==expectedResponsibilities/,'Approved description import must verify the persisted edition and responsibility count');
 assert.match(review,/job\.reviewer_id !== me\.id/,'Unassigned employees must remain excluded from review');
 
 for(const title of ['المدير المالي','مشرف المشتريات والمخزون','مدير العمليات'])assert.ok(roles.jobs.some(job=>job.title===title),`${title} source update is required`);

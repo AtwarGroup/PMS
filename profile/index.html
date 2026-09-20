@@ -198,7 +198,7 @@
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>Production 1.7C</span>
+          <span>Production 2.4.21</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -226,7 +226,54 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('../login.html');if(a){if(a.profile.firebase_uid===HAMZA_FIREBASE_UID)location.replace('financial-manager.html');else{document.getElementById('profileLoading')?.classList.add('hidden');document.getElementById('profileContent')?.classList.add('hidden');document.getElementById('profileUnderConstruction')?.classList.remove('hidden');try{lucide.createIcons()}catch{}}}
+const text=(id,value='—')=>{const node=document.getElementById(id);if(node)node.textContent=value||'—'};
+const roleLabel={admin:'مدير النظام',manager:'مدير',employee:'موظف'};
+const a=await authProfile('../login.html');
+if(a){
+  const {profile,user}=a;
+  if(profile.firebase_uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2')location.replace('financial-manager.html');
+  else{
+    let manager=null,job=null;
+    if(profile.manager_id){
+      const result=await sb.from('profiles').select('full_name').eq('id',profile.manager_id).maybeSingle();
+      manager=result.data||null;
+    }
+    const assignment=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();
+    const jobId=assignment.data?.job_description_id||profile.job_description_id;
+    if(jobId){
+      const result=await sb.from('job_descriptions').select('id,published_snapshot').eq('id',jobId).maybeSingle();
+      job=result.data||null;
+    }
+    if(!job&&profile.job_title){
+      const result=await sb.from('job_descriptions').select('id,published_snapshot').eq('title',profile.job_title).not('published_at','is',null).maybeSingle();
+      job=result.data||null;
+    }
+
+    text('profileAvatar',(profile.full_name||user.email||'م').trim().charAt(0));
+    text('profileName',profile.full_name||user.email);
+    text('profileTitle',profile.job_title);
+    text('jobTitle',profile.job_title);
+    text('department',profile.department);
+    text('managerName',manager?.full_name||'غير محدد');
+    text('employeeCode','غير مسجل');
+    text('profileEmail',profile.email||user.email);
+    text('systemRole',roleLabel[profile.role]||profile.role);
+    text('managerUidDisplay',profile.manager_id?'مسجل في الهيكل التنظيمي':'غير محدد');
+    text('accountStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
+    text('profileStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
+    text('joinDate',profile.created_at?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(profile.created_at)):'غير مسجل');
+    text('workLocation','غير مسجل');
+    text('employmentType','غير مسجل');
+
+    const hasPublishedJob=Boolean(job?.published_snapshot);
+    document.getElementById('jobDescriptionLink')?.classList.toggle('hidden',!hasPublishedJob);
+    document.getElementById('kpiLink')?.classList.toggle('hidden',!hasPublishedJob);
+    document.getElementById('profileLoading')?.classList.add('hidden');
+    document.getElementById('profileUnderConstruction')?.classList.add('hidden');
+    document.getElementById('profileContent')?.classList.remove('hidden');
+    try{lucide.createIcons()}catch{}
+  }
+}
 </script>
 </body>
 </html>

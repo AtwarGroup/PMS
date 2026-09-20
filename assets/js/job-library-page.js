@@ -59,6 +59,13 @@ async function prepareProfessionalDrafts(){
       ?await sb.from('job_descriptions').update(payload).eq('id',currentJob.id)
       :await sb.from('job_descriptions').insert({...payload,job_code:reviewed.job_code,created_by:me.id});
     if(response.error)throw response.error;
+    const verify=await sb.from('job_descriptions').select('id,job_code,status,content').eq('job_code',reviewed.job_code).maybeSingle();
+    if(verify.error)throw verify.error;
+    const actualEdition=verify.data?.content?.review_metadata?.edition;
+    const actualResponsibilities=verify.data?.content?.responsibilities?.length||0;
+    if(actualEdition!==sourceEdition||actualResponsibilities!==expectedResponsibilities){
+      throw new Error(`فشل التحقق من تحديث ${reviewed.title}: الإصدار أو عدد المهام في قاعدة البيانات لا يطابق الملف المعتمد.`);
+    }
     currentJob?updated++:created++;
   }
   toast(updated||created?`تم تحديث ${updated} وصف وإضافة ${created} وصف من الملفات المعتمدة؛ لن يظهر للموظف أو يصله إشعار إلا بعد إكمال المراجعة ثم «اعتماد ونشر»`:'الأوصاف الثلاثة مطابقة للمصدر؛ أكمل المراجعة ثم اضغط «اعتماد ونشر» لتظهر للموظفين');
