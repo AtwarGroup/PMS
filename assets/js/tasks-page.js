@@ -2760,6 +2760,10 @@ function renderDetails(){
   if(allowed.length>1){
     assigneeBox.innerHTML=`
       <div class="w-full">
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="text-[10px] font-black text-slate-500">المسؤول الحالي</span>
+          ${currentProfile?.role==='manager'&&isTaskOwner(task)?'<button type="button" id="delegateTaskButton" class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700" title="تفويض المهمة لموظف تابع"><i data-lucide="user-round-cog" class="w-3.5 h-3.5"></i><span>تفويض المهمة</span></button>':''}
+        </div>
         <select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">
           ${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${String(u.uid)===displayedAssigneeUid?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}
         </select>
@@ -2769,6 +2773,7 @@ function renderDetails(){
     assigneeSelect.onchange=e=>updateSelectedField('assignUid',e.target.value);
     assigneeSelect.disabled=!canEditTaskField(task,'assignUid');
     assigneeSelect.classList.toggle('opacity-60',assigneeSelect.disabled);
+    document.getElementById('delegateTaskButton')?.addEventListener('click',()=>{assigneeSelect.focus();if(typeof assigneeSelect.showPicker==='function')assigneeSelect.showPicker()});
   }else{
     assigneeBox.innerHTML=`<div class="font-bold text-sm text-blue-700">${escapeHTML(task.assign||currentProfile.name||'')}</div>`;
   }
@@ -2776,6 +2781,7 @@ function renderDetails(){
   applyTaskFieldPermissions(task);
   renderSubtasks(task);
   renderActivityLog(task);
+  window.lucide?.createIcons();
 }
 function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 

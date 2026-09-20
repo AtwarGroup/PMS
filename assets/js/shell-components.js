@@ -194,7 +194,7 @@
     }
     const {error}=await sb.from('notifications').delete().eq('id',row.id);
     if(error){onError('تعذر مسح الإشعار الآن.');return false}
-    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:`${depthPrefix}home.html`;
+    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/job-description.html`:`${depthPrefix}home.html`;
     return true;
   };
 

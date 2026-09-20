@@ -55,7 +55,11 @@ function reviewerResolution() {
   const managerIds = [...new Set(linkedUsers.map(user => user.manager_id).filter(Boolean))];
   const missing = linkedUsers.filter(user => !user.manager_id);
   if (!linkedUsers.length) return {state:'warning', text:'لم تُربط الوظيفة بموظف حتى الآن. يحدد مسؤول النظام المدير عند أول استخدام.'};
-  if (missing.length) return {state:'danger', text:`يوجد ${missing.length} موظف دون مدير مباشر مسجل. يجب أن يعالج مسؤول النظام الربط قبل إرسال الوصف للمراجعة.`};
+  if (missing.length && job.reviewer_id) {
+    const explicitReviewer = users.find(user => user.id === job.reviewer_id)?.full_name || 'المراجع المعيّن';
+    return {state:'', text:`لا يوجد مدير مباشر للموظف، لذلك سيُرسل الوصف إلى المراجع الذي عيّنه مسؤول النظام: ${explicitReviewer}.`};
+  }
+  if (missing.length) return {state:'danger', text:`يوجد ${missing.length} موظف دون مدير مباشر أو مراجع معيّن. يجب أن يختار مسؤول النظام المراجع قبل الإرسال.`};
   if (managerIds.length > 1 && !job.reviewer_id) return {state:'danger', text:'الموظفون المرتبطون بهذه الوظيفة يتبعون أكثر من مدير. يحدد مسؤول النظام مدير المراجعة المناسب.'};
   if (managerIds.length === 1 && job.reviewer_id && managerIds[0] !== job.reviewer_id) return {state:'danger', text:'المدير المراجع لا يطابق المدير المباشر المسجل للموظفين. الحالة محالة لمسؤول النظام.'};
   const name = users.find(user => user.id === (job.reviewer_id || managerIds[0]))?.full_name || 'المدير المسجل';
@@ -74,7 +78,10 @@ function responsibilitiesView(rows, limit = 0) {
 
 function overviewView() {
   const content = job.content || {};
-  return `<div class="content-stack"><section class="content-card"><h2>الغرض الوظيفي</h2><div class="purpose-text">${esc(job.purpose || 'غير محدد')}</div>${proposalActions('PURPOSE',-1)}</section><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
+  const linked = assignments.filter(item => item.job_description_id === job.id);
+  const linkedIds = new Set(linked.map(item => item.profile_id));
+  const assignmentCard = me.role === 'admin' ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.status === 'PUBLISHED' ? 'الوصف ظاهر الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
+  return `<div class="content-stack">${assignmentCard}<section class="content-card"><h2>الغرض الوظيفي</h2><div class="purpose-text">${esc(job.purpose || 'غير محدد')}</div>${proposalActions('PURPOSE',-1)}</section><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
 }
 
 function authoritiesView() {
@@ -102,7 +109,7 @@ function reviewView() {
 
 function editView() {
   const content = job.content || {};
-  if (activeTab === 'overview') return `<section class="content-card edit-grid"><div class="edit-field"><label>المسمى الوظيفي</label><input id="editTitle" value="${esc(job.title)}"></div><div class="edit-field"><label>العائلة الوظيفية</label><input id="editFamily" value="${esc(job.family || '')}"></div><div class="edit-field"><label>المستوى</label><input id="editLevel" value="${esc(job.job_level || '')}"></div><div class="edit-field"><label>المدير المراجع</label><select id="editReviewer"><option value="">يتطلب تحديد مسؤول النظام</option>${users.filter(user => ['manager','admin'].includes(user.role)).map(user => `<option value="${user.id}" ${job.reviewer_id === user.id ? 'selected' : ''}>${esc(user.full_name)}</option>`).join('')}</select></div><div class="edit-field" style="grid-column:1/-1"><label>الغرض الوظيفي</label><textarea id="editPurpose">${esc(job.purpose || '')}</textarea></div></section>`;
+  if (activeTab === 'overview') return `<section class="content-card edit-grid"><div class="edit-field"><label>المسمى الوظيفي</label><input id="editTitle" value="${esc(job.title)}"></div><div class="edit-field"><label>العائلة الوظيفية</label><input id="editFamily" value="${esc(job.family || '')}"></div><div class="edit-field"><label>المستوى</label><input id="editLevel" value="${esc(job.job_level || '')}"></div><div class="edit-field"><label>المراجع المعتمد</label><select id="editReviewer"><option value="">يتطلب تحديد مسؤول النظام</option>${users.map(user => `<option value="${user.id}" ${job.reviewer_id === user.id ? 'selected' : ''}>${esc(user.full_name)} — ${esc(user.role || '')}</option>`).join('')}</select></div><div class="edit-field" style="grid-column:1/-1"><label>الغرض الوظيفي</label><textarea id="editPurpose">${esc(job.purpose || '')}</textarea></div></section>`;
   const keys = activeTab === 'responsibilities' ? [['responsibilities','المهام والمسؤوليات']] : activeTab === 'authorities' ? [['authorities','الصلاحيات']] : [['kpis','مؤشرات الأداء'],['reports','التقارير والمخرجات']];
   return `<div class="content-stack">${keys.map(([key,title]) => `<section class="content-card"><h2>${title}</h2><div class="edit-list">${asArray(content[key]).map((item,index) => `<div class="edit-field"><label>البند ${index + 1}</label><textarea data-edit-list="${key}" data-index="${index}">${esc(itemText(item))}</textarea></div>`).join('')}</div></section>`).join('')}</div>`;
 }
@@ -240,12 +247,23 @@ async function transition(status) {
 }
 
 async function managerDone() {
-  const response = await sb.from('job_description_change_requests').insert({job_description_id:job.id,section:'PURPOSE',item_index:null,action:'COMMENT',original_value:null,proposed_value:null,reason:'اكتملت مراجعة المدير وأصبحت المقترحات جاهزة لمراجعة مسؤول النظام',manager_id:me.id});
+  const response = await sb.rpc('complete_job_description_review',{p_job_id:job.id});
   if (response.error) return toast(response.error.message);
+  job = response.data;
   await loadRelated();
   activeTab = 'review';
   render();
-  toast('أُبلغ مسؤول النظام باكتمال مراجعة المدير');
+  toast('تم الإرسال إلى مدير النظام للمراجعة والاعتماد');
+}
+
+async function assignEmployee() {
+  const profileId = byId('assignmentEmployee')?.value;
+  if (!profileId) return toast('اختر الموظف أولًا');
+  const response = await sb.from('employee_job_assignments').upsert({profile_id:profileId,job_description_id:job.id,assigned_by:me.id,updated_by:me.id},{onConflict:'profile_id'});
+  if (response.error) return toast(response.error.message);
+  await loadRelated();
+  render();
+  toast(job.status === 'PUBLISHED' ? 'تم الربط وإشعار الموظف' : 'تم الربط؛ سيظهر الوصف للموظف بعد النشر');
 }
 
 async function addComment() {
@@ -267,6 +285,7 @@ function bindActions() {
   byId('adminDoneBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
   byId('publishBtn')?.addEventListener('click',() => transition('PUBLISHED'));
   byId('commentBtn')?.addEventListener('click',addComment);
+  byId('assignEmployeeBtn')?.addEventListener('click',assignEmployee);
 }
 
 async function loadRelated() {
