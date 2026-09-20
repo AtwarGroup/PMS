@@ -61,6 +61,8 @@ jobs:
         run: node tests/tasks-kanban-password.mjs
       - name: Run weekly encrypted backup configuration audit
         run: node tests/weekly-backup-config.mjs
+      - name: Run task governance and job acknowledgement audit
+        run: node tests/task-governance-job-acknowledgement.mjs
       - name: Run phase-two information architecture audit
         run: node tests/phase-two-information-architecture.mjs
       - name: Run phase-two unified task workspace audit
