@@ -347,7 +347,7 @@ function isDescendantOf(userOrUid,managerUid){
 function visibleUsers(){
   if(!currentProfile||!currentUser)return [];
 
-  if(currentProfile.role==='admin'||(currentProfile.permissions||[]).includes('tasks.read_all')){
+  if(currentProfile.role==='admin'){
     return users.filter(isActiveProfile);
   }
 
@@ -714,8 +714,9 @@ onAuthStateChanged(auth,async(user)=>{
     if(me)currentProfile=me;
     window.atwarSyncShellIdentity?.(currentProfile,user);
     const executiveRead=(currentProfile.permissions||[]).includes('tasks.read_all');
-    if(executiveRead&&currentProfile.role!=='admin'){
-      window.ATWAR_SUPABASE.rpc('record_executive_task_access',{p_user_agent:navigator.userAgent}).then(({error})=>error&&console.warn('Executive access audit:',error));
+    if(executiveRead){
+      const nav=document.querySelector('.atwar-header-task-nav');
+      if(nav&&!nav.querySelector('[data-executive-view]'))nav.insertAdjacentHTML('beforeend','<a data-executive-view href="executive.html"><i data-lucide="scan-eye"></i><span>اطلاع تنفيذي</span></a>');
     }
 
     document.getElementById('currentUserBadge').textContent=
@@ -725,7 +726,7 @@ onAuthStateChanged(auth,async(user)=>{
       currentProfile.role==='admin'
         ? 'عرض جميع المهام'
         : executiveRead
-          ? 'اطلاع تنفيذي للقراءة فقط على جميع مهام المؤسسة'
+          ? 'مهامك وفريقك — الاطلاع الشامل متاح في صفحة «اطلاع تنفيذي»'
         : currentProfile.role==='manager'
           ? 'مهامك وفريقك المباشر، مع المهام التي أنشأتها لغير المباشرين'
           : 'مهامك الشخصية';

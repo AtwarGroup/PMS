@@ -61,7 +61,7 @@
 
     <main class="profile-page">
       <div class="profile-page-head">
-        <div><h1>ملفي الوظيفي</h1><p>بياناتك الوظيفية والمعلومات التنظيمية المسجلة في النظام.</p></div>
+        <div><h1>الملف التعريفي</h1><p>بياناتك الوظيفية والتنظيمية والإضافية المسجلة في النظام.</p></div>
       </div>
 
       <div id="profileLoading" class="profile-loading">
@@ -128,32 +128,14 @@
           </section>
 
           <section class="profile-card">
-            <h3>ملفي</h3>
-
+            <h3>الملف الوظيفي المعتمد</h3>
             <div class="profile-links">
               <a id="jobDescriptionLink" class="profile-link hidden" href="job-description.html">
-                <i data-lucide="file-text"></i>
-                <b>الوصف الوظيفي</b>
-                <small>الهدف الوظيفي والمسؤوليات والمهام الرئيسية.</small>
+                <i data-lucide="briefcase-business"></i>
+                <b>فتح الملف الوظيفي</b>
+                <small>المهام الوظيفية، حدود الصلاحيات، وكيف يُقاس عملي ومؤشرات الأداء.</small>
               </a>
-
-              <a id="kpiLink" class="profile-link hidden" href="kpi.html">
-                <i data-lucide="chart-no-axes-combined"></i>
-                <b>مؤشرات الأداء KPI</b>
-                <small>المؤشرات والأهداف ونتائج الأداء المرتبطة بملفك.</small>
-              </a>
-
-              <a class="profile-link" href="../tasks/index.html">
-                <i data-lucide="list-checks"></i>
-                <b>مهامي</b>
-                <small>الانتقال إلى المهام الحالية والمتابعة.</small>
-              </a>
-
-              <a class="profile-link" href="../workspace/index.html">
-                <i data-lucide="clock-arrow-up"></i>
-                <b>مساحة عملي</b>
-                <small>الملاحظات والمتابعات الشخصية المحفوظة في حسابك.</small>
-              </a>
+              <div id="jobDescriptionPending" class="profile-empty">لا توجد نسخة وظيفية منشورة مرتبطة بالحساب حاليًا.</div>
             </div>
           </section>
 
@@ -235,8 +217,8 @@ if(a){
   else{
     let manager=null,job=null;
     if(profile.manager_id){
-      const result=await sb.from('profiles').select('full_name').eq('id',profile.manager_id).maybeSingle();
-      manager=result.data||null;
+      const result=await sb.rpc('get_my_manager_profile');
+      manager=Array.isArray(result.data)?result.data[0]||null:result.data||null;
     }
     const assignment=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();
     const jobId=assignment.data?.job_description_id||profile.job_description_id;
@@ -255,19 +237,19 @@ if(a){
     text('jobTitle',profile.job_title);
     text('department',profile.department);
     text('managerName',manager?.full_name||'غير محدد');
-    text('employeeCode','غير مسجل');
+    text('employeeCode',profile.employee_code||'غير مسجل');
     text('profileEmail',profile.email||user.email);
     text('systemRole',roleLabel[profile.role]||profile.role);
     text('managerUidDisplay',profile.manager_id?'مسجل في الهيكل التنظيمي':'غير محدد');
     text('accountStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
     text('profileStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
-    text('joinDate',profile.created_at?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(profile.created_at)):'غير مسجل');
-    text('workLocation','غير مسجل');
-    text('employmentType','غير مسجل');
+    text('joinDate',profile.join_date?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(`${profile.join_date}T00:00:00`)):'غير مسجل');
+    text('workLocation',profile.work_location||'غير مسجل');
+    text('employmentType',profile.employment_type||'غير مسجل');
 
     const hasPublishedJob=Boolean(job?.published_snapshot);
     document.getElementById('jobDescriptionLink')?.classList.toggle('hidden',!hasPublishedJob);
-    document.getElementById('kpiLink')?.classList.toggle('hidden',!hasPublishedJob);
+    document.getElementById('jobDescriptionPending')?.classList.toggle('hidden',hasPublishedJob);
     document.getElementById('profileLoading')?.classList.add('hidden');
     document.getElementById('profileUnderConstruction')?.classList.add('hidden');
     document.getElementById('profileContent')?.classList.remove('hidden');

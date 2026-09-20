@@ -32,7 +32,7 @@
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
-          ${nav('profile','profile/index.html','circle-user-round','ملفي الوظيفي')}
+          ${nav('profile','profile/index.html','circle-user-round','الملف التعريفي')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">

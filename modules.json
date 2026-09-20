@@ -47,7 +47,16 @@
       "id": "kpi",
       "path": "profile/kpi.html",
       "minRole": "employee",
-      "status": "conditional"
+      "status": "redirect",
+      "navigation": "hidden"
+    },
+    {
+      "id": "executive-tasks",
+      "path": "tasks/executive.html",
+      "minRole": "manager",
+      "status": "conditional",
+      "navigation": "permission",
+      "permission": "tasks.read_all"
     },
     {
       "id": "approvals",
