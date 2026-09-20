@@ -1,6 +1,10 @@
 begin;
 
 -- امتياز قراءة تنفيذي مستقل عن دور مدير النظام.
+-- بعض نسخ قاعدة البيانات السابقة لا تحتوي عمود الصلاحيات بعد.
+alter table public.profiles
+  add column if not exists permissions text[] not null default array[]::text[];
+
 create or replace function private.has_permission(p_permission text)
 returns boolean language sql stable security definer
 set search_path='pg_catalog','public','private'
