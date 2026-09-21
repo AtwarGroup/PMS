@@ -99,9 +99,9 @@
     .kanban-column-overdue .kanban-card{border-color:#fecaca}.kanban-column-overdue .kanban-progress span{background:#e11d48}
     #detailsBackdrop{position:fixed;inset:var(--atwar-header-height,72px) 0 0 0;background:rgba(15,23,42,.32);backdrop-filter:blur(2px);z-index:810}
     body.atwar-kanban-mode #detailsPanel:not(.hidden){position:fixed!important;top:calc(var(--atwar-header-height,72px) + 12px);bottom:12px;left:12px;width:min(440px,calc(100vw - 24px))!important;max-height:none;overflow-y:auto;z-index:820;border-radius:18px!important;box-shadow:0 24px 70px rgba(15,23,42,.28)!important}
-    body.atwar-task-drawer-open{overflow:hidden}body.atwar-kanban-mode #kanbanView{max-height:calc(100vh - 250px);overflow:auto}
-    .task-filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}.task-filter-bar #searchInput{flex:1 1 300px;min-width:220px}.task-filter-bar #quickFilters{flex:0 1 auto;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.task-filter-bar select,.task-filter-bar .view-switch{flex:0 0 auto}
-    @media(max-width:1200px){.task-filter-bar{flex-wrap:wrap}.task-filter-bar #searchInput{flex-basis:100%}.task-filter-bar #quickFilters{flex:1 1 auto}}
+    body.atwar-task-drawer-open{overflow:hidden}body.atwar-kanban-mode #kanbanView{overflow:visible}
+    .task-filter-bar{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;align-items:center;gap:10px}.task-filter-bar #searchInput{min-width:220px}.task-filter-bar #quickFilters{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}.task-filter-bar select,.task-filter-bar .view-switch{min-width:max-content}
+    @media(max-width:1200px){.task-filter-bar{grid-template-columns:minmax(0,1fr) auto}.task-filter-bar #quickFilters{grid-column:1/-1;grid-row:2}.task-filter-bar #searchInput{min-width:0}.task-filter-bar #assigneeFilter,.task-filter-bar #sortFilter{grid-row:3}}
     @media(max-width:900px){.kanban-board{grid-template-columns:repeat(4,280px)}}
     input[type=range]{
       -webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
@@ -577,7 +577,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.4.29"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.4.30"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

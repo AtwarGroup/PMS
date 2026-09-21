@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.29";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.30";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -19,7 +19,7 @@ let assigneeFilterValue='ALL';
 let sortFilterValue='DEFAULT';
 let notifications=[];
 let unsubscribeNotifications=null;
-let managerDashboardCollapsed=false;
+let managerDashboardCollapsed=true;
 let activityLogExpanded=false;
 let pendingAssigneeChange=null;
 let homeFilterValue='';
