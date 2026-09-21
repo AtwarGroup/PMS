@@ -38,6 +38,10 @@ assert.match(profileIndex,/hasPublishedJob/,'My Profile must reveal a published 
 assert.doesNotMatch(profileIndex,/else\{document\.getElementById\('profileLoading'\).*profileUnderConstruction/s,'My Profile must not be restricted to one hard-coded employee');
 assert.doesNotMatch(profileIndex,/href="kpi\.html"/,'Profile overview must not duplicate the approved job KPI page');
 assert.match(profileIndex,/get_my_manager_profile/,'Profile overview must resolve the direct manager through the governed RPC');
+assert.doesNotMatch(profileIndex,/location\.replace\('financial-manager\.html'\)/,'Every employee must use the unified profile instead of a legacy one-off page');
+for(const section of ['البيانات الوظيفية','المعلومات التنظيمية','البيانات الإضافية','ملفي الوظيفي المعتمد'])assert.match(profileIndex,new RegExp(section),`Unified profile section is missing: ${section}`);
+for(const state of ['مرتبط — بانتظار النشر','منشور ومعتمد','غير مرتبط'])assert.match(profileIndex,new RegExp(state),`Profile must explain job linkage state: ${state}`);
+assert.match(profileIndex,/job_description_acknowledgements/,'Profile summary must show the acknowledgement state for the published revision');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
 assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
 assert.match(adminUsers,/class="row-save-state" aria-live="polite"/,'Each account row must expose its own accessible save result');

@@ -48,6 +48,13 @@
 .profile-under-card h2{margin:0;color:#10233f;font-size:23px;font-weight:900}
 .profile-under-card p{margin:10px auto 0;color:#7b8aa5;font-size:11px;line-height:1.9;max-width:430px}
 
+/* V2.4.32 unified employee profile */
+.profile-page{max-width:1440px;margin:auto;width:100%;padding:22px!important}.profile-page-head{margin-bottom:12px}.profile-page-head h1{font-size:25px}
+.profile-hero{border:0;border-radius:22px;padding:24px 26px;color:#fff;background:linear-gradient(120deg,#0b315f,#1769c9);box-shadow:0 14px 34px rgba(13,58,112,.16)}.profile-hero:after{display:none}.profile-avatar{width:62px;height:62px;border-radius:18px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)}.profile-name{font-size:24px}.profile-title{font-size:11px;color:#dcecff}.profile-state{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.24);color:#fff}
+.profile-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.profile-overview article{background:#fff;border:1px solid #e2eaf4;border-radius:15px;padding:13px 15px;box-shadow:0 4px 14px rgba(20,45,80,.035)}.profile-overview span{display:block;color:#7b8aa5;font-size:9px;font-weight:800}.profile-overview strong{display:block;color:#15375f;font-size:13px;margin-top:5px}.profile-overview small{display:block;color:#8a98aa;font-size:9px;margin-top:3px}
+.profile-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.profile-card{padding:17px;border-radius:17px}.profile-card h3{display:flex;align-items:center;gap:8px;margin-bottom:10px}.profile-card h3 i{width:18px;height:18px;color:#1769e0}.profile-row{padding:10px 0}.profile-value.not-recorded{color:#a0aabd;font-weight:700}.profile-professional{grid-column:1/-1;background:linear-gradient(145deg,#fff,#f7fbff)}.professional-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}.professional-head h3{margin:0}.job-publication-state{padding:6px 10px;border-radius:99px;background:#fff4d8;color:#a86300;font-size:9px;font-weight:900}.job-publication-state.published{background:#eafaf1;color:#11834b}.professional-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.professional-link{display:flex;gap:11px;align-items:center;text-decoration:none;padding:14px;border:1px solid #dce7f4;border-radius:14px;background:#fff;color:#20364f;transition:.16s ease}.professional-link:hover{transform:translateY(-2px);border-color:#91bdf0;box-shadow:0 8px 18px rgba(23,105,224,.08)}.professional-link.disabled{pointer-events:none;opacity:.52}.professional-icon{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:#eaf3ff;color:#1769e0}.professional-link:nth-child(2) .professional-icon{background:#eefbf5;color:#15905e}.professional-link:nth-child(3) .professional-icon{background:#fff5e4;color:#c77700}.professional-link:nth-child(4) .professional-icon{background:#f1edff;color:#7254d8}.professional-icon i{width:18px;height:18px}.professional-link b{display:block;font-size:11px}.professional-link small{display:block;color:#7d8ca2;font-size:9px;margin-top:3px}.professional-empty{padding:14px;border:1px dashed #d8e3ef;border-radius:13px;color:#75869c;font-size:10px;background:#fbfdff}
+@media(max-width:1050px){.profile-grid{grid-template-columns:1fr 1fr}.profile-professional{grid-column:1/-1}.profile-overview,.professional-links{grid-template-columns:1fr 1fr}}@media(max-width:650px){.profile-grid,.profile-overview,.professional-links{grid-template-columns:1fr}.profile-hero{align-items:flex-start;flex-direction:column}.profile-professional{grid-column:auto}.profile-page{padding:13px!important}}
+
 </style>
 
 </head>
@@ -97,9 +104,16 @@
           <div id="profileStatus" class="profile-state">نشط</div>
         </section>
 
+        <section class="profile-overview" aria-label="ملخص الملف التعريفي">
+          <article><span>الرقم الوظيفي</span><strong id="overviewEmployeeCode">—</strong><small>المعرّف الداخلي للموظف</small></article>
+          <article><span>المدير المباشر</span><strong id="overviewManager">—</strong><small id="overviewManagerState">حسب الهيكل التنظيمي</small></article>
+          <article><span>الوصف الوظيفي</span><strong id="overviewJobState">—</strong><small id="overviewJobDetail">حالة الربط والنشر</small></article>
+          <article><span>إقرار الموظف</span><strong id="overviewAckState">—</strong><small id="overviewAckDetail">على النسخة المنشورة</small></article>
+        </section>
+
         <div class="profile-grid">
           <section class="profile-card">
-            <h3>بياناتي الوظيفية</h3>
+            <h3><i data-lucide="briefcase-business"></i> البيانات الوظيفية</h3>
 
             <div class="profile-row">
               <span class="profile-label">المسمى الوظيفي</span>
@@ -128,29 +142,14 @@
           </section>
 
           <section class="profile-card">
-            <h3>الملف الوظيفي المعتمد</h3>
-            <div class="profile-links">
-              <a id="jobDescriptionLink" class="profile-link hidden" href="job-description.html">
-                <i data-lucide="briefcase-business"></i>
-                <b>فتح الملف الوظيفي</b>
-                <small>المهام الوظيفية، حدود الصلاحيات، وكيف يُقاس عملي ومؤشرات الأداء.</small>
-              </a>
-              <div id="jobDescriptionPending" class="profile-empty">لا توجد نسخة وظيفية منشورة مرتبطة بالحساب حاليًا.</div>
-            </div>
-          </section>
-
-          <section class="profile-card">
-            <h3>معلومات تنظيمية</h3>
+            <h3><i data-lucide="network"></i> المعلومات التنظيمية</h3>
 
             <div class="profile-row">
               <span class="profile-label">الدور في النظام</span>
               <span id="systemRole" class="profile-value">—</span>
             </div>
 
-            <div class="profile-row">
-              <span class="profile-label">المدير UID</span>
-              <span id="managerUidDisplay" class="profile-value profile-empty">غير معروض</span>
-            </div>
+            <div class="profile-row"><span class="profile-label">المرجعية الإدارية</span><span id="organizationManager" class="profile-value">—</span></div>
 
             <div class="profile-row">
               <span class="profile-label">حالة الحساب</span>
@@ -159,7 +158,7 @@
           </section>
 
           <section class="profile-card">
-            <h3>بيانات إضافية</h3>
+            <h3><i data-lucide="clipboard-list"></i> البيانات الإضافية</h3>
 
             <div class="profile-row">
               <span class="profile-label">تاريخ الانضمام</span>
@@ -176,11 +175,22 @@
               <span id="employmentType" class="profile-value">—</span>
             </div>
           </section>
+
+          <section class="profile-card profile-professional">
+            <div class="professional-head"><div><h3><i data-lucide="badge-check"></i> ملفي الوظيفي المعتمد</h3><p class="profile-empty" style="margin:5px 0 0">مهام الوظيفة وحدود الصلاحيات وآلية قياس الأداء في النسخة الرسمية المنشورة.</p></div><span id="jobPublicationState" class="job-publication-state">جاري التحقق</span></div>
+            <div id="professionalLinks" class="professional-links hidden">
+              <a class="professional-link" href="job-description.html"><span class="professional-icon"><i data-lucide="file-badge"></i></span><span><b>الوصف الوظيفي</b><small id="jobRoleTitle">النسخة المنشورة</small></span></a>
+              <a class="professional-link" href="job-description.html?tab=tasks"><span class="professional-icon"><i data-lucide="list-checks"></i></span><span><b>المهام والمسؤوليات</b><small id="jobTaskCount">عرض نطاق العمل</small></span></a>
+              <a class="professional-link" href="job-description.html?tab=authority"><span class="professional-icon"><i data-lucide="shield-check"></i></span><span><b>حدود صلاحياتي</b><small id="jobAuthorityCount">عرض الصلاحيات</small></span></a>
+              <a class="professional-link" href="job-description.html?tab=performance"><span class="professional-icon"><i data-lucide="chart-no-axes-combined"></i></span><span><b>كيف يُقاس عملي؟</b><small id="jobKpiCount">المؤشرات والمستهدفات</small></span></a>
+            </div>
+            <div id="jobDescriptionPending" class="professional-empty">لم تُنشر بعد نسخة معتمدة من الوصف الوظيفي المرتبط بهذا الحساب.</div>
+          </section>
         </div>
 
         <footer class="atwar-footer">
           <span>ATWAR ONE • My Profile</span>
-          <span>Production 2.4.21</span>
+          <span>Production 2.4.32</span>
           <span>جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</span>
         </footer>
       </div>
@@ -192,7 +202,7 @@
 <script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/shell-components.js?v=1.9.18"></script>
+<script src="../assets/js/shell-components.js?v=2.4.32"></script>
 <script src="../assets/js/permissions.js"></script>
 
 <script type="module">
@@ -213,48 +223,23 @@ const roleLabel={admin:'مدير النظام',manager:'مدير',employee:'مو
 const a=await authProfile('../login.html');
 if(a){
   const {profile,user}=a;
-  if(profile.firebase_uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2')location.replace('financial-manager.html');
-  else{
-    let manager=null,job=null;
-    if(profile.manager_id){
-      const result=await sb.rpc('get_my_manager_profile');
-      manager=Array.isArray(result.data)?result.data[0]||null:result.data||null;
-    }
-    const assignment=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();
-    const jobId=assignment.data?.job_description_id||profile.job_description_id;
-    if(jobId){
-      const result=await sb.from('job_descriptions').select('id,published_snapshot').eq('id',jobId).maybeSingle();
-      job=result.data||null;
-    }
-    if(!job&&profile.job_title){
-      const result=await sb.from('job_descriptions').select('id,published_snapshot').eq('title',profile.job_title).not('published_at','is',null).maybeSingle();
-      job=result.data||null;
-    }
+  let manager=null,job=null,assignment=null,acknowledgement=null;
+  if(profile.manager_id){const result=await sb.rpc('get_my_manager_profile');manager=Array.isArray(result.data)?result.data[0]||null:result.data||null}
+  const assignmentResult=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();assignment=assignmentResult.data||null;
+  const jobId=assignment?.job_description_id||profile.job_description_id;
+  if(jobId){const result=await sb.from('job_descriptions').select('id,title,revision,published_at,published_snapshot').eq('id',jobId).maybeSingle();job=result.data||null}
+  if(!job&&profile.job_title){const result=await sb.from('job_descriptions').select('id,title,revision,published_at,published_snapshot').eq('title',profile.job_title).maybeSingle();job=result.data||null}
+  const hasPublishedJob=Boolean(job?.published_at&&job?.published_snapshot),snapshot=job?.published_snapshot||{},content=snapshot.content||{},revision=Number(snapshot.revision||job?.revision||1);
+  if(hasPublishedJob){const result=await sb.from('job_description_acknowledgements').select('id,accepted_at,email_status').eq('profile_id',profile.id).eq('job_description_id',job.id).eq('job_revision',revision).maybeSingle();acknowledgement=result.data||null}
 
-    text('profileAvatar',(profile.full_name||user.email||'م').trim().charAt(0));
-    text('profileName',profile.full_name||user.email);
-    text('profileTitle',profile.job_title);
-    text('jobTitle',profile.job_title);
-    text('department',profile.department);
-    text('managerName',manager?.full_name||'غير محدد');
-    text('employeeCode',profile.employee_code||'غير مسجل');
-    text('profileEmail',profile.email||user.email);
-    text('systemRole',roleLabel[profile.role]||profile.role);
-    text('managerUidDisplay',profile.manager_id?'مسجل في الهيكل التنظيمي':'غير محدد');
-    text('accountStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
-    text('profileStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');
-    text('joinDate',profile.join_date?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(`${profile.join_date}T00:00:00`)):'غير مسجل');
-    text('workLocation',profile.work_location||'غير مسجل');
-    text('employmentType',profile.employment_type||'غير مسجل');
+  const missing='لم يُسجل بعد',managerDisplay=manager?.full_name||(profile.manager_id?'مسجل — الاسم غير متاح':'لا يوجد مدير مباشر');
+  text('profileAvatar',(profile.full_name||user.email||'م').trim().charAt(0));text('profileName',profile.full_name||user.email);text('profileTitle',profile.job_title);text('jobTitle',profile.job_title||missing);text('department',profile.department||missing);text('managerName',managerDisplay);text('organizationManager',managerDisplay);text('employeeCode',profile.employee_code||missing);text('profileEmail',profile.email||user.email);text('systemRole',roleLabel[profile.role]||profile.role);text('accountStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');text('profileStatus',profile.active!==false&&profile.status!=='inactive'?'نشط':'غير نشط');text('joinDate',profile.join_date?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(`${profile.join_date}T00:00:00`)):missing);text('workLocation',profile.work_location||missing);text('employmentType',profile.employment_type||missing);
+  text('overviewEmployeeCode',profile.employee_code||missing);text('overviewManager',managerDisplay);text('overviewManagerState',profile.manager_id?'مسجل في الهيكل التنظيمي':'غير مرتبط بمدير');
+  text('overviewJobState',hasPublishedJob?'منشور ومعتمد':job?'مرتبط — بانتظار النشر':'غير مرتبط');text('overviewJobDetail',hasPublishedJob?`الإصدار ${revision}`:job?'لن يظهر محتواه قبل النشر':'يلزم ربط وصف وظيفي');text('overviewAckState',acknowledgement?'تمت الموافقة':hasPublishedJob?'بانتظار موافقتك':'غير مطلوب حالياً');text('overviewAckDetail',acknowledgement?new Intl.DateTimeFormat('ar-SA',{dateStyle:'medium'}).format(new Date(acknowledgement.accepted_at)):hasPublishedJob?'افتح الملف الوظيفي للاطلاع':'بعد نشر الوصف الوظيفي');
 
-    const hasPublishedJob=Boolean(job?.published_snapshot);
-    document.getElementById('jobDescriptionLink')?.classList.toggle('hidden',!hasPublishedJob);
-    document.getElementById('jobDescriptionPending')?.classList.toggle('hidden',hasPublishedJob);
-    document.getElementById('profileLoading')?.classList.add('hidden');
-    document.getElementById('profileUnderConstruction')?.classList.add('hidden');
-    document.getElementById('profileContent')?.classList.remove('hidden');
-    try{lucide.createIcons()}catch{}
-  }
+  const publication=document.getElementById('jobPublicationState');publication.textContent=hasPublishedJob?'منشور ومعتمد':job?'مرتبط — بانتظار النشر':'غير مرتبط';publication.classList.toggle('published',hasPublishedJob);document.getElementById('professionalLinks').classList.toggle('hidden',!hasPublishedJob);document.getElementById('jobDescriptionPending').classList.toggle('hidden',hasPublishedJob);if(job){text('jobRoleTitle',snapshot.title||job.title);text('jobTaskCount',`${Array.isArray(content.responsibilities)?content.responsibilities.length:0} مهمة ومسؤولية`);text('jobAuthorityCount',`${Array.isArray(content.authorities)?content.authorities.length:0} صلاحية وحد`);text('jobKpiCount',`${Array.isArray(content.kpis)?content.kpis.length:0} مؤشر قياس`) }
+  document.querySelectorAll('.profile-value').forEach(node=>node.classList.toggle('not-recorded',node.textContent===missing));
+  document.getElementById('profileLoading')?.classList.add('hidden');document.getElementById('profileUnderConstruction')?.classList.add('hidden');document.getElementById('profileContent')?.classList.remove('hidden');try{lucide.createIcons()}catch{}
 }
 </script>
 </body>
