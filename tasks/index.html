@@ -255,15 +255,23 @@
 
 
 
-  <main class="w-full max-w-[1600px] mx-auto p-3 lg:p-4 space-y-3">
+  <main class="task-suite-page">
+
+    <section class="task-suite-hero">
+      <div>
+        <h1 id="taskSuiteTitle">المهام النشطة</h1>
+        <p id="taskSuiteDescription">إدارة مهامك ومتابعة التنفيذ والاعتمادات ضمن مساحة عمل واحدة واضحة.</p>
+      </div>
+      <span id="taskSuiteBadge" class="task-suite-hero-badge"><i data-lucide="layout-dashboard"></i> مساحة إدارة المهام</span>
+    </section>
 
     <!-- Stats -->
-    <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p id="statTotalLabel" class="text-[11px] font-bold text-slate-500">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
-      <div class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm"><p class="text-[11px] font-bold text-slate-500">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+    <section class="task-suite-metrics">
+      <div class="task-suite-metric"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="task-suite-metric"><p>مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
+      <div class="task-suite-metric"><p>قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
+      <div class="task-suite-metric"><p>قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
+      <div class="task-suite-metric"><p>متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
     </section>
 
     <!-- Manager Dashboard -->

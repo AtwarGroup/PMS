@@ -567,6 +567,12 @@ function applyTaskScopeUI(){
   document.getElementById('completedDateFilters')?.classList.toggle('hidden',!archive);
   const totalLabel=document.getElementById('statTotalLabel');
   if(totalLabel)totalLabel.textContent=archive?'إجمالي المهام المكتملة':'إجمالي المهام النشطة';
+  const suiteTitle=document.getElementById('taskSuiteTitle');
+  const suiteDescription=document.getElementById('taskSuiteDescription');
+  const suiteBadge=document.getElementById('taskSuiteBadge');
+  if(suiteTitle)suiteTitle.textContent=archive?'المهام المكتملة':'المهام النشطة';
+  if(suiteDescription)suiteDescription.textContent=archive?'أرشيف موحد للمهام المنجزة والمعتمدة مع إمكان البحث والتصفية والمراجعة.':'إدارة مهامك ومتابعة التنفيذ والاعتمادات ضمن مساحة عمل واحدة واضحة.';
+  if(suiteBadge)suiteBadge.lastChild.textContent=archive?' أرشيف للقراءة والمراجعة':' مساحة إدارة المهام';
   const subtitle=document.getElementById('pageSubtitle');
   if(archive&&subtitle)subtitle.textContent='أرشيف المهام المكتملة — للقراءة فقط، وإعادة الفتح لمدير النظام';
   if(archive){

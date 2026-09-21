@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="../assets/css/shared.css">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
-.card{background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:16px;margin-bottom:14px}
 .form-grid{display:grid;grid-template-columns:2fr 1.25fr 1fr .8fr 1.25fr .9fr;gap:10px}
 .field{min-width:0}.field label{display:block;font-size:10px;font-weight:900;color:#64748b;margin:0 2px 6px}
 .field input,.field select{width:100%;border:1px solid #dfe7f1;border-radius:10px;padding:10px 11px;font-family:inherit;background:#fff}
@@ -18,23 +17,22 @@
 .second-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;margin-top:10px;align-items:end}
 .btn{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:10px 14px;font-family:inherit;font-weight:900;cursor:pointer}
 .btn:disabled{opacity:.55;cursor:not-allowed}.danger{background:#b42318}.secondary{background:#eaf2fb;color:#173b64}
-.row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #edf2f7}
+.row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;align-items:center;padding:14px 10px;border-bottom:1px solid #edf2f7}.row:hover{background:#f8fbff}.recurring-list-head{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;padding:9px 10px;background:#f1f6fc;color:#60738b;font-size:10px;font-weight:900;border-radius:10px}
 .meta{font-size:10px;color:#7b8aa5}.success{color:#15803d;font-weight:800}.error{color:#b42318;font-weight:800}
-@media(max-width:950px){.form-grid{grid-template-columns:1fr 1fr}.second-row,.row{grid-template-columns:1fr 1fr}.second-row .wide{grid-column:1/-1}}
-@media(max-width:620px){.form-grid,.second-row,.row{grid-template-columns:1fr}}
+@media(max-width:950px){.form-grid{grid-template-columns:1fr 1fr}.second-row,.row{grid-template-columns:1fr 1fr}.second-row .wide{grid-column:1/-1}.recurring-list-head{display:none}}
+@media(max-width:620px){.form-grid,.second-row,.row{grid-template-columns:1fr}.row{padding:14px 4px}.row .btn{width:100%}}
 </style>
 </head>
 <body data-min-role="manager">
 <div class="atwar-shell">
 <atwar-sidebar active=""></atwar-sidebar>
 <section class="atwar-main">
-<atwar-header></atwar-header>
-<main class="atwar-content">
-<h1 style="margin-bottom:5px">المهام الدورية</h1>
-<p style="font-size:11px;color:#7b8aa5;margin-top:0">ينشئ النظام المهمة تلقائيًا عند موعدها، ويمكن تشغيل المهام المستحقة يدويًا عند الحاجة.</p>
+<atwar-header mode="task-suite"></atwar-header>
+<main class="task-suite-page">
+<section class="task-suite-hero"><div><h1>المهام الدورية</h1><p>إنشاء قوالب متكررة منظمة ومتابعة موعد التشغيل القادم وحالة كل قالب.</p></div><span class="task-suite-hero-badge"><i data-lucide="repeat-2"></i> إدارة القوالب المتكررة</span></section>
 
-<section class="card">
-<h3 style="margin-top:0">إضافة مهمة دورية</h3>
+<section class="task-suite-panel">
+<div class="task-suite-panel-head"><div><h2>إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
 <div class="form-grid">
   <div class="field"><label>عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
   <div class="field"><label>المسند إليه</label><select id="assignee"></select></div>
@@ -52,11 +50,12 @@
 <div id="msg" class="meta" style="margin-top:10px"></div>
 </section>
 
-<section class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-  <h3 style="margin:0">المهام الدورية الحالية</h3>
+<section class="task-suite-panel">
+<div class="task-suite-panel-head">
+  <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
   <button id="run" class="btn">تشغيل المستحق الآن</button>
 </div>
+<div class="recurring-list-head"><span>المهمة والمسؤول</span><span>التكرار</span><span>التشغيل القادم</span><span>الحالة</span><span>الإجراء</span></div>
 <div id="list" style="margin-top:10px">جاري التحميل...</div>
 </section>
 <footer class="atwar-footer"><span>ATWAR ONE • Recurring Tasks</span><span>Production 1.8.1</span><span>Hourly Scheduler</span></footer>

@@ -53,22 +53,25 @@
 
   class AtwarHeader extends HTMLElement{
     connectedCallback(){
-      const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession();
       const currentPath=location.pathname;
+      const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession(),taskSuiteMode=mode==='tasks'||mode==='task-suite'||currentPath.endsWith('/tasks/executive.html');
       const taskNavActive=key=>{
         const completedScope=/\/tasks\//.test(currentPath)&&String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
-        if(key==='tasks')return /\/tasks\//.test(currentPath)&&!completedScope;
+        if(key==='tasks')return /\/tasks\//.test(currentPath)&&!currentPath.endsWith('/executive.html')&&!completedScope;
         if(key==='completed')return /\/completed\//.test(currentPath)||completedScope;
         if(key==='recurring')return /\/recurring\//.test(currentPath);
+        if(key==='executive')return currentPath.endsWith('/executive.html');
         return false;
       };
       const recurringAllowed=!s || ['manager','admin'].includes(s.role);
+      const executiveAllowed=!s || s.role==='admin'||(s.permissions||[]).includes('tasks.read_all');
       const taskModuleOpen=/\/(tasks|completed|recurring)\//.test(currentPath);
       const taskNav=taskModuleOpen?`
         <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
           <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
           ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
+          ${executiveAllowed?`<a class="${taskNavActive('executive')?'active':''}" href="${d}tasks/executive.html"><i data-lucide="scan-eye"></i><span>الاطلاع التنفيذي</span></a>`:''}
         </nav>`:'';
       const taskTools=mode==='tasks'?`
         <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="atwar-task-add"><i data-lucide="plus"></i><span>إضافة مهمة</span></button>
@@ -119,7 +122,7 @@
         @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
       </style>
       <header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
-        ${mode==='tasks'?'':`<div class="atwar-top-brand">
+        ${taskSuiteMode?'':`<div class="atwar-top-brand">
           <div class="atwar-brand-mark"></div>
           <div class="atwar-org-title">
               <h2>نظام إدارة الأداء المؤسسي</h2>
