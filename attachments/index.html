@@ -6,8 +6,8 @@
 <title>ATWAR ONE – المرفقات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=2.5.0"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
 .head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:14px}.head h1{margin:0}.head p{font-size:11px;color:#7b8aa5;margin:5px 0 0}
@@ -65,7 +65,7 @@ function render(){
    <div class="meta">${esc(fmt(x.created_at))}</div>
    <button class="btn open" data-path="${esc(x.storage_path)}">فتح</button>
  </div>`).join(''):'<div class="empty"><i data-lucide="paperclip" style="width:28px;height:28px;margin-bottom:8px"></i><div>لا توجد مرفقات مطابقة.</div></div>';
- document.querySelectorAll('.open').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('task-attachments').createSignedUrl(b.dataset.path,120);if(r.error)alert(r.error.message);else window.open(r.data.signedUrl,'_blank','noopener')});
+ document.querySelectorAll('.open').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('task-attachments').createSignedUrl(b.dataset.path,120);if(r.error)window.atwarUI?.toast(r.error.message,{tone:'error'});else window.open(r.data.signedUrl,'_blank','noopener')});
  try{lucide.createIcons()}catch{}
 }
 document.getElementById('q').addEventListener('input',render);

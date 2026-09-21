@@ -45,7 +45,10 @@ function quality() {
 }
 
 function reviewerResolution() {
+  if(job.status === 'MANAGER_APPROVED')return {state:'approved',text:'تمت مراجعة المدير وإرسال الوصف إلى مدير النظام. الحالة الآن: بانتظار المراجعة النهائية والاعتماد.'};
+  if(job.status === 'PUBLISHED')return {state:'approved',text:'تم اعتماد الوصف ونشره، وهو ظاهر الآن للموظفين المرتبطين بهذه الوظيفة.'};
   if (me.role !== 'admin') {
+    if(job.reviewer_id === me.id && !me.manager_id)return {state:'',text:'أنت المراجع الأعلى لهذه الوظيفة. بعد استكمال المراجعة استخدم «إرسال لمدير النظام للاعتماد» لتنتقل مباشرة إلى مسؤول النظام.'};
     return job.reviewer_id === me.id
       ? {state:'', text:'أنت المدير المباشر المكلّف بمراجعة هذه الوظيفة، ويمكنك اقتراح تعديل أو حذف أو إضافة دون تغيير النسخة الرئيسية.'}
       : {state:'danger', text:'هذه الوظيفة ليست ضمن نطاق مراجعتك الحالي.'};
@@ -119,7 +122,7 @@ function headerActions() {
   if (me.role === 'admin') buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
   if (editing) buttons.push('<button id="saveBtn" class="review-btn primary">حفظ المسودة</button>');
   if (!editing && me.role === 'admin' && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
-  if (!editing && managerReviewing()) buttons.push('<button id="managerDoneBtn" class="review-btn primary">إنهاء مراجعة المدير</button>');
+  if (!editing && managerReviewing()) buttons.push(`<button id="managerDoneBtn" class="review-btn primary">${!me.manager_id?'إرسال لمدير النظام للاعتماد':'إنهاء المراجعة وإرسالها لمدير النظام'}</button>`);
   if (!editing && me.role === 'admin' && job.status === 'IN_REVIEW') buttons.push('<button id="adminDoneBtn" class="review-btn primary">إنهاء مراجعة المقترحات</button>');
   if (!editing && me.role === 'admin' && job.status === 'MANAGER_APPROVED') buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
   return buttons.join('');
@@ -159,11 +162,11 @@ async function createProposal(section,index,action) {
   const original = sourceItem(section,index);
   let proposed = original;
   if (['MODIFY','ADD'].includes(action)) {
-    const input = prompt(action === 'ADD' ? 'اكتب البند المقترح:' : 'اكتب النص البديل:', action === 'ADD' ? '' : valueText(original));
+    const input = await window.AtwarUI.prompt({title:action === 'ADD' ? 'إضافة بند مقترح' : 'تعديل البند',message:action === 'ADD' ? 'اكتب البند الجديد المقترح.' : 'اكتب النص البديل المقترح.',value:action === 'ADD' ? '' : valueText(original),required:true});
     if (input === null || input.trim().length < 2) return;
     proposed = typeof original === 'object' ? {...original, [section === 'KPIS' || section === 'REPORTS' ? 'name' : 'text']:input.trim()} : input.trim();
   }
-  const reason = prompt(action === 'COMMENT' ? 'اكتب الملاحظة:' : 'اكتب سبب الاقتراح:', '');
+  const reason = await window.AtwarUI.prompt({title:action === 'COMMENT' ? 'إضافة ملاحظة' : 'سبب الاقتراح',message:'اكتب توضيحًا يساعد مسؤول النظام على اتخاذ القرار.',required:true});
   if (!reason || reason.trim().length < 2) return;
   const response = await sb.from('job_description_change_requests').insert({job_description_id:job.id,section,item_index:index >= 0 ? index : null,action,original_value:original,proposed_value:['DELETE','COMMENT'].includes(action) ? null : proposed,reason:reason.trim(),manager_id:me.id});
   if (response.error) return toast(response.error.message);
@@ -189,7 +192,7 @@ async function decideProposal(id,decision) {
   if (!record) return;
   let value = record.proposed_value;
   if (decision === 'REVISED') {
-    const input = prompt('عدّل النص المقترح قبل اعتماده:', valueText(value));
+    const input = await window.AtwarUI.prompt({title:'تعديل المقترح قبل اعتماده',value:valueText(value),required:true});
     if (input === null || input.trim().length < 2) return;
     value = typeof value === 'object' ? {...value,[record.section === 'KPIS' || record.section === 'REPORTS' ? 'name' : 'text']:input.trim()} : input.trim();
   }
@@ -198,7 +201,9 @@ async function decideProposal(id,decision) {
     if (update.error || !update.data) return toast(update.error?.message || 'تعذر تطبيق المقترح');
     job = update.data;
   }
-  const note = decision === 'REJECTED' ? (prompt('سبب الرفض:','') || 'لم يعتمد') : null;
+  const rejectedNote = decision === 'REJECTED' ? await window.AtwarUI.prompt({title:'سبب رفض المقترح',message:'سيظهر السبب في سجل المراجعة.',required:true}) : null;
+  if(decision === 'REJECTED' && rejectedNote === null)return;
+  const note = decision === 'REJECTED' ? rejectedNote : null;
   const response = await sb.from('job_description_change_requests').update({status:decision,proposed_value:value,admin_note:note}).eq('id',id);
   if (response.error) return toast(response.error.message);
   await loadRelated();

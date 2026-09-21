@@ -1004,7 +1004,7 @@ async function markAllNotificationsRead(){
   if(!currentUser?.uid)return;
   const unread=notifications.filter(n=>!n.read);
   if(!unread.length)return;
-  if(!confirm('هل تريد مسح جميع الإشعارات؟'))return;
+  if(!await window.AtwarUI.confirm({title:'تحديد الإشعارات كمقروءة',message:`سيتم تحديد ${unread.length} إشعارًا كمقروء.`,confirmText:'تأكيد'}))return;
   const changes={};
   unread.forEach(n=>changes[`${notificationPath(currentUser.uid)}/${n._key}/read`]=true);
   try{await update(ref(db),changes)}catch(error){console.error(error)}
@@ -1615,11 +1615,11 @@ async function updateTaskField(task,f,v){
 async function requestSelectedTaskReschedule(){
   const task=selectedTask();
   if(!task||!isTaskOwner(task)||String(task.createdByUid||'')===String(currentUser?.uid||''))return;
-  const start=prompt('تاريخ البداية المقترح (YYYY-MM-DD):',task.start||'');
+  const start=await window.AtwarUI.prompt({title:'تاريخ البداية المقترح',message:'اكتب التاريخ بصيغة YYYY-MM-DD.',value:task.start||'',multiline:false});
   if(start===null)return;
-  const end=prompt('تاريخ النهاية المقترح (YYYY-MM-DD):',task.end||'');
+  const end=await window.AtwarUI.prompt({title:'تاريخ النهاية المقترح',message:'اكتب التاريخ بصيغة YYYY-MM-DD.',value:task.end||'',multiline:false});
   if(end===null)return;
-  const reason=prompt('اذكر سبب طلب إعادة الجدولة:','');
+  const reason=await window.AtwarUI.prompt({title:'سبب طلب إعادة الجدولة',message:'اشرح سبب الحاجة إلى تغيير المدة.',required:true});
   if(!reason||reason.trim().length<3)return showToast('سبب إعادة الجدولة مطلوب.','warning');
   if(start&&end&&end<start)return showToast('تاريخ النهاية المقترح يجب ألا يسبق تاريخ البداية.','warning');
   const button=document.getElementById('requestRescheduleButton');
@@ -1652,7 +1652,7 @@ async function loadReschedulePanel(task){
   box.classList.remove('hidden');
 }
 async function decideSelectedTaskReschedule(requestId,approve){
-  const note=prompt(approve?'ملاحظة الموافقة (اختياري):':'اذكر سبب الرفض:','');if(note===null)return;
+  const note=await window.AtwarUI.prompt({title:approve?'ملاحظة الموافقة':'سبب رفض إعادة الجدولة',message:approve?'يمكن إضافة ملاحظة اختيارية.':'سبب الرفض مطلوب وسيظهر لصاحب الطلب.',required:!approve});if(note===null)return;
   if(!approve&&note.trim().length<2)return showToast('سبب الرفض مطلوب.','warning');
   const {error}=await window.ATWAR_SUPABASE.rpc('decide_task_reschedule',{p_request_id:requestId,p_approve:approve,p_note:note.trim()||null});
   if(error)return showToast('تعذر تسجيل القرار: '+error.message,'error',5000);

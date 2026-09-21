@@ -147,7 +147,7 @@
               
             } catch (error) {
               console.error("خطأ أثناء التصدير: ", error);
-              alert("حدث خطأ أثناء تصدير الملف.");
+              window.atwarUI?.toast("حدث خطأ أثناء تصدير الملف.", { tone: "error" });
             } finally {
               setIsExporting(false);
             }

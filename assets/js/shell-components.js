@@ -3,13 +3,7 @@
   const shellScript=document.currentScript;
   const assetRoot=new URL('../',shellScript?.src||location.href);
   if(!document.querySelector('link[data-atwar-design-system]')){
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.0',assetRoot).href;document.head.append(style);
-  }
-  if(!window.AtwarUI&&!document.querySelector('script[data-atwar-ui-feedback]')){
-    const ui=document.createElement('script');ui.dataset.atwarUiFeedback='1';ui.src=new URL('js/ui-feedback.js?v=2.5.0',assetRoot).href;document.head.append(ui);
-  }
-  if(!window.AtwarSession&&!document.querySelector('script[data-atwar-session-service]')){
-    const session=document.createElement('script');session.dataset.atwarSessionService='1';session.src=new URL('js/session-service.js?v=2.5.0',assetRoot).href;document.head.append(session);
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.1',assetRoot).href;document.head.append(style);
   }
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
@@ -206,9 +200,9 @@
       location.href=`${depthPrefix}tasks/index.html?task=${encodeURIComponent(task.id)}&owner=${encodeURIComponent(task.assignee_id||'')}&notification=${encodeURIComponent(row.id)}${scope}`;
       return true;
     }
-    const {error}=await sb.from('notifications').delete().eq('id',row.id);
-    if(error){onError('تعذر مسح الإشعار الآن.');return false}
-    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/job-description.html`:`${depthPrefix}home.html`;
+    const {error}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
+    if(error){onError('تعذر تحديث حالة الإشعار الآن.');return false}
+    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/index.html#job-profile`:`${depthPrefix}home.html`;
     return true;
   };
 
@@ -234,8 +228,8 @@
         const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
         if(error)throw error;
         const rows=data||[];
-        badge.textContent=rows.length>99?'99+':String(rows.length);badge.classList.toggle('hidden',rows.length===0);
-        list.innerHTML=rows.length?rows.slice(0,8).map(n=>`<button type="button" data-global-notification-id="${esc(n.id)}" class="atwar-global-notification-item is-unread"><span class="atwar-global-notification-icon">🔔</span><span class="atwar-global-notification-copy"><b>${esc(n.title||n.type||'إشعار')}</b><small>${esc(n.message||n.detail||'')}</small></span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
+        const unread=rows.filter(row=>!row.read_at);badge.textContent=unread.length>99?'99+':String(unread.length);badge.classList.toggle('hidden',unread.length===0);
+        list.innerHTML=rows.length?rows.slice(0,8).map(n=>`<button type="button" data-global-notification-id="${esc(n.id)}" class="atwar-global-notification-item ${n.read_at?'':'is-unread'}"><span class="atwar-global-notification-icon">🔔</span><span class="atwar-global-notification-copy"><b>${esc(n.title||n.type||'إشعار')}</b><small>${esc(n.message||n.detail||'')}</small></span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
         list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
           const row=rows.find(x=>String(x.id)===btn.dataset.globalNotificationId);
           // سياسة ATWAR ONE: فتح الإشعار يحذفه بعد نجاح الوصول للعنصر المرتبط.
@@ -243,7 +237,7 @@
           const opened=await window.atwarOpenNotificationRecord(sb,row,depthPrefix,()=>{});
           if(!opened)await refresh();
         }));
-        markAll.onclick=async()=>{if(!rows.length||!confirm('هل تريد مسح جميع الإشعارات؟'))return;const ids=rows.map(x=>x.id);const {error:e}=await sb.from('notifications').delete().in('id',ids);if(!e)await refresh();};
+        markAll.onclick=async()=>{const unreadRows=rows.filter(row=>!row.read_at);if(!unreadRows.length)return;const approved=await window.AtwarUI.confirm({title:'تحديد الكل كمقروء',message:`سيتم تحديد ${unreadRows.length} إشعارًا كمقروء مع الاحتفاظ به في السجل.`,confirmText:'تحديد كمقروء'});if(!approved)return;const ids=unreadRows.map(x=>x.id);const {error:e}=await sb.from('notifications').update({read_at:new Date().toISOString()}).in('id',ids);if(e)window.AtwarUI.toast(e.message,'error');else{window.AtwarUI.toast('تم تحديث الإشعارات','success');await refresh()}};
       }catch(error){console.error('Global notifications:',error);list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';}
     }
     await refresh();
