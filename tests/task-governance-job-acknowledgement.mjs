@@ -46,6 +46,9 @@ assert.match(profileIndex,/data-inline-job="description"/,'Job description must 
 for(const mode of ['tasks','authority','performance'])assert.match(profileIndex,new RegExp(`data-inline-job="${mode}"`),`${mode} must open inline without leaving the profile`);
 assert.match(profileIndex,/function renderInlineJob\(mode,context\)/,'The unified profile must render published job content inline');
 assert.match(profileIndex,/inline-task-grid[\s\S]*inline-authority-grid[\s\S]*inline-kpi-grid/,'Tasks, authorities and KPIs must have distinct visual card systems');
+assert.match(profileIndex,/hybrid-details[\s\S]*authority-tone-approve[\s\S]*kpi-framework/,'The profile must use the unified hybrid visual system');
+assert.match(profileIndex,/content\.reports[\s\S]*report-grid/,'Published outputs and reports must remain visible without inventing responsibility links');
+assert.match(profileIndex,/scoreScale\(item\)/,'KPI scoring details must be expandable when the published data provides them');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
 assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
 assert.match(adminUsers,/class="row-save-state" aria-live="polite"/,'Each account row must expose its own accessible save result');
