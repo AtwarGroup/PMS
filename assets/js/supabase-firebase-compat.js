@@ -63,12 +63,15 @@ async function loadChildren(taskIds){
   return {activities,subtasks,attachments};
 }
 
-function taskLegacy(t,children){
+function taskLegacy(t,children,profileNames=new Map()){
   if(!t)return null;
+  const currentCreatorName=profileNames.get(String(t.creator_id||''))||t.creator_name_snapshot||'';
+  const currentAssigneeName=profileNames.get(String(t.assignee_id||''))||t.assignee_name_snapshot||'';
   return {
     id:t.legacy_id||t.firebase_task_key||t.id,title:t.title||'',desc:t.description||'',type:t.task_type||'',
     status:t.status||'قيد الانتظار',priority:t.priority||'normal',progress:Number(t.progress||0),
-    createdByUid:t.creator_id||'',assignUid:t.assignee_id||'',createdBy:t.creator_name_snapshot||'',assign:t.assignee_name_snapshot||'',
+    createdByUid:t.creator_id||'',assignUid:t.assignee_id||'',createdBy:currentCreatorName,assign:currentAssigneeName,
+    createdByNameSnapshot:t.creator_name_snapshot||'',assigneeNameSnapshot:t.assignee_name_snapshot||'',
     start:t.start_date||'',end:t.due_date||'',actualEnd:t.actual_end_date||'',notes:t.notes||'',managerNotes:t.manager_notes||'',revision:Number(t.revision||1),reopenReason:t.reopen_reason||'',
     createdAt:ms(t.created_at),updatedAt:ms(t.updated_at),startedAt:ms(t.started_at)||null,submittedAt:ms(t.submitted_at)||null,
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
@@ -98,8 +101,14 @@ async function visibleTasks(extra=null){
   if(extra?.creator)q=q.eq('creator_id',extra.creator);
   if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);
   const {data,error}=await q.order('updated_at',{ascending:false});if(error)throw error;
+  const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id]).filter(Boolean))];
+  let profileNames=new Map();
+  if(profileIds.length){
+    const profiles=await sb.from('profiles').select('id,full_name,email').in('id',profileIds);
+    if(!profiles.error)profileNames=new Map((profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
+  }
   const children=await loadChildren((data||[]).map(x=>x.id));
-  return (data||[]).map(t=>taskLegacy(t,children));
+  return (data||[]).map(t=>taskLegacy(t,children,profileNames));
 }
 
 export async function get(r){

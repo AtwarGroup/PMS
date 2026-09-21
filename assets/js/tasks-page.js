@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=1.9.20";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.29";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -567,6 +567,13 @@ function applyTaskScopeUI(){
   document.getElementById('completedDateFilters')?.classList.toggle('hidden',!archive);
   const totalLabel=document.getElementById('statTotalLabel');
   if(totalLabel)totalLabel.textContent=archive?'إجمالي المهام المكتملة':'إجمالي المهام النشطة';
+  const metricLabels={
+    statCompletedLabel:archive?'مكتملة هذا الشهر':'مكتملة',
+    statProgressLabel:archive?'مكتملة في الموعد':'قيد التنفيذ',
+    statPendingLabel:archive?'مكتملة بعد الموعد':'قيد الانتظار',
+    statDelayedLabel:archive?'متوسط مدة الإنجاز':'متأخرة'
+  };
+  Object.entries(metricLabels).forEach(([id,label])=>{const node=document.getElementById(id);if(node)node.textContent=label});
   const suiteTitle=document.getElementById('taskSuiteTitle');
   const suiteDescription=document.getElementById('taskSuiteDescription');
   const suiteBadge=document.getElementById('taskSuiteBadge');
@@ -575,9 +582,10 @@ function applyTaskScopeUI(){
   if(suiteBadge)suiteBadge.lastChild.textContent=archive?' أرشيف للقراءة والمراجعة':' مساحة إدارة المهام';
   const subtitle=document.getElementById('pageSubtitle');
   if(archive&&subtitle)subtitle.textContent='أرشيف المهام المكتملة — للقراءة فقط، وإعادة الفتح لمدير النظام';
+  document.getElementById('quickFilters')?.classList.toggle('hidden',archive);
+  document.getElementById('taskViewSwitch')?.classList.toggle('hidden',archive);
   if(archive){
     setTaskViewMode('LIST',false);
-    document.getElementById('taskViewSwitch')?.classList.add('hidden');
     document.getElementById('statusFilter').value='ALL';
     document.querySelectorAll('.qf').forEach(button=>button.classList.toggle('active',button.dataset.filter==='ALL'));
   }
@@ -720,10 +728,6 @@ onAuthStateChanged(auth,async(user)=>{
     if(me)currentProfile=me;
     window.atwarSyncShellIdentity?.(currentProfile,user);
     const executiveRead=(currentProfile.permissions||[]).includes('tasks.read_all');
-    if(executiveRead){
-      const nav=document.querySelector('.atwar-header-task-nav');
-      if(nav&&!nav.querySelector('[data-executive-view]'))nav.insertAdjacentHTML('beforeend','<a data-executive-view href="executive.html"><i data-lucide="scan-eye"></i><span>اطلاع تنفيذي</span></a>');
-    }
 
     document.getElementById('currentUserBadge').textContent=
       `👤 ${currentProfile.name||user.email} • ${roleLabel(currentProfile.role)}`;
@@ -2296,7 +2300,7 @@ function renderTasks(){
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
     const timingClass=delay>0?'text-rose-600':'text-slate-500';
     const card=document.createElement('div');
-    card.className=`task-card ${selected?'selected':''} ${delay>0?'is-overdue':''} ${t.status==='مكتملة'?'opacity-60':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
+    card.className=`task-card ${selected?'selected':''} ${delay>0&&!isCompletedArchiveView()?'is-overdue':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
       if(selectedTaskKey!==key && pendingAssigneeChange){
@@ -2797,6 +2801,26 @@ function renderDetails(){
 function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 
 function updateStats(){
+  if(isCompletedArchiveView()){
+    const today=localDateISO(),month=today.slice(0,7);
+    const completionDate=t=>t.actualEnd||(t.completedAt?localDateISO(new Date(t.completedAt)):'');
+    const completedThisMonth=tasks.filter(t=>completionDate(t).startsWith(month)).length;
+    const measurable=tasks.filter(t=>completionDate(t)&&t.end);
+    const onTime=measurable.filter(t=>completionDate(t)<=t.end).length;
+    const late=measurable.filter(t=>completionDate(t)>t.end).length;
+    const durations=tasks.map(t=>{
+      const end=completionDate(t);if(!t.start||!end)return null;
+      const days=Math.round((new Date(end+'T00:00:00')-new Date(t.start+'T00:00:00'))/86400000);
+      return Number.isFinite(days)?Math.max(0,days):null;
+    }).filter(v=>v!==null);
+    const average=durations.length?Math.round(durations.reduce((sum,v)=>sum+v,0)/durations.length):0;
+    document.getElementById('stat-total').textContent=tasks.length;
+    document.getElementById('stat-completed').textContent=completedThisMonth;
+    document.getElementById('stat-progress').textContent=onTime;
+    document.getElementById('stat-pending').textContent=late;
+    document.getElementById('stat-delayed').textContent=`${average} يوم`;
+    return;
+  }
   document.getElementById('stat-total').textContent=tasks.length;
   document.getElementById('stat-completed').textContent=[...completedCountsByOwner.values()].reduce((sum,count)=>sum+Number(count||0),0);
   document.getElementById('stat-progress').textContent=tasks.filter(t=>t.status==='قيد التنفيذ').length;

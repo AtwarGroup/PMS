@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=1.9.18"></script>
+<script src="../assets/js/shell-components.js?v=2.4.29"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -198,7 +198,7 @@
 
 </style>
 
-<link rel="stylesheet" href="../assets/css/shared.css">
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.4.29">
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>
@@ -268,10 +268,10 @@
     <!-- Stats -->
     <section class="task-suite-metrics">
       <div class="task-suite-metric"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
-      <div class="task-suite-metric"><p>مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
-      <div class="task-suite-metric"><p>قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
-      <div class="task-suite-metric"><p>قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
-      <div class="task-suite-metric"><p>متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+      <div class="task-suite-metric"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
+      <div class="task-suite-metric"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
+      <div class="task-suite-metric"><p id="statPendingLabel">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
+      <div class="task-suite-metric"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
     </section>
 
     <!-- Manager Dashboard -->
@@ -577,7 +577,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=1.9.23&patch=2.4.18"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.4.29"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

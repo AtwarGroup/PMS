@@ -6,21 +6,21 @@
 <title>ATWAR ONE – المهام الدورية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=1.9.18"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="../assets/js/shell-components.js?v=2.4.29"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.4.29">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
-.form-grid{display:grid;grid-template-columns:2fr 1.25fr 1fr .8fr 1.25fr .9fr;gap:10px}
+.recurring-form-layout{display:grid;grid-template-columns:1.05fr 1fr;gap:12px}.recurring-form-block{border:1px solid #e5edf6;border-radius:14px;padding:14px;background:#fbfdff}.recurring-form-block h3{margin:0 0 12px;font-size:12px;color:#174f93}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field.wide{grid-column:1/-1}
 .field{min-width:0}.field label{display:block;font-size:10px;font-weight:900;color:#64748b;margin:0 2px 6px}
 .field input,.field select{width:100%;border:1px solid #dfe7f1;border-radius:10px;padding:10px 11px;font-family:inherit;background:#fff}
 .field-help{font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.5}
-.second-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;margin-top:10px;align-items:end}
+.recurring-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #e8eef5}
 .btn{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:10px 14px;font-family:inherit;font-weight:900;cursor:pointer}
 .btn:disabled{opacity:.55;cursor:not-allowed}.danger{background:#b42318}.secondary{background:#eaf2fb;color:#173b64}
 .row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;align-items:center;padding:14px 10px;border-bottom:1px solid #edf2f7}.row:hover{background:#f8fbff}.recurring-list-head{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:10px;padding:9px 10px;background:#f1f6fc;color:#60738b;font-size:10px;font-weight:900;border-radius:10px}
 .meta{font-size:10px;color:#7b8aa5}.success{color:#15803d;font-weight:800}.error{color:#b42318;font-weight:800}
-@media(max-width:950px){.form-grid{grid-template-columns:1fr 1fr}.second-row,.row{grid-template-columns:1fr 1fr}.second-row .wide{grid-column:1/-1}.recurring-list-head{display:none}}
-@media(max-width:620px){.form-grid,.second-row,.row{grid-template-columns:1fr}.row{padding:14px 4px}.row .btn{width:100%}}
+@media(max-width:950px){.recurring-form-layout{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}.recurring-list-head{display:none}}
+@media(max-width:620px){.form-grid,.row{grid-template-columns:1fr}.field.wide{grid-column:auto}.row{padding:14px 4px}.row .btn,.recurring-actions .btn{width:100%}.recurring-actions{align-items:stretch;flex-direction:column}}
 </style>
 </head>
 <body data-min-role="manager">
@@ -33,21 +33,23 @@
 
 <section class="task-suite-panel">
 <div class="task-suite-panel-head"><div><h2>إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
-<div class="form-grid">
-  <div class="field"><label>عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
-  <div class="field"><label>المسند إليه</label><select id="assignee"></select></div>
-  <div class="field"><label>التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
-  <div class="field"><label>كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help">كل أسبوع</div></div>
-  <div class="field"><label>موعد أول إنشاء</label><input id="next" type="datetime-local"></div>
-  <div class="field"><label>الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
+<div class="recurring-form-layout">
+  <div class="recurring-form-block"><h3>بيانات المهمة</h3><div class="form-grid">
+    <div class="field wide"><label>عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
+    <div class="field"><label>المسند إليه</label><select id="assignee"></select></div>
+    <div class="field"><label>الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
+    <div class="field wide"><label>الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
+  </div></div>
+  <div class="recurring-form-block"><h3>إعدادات التكرار</h3><div class="form-grid">
+    <div class="field"><label>التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
+    <div class="field"><label>كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help">كل أسبوع</div></div>
+    <div class="field"><label>موعد أول إنشاء</label><input id="next" type="datetime-local"></div>
+    <div class="field"><label>مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء المهمة حتى استحقاقها.</div></div>
+  </div></div>
 </div>
-
-<div class="second-row">
-  <div class="field wide"><label>الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
-  <div class="field"><label>مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">عدد الأيام من تاريخ إنشاء المهمة حتى تاريخ استحقاقها.</div></div>
-  <button id="add" class="btn">إضافة</button>
+<div class="recurring-actions">
+  <div id="msg" class="meta"></div><button id="add" class="btn">إضافة المهمة الدورية</button>
 </div>
-<div id="msg" class="meta" style="margin-top:10px"></div>
 </section>
 
 <section class="task-suite-panel">
