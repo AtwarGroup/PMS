@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ATWAR ONE – مراجعة الوصف الوظيفي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+  <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
+  <link rel="stylesheet" href="../assets/css/job-review.css">
+  <style>.manager-alert.approved{background:#eaf9f2;border-color:#bce8d3;color:#087f5b}</style>
+</head>
+<body style="visibility:hidden">
+  <div class="atwar-shell">
+    <atwar-sidebar active="jobLibrary"></atwar-sidebar>
+    <section class="atwar-main">
+      <atwar-header></atwar-header>
+      <main class="atwar-content review-page">
+        <a class="back-link" href="index.html"><i data-lucide="arrow-right"></i> العودة إلى مكتبة الوظائف</a>
+        <section id="reviewState" class="loading-card">جاري تحميل الوصف الوظيفي...</section>
+        <div id="reviewApp" hidden>
+          <header class="role-header">
+            <div class="role-title">
+              <div class="role-kicker"><span id="jobCode"></span><span id="jobStatus" class="status-pill"></span></div>
+              <h1 id="jobTitle"></h1>
+              <p id="jobPurpose"></p>
+            </div>
+            <div id="headerActions" class="header-actions"></div>
+          </header>
+
+          <section id="managerAlert" class="manager-alert"></section>
+
+          <div class="review-layout">
+            <aside class="review-summary">
+              <section class="summary-card">
+                <h2>بطاقة الوظيفة</h2>
+                <dl>
+                  <div><dt>العائلة الوظيفية</dt><dd id="jobFamily"></dd></div>
+                  <div><dt>المستوى</dt><dd id="jobLevel"></dd></div>
+                  <div><dt>الإصدار</dt><dd id="jobRevision"></dd></div>
+                  <div><dt>المدير المراجع</dt><dd id="jobReviewer"></dd></div>
+                </dl>
+              </section>
+              <section class="summary-card progress-card">
+                <h2>اكتمال المحتوى</h2>
+                <div id="qualityScore" class="quality-score"></div>
+                <div id="qualityChecks" class="quality-checks"></div>
+              </section>
+              <section class="summary-card">
+                <h2>مسار الاعتماد</h2>
+                <ol class="approval-path">
+                  <li>مسودة مسؤول النظام</li>
+                  <li>مراجعة المدير المباشر</li>
+                  <li>قرار مسؤول النظام</li>
+                  <li>نشر نسخة الموظف</li>
+                </ol>
+              </section>
+            </aside>
+
+            <section class="review-content">
+              <nav id="reviewTabs" class="review-tabs" aria-label="أقسام الوصف">
+                <button data-tab="overview" class="active">الوظيفة</button>
+                <button data-tab="responsibilities">المهام والمسؤوليات</button>
+                <button data-tab="authorities">مصفوفة الصلاحيات</button>
+                <button data-tab="measurement">القياس والنماذج</button>
+                <button data-tab="review">المقترحات والملاحظات <span id="proposalCount">0</span></button>
+              </nav>
+              <div id="reviewBody"></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+  <div id="toast" class="review-toast"></div>
+  <script src="../assets/js/roles-config.js"></script>
+  <script src="../assets/js/start-page-config.js"></script>
+  <script src="../assets/js/supabase-config.js"></script>
+  <script src="../assets/js/supabase-runtime.js"></script>
+  <script src="../assets/js/permissions.js"></script>
+  <script type="module" src="../assets/js/job-review-page.js?v=2.5.1"></script>
+</body>
+</html>

@@ -602,8 +602,11 @@ atwar-sidebar,atwar-header{display:contents}
 .atwar-shell{display:grid!important;grid-template-columns:var(--atwar-sidebar-width,160px) minmax(0,1fr)!important;min-height:100vh!important}
 .atwar-main{min-width:0!important;background:var(--atwar-bg,#f4f7fb)!important}
 .atwar-sidebar{min-height:100vh!important;height:100vh!important;position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important;overflow-y:auto!important}
-.atwar-topbar{position:sticky!important;top:0!important;z-index:900!important;width:100%!important;box-sizing:border-box!important}
-.atwar-top-actions{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+.atwar-topbar{position:sticky!important;top:0!important;z-index:900!important;width:100%!important;box-sizing:border-box!important;flex-wrap:nowrap!important;overflow:visible!important}
+.atwar-top-brand{flex:0 1 auto!important;min-width:0!important}
+.atwar-org-title{min-width:0!important}
+.atwar-org-title h2,.atwar-org-title p{white-space:nowrap!important}
+.atwar-top-actions{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:0 1 auto!important;flex-wrap:nowrap!important}
 .atwar-bell,.atwar-icon-btn{width:36px!important;height:36px!important;min-width:36px!important;display:grid!important;place-items:center!important;position:relative!important;border:0!important;border-radius:10px!important;background:rgba(255,255,255,.08)!important;color:#fff!important;text-decoration:none!important;cursor:pointer!important}
 .atwar-bell:hover,.atwar-icon-btn:hover{background:rgba(255,255,255,.14)!important}
 .atwar-bell svg,.atwar-icon-btn svg{width:16px!important;height:16px!important}
@@ -634,8 +637,8 @@ body.atwar-task-page #authLoadingScreen,body.atwar-task-page #loginScreen,body.a
 .atwar-profile-host .rounded-\[2rem\]{border-radius:14px!important}
 .atwar-profile-host .mb-12{margin-bottom:20px!important}
 .atwar-profile-host .mb-10{margin-bottom:18px!important}
-@media(max-width:1200px){.atwar-task-save-status{display:none!important}.atwar-task-tools .atwar-search{width:180px!important}}
-@media(max-width:1050px){.atwar-pm-label{display:none!important}.atwar-task-tools .atwar-search{display:none!important}.atwar-user{display:none!important}}
+@media(max-width:1280px){.atwar-task-save-status{display:none!important}.atwar-task-tools .atwar-search{width:180px!important}.atwar-pm-label{display:none!important}}
+@media(max-width:1120px){.atwar-task-tools .atwar-search{display:none!important}.atwar-user{display:none!important}}
 @media(max-width:1100px){.atwar-shell{grid-template-columns:68px minmax(0,1fr)!important}}
 
 
@@ -648,3 +651,38 @@ body.atwar-task-page #authLoadingScreen,body.atwar-task-page #loginScreen,body.a
 
 /* Shared visibility utility used by header/dropdowns across non-Tailwind pages */
 .hidden{display:none!important}
+
+/* =========================================================
+   ATWAR ONE V0.32 — STABILIZATION DESIGN SYSTEM
+   Final visual contract shared by every authenticated page.
+   ========================================================= */
+:root{--atwar-content-max:1440px;--atwar-control-height:40px;--atwar-dialog-width:520px;--atwar-shadow-card:0 4px 16px rgba(20,45,80,.045);--atwar-shadow-dialog:0 24px 70px rgba(15,23,42,.22)}
+html{font-size:16px}body{font-size:13px!important;line-height:1.65}.atwar-main{overflow-x:hidden}.atwar-content{width:100%!important;max-width:var(--atwar-content-max)!important;margin-inline:auto!important;padding:24px!important}
+.atwar-content>h1,.atwar-content>.head h1,.atwar-content header.head h1{margin:0 0 6px!important;font-size:26px!important;line-height:1.3!important;letter-spacing:0!important}.atwar-content>.head,.atwar-content>header.head{margin-bottom:18px!important}.atwar-content>.head p,.atwar-content>header.head p{font-size:12px!important;line-height:1.8!important;color:var(--atwar-muted)!important}
+.atwar-main .card,.atwar-main .panel,.atwar-main .box,.atwar-main .tile,.atwar-main .stat,.atwar-main .kpi-card,.atwar-main .home-card,.atwar-main .section-card,.atwar-main .side-card{border:1px solid var(--atwar-border)!important;border-radius:16px!important;box-shadow:var(--atwar-shadow-card)!important}.atwar-main .card,.atwar-main .panel,.atwar-main .box,.atwar-main .section-card,.atwar-main .side-card{padding:18px!important}.atwar-main h2{line-height:1.4}.atwar-main h3{line-height:1.45}.atwar-main p{line-height:1.85}.atwar-main small,.atwar-main .muted,.atwar-main .subtle,.atwar-main .hint,.atwar-main .meta{font-size:11px!important;line-height:1.7!important}
+.atwar-main button,.atwar-main .btn,.atwar-main input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),.atwar-main select{min-height:var(--atwar-control-height)!important;border-radius:10px!important;font-size:12px!important}.atwar-main input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),.atwar-main select,.atwar-main textarea{padding:10px 12px!important}.atwar-main textarea{min-height:96px;border-radius:10px!important;font-size:12px!important;line-height:1.8!important;resize:vertical}.atwar-main button:focus-visible,.atwar-main .btn:focus-visible,.atwar-main input:focus-visible,.atwar-main select:focus-visible,.atwar-main textarea:focus-visible,.atwar-main a:focus-visible{outline:3px solid rgba(22,119,255,.2)!important;outline-offset:2px!important;border-color:var(--atwar-blue)!important}.atwar-main button:disabled,.atwar-main .btn:disabled{opacity:.55!important;cursor:not-allowed!important}
+.dialog-backdrop,.password-dialog,.workspace{background:rgba(9,25,48,.58)!important;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}.password-box,.dialog-backdrop>div{width:min(var(--atwar-dialog-width),calc(100vw - 32px))!important;max-height:min(82vh,720px)!important;overflow:auto!important;border:1px solid var(--atwar-border)!important;border-radius:18px!important;background:#fff!important;box-shadow:var(--atwar-shadow-dialog)!important}.password-box{padding:22px!important}.password-actions{justify-content:flex-start!important;gap:10px!important;margin-top:18px!important}.password-actions .btn{flex:0 1 auto!important;min-width:110px!important}
+.workspace{padding:20px!important;z-index:1000!important}.workspace-shell{width:min(1180px,100%)!important;height:min(900px,calc(100vh - 40px))!important;border-radius:20px!important;box-shadow:var(--atwar-shadow-dialog)!important}.workspace-head{min-height:72px!important;padding:14px 20px!important;gap:16px!important}.workspace-title h2{font-size:20px!important;line-height:1.35!important}.editor-tabs{min-height:52px!important;padding:0 20px!important;gap:8px!important;overflow-x:auto!important}.editor-tabs button,.view-tabs button{min-width:max-content!important;padding:12px 14px!important;font-size:12px!important}.editor-body{padding:20px!important}.content-stack{gap:14px!important}.section-card h3,.side-card h3{font-size:15px!important;margin-bottom:14px!important}.read-text{font-size:13px!important;line-height:2!important}.item-list{gap:10px!important}.read-item{grid-template-columns:34px minmax(0,1fr)!important;padding:14px!important;gap:12px!important}.read-item b{font-size:13px!important;line-height:1.85!important}.read-item p{font-size:11px!important;line-height:1.8!important}.matrix-head,.matrix-row{font-size:11px!important}.matrix-head span,.matrix-row>span,.matrix-row>div{padding:14px!important;line-height:1.8!important}
+#toastContainer,.toast{z-index:1300!important}.toast{font-size:12px!important;line-height:1.65!important;border-radius:12px!important}
+@media(max-width:850px){.atwar-content{padding:16px!important}.atwar-content>h1,.atwar-content>.head h1,.atwar-content header.head h1{font-size:23px!important}.workspace{padding:0!important}.workspace-shell{height:100vh!important;border-radius:0!important}.workspace-head{padding:12px 14px!important}.editor-tabs{padding:0 12px!important}.editor-body{padding:14px!important}.atwar-main .card,.atwar-main .panel,.atwar-main .box,.atwar-main .section-card,.atwar-main .side-card{padding:15px!important}}
+@media(max-width:560px){.atwar-content{padding:12px!important}.password-actions{flex-direction:column!important}.password-actions .btn{width:100%!important}.read-item{padding:12px!important}}
+
+/* ATWAR ONE V0.33 — UNIFIED TASK SUITE
+   Active, completed, recurring and executive views share one visual contract. */
+.task-suite-page{width:100%;max-width:1440px;margin-inline:auto;padding:20px 24px 28px}
+.task-suite-page>*+*{margin-top:14px}
+.task-suite-hero{min-height:116px;padding:22px 24px;border-radius:20px;background:linear-gradient(135deg,#0b2f5d,#1769b8);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:22px;box-shadow:0 12px 28px rgba(18,72,130,.12)}
+.task-suite-hero h1{margin:0 0 7px!important;font-size:25px!important;line-height:1.3!important;color:#fff!important}
+.task-suite-hero p{margin:0!important;max-width:760px;color:#dcecff!important;font-size:11px!important;line-height:1.8!important}
+.task-suite-hero-badge{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:7px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.11);color:#fff;font-size:10px;font-weight:900;white-space:nowrap}
+.task-suite-hero-badge svg{width:15px;height:15px}
+.task-suite-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.task-suite-metrics.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.task-suite-metric{min-height:82px;padding:14px 16px!important;border:1px solid var(--atwar-border,#e5edf6)!important;border-radius:15px!important;background:#fff!important;box-shadow:var(--atwar-shadow-card)!important}
+.task-suite-metric strong,.task-suite-metric span,.task-suite-metric>div{display:block}.task-suite-metric strong,.task-suite-metric>div{font-size:21px;line-height:1.2;color:#0d3a70}.task-suite-metric span,.task-suite-metric p{margin:8px 0 0;font-size:10px;color:#718198;font-weight:800}
+.task-suite-panel{padding:16px!important;border:1px solid var(--atwar-border,#e5edf6)!important;border-radius:17px!important;background:#fff!important;box-shadow:var(--atwar-shadow-card)!important}
+.task-suite-panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}.task-suite-panel-head h2{margin:0!important;font-size:16px!important}.task-suite-panel-head p{margin:3px 0 0!important;color:#718198!important;font-size:10px!important}
+.task-suite-filters{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.task-suite-filters input[type="text"],.task-suite-filters input[type="search"]{flex:1 1 280px}.task-suite-filters select{flex:0 1 210px}
+.task-suite-empty{padding:44px 20px;text-align:center;color:#7b899b}
+@media(max-width:900px){.task-suite-page{padding:16px}.task-suite-hero{align-items:flex-start;flex-direction:column}.task-suite-metrics,.task-suite-metrics.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.task-suite-page{padding:12px}.task-suite-hero{padding:19px;border-radius:16px}.task-suite-hero h1{font-size:22px!important}.task-suite-metrics,.task-suite-metrics.four{grid-template-columns:1fr 1fr}.task-suite-metric{padding:12px!important}.task-suite-panel-head{align-items:flex-start;flex-direction:column}.task-suite-filters>*{width:100%;flex-basis:100%!important}}

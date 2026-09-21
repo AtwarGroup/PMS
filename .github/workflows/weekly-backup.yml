@@ -1,0 +1,121 @@
+name: ATWAR Weekly Encrypted Backup
+
+on:
+  schedule:
+    # Friday 02:00 Asia/Riyadh = Thursday 23:00 UTC
+    - cron: '0 23 * * 4'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atwar-weekly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Supabase, Storage and Source Backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RCLONE_CONFIG_BASE64: ${{ secrets.RCLONE_CONFIG_BASE64 }}
+      BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      GDRIVE_BACKUP_FOLDER: ${{ vars.GDRIVE_BACKUP_FOLDER }}
+    steps:
+      - name: Checkout production source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in SUPABASE_DB_URL SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY RCLONE_CONFIG_BASE64 BACKUP_ENCRYPTION_PASSWORD; do
+            test -n "${!name:-}" || { echo "Missing GitHub secret: $name" >&2; exit 1; }
+          done
+
+      - name: Install backup clients
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rclone gnupg
+          docker pull postgres:17.6
+          docker run --rm postgres:17.6 pg_dump --version
+          rclone version
+
+      - name: Create complete backup
+        id: create
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          stamp="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
+          name="ATWAR_ONE_${stamp}"
+          work="$RUNNER_TEMP/$name"
+          mkdir -p "$work/storage"
+          chmod 700 "$work"
+
+          docker run --rm \
+            --volume "$work:/backup" \
+            postgres:17.6 \
+            pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --no-privileges --file=/backup/database.dump
+          docker run --rm \
+            postgres:17.6 \
+            pg_dumpall --dbname="$SUPABASE_DB_URL" --roles-only --no-role-passwords > "$work/roles.sql"
+          node scripts/backup/download-supabase-storage.mjs "$work/storage"
+          git archive --format=tar.gz --output="$work/source.tar.gz" HEAD
+          {
+            echo "backup_name=$name"
+            echo "created_utc=$(date -u --iso-8601=seconds)"
+            echo "repository=${GITHUB_REPOSITORY}"
+            echo "commit=${GITHUB_SHA}"
+            echo "database=Supabase PostgreSQL including auth and storage metadata"
+            echo "storage=All Supabase Storage bucket objects"
+            echo "retention=12 weekly copies"
+          } > "$work/backup-info.txt"
+
+          bash scripts/backup/verify-backup.sh "$work"
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/$name.tar.gz" "$name"
+          gpg --batch --yes --pinentry-mode loopback --cipher-algo AES256 \
+            --passphrase "$BACKUP_ENCRYPTION_PASSWORD" \
+            --symmetric --output "$RUNNER_TEMP/$name.tar.gz.gpg" "$RUNNER_TEMP/$name.tar.gz"
+          sha256sum "$RUNNER_TEMP/$name.tar.gz.gpg" > "$RUNNER_TEMP/$name.tar.gz.gpg.sha256"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload encrypted backup to Google Drive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          config_file="$RUNNER_TEMP/rclone.conf"
+          printf '%s' "$RCLONE_CONFIG_BASE64" | base64 --decode > "$config_file"
+          chmod 600 "$config_file"
+          target="gdrive:${GDRIVE_BACKUP_FOLDER:-ATWAR ONE Backups}"
+          name="${{ steps.create.outputs.name }}"
+          rclone --config "$config_file" mkdir "$target"
+          rclone --config "$config_file" copyto "$RUNNER_TEMP/$name.tar.gz.gpg" "$target/$name.tar.gz.gpg" --retries 3 --checkers 4
+          rclone --config "$config_file" copyto "$RUNNER_TEMP/$name.tar.gz.gpg.sha256" "$target/$name.tar.gz.gpg.sha256" --retries 3
+          rclone --config "$config_file" lsf "$target" --files-only | grep -Fx "$name.tar.gz.gpg"
+
+      - name: Retain latest 12 weekly copies
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          config_file="$RUNNER_TEMP/rclone.conf"
+          target="gdrive:${GDRIVE_BACKUP_FOLDER:-ATWAR ONE Backups}"
+          mapfile -t old_files < <(rclone --config "$config_file" lsf "$target" --files-only --include 'ATWAR_ONE_*.tar.gz.gpg' | sort -r | tail -n +13)
+          for file in "${old_files[@]}"; do
+            test -n "$file" || continue
+            rclone --config "$config_file" deletefile "$target/$file"
+            rclone --config "$config_file" deletefile "$target/$file.sha256" || true
+          done
+
+      - name: Remove runner copies
+        if: always()
+        shell: bash
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -name 'ATWAR_ONE_*' -exec rm -rf -- {} +
+          rm -f "$RUNNER_TEMP/rclone.conf"

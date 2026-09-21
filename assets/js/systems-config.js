@@ -23,5 +23,13 @@ window.ATWAR_SYSTEMS = [
     icon: 'boxes',
     href: 'https://atwar.odoo.com/odoo',
     target: '_blank'
+  },
+  {
+    id: 'powerbi',
+    name: 'Power BI',
+    description: 'لوحات مؤشرات الأداء والتقارير التحليلية للإدارة.',
+    icon: 'chart-no-axes-combined',
+    href: 'https://app.powerbi.com/home?experience=power-bi',
+    target: '_blank'
   }
 ];

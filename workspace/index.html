@@ -5,8 +5,8 @@
 <title>ATWAR ONE – ملاحظاتي</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
 <style>
 .ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
 .ws-head h1{font-size:28px;margin:0}.ws-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
@@ -31,7 +31,8 @@
 .follow-top{display:flex;justify-content:space-between;gap:10px}.follow-title{font-weight:900;font-size:12px}.follow-meta{font-size:9px;color:#8794a7;margin-top:4px}
 .follow-note{font-size:10px;color:#68778c;line-height:1.7;margin-top:7px}.follow-actions{display:flex;gap:6px;margin-top:8px}.follow-actions button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:6px 9px;font-family:inherit;font-size:9px;font-weight:900;cursor:pointer}
 .follow-empty{font-size:11px;color:#7b8aa5;padding:18px;text-align:center;border:1px dashed #dce5ef;border-radius:12px}
-.follow-form{display:none;margin-top:10px;padding:12px;background:#f8fbff;border:1px solid #e0eaf5;border-radius:13px}.follow-form.show{display:block}.follow-form input,.follow-form textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:9px;padding:9px;font-family:inherit;margin-top:7px}.follow-form textarea{min-height:70px}
+.follow-form{display:none;margin-top:10px;padding:12px;background:#f8fbff;border:1px solid #e0eaf5;border-radius:13px}.follow-form.show{display:block}.follow-form input,.follow-form select,.follow-form textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:9px;padding:9px;font-family:inherit;margin-top:7px;background:#fff}.follow-form textarea{min-height:70px}
+.follow-task{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 8px;border-radius:8px;background:#eef6ff;color:#176fd3;text-decoration:none;font-size:9px;font-weight:900}.follow-task:hover{background:#dfeeff}.follow-task.missing{color:#7b8aa5;background:#f1f5f9;pointer-events:none}
 
 .workspace-main-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 .workspace-main-grid .ws-card{min-height:470px}.workspace-note-card .note-input{min-height:330px}.workspace-follow-card .follow-list{max-height:390px}
@@ -58,13 +59,16 @@
   <section class="ws-card workspace-follow-card">
     <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
     <div id="workspaceFollowForm" class="follow-form">
-      <input id="wfTitle" placeholder="عنوان المتابعة"><input id="wfDate" type="date"><textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
+      <input id="wfTitle" placeholder="عنوان المتابعة"><input id="wfDate" type="date">
+      <select id="wfTask"><option value="">بدون ارتباط بمهمة</option></select>
+      <div style="font-size:9px;color:#8a97a9;margin:5px 2px 0">الارتباط اختياري ويحتفظ بمرجع للمهمة فقط دون نسخ بياناتها.</div>
+      <textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px"><button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button><button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button></div>
     </div>
     <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Production 1.7E</span><span>Supabase Sync</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • My Workspace</span><span>Version 1.9.16</span><span>Supabase Sync</span></footer>
 </main></section></div>
 
 <script src="../assets/js/supabase-config.js"></script>
@@ -82,8 +86,81 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');let profile=null,followData=[],saving=false;const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function showNotice(text='تم الحفظ',kind='ok'){if(!savedNotice)return;savedNotice.textContent=text;savedNotice.style.display='block';savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';savedNotice.style.color=kind==='error'?'#b42318':'#087443';setTimeout(()=>savedNotice.style.display='none',2200)}function fdate(x){return x.follow_date||x.date||x.due_date||''}function fnote(x){return x.note||x.notes||x.description||''}function renderFollowups(){const host=document.getElementById('workspaceFollowList'),labels={soon:'متابعة',wait:'بانتظار رد',done:'مكتملة'};host.innerHTML=followData.length?followData.map(x=>`<div class="follow-item"><div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(fdate(x)||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>${fnote(x)?`<div class="follow-note">${esc(fnote(x))}</div>`:''}<div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div></div>`).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';host.querySelectorAll('[data-follow-done]').forEach(b=>b.onclick=async()=>{const{error}=await sb.from('follow_ups').update({status:'done'}).eq('id',b.dataset.followDone);if(error)showNotice('تعذر تحديث المتابعة.','error');else await loadFollowups()});host.querySelectorAll('[data-follow-delete]').forEach(b=>b.onclick=async()=>{const{error}=await sb.from('follow_ups').delete().eq('id',b.dataset.followDelete);if(error)showNotice('تعذر حذف المتابعة.','error');else await loadFollowups()})}async function loadFollowups(){const{data,error}=await sb.from('follow_ups').select('*').eq('owner_id',profile.id).order('created_at',{ascending:false});if(error)throw error;followData=data||[];renderFollowups()}
-const a=await authProfile('../login.html');if(a){profile=a.profile;const{data:n}=await sb.from('quick_notes').select('*').eq('owner_id',profile.id).order('updated_at',{ascending:false}).limit(1);const row=(n||[])[0];noteInput.value=row?.text??row?.note_text??row?.body??row?.content??'';await loadFollowups().catch(e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'})}window.saveNote=async function(){if(!profile||saving)return;saving=true;const text=String(noteInput.value||'');if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}const{error}=await sb.rpc('workspace_save_note',{p_text:text});showNotice(error?'لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.':'تم حفظ الملاحظة ومزامنتها بنجاح',error?'error':'ok');saving=false};const form=document.getElementById('workspaceFollowForm');document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form?.classList.add('show'));document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));document.getElementById('wfSave')?.addEventListener('click',async()=>{const title=document.getElementById('wfTitle').value.trim(),note=document.getElementById('wfNote').value.trim();if(!title){showNotice('عنوان المتابعة مطلوب.','error');return}const{error}=await sb.rpc('workspace_add_followup',{p_title:title,p_follow_date:document.getElementById('wfDate').value||null,p_note:note});if(error)showNotice('تعذر حفظ المتابعة.','error');else{document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';form?.classList.remove('show');await loadFollowups()}});try{lucide.createIcons()}catch{}
+const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');
+let profile=null,followData=[],taskData=[],taskById=new Map(),saving=false;
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function showNotice(text='تم الحفظ',kind='ok'){
+  if(!savedNotice)return;
+  savedNotice.textContent=text;savedNotice.style.display='block';
+  savedNotice.style.background=kind==='error'?'#fff1f2':'#ecfdf5';savedNotice.style.color=kind==='error'?'#b42318':'#087443';
+  setTimeout(()=>savedNotice.style.display='none',2200);
+}
+function fdate(x){return x.follow_date||x.date||x.due_date||''}
+function fnote(x){return x.note||x.notes||x.description||''}
+function taskUrl(task){
+  const scope=task?.status==='مكتملة'?'&scope=COMPLETED':'';
+  return `../tasks/index.html?task=${encodeURIComponent(task.id)}&owner=${encodeURIComponent(task.assignee_id||'')}${scope}`;
+}
+function renderFollowups(){
+  const host=document.getElementById('workspaceFollowList'),labels={soon:'متابعة',wait:'بانتظار رد',done:'مكتملة'};
+  host.innerHTML=followData.length?followData.map(x=>{
+    const task=x.task_id?taskById.get(String(x.task_id)):null;
+    const taskLink=x.task_id?(task
+      ?`<a class="follow-task" href="${taskUrl(task)}">↗ فتح المهمة: ${esc(task.title||'المهمة')}</a>`
+      :'<span class="follow-task missing">المهمة المرتبطة غير متاحة</span>'):'';
+    return `<div class="follow-item"><div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(fdate(x)||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>${fnote(x)?`<div class="follow-note">${esc(fnote(x))}</div>`:''}${taskLink}<div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div></div>`;
+  }).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';
+  host.querySelectorAll('[data-follow-done]').forEach(b=>b.onclick=async()=>{
+    const{error}=await sb.rpc('workspace_complete_followup',{p_followup_id:b.dataset.followDone});
+    if(error)showNotice('تعذر تحديث المتابعة.','error');else await loadFollowups();
+  });
+  host.querySelectorAll('[data-follow-delete]').forEach(b=>b.onclick=async()=>{
+    const{error}=await sb.rpc('workspace_delete_followup',{p_followup_id:b.dataset.followDelete});
+    if(error)showNotice('تعذر حذف المتابعة.','error');else await loadFollowups();
+  });
+}
+function populateTaskOptions(){
+  const select=document.getElementById('wfTask');if(!select)return;
+  select.innerHTML='<option value="">بدون ارتباط بمهمة</option>'+taskData.map(t=>`<option value="${esc(t.id)}">${esc(t.title||'مهمة')} — ${esc(t.status||'')}</option>`).join('');
+}
+async function loadFollowups(){
+  const{data,error}=await sb.from('follow_ups').select('*').eq('owner_id',profile.id).order('created_at',{ascending:false});
+  if(error)throw error;followData=data||[];renderFollowups();
+}
+async function loadTaskReferences(){
+  const{data,error}=await sb.from('tasks').select('id,title,status,assignee_id').is('deleted_at',null).order('updated_at',{ascending:false}).limit(500);
+  if(error)throw error;taskData=data||[];taskById=new Map(taskData.map(t=>[String(t.id),t]));populateTaskOptions();
+}
+const a=await authProfile('../login.html');
+if(a){
+  profile=a.profile;
+  const[{data:n}]=await Promise.all([
+    sb.from('quick_notes').select('*').eq('owner_id',profile.id).order('updated_at',{ascending:false}).limit(1),
+    loadTaskReferences()
+  ]);
+  const row=(n||[])[0];noteInput.value=row?.text??row?.note_text??row?.body??row?.content??'';
+  await loadFollowups().catch(e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'});
+}
+window.saveNote=async function(){
+  if(!profile||saving)return;saving=true;const text=String(noteInput.value||'');
+  if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}
+  const{error}=await sb.rpc('workspace_save_note',{p_text:text});
+  showNotice(error?'لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.':'تم حفظ الملاحظة ومزامنتها بنجاح',error?'error':'ok');saving=false;
+};
+const form=document.getElementById('workspaceFollowForm');
+document.getElementById('workspaceFollowAdd')?.addEventListener('click',()=>form?.classList.add('show'));
+document.getElementById('wfCancel')?.addEventListener('click',()=>form?.classList.remove('show'));
+document.getElementById('wfSave')?.addEventListener('click',async()=>{
+  const title=document.getElementById('wfTitle').value.trim(),note=document.getElementById('wfNote').value.trim(),taskId=document.getElementById('wfTask').value||null;
+  if(!title){showNotice('عنوان المتابعة مطلوب.','error');return}
+  const{error}=await sb.rpc('workspace_add_followup',{p_title:title,p_follow_date:document.getElementById('wfDate').value||null,p_note:note,p_task_id:taskId});
+  if(error)showNotice('تعذر حفظ المتابعة.','error');
+  else{
+    document.getElementById('wfTitle').value='';document.getElementById('wfDate').value='';document.getElementById('wfNote').value='';document.getElementById('wfTask').value='';
+    form?.classList.remove('show');await loadFollowups();
+  }
+});
+try{lucide.createIcons()}catch{}
 </script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>

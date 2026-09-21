@@ -5,8 +5,8 @@
 <title>ATWAR ONE – الإدارة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
 <style>
 .admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .admin-card{background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:20px;text-decoration:none;color:inherit}
@@ -26,7 +26,22 @@
     <p style="font-size:11px;color:#7b8aa5;margin:6px 0 0">بوابة مستقلة لإدارة حسابات المستخدمين والأدوار والصلاحيات، بعيدًا عن صفحة المهام.</p>
   </div>
 
-  <div class="admin-grid">
+<div class="admin-grid">
+      <a class="admin-card" href="forms.html">
+        <i data-lucide="files"></i>
+        <h3>مكتبة النماذج والأدلة</h3>
+        <p>إدارة النماذج والسجلات والتقارير وقوائم التحقق وربطها بالأوصاف الوظيفية دون تكرار.</p>
+      </a>
+      <a class="admin-card" href="announcements.html">
+        <i data-lucide="megaphone"></i>
+        <h3>لوحة الإعلانات</h3>
+        <p>إنشاء الإعلانات ونشرها للموظفين أو المدراء أو الجميع وتحديد مدة ظهورها.</p>
+      </a>
+      <a class="admin-card" href="../job-library/index.html">
+        <i data-lucide="library-big"></i>
+        <h3>مكتبة الوظائف</h3>
+        <p>رفع الأوصاف كمسودات، إسنادها للمدير المباشر، متابعة المراجعة والاعتماد ثم النشر للموظفين.</p>
+      </a>
     <a class="admin-card" href="users.html">
       <i data-lucide="users-round"></i>
       <h3>إدارة الحسابات</h3>
@@ -49,6 +64,12 @@
       <i data-lucide="network"></i>
       <h3>الهيكل الإداري</h3>
       <p>مراجعة العلاقات الإدارية والمديرين والموظفين الواقعين تحت كل مستوى إداري.</p>
+    </a>
+
+    <a class="admin-card" href="maintenance.html">
+      <i data-lucide="activity"></i>
+      <h3>صحة النظام والصيانة</h3>
+      <p>مراقبة الأخطاء والبريد، استعادة المهام المحذوفة، ومراجعة سجل الحركات الإدارية.</p>
     </a>
   </div>
 </section>

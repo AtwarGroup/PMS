@@ -1,85 +1,11 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – يومي</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
-<style>
-.day-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
-.day-head h1{font-size:30px;margin:0}.day-head p{font-size:12px;color:#7b8aa5;margin:5px 0 0}
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.sum{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:15px}
-.sum b{display:block;font-size:24px}.sum span{font-size:10px;color:#7b8aa5}
-.day-grid{display:grid;grid-template-columns:1.25fr .85fr;gap:16px}
-.card{background:#fff;border:1px solid #e5edf6;border-radius:19px;padding:18px}
-.card h3{margin:0 0 14px;font-size:16px}
-.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7}
-.item:last-child{border-bottom:0}.item b{font-size:12px}.item small{display:block;color:#8290a3;margin-top:4px;font-size:10px}
-.tag{font-size:9px;font-weight:900;padding:6px 8px;border-radius:999px;white-space:nowrap}
-.task{background:#eef6ff;color:#176fd3}.follow{background:#fff5e6;color:#b66b00}.approval{background:#edf9f3;color:#16805b}.late{background:#fff0f0;color:#c83c43}
-.note{background:#fffdf4;border:1px solid #f0e5b8;border-radius:15px;padding:14px;font-size:12px;line-height:1.8;color:#5f6570;min-height:90px}
-.quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.quick a{text-decoration:none;background:#f8fbff;border:1px solid #e2ebf5;border-radius:12px;padding:12px;color:#31445d;font-size:11px;font-weight:900}
-@media(max-width:900px){.summary{grid-template-columns:repeat(2,1fr)}.day-grid{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ATWAR ONE — مهام اليوم</title>
+  <meta http-equiv="refresh" content="0; url=../tasks/index.html?scope=TODAY&amp;owner=me">
+  <script>location.replace('../tasks/index.html?scope=TODAY&owner=me');</script>
 </head>
-<body>
-<div class="atwar-shell">
-<atwar-sidebar active=""></atwar-sidebar>
-<section class="atwar-main">
-<atwar-header></atwar-header>
-<main class="atwar-content">
-<div class="day-head"><div><h1>يومي</h1><p>ما يحتاج انتباهك اليوم، بدون أن تبحث بين الصفحات.</p></div></div>
-
-<section class="summary">
-<div class="sum"><b id="dayTaskCount">—</b><span>مهام اليوم</span></div>
-<div class="sum"><b id="dayLateCount" style="color:#c83c43">—</b><span>مهمة متأخرة</span></div>
-<div class="sum"><b id="dayFollowCount">—</b><span>متابعات قريبة</span></div>
-<div class="sum" data-role-min="manager"><b id="dayApprovalCount">—</b><span>بانتظار اعتمادي</span></div>
-</section>
-
-<div class="day-grid">
-<section class="card">
-<h3>الأولوية اليوم</h3>
-<div id="dayPriority"><div class="item"><div><b>جاري تجهيز يومك...</b><small>من بيانات حسابك</small></div></div></div>
-</section>
-
-<section>
-<div class="card">
-<h3>ملاحظتي</h3>
-<div id="dayNote" class="note">جاري تحميل ملاحظتك...</div>
-<div class="quick">
-<a href="../workspace/index.html">فتح مساحة عملي</a>
-<a href="../tasks/index.html">فتح مهامي</a>
-<a href="../follow-up/index.html">فتح المتابعات</a>
-<a data-role-min="manager" href="../approvals/index.html">فتح الاعتمادات</a>
-</div>
-</div>
-</section>
-</div>
-
-<footer class="atwar-footer"><span>ATWAR ONE • My Day</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
-</main></section></div>
-<script src="../assets/js/roles-config.js"></script><script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/supabase-config.js"></script>
-<script src="../assets/js/supabase-runtime.js"></script>
-<script src="../assets/js/permissions.js"></script>
-<script type="module" id="myDaySupabaseBinding">
-const sb=await window.atwarGetSupabase();
-async function authProfile(loginPath){
-  const {data:{session},error:se}=await sb.auth.getSession();
-  if(se||!session?.user){location.href=loginPath;return null;}
-  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
-  }
-  window.atwarSyncShellIdentity?.(profile,session.user);
-  return {session,user:session.user,profile};
-}
-
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};const late=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&t.due_date<today();
-const a=await authProfile('../login.html');if(a){const p=a.profile;const [tr,fr,nr,pr]=await Promise.all([sb.from('tasks').select('*').order('due_date'),sb.from('follow_ups').select('*').eq('owner_id',p.id).order('created_at',{ascending:false}),sb.from('quick_notes').select('*').eq('owner_id',p.id).order('updated_at',{ascending:false}).limit(1),p.role==='manager'?sb.from('profiles').select('id,manager_id').eq('manager_id',p.id):Promise.resolve({data:[],error:null})]);const all=tr.data||[],mine=all.filter(x=>x.assignee_id===p.id),directIds=new Set((pr.data||[]).map(x=>x.id)),d=today(),todayTasks=mine.filter(x=>x.status!=='مكتملة'&&(x.start_date===d||x.due_date===d)),lateTasks=mine.filter(late),follows=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date)||(x.follow_date||x.date)<=d)),approvals=all.filter(x=>x.status==='بانتظار الاعتماد'&&(p.role==='admin'?x.assignee_id!==p.id:p.role==='manager'?directIds.has(x.assignee_id):false));document.getElementById('dayTaskCount').textContent=todayTasks.length;document.getElementById('dayLateCount').textContent=lateTasks.length;document.getElementById('dayFollowCount').textContent=follows.length;document.getElementById('dayApprovalCount').textContent=approvals.length;const rows=[...lateTasks.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>مهمة متأخرة</small></div><span class="tag late">متأخرة</span></div>`),...todayTasks.slice(0,3).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>استحقاق اليوم</small></div><span class="tag task">مهمة</span></div>`),...follows.slice(0,2).map(x=>`<div class="item"><div><b>${esc(x.title||'متابعة')}</b><small>متابعة شخصية</small></div><span class="tag follow">متابعة</span></div>`),...approvals.slice(0,2).map(t=>`<div class="item"><div><b>${esc(t.title)}</b><small>بانتظار قرارك</small></div><span class="tag approval">اعتماد</span></div>`)];document.getElementById('dayPriority').innerHTML=rows.join('')||'<div class="item"><div><b>يومك واضح</b><small>لا توجد عناصر عاجلة مسجلة حالياً.</small></div></div>';const n=(nr.data||[])[0],txt=n?.text??n?.note_text??n?.body??n?.content??'';document.getElementById('dayNote').textContent=txt||'لا توجد ملاحظة محفوظة.';try{lucide.createIcons()}catch{}}
-</script>
-</body></html>
+<body></body>
+</html>

@@ -6,8 +6,8 @@
 <title>ATWAR ONE – ملف الموظف</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script>
-<link rel="stylesheet" href="../assets/css/shared.css">
+<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
 <style>
 .employee-hero{
   background:linear-gradient(135deg,#0b1d3a,#143e6f);
@@ -72,7 +72,7 @@
           <p id="employeeProfileMessage" style="font-size:11px;color:#7b8aa5;line-height:1.9;margin:11px auto 0;max-width:450px">لم يتم تجهيز واعتماد الملف الوظيفي الخاص بهذا الموظف حتى الآن.</p>
         </div>
       </section>
-      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Production 1.7C</span><span>Supabase Live Data</span></footer>
+      <footer class="atwar-footer"><span>ATWAR ONE • Employee Profile</span><span>Version 1.9.15</span><span>Supabase Directory</span></footer>
     </main>
   </section>
 </div>
@@ -113,7 +113,7 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const uid=new URLSearchParams(location.search).get('uid')||'',HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';const a=await authProfile('../login.html');if(a){if(!uid)location.replace('index.html');else{const {data:target,error}=await sb.from('profiles').select('*').eq('id',uid).single();if(error||!target||target.active===false||target.status==='inactive')location.replace('index.html');else{const allowed=a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id);if(!allowed)location.replace('../home.html');else if(target.firebase_uid===HAMZA_FIREBASE_UID)location.replace('../profile/financial-manager.html');else{document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}}}
+const uid=new URLSearchParams(location.search).get('uid')||'',HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';const a=await authProfile('../login.html');if(a){if(!uid)location.replace('index.html');else{const {data:target,error}=await sb.from('profiles').select('*').eq('id',uid).single();if(error||!target||target.active===false||target.status==='inactive')location.replace('index.html');else{const allowed=['manager','admin'].includes(a.profile.role);if(!allowed)location.replace('../home.html');else if(target.firebase_uid===HAMZA_FIREBASE_UID)location.replace('../profile/financial-manager.html');else{document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}}}
 </script>
 </body>
 </html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – المهام الدورية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
+<style>
+*{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
+.recurring-form-layout{display:grid;grid-template-columns:1.05fr 1fr;gap:12px}.recurring-form-block{border:1px solid #e5edf6;border-radius:14px;padding:14px;background:#fbfdff}.recurring-form-block h3{margin:0 0 12px;font-size:12px;color:#174f93}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field.wide{grid-column:1/-1}
+.field{min-width:0}.field label{display:block;font-size:10px;font-weight:900;color:#64748b;margin:0 2px 6px}
+.field input,.field select{width:100%;border:1px solid #dfe7f1;border-radius:10px;padding:10px 11px;font-family:inherit;background:#fff}
+.field-help{font-size:9px;color:#94a3b8;margin-top:4px;line-height:1.5}
+.recurring-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #e8eef5}
+.btn{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:10px 14px;font-family:inherit;font-weight:900;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:not-allowed}.danger{background:#b42318}.secondary{background:#eaf2fb;color:#173b64}
+.recurring-metrics{margin:14px 0}.recurring-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.recurring-card{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:15px;border:1px solid var(--atwar-border);border-radius:15px;background:#fff;box-shadow:var(--atwar-shadow-card)}.recurring-card:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--atwar-blue-600)}.recurring-card.paused:before{background:var(--atwar-muted-light)}.recurring-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.recurring-card h3{margin:0;color:var(--atwar-text);font-size:13px;line-height:1.75}.recurring-owner{display:flex;align-items:center;gap:7px;color:var(--atwar-muted);font-size:10px}.recurring-owner i{width:14px}.recurring-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px}.recurring-fact{padding:9px;border-radius:10px;background:var(--atwar-surface-soft)}.recurring-fact span{display:block;color:var(--atwar-muted-light);font-size:9px}.recurring-fact b{display:block;margin-top:3px;color:var(--atwar-text-soft);font-size:10px}.recurring-card-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--atwar-border)}.recurring-toggle{display:flex;align-items:center;gap:7px;color:var(--atwar-text-soft);font-size:10px;font-weight:900}.recurring-toggle input{accent-color:var(--atwar-success-600)}
+.meta{font-size:10px;color:#7b8aa5}.success{color:#15803d;font-weight:800}.error{color:#b42318;font-weight:800}
+@media(max-width:1100px){.recurring-cards{grid-template-columns:1fr 1fr}}@media(max-width:950px){.recurring-form-layout{grid-template-columns:1fr}}
+@media(max-width:620px){.form-grid,.recurring-cards{grid-template-columns:1fr}.field.wide{grid-column:auto}.recurring-actions .btn{width:100%}.recurring-actions{align-items:stretch;flex-direction:column}}
+</style>
+</head>
+<body data-min-role="manager">
+<div class="atwar-shell">
+<atwar-sidebar active=""></atwar-sidebar>
+<section class="atwar-main">
+<atwar-header mode="task-suite"></atwar-header>
+<main class="task-suite-page">
+<section class="task-suite-hero"><div><h1>المهام الدورية</h1><p>إنشاء قوالب متكررة منظمة ومتابعة موعد التشغيل القادم وحالة كل قالب.</p></div><span class="task-suite-hero-badge"><i data-lucide="repeat-2"></i> إدارة القوالب المتكررة</span></section>
+
+<section class="atwar-metrics recurring-metrics" aria-label="ملخص المهام الدورية">
+  <article class="atwar-metric"><strong id="templateCount">0</strong><span>إجمالي القوالب</span></article>
+  <article class="atwar-metric success"><strong id="activeTemplateCount">0</strong><span>قوالب نشطة</span></article>
+  <article class="atwar-metric warning"><strong id="dueTemplateCount">0</strong><span>مستحقة الآن</span></article>
+  <article class="atwar-metric purple"><strong id="nextTemplateRun">—</strong><span>أقرب تشغيل</span></article>
+</section>
+
+<section class="task-suite-panel">
+<div class="task-suite-panel-head"><div><h2>إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
+<div class="recurring-form-layout">
+  <div class="recurring-form-block"><h3>بيانات المهمة</h3><div class="form-grid">
+    <div class="field wide"><label>عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
+    <div class="field"><label>المسند إليه</label><select id="assignee"></select></div>
+    <div class="field"><label>الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
+    <div class="field wide"><label>الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
+  </div></div>
+  <div class="recurring-form-block"><h3>إعدادات التكرار</h3><div class="form-grid">
+    <div class="field"><label>التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
+    <div class="field"><label>كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help">كل أسبوع</div></div>
+    <div class="field"><label>موعد أول إنشاء</label><input id="next" type="datetime-local"></div>
+    <div class="field"><label>مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء المهمة حتى استحقاقها.</div></div>
+  </div></div>
+</div>
+<div class="recurring-actions">
+  <div id="msg" class="meta"></div><button id="add" class="btn">إضافة المهمة الدورية</button>
+</div>
+</section>
+
+<section class="task-suite-panel">
+<div class="task-suite-panel-head">
+  <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
+  <button id="run" class="btn">تشغيل المستحق الآن</button>
+</div>
+<div id="list" class="recurring-cards">جاري التحميل...</div>
+</section>
+<footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>Production 2.5.0</span><span>محرك الجدولة</span></footer>
+</main></section></div>
+
+<script src="../assets/js/roles-config.js"></script>
+<script src="../assets/js/start-page-config.js"></script>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/supabase-runtime.js"></script>
+<script type="module">
+const sb=await window.atwarGetSupabase();
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let me=null,people=[];
+const labelMap={daily:'يوم',weekly:'أسبوع',monthly:'شهر',yearly:'سنة'};
+const displayMap={daily:'يومي',weekly:'أسبوعي',monthly:'شهري',yearly:'سنوي'};
+function dt(v){try{return new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(v))}catch{return v||''}}
+function recurrenceText(kind,n){
+ n=Number(n||1);const unit=labelMap[kind]||'دورة';
+ if(n===1)return `كل ${unit}`;
+ if(kind==='weekly'&&n===2)return 'كل أسبوعين';
+ if(kind==='daily'&&n===2)return 'كل يومين';
+ if(kind==='monthly'&&n===2)return 'كل شهرين';
+ if(kind==='yearly'&&n===2)return 'كل سنتين';
+ return `كل ${n} ${unit}`;
+}
+function setDefaultNext(){
+ const d=new Date(Date.now()+3600000);d.setMinutes(0,0,0);
+ document.getElementById('next').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+function updateIntervalHelp(){document.getElementById('intervalHelp').textContent=recurrenceText(document.getElementById('recurrence').value,document.getElementById('interval').value)}
+function resetForm(){
+ document.getElementById('title').value='';
+ document.getElementById('desc').value='';
+ document.getElementById('recurrence').value='weekly';
+ document.getElementById('interval').value='1';
+ document.getElementById('priority').value='normal';
+ document.getElementById('dueOffset').value='0';
+ if(document.getElementById('assignee').options.length)document.getElementById('assignee').selectedIndex=0;
+ setDefaultNext();updateIntervalHelp();
+}
+async function load(){
+ const r=await sb.from('recurring_task_templates').select('id,title,assignee_id,recurrence,interval_count,next_run_at,due_offset_days,priority,active').order('next_run_at');
+ const rows=r.data||[];
+ const now=Date.now(),activeRows=rows.filter(x=>x.active),dueRows=activeRows.filter(x=>new Date(x.next_run_at).getTime()<=now),nextRow=activeRows.find(x=>new Date(x.next_run_at).getTime()>now);
+ document.getElementById('templateCount').textContent=rows.length;document.getElementById('activeTemplateCount').textContent=activeRows.length;document.getElementById('dueTemplateCount').textContent=dueRows.length;document.getElementById('nextTemplateRun').textContent=nextRow?new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'short'}).format(new Date(nextRow.next_run_at)):'—';
+ document.getElementById('list').innerHTML=rows.length?rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(people.find(p=>p.id===x.assignee_id)?.full_name||x.assignee_id)}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join(''):'<div class="atwar-state"><div><div class="atwar-state-icon"><i data-lucide="repeat-2"></i></div><h3>لا توجد قوالب دورية</h3><p>أنشئ القالب الأول ليقوم النظام بإضافة المهمة في موعدها تلقائيًا.</p></div></div>';
+ document.querySelectorAll('.active').forEach(x=>x.onchange=async()=>{const r=await sb.from('recurring_task_templates').update({active:x.checked}).eq('id',x.dataset.id);if(r.error){window.AtwarUI?.toast(r.error.message,{type:'error'});x.checked=!x.checked}else{window.AtwarUI?.toast(x.checked?'تم تفعيل القالب':'تم إيقاف القالب',{type:'success'});await load()}});
+ document.querySelectorAll('.del').forEach(x=>x.onclick=async()=>{const approved=await window.AtwarUI.confirm({title:'حذف المهمة الدورية',message:'سيتم حذف القالب ولن تُنشأ منه مهام جديدة. المهام المنشأة سابقًا لن تتأثر.',confirmText:'حذف القالب',danger:true});if(!approved)return;const r=await sb.from('recurring_task_templates').delete().eq('id',x.dataset.id);if(r.error)window.AtwarUI.toast(r.error.message,{type:'error'});else{window.AtwarUI.toast('تم حذف القالب الدوري',{type:'success'});await load()}});try{lucide.createIcons()}catch{}
+}
+const{data:{session}}=await sb.auth.getSession();
+if(!session?.user)location.href='../login.html';
+else{
+ const{data:p}=await sb.from('profiles').select('id,full_name,email,job_title,department,role,status,active,manager_id,permissions').eq('id',session.user.id).single();me=p;
+ if(!p||!['manager','admin'].includes(p.role))location.href='../home.html';
+ else{
+  window.atwarSyncShellIdentity?.(p,session.user);
+  const pr=await sb.from('profiles').select('id,full_name,email,manager_id,role,active,status').eq('active',true).eq('status','active').order('full_name');
+  people=(pr.data||[]).filter(x=>p.role==='admin'||x.id===p.id||x.manager_id===p.id);
+  document.getElementById('assignee').innerHTML=people.map(x=>`<option value="${x.id}">${esc(x.full_name||x.email)}</option>`).join('');
+  resetForm();await load();
+ }
+}
+document.getElementById('recurrence').addEventListener('change',updateIntervalHelp);
+document.getElementById('interval').addEventListener('input',updateIntervalHelp);
+document.getElementById('add').onclick=async()=>{
+ const title=document.getElementById('title').value.trim(),assignee=document.getElementById('assignee').value,next=document.getElementById('next').value;
+ const msg=document.getElementById('msg');
+ if(!title||!assignee||!next){msg.className='meta error';msg.textContent='العنوان والمسند إليه وموعد أول إنشاء حقول مطلوبة.';return}
+ const payload={owner_id:me.id,assignee_id:assignee,title,description:document.getElementById('desc').value.trim()||null,priority:document.getElementById('priority').value,recurrence:document.getElementById('recurrence').value,interval_count:Number(document.getElementById('interval').value||1),next_run_at:new Date(next).toISOString(),due_offset_days:Number(document.getElementById('dueOffset').value||0)};
+ const b=document.getElementById('add');b.disabled=true;
+ const r=await sb.from('recurring_task_templates').insert(payload);
+ b.disabled=false;
+ if(r.error){msg.className='meta error';msg.textContent='تعذر الإضافة: '+r.error.message;return}
+ resetForm();msg.className='meta success';msg.textContent='تمت إضافة المهمة الدورية بنجاح وتم تفريغ الحقول.';await load();
+};
+document.getElementById('run').onclick=async()=>{const button=document.getElementById('run');button.disabled=true;button.textContent='جارٍ تشغيل المستحق…';const r=await sb.rpc('run_recurring_tasks_safe');button.disabled=false;button.textContent='تشغيل المستحق الآن';if(r.error)window.AtwarUI?.toast(r.error.message,{type:'error'});else{window.AtwarUI?.toast(`تم إنشاء ${r.data||0} مهمة مستحقة.`,{type:'success'});await load()}};
+try{lucide.createIcons()}catch{}
+</script>
+</body></html>

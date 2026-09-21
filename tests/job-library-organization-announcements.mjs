@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';
+const root=resolve(new URL('..',import.meta.url).pathname),read=f=>readFileSync(resolve(root,f),'utf8');
+const sql=read('supabase/migrations/20260913_job_assignments_and_announcements.sql'),library=read('assets/js/job-library-page.js'),profile=read('assets/js/job-profile-page.js'),home=read('home.html'),admin=read('admin/announcements.html')+read('assets/js/announcements-admin.js'),data=JSON.parse(read('job-library/data/atwar-job-library-v1.json'));
+assert.match(sql,/create table if not exists public\.employee_job_assignments/i);assert.match(sql,/p\.manager_id=\(select auth\.uid\(\)\)/i);assert.match(sql,/create table if not exists public\.announcements/i);assert.match(sql,/announcements_select_policy/i);assert.match(sql,/audience in \('EMPLOYEES','MANAGERS','ALL'\)/i);
+assert.match(library,/إضافة الوظائف الناقصة/);assert.match(library,/employee_job_assignments/);assert.doesNotMatch(library,/managerFor/,'Reviewer routing must never be inferred from title');assert.match(library,/data-tab/);assert.match(profile,/employee_job_assignments/);assert.match(profile,/published_snapshot/);assert.match(profile,/المدير المباشر/);
+assert.match(home,/لوحة الإعلانات/);assert.match(home,/announcements/);assert.match(admin,/MANAGERS/);assert.match(admin,/PUBLISHED/);
+const byTitle=new Map(data.jobs.map(x=>[x.title,x]));assert.deepEqual(byTitle.get('سائق النقل والتوصيل').aliases.sort(),['سائق','سائق توصيل بضاعة','سائق شاحنة'].sort());assert.ok(byTitle.has('عامل خدمات عامة'));assert.ok(byTitle.has('مشرف مبيعات التجزئة'));assert.ok(byTitle.has('مشرف مبيعات التوزيع'));
+console.log('Organization-linked job library and announcements audit passed.');

@@ -147,7 +147,7 @@
               
             } catch (error) {
               console.error("خطأ أثناء التصدير: ", error);
-              alert("حدث خطأ أثناء تصدير الملف.");
+              window.atwarUI?.toast("حدث خطأ أثناء تصدير الملف.", { tone: "error" });
             } finally {
               setIsExporting(false);
             }
@@ -353,7 +353,7 @@
                        
                        {/* رابط الصفحة الرئيسية */}
                        <a 
-                         href="https://atwargroup.github.io/PMS/" 
+                         href="https://one.atwargroup.com/" 
                          title="الصفحة الرئيسية" 
                          className="flex items-center gap-2 text-slate-400 hover:text-sky-400 transition-colors text-[11px] sm:text-xs font-bold"
                        >

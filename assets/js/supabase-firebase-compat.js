@@ -1,11 +1,20 @@
 // ATWAR ONE compatibility bridge: preserves the full legacy UI contract while routing data/auth to Supabase.
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
+import {createRefreshCoordinator} from './supabase-sync.mjs?v=1.9.6';
+
 const sb = await window.atwarGetSupabase();
+
+async function dispatchQueuedTaskEmails(){
+  try{
+    const {error}=await sb.functions.invoke('send-task-email-notifications',{body:{}});
+    if(error)console.warn('Task email delivery is queued for retry.',error);
+  }catch(error){console.warn('Task email delivery is queued for retry.',error)}
+}
 
 const _apps=[{name:'ATWAR_SUPABASE_COMPAT'}];
 const _aliases=new Map();
 function publicKey(real){for(const [alias,id] of _aliases)if(String(id)===String(real))return alias;return String(real)}
-const _listeners=new Set();
+const _listeners=new Map();
 let _authUser=null;
 
 export function initializeApp(){return _apps[0]}
@@ -41,28 +50,34 @@ function profileLegacy(p){
 
 async function loadChildren(taskIds){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
-  if(!ids.length)return {activities:new Map(),subtasks:new Map()};
-  const [ar,sr]=await Promise.all([
+  if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map()};
+  const [ar,sr,fr]=await Promise.all([
     sb.from('task_activity').select('*').in('task_id',ids).order('sequence_no',{ascending:true}),
-    sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true})
+    sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true}),
+    sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',ids).order('created_at',{ascending:false})
   ]);
-  const activities=new Map(),subtasks=new Map();
+  const activities=new Map(),subtasks=new Map(),attachments=new Map();
   for(const a of ar.data||[]){const x={type:a.event_type||'activity',detail:a.detail||'',userUid:a.actor_id||'',userName:a.actor_name_snapshot||'',createdAt:ms(a.created_at)};(activities.get(a.task_id)||activities.set(a.task_id,[]).get(a.task_id)).push(x)}
   for(const s of sr.data||[]){const x={id:s.id,title:s.title||'',done:!!s.done,createdAt:ms(s.created_at),completedAt:ms(s.completed_at)||null};(subtasks.get(s.task_id)||subtasks.set(s.task_id,[]).get(s.task_id)).push(x)}
-  return {activities,subtasks};
+  for(const f of fr.data||[]){const x={id:f.id,uploaderId:f.uploader_id||'',fileName:f.file_name||'',storagePath:f.storage_path||'',sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at)};(attachments.get(f.task_id)||attachments.set(f.task_id,[]).get(f.task_id)).push(x)}
+  return {activities,subtasks,attachments};
 }
 
-function taskLegacy(t,children){
+function taskLegacy(t,children,profileNames=new Map()){
   if(!t)return null;
+  const currentCreatorName=profileNames.get(String(t.creator_id||''))||t.creator_name_snapshot||'';
+  const currentAssigneeName=profileNames.get(String(t.assignee_id||''))||t.assignee_name_snapshot||'';
   return {
     id:t.legacy_id||t.firebase_task_key||t.id,title:t.title||'',desc:t.description||'',type:t.task_type||'',
     status:t.status||'قيد الانتظار',priority:t.priority||'normal',progress:Number(t.progress||0),
-    createdByUid:t.creator_id||'',assignUid:t.assignee_id||'',createdBy:t.creator_name_snapshot||'',assign:t.assignee_name_snapshot||'',
+    createdByUid:t.creator_id||'',assignUid:t.assignee_id||'',createdBy:currentCreatorName,assign:currentAssigneeName,
+    createdByNameSnapshot:t.creator_name_snapshot||'',assigneeNameSnapshot:t.assignee_name_snapshot||'',
     start:t.start_date||'',end:t.due_date||'',actualEnd:t.actual_end_date||'',notes:t.notes||'',managerNotes:t.manager_notes||'',revision:Number(t.revision||1),reopenReason:t.reopen_reason||'',
     createdAt:ms(t.created_at),updatedAt:ms(t.updated_at),startedAt:ms(t.started_at)||null,submittedAt:ms(t.submitted_at)||null,
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
     reopenedAt:ms(t.reopened_at)||null,reopenedBy:t.reopened_by_name_snapshot||'',completedAt:ms(t.completed_at)||null,
-    activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],
+    cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
+    activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
     _relationalId:t.id
   };
 }
@@ -74,13 +89,26 @@ class Snap{
 }
 
 async function visibleTasks(extra=null){
-  let q=sb.from('tasks').select('*');
+  let q=sb.from('tasks').select('*').is('deleted_at',null);
+  // The canonical Tasks workspace serves one scope at a time so active work
+  // stays fast while the completed archive uses the same details experience.
+  const isMainTasksWorkspace=/\/tasks\/(?:index\.html)?$/.test(location.pathname);
+  const requestedScope=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase();
+  if(isMainTasksWorkspace && !extra?.id){
+    q=requestedScope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة');
+  }
   if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
   if(extra?.creator)q=q.eq('creator_id',extra.creator);
   if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);
   const {data,error}=await q.order('updated_at',{ascending:false});if(error)throw error;
+  const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id]).filter(Boolean))];
+  let profileNames=new Map();
+  if(profileIds.length){
+    const profiles=await sb.from('profiles').select('id,full_name,email').in('id',profileIds);
+    if(!profiles.error)profileNames=new Map((profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
+  }
   const children=await loadChildren((data||[]).map(x=>x.id));
-  return (data||[]).map(t=>taskLegacy(t,children));
+  return (data||[]).map(t=>taskLegacy(t,children,profileNames));
 }
 
 export async function get(r){
@@ -95,7 +123,7 @@ export async function get(r){
   if(parts[0]==='tasksByUser'){
     const owner=parts[1],key=parts[2];
     if(key){const rows=await visibleTasks({id:key});const t=rows.find(x=>!owner||x.assignUid===owner)||null;return new Snap(t,key)}
-    const rows=await visibleTasks(owner?{assignee:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]=t}return new Snap(out,owner||null);
+    const rows=await visibleTasks(owner?{assignee:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]={...t,_key:k,_ownerUid:t.assignUid}}return new Snap(out,owner||null);
   }
   if(parts[0]==='createdTaskIndex'&&parts[1]){const rows=await visibleTasks({creator:parts[1]}),out={};for(const t of rows)out[publicKey(t._relationalId)]=t.assignUid;return new Snap(out,parts[1])}
   if(parts[0]==='notificationsByUser'){
@@ -112,12 +140,12 @@ export async function signInWithEmailAndPassword(_auth,email,password){const {da
 export async function signOut(){await sb.auth.signOut();_authUser=null}
 export function onAuthStateChanged(_auth,cb){let dead=false;currentAuthUser().then(u=>{if(!dead)cb(u)});const {data:{subscription}}=sb.auth.onAuthStateChange((_e,s)=>{if(dead)return;_authUser=s?.user?{uid:s.user.id,id:s.user.id,email:s.user.email||''}:null;cb(_authUser)});return ()=>{dead=true;subscription?.unsubscribe?.()}}
 
-function taskPatch(next){
+function taskPatch(next,previous=null){
   const p={};
-  const add=(k,v)=>{if(v!==undefined)p[k]=v};
-  add('title',next.title);add('description',next.desc);add('task_type',next.type||'task');add('status',next.status);add('priority',next.priority);add('progress',Number(next.progress||0));
-  add('start_date',dateOnly(next.start));add('due_date',dateOnly(next.end));add('actual_end_date',dateOnly(next.actualEnd));add('notes',next.notes??'');add('manager_notes',next.managerNotes??'');add('reopen_reason',next.reopenReason??null);
-  add('started_at',iso(next.startedAt));add('submitted_at',iso(next.submittedAt));add('approved_at',iso(next.approvedAt));add('approved_by_name_snapshot',next.approvedBy||null);add('returned_at',iso(next.returnedAt));add('returned_by_name_snapshot',next.returnedBy||null);add('reopened_at',iso(next.reopenedAt));add('reopened_by_name_snapshot',next.reopenedBy||null);add('completed_at',iso(next.completedAt));
+  const add=(k,v,old)=>{if(v!==undefined&&(!previous||JSON.stringify(v)!==JSON.stringify(old)))p[k]=v};
+  add('title',next.title,previous?.title);add('description',next.desc,previous?.desc);add('task_type',next.type||'task',previous?.type||'task');add('status',next.status,previous?.status);add('priority',next.priority,previous?.priority);add('progress',Number(next.progress||0),Number(previous?.progress||0));
+  add('start_date',dateOnly(next.start),dateOnly(previous?.start));add('due_date',dateOnly(next.end),dateOnly(previous?.end));add('actual_end_date',dateOnly(next.actualEnd),dateOnly(previous?.actualEnd));add('notes',next.notes??'',previous?.notes??'');add('manager_notes',next.managerNotes??'',previous?.managerNotes??'');add('reopen_reason',next.reopenReason??null,previous?.reopenReason??null);
+  add('started_at',iso(next.startedAt),iso(previous?.startedAt));add('submitted_at',iso(next.submittedAt),iso(previous?.submittedAt));add('approved_at',iso(next.approvedAt),iso(previous?.approvedAt));add('approved_by_name_snapshot',next.approvedBy||null,previous?.approvedBy||null);add('returned_at',iso(next.returnedAt),iso(previous?.returnedAt));add('returned_by_name_snapshot',next.returnedBy||null,previous?.returnedBy||null);add('reopened_at',iso(next.reopenedAt),iso(previous?.reopenedAt));add('reopened_by_name_snapshot',next.reopenedBy||null,previous?.reopenedBy||null);add('completed_at',iso(next.completedAt),iso(previous?.completedAt));
   return p;
 }
 
@@ -135,13 +163,27 @@ async function reconcileSubtasks(taskId,nextItems){
 export async function runTransaction(r,mutator){
   const path=pathOf(r),parts=path.split('/').filter(Boolean);
   if(parts[0]!=='tasksByUser'||!parts[2])return {committed:false,snapshot:new Snap(null)};
-  const key=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id:key});const cur=rows[0];if(!cur)return {committed:false,snapshot:new Snap(null,key)};
-  const current=structuredClone(cur),next=mutator(structuredClone(current));if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
-  // operationIntent is a legacy lock marker; DB workflow/RLS remains the authoritative guard.
-  const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]);
-  const patch=taskPatch(next);const {data,error}=await sb.from('tasks').update(patch).eq('id',key).select('*').single();if(error)throw error;
-  if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
-  const children=await loadChildren([key]);const snapTask=taskLegacy(data,children);await emitLocal();return {committed:true,snapshot:new Snap(snapTask,key)};
+  const key=_aliases.get(parts[2])||parts[2];
+  for(let attempt=0;attempt<2;attempt++){
+    const rows=await visibleTasks({id:key}),cur=rows[0];
+    if(!cur)return {committed:false,snapshot:new Snap(null,key)};
+    const current=structuredClone(cur),next=mutator(structuredClone(current));
+    if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
+    const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]),patch=taskPatch(next,current);
+    const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
+    if(error){
+      const conflict=String(error.message||'').includes('ATWAR_CONFLICT');
+      if(conflict&&attempt===0)continue;
+      if(conflict)error.code='ATWAR_CONFLICT';
+      throw error;
+    }
+    const row=Array.isArray(data)?data[0]:data;
+    if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
+    const children=await loadChildren([key]),snapTask=taskLegacy(row,children);await emitLocal('tasks');
+    if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
+    return {committed:true,snapshot:new Snap(snapTask,key)};
+  }
+  return {committed:false,snapshot:new Snap(null,key)};
 }
 
 async function createOne(task,assigneeId,aliasKey){
@@ -151,22 +193,28 @@ async function createOne(task,assigneeId,aliasKey){
 async function rootUpdate(changes){
   const entries=Object.entries(changes||{});const taskEntries=entries.filter(([k])=>k.startsWith('tasksByUser/'));
   const creates=taskEntries.filter(([,v])=>v&&typeof v==='object');const deletes=taskEntries.filter(([,v])=>v===null);
+  let shouldDispatchEmail=false;
   // Reassignment = same task key appears as a create under new owner and delete under old owner.
   for(const [newPath,obj] of creates){const np=newPath.split('/'),alias=np[2],real=_aliases.get(alias)||alias;const matchingDelete=deletes.find(([oldPath])=>oldPath.split('/')[2]===alias);
-    if(matchingDelete){const {error}=await sb.from('tasks').update({assignee_id:np[1],assignee_name_snapshot:obj.assign||null}).eq('id',real);if(error)throw error;continue;}
+    if(matchingDelete){
+      const rows=await visibleTasks({id:real});const cur=rows[0];if(!cur)throw new Error('Task not found');
+      const {error}=await sb.rpc('delegate_task_safe',{p_task_id:real,p_target_id:np[1],p_expected_revision:Number(cur.revision||1)});
+      if(error)throw error;shouldDispatchEmail=true;continue;
+    }
   }
   const pureCreates=creates.filter(([newPath])=>!deletes.some(([oldPath])=>oldPath.split('/')[2]===newPath.split('/')[2]));
-  if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);}
-  else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;}
-  for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id});if(error)throw error;}
-  await emitLocal();
+  if(pureCreates.length===1){const [p,obj]=pureCreates[0],parts=p.split('/');await createOne(obj,parts[1],parts[2]);shouldDispatchEmail=true;}
+  else if(pureCreates.length>1){const payload=pureCreates.map(([p,t])=>({title:t.title||'',description:t.desc||'',priority:t.priority||'normal',status:t.status||'قيد الانتظار',progress:Number(t.progress||0),assignee_id:p.split('/')[1],start_date:t.start||null,due_date:t.end||null,notes:t.notes||'',manager_notes:t.managerNotes||''}));const {error}=await sb.rpc('import_tasks_safe',{p_rows:payload});if(error)throw error;shouldDispatchEmail=true;}
+  for(const [oldPath] of deletes){const parts=oldPath.split('/'),alias=parts[2];if(creates.some(([p])=>p.split('/')[2]===alias))continue;const id=_aliases.get(alias)||alias;const {error}=await sb.rpc('delete_task_safe',{p_task_id:id,p_reason:null});if(error)throw error;}
+  await emitLocal('tasks');
+  if(shouldDispatchEmail)await dispatchQueuedTaskEmails();
 }
 
 export async function update(r,changes){
   const path=pathOf(r);
   if(!path){
     const notifIds=Object.keys(changes||{}).filter(k=>k.startsWith('notificationsByUser/')).map(k=>k.split('/')[2]).filter(Boolean);
-    if(notifIds.length){const {error}=await sb.from('notifications').delete().in('id',[...new Set(notifIds)]);if(error)throw error;await emitLocal();}
+    if(notifIds.length){const {error}=await sb.from('notifications').delete().in('id',[...new Set(notifIds)]);if(error)throw error;await emitLocal('notifications');}
     const taskChanges=Object.fromEntries(Object.entries(changes||{}).filter(([k])=>k.startsWith('tasksByUser/')||k.startsWith('createdTaskIndex/')));
     if(Object.keys(taskChanges).some(k=>k.startsWith('tasksByUser/')))await rootUpdate(taskChanges);
     return;
@@ -174,10 +222,15 @@ export async function update(r,changes){
   const parts=path.split('/').filter(Boolean);
   if(parts[0]==='notificationsByUser'){
     // ATWAR ONE policy: notifications have no read flag. Marking read means deleting the row.
-    if(parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal();return}
-    const ids=Object.keys(changes||{}).map(k=>k.split('/')[0]).filter(Boolean);if(ids.length){const {error}=await sb.from('notifications').delete().in('id',ids);if(error)throw error;await emitLocal()}return;
+    if(parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal('notifications');return}
+    const ids=Object.keys(changes||{}).map(k=>k.split('/')[0]).filter(Boolean);if(ids.length){const {error}=await sb.from('notifications').delete().in('id',ids);if(error)throw error;await emitLocal('notifications')}return;
   }
-  if(parts[0]==='tasksByUser'&&parts[2]){const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;const next={...rows[0],...changes};const {error}=await sb.from('tasks').update(taskPatch(next)).eq('id',id);if(error)throw error;await emitLocal();return;}
+  if(parts[0]==='tasksByUser'&&parts[2]){
+    const id=_aliases.get(parts[2])||parts[2];const rows=await visibleTasks({id});if(!rows[0])return;
+    const next={...rows[0],...changes};
+    const {error}=await sb.rpc('update_task_safe',{p_task_id:id,p_expected_revision:Number(rows[0].revision||1),p_patch:taskPatch(next,rows[0])});
+    if(error)throw error;await emitLocal('tasks');return;
+  }
 }
 
 export async function set(r,data){
@@ -185,7 +238,48 @@ export async function set(r,data){
   if(parts[0]==='notificationsByUser')return; // DB triggers create operational notifications.
   if(parts[0]==='tasksByUser'&&parts[2])return rootUpdate({[path]:data});
 }
-export async function remove(r){const path=pathOf(r),parts=path.split('/').filter(Boolean);if(parts[0]==='notificationsByUser'&&parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal()}}
+export async function remove(r){const path=pathOf(r),parts=path.split('/').filter(Boolean);if(parts[0]==='notificationsByUser'&&parts[2]){const {error}=await sb.from('notifications').delete().eq('id',parts[2]);if(error)throw error;await emitLocal('notifications')}}
 
-async function emitLocal(){for(const fn of [..._listeners]){try{await fn()}catch(e){console.warn('compat listener',e)}}}
-export function onValue(r,callback,errorCallback){let alive=true,busy=false;const refresh=async()=>{if(!alive||busy)return;busy=true;try{callback(await get(r))}catch(e){errorCallback?.(e)}finally{busy=false}};_listeners.add(refresh);refresh();const timer=setInterval(refresh,15000);return ()=>{alive=false;clearInterval(timer);_listeners.delete(refresh)}}
+function listenerAccepts(path,scope){
+  if(scope==='all')return true;
+  if(path==='tasksByUser'||path.startsWith('tasksByUser/')||path.startsWith('createdTaskIndex/'))return scope==='tasks';
+  if(path==='users'||path.startsWith('users/'))return scope==='profiles';
+  if(path.startsWith('notificationsByUser'))return scope==='notifications';
+  return true;
+}
+async function emitLocal(scope='all'){
+  const jobs=[];
+  for(const [fn,path] of _listeners){
+    if(listenerAccepts(path,scope))jobs.push(fn());
+  }
+  const results=await Promise.allSettled(jobs);
+  for(const result of results)if(result.status==='rejected')console.warn('compat listener',result.reason);
+}
+let _realtimeChannel=null;
+function ensureRealtime(){
+  if(_realtimeChannel)return;
+  try{
+    _realtimeChannel=sb.channel('atwar-one-compat-v18')
+      .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'subtasks'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_activity'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'task_attachments'},()=>emitLocal('tasks'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},()=>emitLocal('notifications'))
+      .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},()=>emitLocal('profiles'))
+      .subscribe();
+  }catch(e){console.warn('Realtime unavailable; polling fallback remains active.',e)}
+}
+export function onValue(r,callback,errorCallback){
+  ensureRealtime();
+  const listenerPath=pathOf(r);
+  const coordinator=createRefreshCoordinator({
+    load:()=>get(r),
+    serialize:snapshot=>JSON.stringify(snapshot.val()),
+    onValue:callback,
+    onError:errorCallback
+  });
+  const refresh=coordinator.refresh;
+  _listeners.set(refresh,listenerPath);refresh();
+  const timer=setInterval(refresh,60000);
+  return ()=>{coordinator.dispose();clearInterval(timer);_listeners.delete(refresh)};
+}

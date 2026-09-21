@@ -1,52 +1,33 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الوصف الوظيفي</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js"></script><link rel="stylesheet" href="../assets/css/shared.css"><style>.box{background:#fff;border:1px solid #e6edf5;border-radius:20px;padding:22px;margin-bottom:16px;box-shadow:0 5px 14px rgba(20,45,80,.045)}.box h3{margin-top:0}.duty{padding:14px;border-right:4px solid #1677ff;background:#f8fbff;border-radius:12px;margin:10px 0;line-height:1.8}</style></head><body>
-<div class="atwar-shell">
-  <atwar-sidebar active="profile"></atwar-sidebar>
-  <section class="atwar-main">
-    <atwar-header></atwar-header>
-<main class="atwar-content">
-<section id="profileDataHost" style="min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:24px">
-  <div style="width:min(680px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 10px 30px rgba(20,45,80,.05)">
-    <div style="font-size:22px;font-weight:900">الوصف الوظيفي</div>
-    <p style="margin:10px auto 0;font-size:11px;color:#7b8aa5">جاري التحقق من البيانات المعتمدة...</p>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>وصفي الوظيفي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
+  <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
+  <style>
+    .wrap{width:min(980px,100%);margin:auto}.box{background:#fff;border:1px solid #e1e9f2;border-radius:18px;padding:22px;margin-bottom:14px}.hero{border-top:5px solid #1769e0}.hero h1{margin:6px 0}.meta{display:flex;gap:8px;flex-wrap:wrap}.meta span{background:#f1f5f9;border-radius:99px;padding:6px 10px;font-size:10px;color:#53657b}.items{display:grid;gap:9px}.item{display:grid;grid-template-columns:32px 1fr;gap:10px;background:#f8fafc;border:1px solid #e7eef7;border-radius:11px;padding:12px;line-height:1.8}.item b{width:28px;height:28px;border-radius:8px;background:#e5efff;color:#176fd3;display:grid;place-items:center}.muted{color:#64748b;line-height:2}
+  </style>
+</head>
+<body>
+  <div class="atwar-shell">
+    <atwar-sidebar active="profile"></atwar-sidebar>
+    <section class="atwar-main">
+      <atwar-header></atwar-header>
+      <main class="atwar-content">
+        <div id="jobProfile" class="wrap"><section class="box">جاري تحميل الوصف المعتمد...</section></div>
+      </main>
+    </section>
   </div>
-</section>
-</main>
-  </section>
-</div>
-<script src="../assets/js/shared.js"></script>
-<script src="../assets/js/roles-config.js"></script>
-<script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/supabase-config.js"></script>
-<script src="../assets/js/supabase-runtime.js"></script>
-<script src="../assets/js/permissions.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
- const s=document.querySelector('[data-global-search]');
- if(s) s.addEventListener('keydown',e=>{
-   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
- });
-});
-</script>
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-
-
-
-
-<script type="module" id="realProfileDataBinding">
-const sb=await window.atwarGetSupabase();
-async function authProfile(loginPath){
-  const {data:{session},error:se}=await sb.auth.getSession();
-  if(se||!session?.user){location.href=loginPath;return null;}
-  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
-  }
-  window.atwarSyncShellIdentity?.(profile,session.user);
-  return {session,user:session.user,profile};
-}
-
-const host=document.getElementById('profileDataHost'),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function empty(){host.innerHTML='<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">لا توجد بيانات معتمدة</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات الوصف الوظيفي المعتمدة لهذا الحساب حتى الآن.</p></div>'}const a=await authProfile('../login.html');if(a){const data=a.profile.job_description||a.profile.jobDescription||'';if(!data)empty();else host.innerHTML=`<div style="width:min(800px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">الوصف الوظيفي</h1><div style="line-height:2;color:#40536d;white-space:pre-wrap">${esc(typeof data==='string'?data:JSON.stringify(data,null,2))}</div></div>`}
-</script>
+  <script src="../assets/js/roles-config.js"></script>
+  <script src="../assets/js/start-page-config.js"></script>
+  <script src="../assets/js/supabase-config.js"></script>
+  <script src="../assets/js/supabase-runtime.js"></script>
+  <script src="../assets/js/permissions.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script type="module" src="../assets/js/job-profile-page.js?v=2.5.1"></script>
 </body>
 </html>
