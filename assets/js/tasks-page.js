@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.30";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.31";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -822,6 +822,7 @@ function renderManagerDashboard(){
   if(!allowed)return;
 
   body.classList.toggle('hidden',managerDashboardCollapsed);
+  section.classList.toggle('manager-dashboard-collapsed',managerDashboardCollapsed);
   if(toggleText)toggleText.textContent=managerDashboardCollapsed?'إظهار':'إخفاء';
   if(managerDashboardCollapsed)return;
 
