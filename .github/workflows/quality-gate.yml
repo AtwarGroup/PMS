@@ -57,6 +57,10 @@ jobs:
         run: node tests/phase-four-ux-safety.mjs
       - name: Run unified UI design-system audit
         run: node tests/ui-design-system.mjs
+      - name: Run unified system foundation audit
+        run: node tests/unified-system-foundation.mjs
+      - name: Run release 2.5.1 acceptance audit
+        run: node tests/release-acceptance-2-5-1.mjs
       - name: Run Kanban workflow and self-service password audit
         run: node tests/tasks-kanban-password.mjs
       - name: Run weekly encrypted backup configuration audit

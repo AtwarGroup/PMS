@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATWAR ONE – ملف المدير المالي</title>
-    <link rel="stylesheet" href="../assets/css/shared.css">
+    <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
     
     <!-- خط تجوال ليعطي مظهراً احترافياً للغة العربية -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
 <script src="../assets/js/supabase-runtime.js"></script>
     <script src="../assets/js/roles-config.js"></script>
     <script src="../assets/js/start-page-config.js"></script>
-    <script src="../assets/js/shell-components.js?v=2.5.0"></script>
+    <script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
     <script src="../assets/js/permissions.js"></script>
 
     <script type="module" id="financialProfileAccessGuard">
@@ -179,7 +179,7 @@ const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('..
               
             } catch (error) {
               console.error("خطأ أثناء التصدير: ", error);
-              alert("حدث خطأ أثناء تصدير الملف.");
+              window.atwarUI?.toast("حدث خطأ أثناء تصدير الملف.", { tone: "error" });
             } finally {
               setIsExporting(false);
             }

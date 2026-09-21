@@ -7,3 +7,5 @@ Changes:
 4. Keeps the Attachments icon out of the global header.
 5. Improves responsive header behavior on medium-width screens.
 6. No production database records are modified by this upload.
+7. Hides the system and organization title from the Tasks header to free space for controls.
+8. Add Task scrolls to the quick-add form and focuses the task-name field.
