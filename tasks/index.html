@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATWAR ONE – Tasks V1.3.16</title>
+  <title>ATWAR ONE – إدارة المهام</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=2.4.29"></script>
+<script src="../assets/js/shell-components.js?v=2.5.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -16,6 +16,7 @@
     .task-card{transition:.16s ease}
     .task-card:hover{background:#f8fafc}
     .task-card.selected{background:#eff6ff;box-shadow:inset -3px 0 0 #3b82f6}
+    .task-card.is-completed{background:linear-gradient(90deg,#fff,#f5fff9);border-right:3px solid #22a06b!important}.task-card.is-completed:hover{background:#f2fff7}.task-card.is-completed .task-title-line{color:#1f3b31!important}.task-card.is-completed .task-operational{opacity:.88}
     .thin-scroll{scrollbar-width:thin}
     .thin-scroll::-webkit-scrollbar{width:7px;height:7px}
     .thin-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
@@ -199,7 +200,7 @@
 
 </style>
 
-<link rel="stylesheet" href="../assets/css/shared.css?v=2.4.29">
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.0">
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>

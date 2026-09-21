@@ -2301,7 +2301,7 @@ function renderTasks(){
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
     const timingClass=delay>0?'text-rose-600':'text-slate-500';
     const card=document.createElement('div');
-    card.className=`task-card ${selected?'selected':''} ${delay>0&&!isCompletedArchiveView()?'is-overdue':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
+    card.className=`task-card ${selected?'selected':''} ${delay>0&&!isCompletedArchiveView()?'is-overdue':''} ${t.status==='مكتملة'?'is-completed':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
       if(selectedTaskKey!==key && pendingAssigneeChange){
@@ -2338,7 +2338,7 @@ function renderTasks(){
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 min-w-0">
               ${(t.priority||'normal')==='normal'?'':`<span class="priority-dot priority-${escapeHTML(t.priority)}" title="الأولوية: ${priorityLabel(t.priority)}"></span>`}
-              <h3 class="task-title-line font-semibold text-[14px] ${t.status==='مكتملة'?'line-through text-slate-400':'text-slate-800'} truncate">${escapeHTML(t.title||'بدون عنوان')}</h3>
+              <h3 class="task-title-line font-semibold text-[14px] text-slate-800 truncate">${escapeHTML(t.title||'بدون عنوان')}</h3>
             </div>
 
           </div>

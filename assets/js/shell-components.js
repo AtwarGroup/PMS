@@ -1,5 +1,16 @@
 
 (function(){
+  const shellScript=document.currentScript;
+  const assetRoot=new URL('../',shellScript?.src||location.href);
+  if(!document.querySelector('link[data-atwar-design-system]')){
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.0',assetRoot).href;document.head.append(style);
+  }
+  if(!window.AtwarUI&&!document.querySelector('script[data-atwar-ui-feedback]')){
+    const ui=document.createElement('script');ui.dataset.atwarUiFeedback='1';ui.src=new URL('js/ui-feedback.js?v=2.5.0',assetRoot).href;document.head.append(ui);
+  }
+  if(!window.AtwarSession&&!document.querySelector('script[data-atwar-session-service]')){
+    const session=document.createElement('script');session.dataset.atwarSessionService='1';session.src=new URL('js/session-service.js?v=2.5.0',assetRoot).href;document.head.append(session);
+  }
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
     icon.href=new URL('../../favicon.svg',document.currentScript?.src||location.href).href;
