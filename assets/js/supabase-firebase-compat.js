@@ -1,6 +1,6 @@
 // ATWAR ONE compatibility bridge: preserves the full legacy UI contract while routing data/auth to Supabase.
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
-import {createRefreshCoordinator} from './supabase-sync.mjs?v=1.9.6';
+import {createRefreshCoordinator,createSharedInFlightReads} from './supabase-sync.mjs?v=1.9.7';
 
 const sb = await window.atwarGetSupabase();
 
@@ -15,6 +15,7 @@ const _apps=[{name:'ATWAR_SUPABASE_COMPAT'}];
 const _aliases=new Map();
 function publicKey(real){for(const [alias,id] of _aliases)if(String(id)===String(real))return alias;return String(real)}
 const _listeners=new Map();
+const _sharedReads=createSharedInFlightReads();
 let _authUser=null;
 
 export function initializeApp(){return _apps[0]}
@@ -128,7 +129,19 @@ export async function get(r){
     if(key){const rows=await visibleTasks({id:key});const t=rows.find(x=>!owner||x.assignUid===owner||x.delegatedByUid===owner)||null;return new Snap(t,key)}
     const rows=await visibleTasks(owner?{participant:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]={...t,_key:k,_ownerUid:t.assignUid}}return new Snap(out,owner||null);
   }
-  if(parts[0]==='createdTaskIndex'&&parts[1]){const rows=await visibleTasks({creator:parts[1]}),out={};for(const t of rows)out[publicKey(t._relationalId)]=t.assignUid;return new Snap(out,parts[1])}
+  if(parts[0]==='createdTaskIndex'&&parts[1]){
+    // This index only needs task ownership. Avoid loading activity, subtasks,
+    // attachments and profiles for every index listener refresh.
+    let q=sb.from('tasks').select('id,assignee_id').is('deleted_at',null).eq('creator_id',parts[1]);
+    if(/\/tasks\/(?:index\.html)?$/.test(location.pathname)){
+      const scope=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase();
+      q=scope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة');
+    }
+    const {data,error}=await q.order('updated_at',{ascending:false});
+    if(error)throw error;
+    const out={};for(const t of data||[])out[publicKey(t.id)]=t.assignee_id||'';
+    return new Snap(out,parts[1]);
+  }
   if(parts[0]==='notificationsByUser'){
     let q=sb.from('notifications').select('*').order('created_at',{ascending:false});const lim=mods.find(x=>x.type==='limitToLast')?.value||100;q=q.limit(lim);
     const {data,error}=await q;if(error)throw error;const rows=data||[],taskIds=[...new Set(rows.map(n=>n.task_id).filter(Boolean))];let owners=new Map();
@@ -276,7 +289,8 @@ export function onValue(r,callback,errorCallback){
   ensureRealtime();
   const listenerPath=pathOf(r);
   const coordinator=createRefreshCoordinator({
-    load:()=>get(r),
+    // Share identical in-flight snapshots across listeners; never cache completed reads.
+    load:()=>_sharedReads.read(JSON.stringify([listenerPath,r?.mods||[]]),()=>get(r)),
     serialize:snapshot=>JSON.stringify(snapshot.val()),
     onValue:callback,
     onError:errorCallback
