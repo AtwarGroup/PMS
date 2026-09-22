@@ -13,6 +13,7 @@ async function dispatchQueuedTaskEmails(){
 
 const _apps=[{name:'ATWAR_SUPABASE_COMPAT'}];
 const _aliases=new Map();
+const _delegationsInFlight=new Map();
 function publicKey(real){for(const [alias,id] of _aliases)if(String(id)===String(real))return alias;return String(real)}
 const _listeners=new Map();
 let _authUser=null;
@@ -201,8 +202,25 @@ async function rootUpdate(changes){
   for(const [newPath,obj] of creates){const np=newPath.split('/'),alias=np[2],real=_aliases.get(alias)||alias;const matchingDelete=deletes.find(([oldPath])=>oldPath.split('/')[2]===alias);
     if(matchingDelete){
       const rows=await visibleTasks({id:real});const cur=rows[0];if(!cur)throw new Error('Task not found');
-      const {error}=await sb.rpc('delegate_task_safe',{p_task_id:real,p_target_id:np[1],p_expected_revision:Number(cur.revision||1)});
-      if(error)throw error;shouldDispatchEmail=true;continue;
+      const targetId=String(np[1]||'');
+      // Replaying the same transfer is a no-op. This also protects old clients
+      // that resend a completed delegation after receiving its Realtime event.
+      if(String(cur.assignUid||'')===targetId)continue;
+      const signature=`${real}:${targetId}`;
+      let request=_delegationsInFlight.get(signature);
+      if(!request){
+        request=(async()=>{
+          // Reload immediately before the RPC so the optimistic revision is not
+          // inherited from a render/listener snapshot that may already be stale.
+          const freshRows=await visibleTasks({id:real});
+          const fresh=freshRows[0];
+          if(!fresh||String(fresh.assignUid||'')===targetId)return;
+          const {error}=await sb.rpc('delegate_task_safe',{p_task_id:real,p_target_id:targetId,p_expected_revision:Number(fresh.revision||1)});
+          if(error)throw error;
+        })().finally(()=>_delegationsInFlight.delete(signature));
+        _delegationsInFlight.set(signature,request);
+      }
+      await request;shouldDispatchEmail=true;continue;
     }
   }
   const pureCreates=creates.filter(([newPath])=>!deletes.some(([oldPath])=>oldPath.split('/')[2]===newPath.split('/')[2]));

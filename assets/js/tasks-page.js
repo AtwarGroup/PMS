@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.3";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.5";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -1452,6 +1452,10 @@ function stageAssigneeChange(task,newUid){
 
 async function commitPendingAssigneeChange(){
   if(!pendingAssigneeChange)return true;
+  // A double click used to start parallel prepare/delegate requests. Each
+  // request changed the revision used by the others and produced an unbounded
+  // stream of ATWAR_CONFLICT errors. Only one transfer may run per page.
+  if(isReassigningTask)return false;
   const task=selectedTask();
   if(!task)return false;
 
@@ -1464,18 +1468,14 @@ async function commitPendingAssigneeChange(){
 
   isReassigningTask=true;
   setSaveStatus('saving');
-  let prepared=null;
   try{
-    // Intent قصير العمر يقفل المهمة قبل النقل. أي تعديل متزامن يُمنع أثناء العملية.
-    prepared=await prepareTaskOperation(task,'reassign',newOwnerUid);
-    if(!prepared){isReassigningTask=false;setSaveStatus('saved');return false;}
-
-    const locked=prepared.task;
-    const fresh={...locked};
+    // delegate_task_safe already locks the database row. Do not perform a
+    // preliminary update: it increments revision and races the delegation RPC.
+    const fresh={...task};
     delete fresh._key;
     delete fresh._ownerUid;
     const sourceRevision=Number(fresh.revision||0);
-    const transferToken=prepared.token;
+    const transferToken=(globalThis.crypto?.randomUUID?.()||`${currentUser.uid}_${Date.now()}`);
 
     const moved={...fresh};
     delete moved.operationIntent;
@@ -1497,8 +1497,7 @@ async function commitPendingAssigneeChange(){
     };
     if(creatorUid)changes[`createdTaskIndex/${creatorUid}/${taskKey}`]=newOwnerUid;
 
-    // نقل المهمة وحذف الأصل وتحديث الفهرس عملية ذرية واحدة.
-    // القواعد تتحقق من operationIntent + revision قبل قبول النقل.
+    // طبقة التوافق تحول النقل إلى استدعاء delegate_task_safe ذري واحد.
     await update(ref(db),changes);
     await notifyTaskAssigned(moved,newOwnerUid,taskKey);
 
@@ -1510,7 +1509,6 @@ async function commitPendingAssigneeChange(){
     return true;
   }catch(error){
     console.error('Intent-guarded reassignment error:',error);
-    if(prepared)await clearTaskOperation(prepared.task,prepared.token);
     isReassigningTask=false;
     setSaveStatus('error');
     showToast('تعذر نقل المهمة بأمان. لم يتم تنفيذ أي نقل جزئي.','error',5000);
