@@ -67,11 +67,13 @@ function taskLegacy(t,children,profileNames=new Map()){
   if(!t)return null;
   const currentCreatorName=profileNames.get(String(t.creator_id||''))||t.creator_name_snapshot||'';
   const currentAssigneeName=profileNames.get(String(t.assignee_id||''))||t.assignee_name_snapshot||'';
+  const currentDelegatorName=profileNames.get(String(t.delegated_by_id||''))||t.delegated_by_name_snapshot||'';
   return {
     id:t.legacy_id||t.firebase_task_key||t.id,title:t.title||'',desc:t.description||'',type:t.task_type||'',
     status:t.status||'قيد الانتظار',priority:t.priority||'normal',progress:Number(t.progress||0),
     createdByUid:t.creator_id||'',assignUid:t.assignee_id||'',createdBy:currentCreatorName,assign:currentAssigneeName,
     createdByNameSnapshot:t.creator_name_snapshot||'',assigneeNameSnapshot:t.assignee_name_snapshot||'',
+    delegatedByUid:t.delegated_by_id||'',delegatedBy:currentDelegatorName,delegatedAt:ms(t.delegated_at)||null,isDelegated:!!t.delegated_by_id,
     start:t.start_date||'',end:t.due_date||'',actualEnd:t.actual_end_date||'',notes:t.notes||'',managerNotes:t.manager_notes||'',revision:Number(t.revision||1),reopenReason:t.reopen_reason||'',
     createdAt:ms(t.created_at),updatedAt:ms(t.updated_at),startedAt:ms(t.started_at)||null,submittedAt:ms(t.submitted_at)||null,
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
@@ -97,11 +99,12 @@ async function visibleTasks(extra=null){
   if(isMainTasksWorkspace && !extra?.id){
     q=requestedScope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة');
   }
-  if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
+  if(extra?.participant)q=q.or(`assignee_id.eq.${extra.participant},delegated_by_id.eq.${extra.participant}`);
+  else if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
   if(extra?.creator)q=q.eq('creator_id',extra.creator);
   if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);
   const {data,error}=await q.order('updated_at',{ascending:false});if(error)throw error;
-  const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id]).filter(Boolean))];
+  const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id,t.delegated_by_id]).filter(Boolean))];
   let profileNames=new Map();
   if(profileIds.length){
     const profiles=await sb.from('profiles').select('id,full_name,email').in('id',profileIds);
@@ -122,8 +125,8 @@ export async function get(r){
   if(parts[0]==='users'&&parts[1]){const {data,error}=await sb.from('profiles').select('*').eq('id',parts[1]).maybeSingle();if(error)throw error;return new Snap(data?profileLegacy(data):null,parts[1])}
   if(parts[0]==='tasksByUser'){
     const owner=parts[1],key=parts[2];
-    if(key){const rows=await visibleTasks({id:key});const t=rows.find(x=>!owner||x.assignUid===owner)||null;return new Snap(t,key)}
-    const rows=await visibleTasks(owner?{assignee:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]={...t,_key:k,_ownerUid:t.assignUid}}return new Snap(out,owner||null);
+    if(key){const rows=await visibleTasks({id:key});const t=rows.find(x=>!owner||x.assignUid===owner||x.delegatedByUid===owner)||null;return new Snap(t,key)}
+    const rows=await visibleTasks(owner?{participant:owner}:null),out={};for(const t of rows){const k=publicKey(t._relationalId);out[k]={...t,_key:k,_ownerUid:t.assignUid}}return new Snap(out,owner||null);
   }
   if(parts[0]==='createdTaskIndex'&&parts[1]){const rows=await visibleTasks({creator:parts[1]}),out={};for(const t of rows)out[publicKey(t._relationalId)]=t.assignUid;return new Snap(out,parts[1])}
   if(parts[0]==='notificationsByUser'){

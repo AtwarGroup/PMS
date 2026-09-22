@@ -11,7 +11,7 @@ walk(root);
 const protectedPages=html.filter(file=>readFileSync(file,'utf8').includes('shell-components.js'));
 for(const file of protectedPages){
   const source=readFileSync(file,'utf8');
-  assert.match(source,/shell-components\.js\?v=2\.5\.2/,'Stale shell cache version: '+file);
+  assert.match(source,/shell-components\.js\?v=2\.5\.3/,'Stale shell cache version: '+file);
   assert.match(source,/ui-feedback\.js\?v=2\.5\.2/,'Missing synchronous feedback: '+file);
   assert.match(source,/session-service\.js\?v=2\.5\.2/,'Missing synchronous session service: '+file);
   assert.match(source,/shared\.css\?v=2\.5\.2/,'Stale shared theme: '+file);
@@ -39,5 +39,5 @@ assert.match(executive,/id="listView"[\s\S]*id="kanbanView"/,'Executive view mus
 assert.match(users,/admin_set_executive_task_access[\s\S]*admin_update_profile_details/,'Account save must persist executive and profile fields');
 assert.match(notificationMigration,/add column if not exists read_at[\s\S]*notifications_update_read_policy/,'Notifications must retain a protected read state');
 assert.match(shell,/update\(\{read_at:new Date\(\)\.toISOString\(\)\}\)/,'Opening a notification must mark it read instead of deleting it');
-assert.match(shell,/profile\/index\.html#job-profile/,'Job assignment notifications must open the inline employee profile');
+assert.match(shell,/profile\/index\.html\?view=job#job-profile/,'Job assignment notifications must open the approved job view');
 console.log(`Release 2.5.1 acceptance passed: ${protectedPages.length} protected pages.`);
