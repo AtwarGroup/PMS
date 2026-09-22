@@ -1,0 +1,29 @@
+name: Remove merged release branches
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cleanup-release-branches.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete verified merged branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for branch in \
+            ATWAR_ONE_V2.5.2 \
+            ATWAR_ONE_V2.5.3 \
+            ATWAR_ONE_V2.5.4 \
+            ATWAR_ONE_V2.5.4.1 \
+            ATWAR_ONE_V2.5.5_CPU_FIX \
+            ATWAR_ONE_V2.5.6_CONSOLE_CLEANUP
+          do
+            gh api --method DELETE "repos/${{ github.repository }}/git/refs/heads/$branch" || true
+          done
