@@ -6,8 +6,8 @@
 <title>ATWAR ONE – المهام الدورية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="../assets/js/shell-components.js?v=2.5.1"></script><script src="../assets/js/ui-feedback.js?v=2.5.1"></script><script src="../assets/js/session-service.js?v=2.5.1"></script>
-<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.1">
+<script src="../assets/js/shell-components.js?v=2.5.2"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
 .recurring-form-layout{display:grid;grid-template-columns:1.05fr 1fr;gap:12px}.recurring-form-block{border:1px solid #e5edf6;border-radius:14px;padding:14px;background:#fbfdff}.recurring-form-block h3{margin:0 0 12px;font-size:12px;color:#174f93}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field.wide{grid-column:1/-1}
@@ -18,9 +18,11 @@
 .btn{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:10px 14px;font-family:inherit;font-weight:900;cursor:pointer}
 .btn:disabled{opacity:.55;cursor:not-allowed}.danger{background:#b42318}.secondary{background:#eaf2fb;color:#173b64}
 .recurring-metrics{margin:14px 0}.recurring-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.recurring-card{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:15px;border:1px solid var(--atwar-border);border-radius:15px;background:#fff;box-shadow:var(--atwar-shadow-card)}.recurring-card:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--atwar-blue-600)}.recurring-card.paused:before{background:var(--atwar-muted-light)}.recurring-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.recurring-card h3{margin:0;color:var(--atwar-text);font-size:13px;line-height:1.75}.recurring-owner{display:flex;align-items:center;gap:7px;color:var(--atwar-muted);font-size:10px}.recurring-owner i{width:14px}.recurring-facts{display:grid;grid-template-columns:1fr 1fr;gap:7px}.recurring-fact{padding:9px;border-radius:10px;background:var(--atwar-surface-soft)}.recurring-fact span{display:block;color:var(--atwar-muted-light);font-size:9px}.recurring-fact b{display:block;margin-top:3px;color:var(--atwar-text-soft);font-size:10px}.recurring-card-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--atwar-border)}.recurring-toggle{display:flex;align-items:center;gap:7px;color:var(--atwar-text-soft);font-size:10px;font-weight:900}.recurring-toggle input{accent-color:var(--atwar-success-600)}
+.recurring-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.recurring-search{width:min(360px,100%);border:1px solid #dfe7f1;border-radius:11px;padding:9px 12px;font-family:inherit}.recurring-view-switch{display:flex;gap:4px;padding:4px;border:1px solid #dbe5f0;border-radius:12px;background:#f1f5f9}.recurring-view-switch button{border:0;border-radius:8px;background:transparent;color:#64748b;font-family:inherit;font-size:10px;font-weight:900;padding:7px 13px;cursor:pointer}.recurring-view-switch button.active{background:#1769e0;color:#fff;box-shadow:0 3px 10px rgba(23,105,224,.2)}
+.recurring-table-wrap{overflow-x:auto}.recurring-table{width:100%;min-width:760px;border-collapse:collapse;font-size:10px}.recurring-table th{padding:11px;background:#eaf2fc;color:#385675;text-align:right}.recurring-table td{padding:12px 11px;border-bottom:1px solid #e8eef5;color:#40566f}.recurring-table td:first-child{font-size:12px;font-weight:900;color:#162c49}.recurring-table tr.paused{background:#f8fafc;opacity:.78}.recurring-table-actions{display:flex;align-items:center;gap:8px}
 .meta{font-size:10px;color:#7b8aa5}.success{color:#15803d;font-weight:800}.error{color:#b42318;font-weight:800}
 @media(max-width:1100px){.recurring-cards{grid-template-columns:1fr 1fr}}@media(max-width:950px){.recurring-form-layout{grid-template-columns:1fr}}
-@media(max-width:620px){.form-grid,.recurring-cards{grid-template-columns:1fr}.field.wide{grid-column:auto}.recurring-actions .btn{width:100%}.recurring-actions{align-items:stretch;flex-direction:column}}
+@media(max-width:620px){.form-grid,.recurring-cards{grid-template-columns:1fr}.field.wide{grid-column:auto}.recurring-actions .btn{width:100%}.recurring-actions{align-items:stretch;flex-direction:column}.recurring-toolbar{align-items:stretch;flex-direction:column}.recurring-search{width:100%}.recurring-view-switch{align-self:flex-start}}
 </style>
 </head>
 <body data-min-role="manager">
@@ -64,9 +66,10 @@
   <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
   <button id="run" class="btn">تشغيل المستحق الآن</button>
 </div>
+<div class="recurring-toolbar"><input id="recurringSearch" class="recurring-search" type="search" placeholder="ابحث باسم القالب أو المسؤول"><div class="recurring-view-switch" aria-label="طريقة عرض المهام الدورية"><button id="recurringListButton" type="button">قائمة</button><button id="recurringKanbanButton" type="button">كانبان</button></div></div>
 <div id="list" class="recurring-cards">جاري التحميل...</div>
 </section>
-<footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>Production 2.5.0</span><span>محرك الجدولة</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>Production 2.5.2</span><span>محرك الجدولة</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
@@ -76,7 +79,7 @@
 <script type="module">
 const sb=await window.atwarGetSupabase();
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let me=null,people=[];
+let me=null,people=[],recurringRows=[],recurringView=localStorage.getItem('atwarRecurringView')==='LIST'?'LIST':'KANBAN';
 const labelMap={daily:'يوم',weekly:'أسبوع',monthly:'شهر',yearly:'سنة'};
 const displayMap={daily:'يومي',weekly:'أسبوعي',monthly:'شهري',yearly:'سنوي'};
 function dt(v){try{return new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(v))}catch{return v||''}}
@@ -106,13 +109,26 @@ function resetForm(){
 }
 async function load(){
  const r=await sb.from('recurring_task_templates').select('id,title,assignee_id,recurrence,interval_count,next_run_at,due_offset_days,priority,active').order('next_run_at');
- const rows=r.data||[];
+ const rows=r.data||[];recurringRows=rows;
  const now=Date.now(),activeRows=rows.filter(x=>x.active),dueRows=activeRows.filter(x=>new Date(x.next_run_at).getTime()<=now),nextRow=activeRows.find(x=>new Date(x.next_run_at).getTime()>now);
  document.getElementById('templateCount').textContent=rows.length;document.getElementById('activeTemplateCount').textContent=activeRows.length;document.getElementById('dueTemplateCount').textContent=dueRows.length;document.getElementById('nextTemplateRun').textContent=nextRow?new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'short'}).format(new Date(nextRow.next_run_at)):'—';
- document.getElementById('list').innerHTML=rows.length?rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(people.find(p=>p.id===x.assignee_id)?.full_name||x.assignee_id)}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join(''):'<div class="atwar-state"><div><div class="atwar-state-icon"><i data-lucide="repeat-2"></i></div><h3>لا توجد قوالب دورية</h3><p>أنشئ القالب الأول ليقوم النظام بإضافة المهمة في موعدها تلقائيًا.</p></div></div>';
- document.querySelectorAll('.active').forEach(x=>x.onchange=async()=>{const r=await sb.from('recurring_task_templates').update({active:x.checked}).eq('id',x.dataset.id);if(r.error){window.AtwarUI?.toast(r.error.message,{type:'error'});x.checked=!x.checked}else{window.AtwarUI?.toast(x.checked?'تم تفعيل القالب':'تم إيقاف القالب',{type:'success'});await load()}});
- document.querySelectorAll('.del').forEach(x=>x.onclick=async()=>{const approved=await window.AtwarUI.confirm({title:'حذف المهمة الدورية',message:'سيتم حذف القالب ولن تُنشأ منه مهام جديدة. المهام المنشأة سابقًا لن تتأثر.',confirmText:'حذف القالب',danger:true});if(!approved)return;const r=await sb.from('recurring_task_templates').delete().eq('id',x.dataset.id);if(r.error)window.AtwarUI.toast(r.error.message,{type:'error'});else{window.AtwarUI.toast('تم حذف القالب الدوري',{type:'success'});await load()}});try{lucide.createIcons()}catch{}
+ renderRecurringRows();
+ bindRecurringActions();try{lucide.createIcons()}catch{}
 }
+function recurringOwner(x){return people.find(p=>p.id===x.assignee_id)?.full_name||x.assignee_id}
+function renderRecurringRows(){
+ const q=document.getElementById('recurringSearch').value.trim().toLowerCase(),rows=recurringRows.filter(x=>!q||`${x.title} ${recurringOwner(x)}`.toLowerCase().includes(q)),host=document.getElementById('list');
+ document.getElementById('recurringListButton').classList.toggle('active',recurringView==='LIST');document.getElementById('recurringKanbanButton').classList.toggle('active',recurringView==='KANBAN');
+ if(!rows.length){host.className='recurring-cards';host.innerHTML='<div class="atwar-state"><div><div class="atwar-state-icon"><i data-lucide="repeat-2"></i></div><h3>لا توجد قوالب مطابقة</h3><p>أنشئ القالب الأول أو غيّر عبارة البحث.</p></div></div>';return}
+ if(recurringView==='LIST'){host.className='recurring-table-wrap';host.innerHTML=`<table class="recurring-table"><thead><tr><th>القالب</th><th>المسؤول</th><th>التكرار</th><th>التشغيل القادم</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.active?'':'paused'}"><td>${esc(x.title)}</td><td>${esc(recurringOwner(x))}</td><td>${esc(recurrenceText(x.recurrence,x.interval_count))}</td><td>${esc(dt(x.next_run_at))}</td><td><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></td><td><div class="recurring-table-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> تفعيل</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></td></tr>`).join('')}</tbody></table>`}
+ else{host.className='recurring-cards';host.innerHTML=rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(recurringOwner(x))}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join('')}
+}
+function bindRecurringActions(){
+ document.querySelectorAll('.active').forEach(x=>x.onchange=async()=>{const r=await sb.from('recurring_task_templates').update({active:x.checked}).eq('id',x.dataset.id);if(r.error){window.AtwarUI?.toast(r.error.message,{type:'error'});x.checked=!x.checked}else{window.AtwarUI?.toast(x.checked?'تم تفعيل القالب':'تم إيقاف القالب',{type:'success'});await load()}});
+ document.querySelectorAll('.del').forEach(x=>x.onclick=async()=>{const approved=await window.AtwarUI.confirm({title:'حذف المهمة الدورية',message:'سيتم حذف القالب ولن تُنشأ منه مهام جديدة. المهام المنشأة سابقًا لن تتأثر.',confirmText:'حذف القالب',danger:true});if(!approved)return;const r=await sb.from('recurring_task_templates').delete().eq('id',x.dataset.id);if(r.error)window.AtwarUI.toast(r.error.message,{type:'error'});else{window.AtwarUI.toast('تم حذف القالب الدوري',{type:'success'});await load()}});
+}
+function setRecurringView(mode){recurringView=mode;localStorage.setItem('atwarRecurringView',mode);renderRecurringRows();bindRecurringActions();try{lucide.createIcons()}catch{}}
+document.getElementById('recurringListButton').onclick=()=>setRecurringView('LIST');document.getElementById('recurringKanbanButton').onclick=()=>setRecurringView('KANBAN');document.getElementById('recurringSearch').addEventListener('input',()=>{renderRecurringRows();bindRecurringActions()});
 const{data:{session}}=await sb.auth.getSession();
 if(!session?.user)location.href='../login.html';
 else{

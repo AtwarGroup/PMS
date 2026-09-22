@@ -59,6 +59,8 @@ jobs:
         run: node tests/ui-design-system.mjs
       - name: Run unified system foundation audit
         run: node tests/unified-system-foundation.mjs
+      - name: Run user requirements 2.5.2 audit
+        run: node tests/user-requirements-2-5-2.mjs
       - name: Run release 2.5.1 acceptance audit
         run: node tests/release-acceptance-2-5-1.mjs
       - name: Run Kanban workflow and self-service password audit
