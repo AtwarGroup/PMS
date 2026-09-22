@@ -1,0 +1,69 @@
+/* =========================================================
+   ATWAR ONE V2.5.4 — CANONICAL TYPOGRAPHY SYSTEM
+   Loaded last so every module follows one readable Arabic scale.
+   ========================================================= */
+:root{
+  --atwar-type-font:'Tajawal',Arial,sans-serif;
+  --atwar-type-display:30px;
+  --atwar-type-page-title:26px;
+  --atwar-type-section-title:20px;
+  --atwar-type-card-title:16px;
+  --atwar-type-body:14px;
+  --atwar-type-control:13px;
+  --atwar-type-meta:12px;
+  --atwar-type-caption:11px;
+  --atwar-type-line-body:1.75;
+  --atwar-type-line-title:1.4;
+}
+
+html{font-size:16px}
+body{font-family:var(--atwar-type-font)!important;font-size:var(--atwar-type-body)!important;line-height:var(--atwar-type-line-body)!important}
+button,input,select,textarea{font-family:var(--atwar-type-font)!important}
+
+/* Shared navigation and header */
+.atwar-brand h1{font-size:16px!important;line-height:1.3!important}
+.atwar-brand p{font-size:var(--atwar-type-caption)!important;line-height:1.55!important}
+.atwar-nav a{font-size:13px!important;line-height:1.45!important}
+.atwar-side-link{font-size:12px!important;line-height:1.45!important}
+.atwar-org-title h2{font-size:19px!important;line-height:1.3!important}
+.atwar-org-title p,.atwar-pm-label{font-size:var(--atwar-type-caption)!important;line-height:1.5!important}
+.atwar-user-name{font-size:13px!important}.atwar-user-role{font-size:var(--atwar-type-caption)!important}
+.atwar-search input,.atwar-task-add,.atwar-header-task-nav a{font-size:12px!important}
+
+/* Content hierarchy */
+.atwar-main :where(h1),
+.atwar-content>h1,
+.atwar-content>.head h1,
+.atwar-content header.head h1,
+.task-suite-hero h1{font-size:var(--atwar-type-page-title)!important;line-height:var(--atwar-type-line-title)!important}
+.atwar-main :where(h2),
+.atwar-section-title,.card-title,.panel-title{font-size:var(--atwar-type-section-title)!important;line-height:var(--atwar-type-line-title)!important}
+.atwar-main :where(h3,h4),
+.atwar-card-title,.task-suite-panel-head h2,.section-card h3,.side-card h3{font-size:var(--atwar-type-card-title)!important;line-height:1.5!important}
+.atwar-main :where(p,li,dd,dt,label,td){font-size:var(--atwar-type-body)!important;line-height:var(--atwar-type-line-body)!important}
+.atwar-main :where(th){font-size:var(--atwar-type-meta)!important;line-height:1.6!important}
+.atwar-main :where(small,.muted,.sub,.subtitle,.subtle,.hint,.meta),
+.task-suite-hero p,.task-suite-panel-head p{font-size:var(--atwar-type-meta)!important;line-height:1.7!important}
+
+/* Controls, statuses and compact supporting information */
+.atwar-main :where(button,.btn,input,select,textarea),
+.atwar-btn,.atwar-input,.atwar-select,.atwar-textarea{font-size:var(--atwar-type-control)!important;line-height:1.5!important}
+.atwar-main :where(.badge,.pill,.tag,.status-chip,.atwar-badge),
+.task-suite-hero-badge{font-size:var(--atwar-type-caption)!important;line-height:1.45!important}
+.task-suite-metric strong,.task-suite-metric>div,.atwar-metric strong{font-size:22px!important}
+.task-suite-metric span,.task-suite-metric p,.atwar-metric span{font-size:var(--atwar-type-meta)!important}
+.atwar-notification-head,.atwar-global-notification-copy b{font-size:var(--atwar-type-control)!important}
+.atwar-global-notification-copy small,.atwar-global-notification-time,.atwar-task-save-status{font-size:var(--atwar-type-caption)!important}
+.atwar-footer,.atwar-copyright{font-size:var(--atwar-type-caption)!important}
+
+/* Public/auth pages and legacy standalone role pages */
+body:not(:has(.atwar-shell)) :where(p,li,label,input,select,textarea,button){font-size:var(--atwar-type-body)!important;line-height:var(--atwar-type-line-body)!important}
+body:not(:has(.atwar-shell)) :where(h1){line-height:var(--atwar-type-line-title)!important}
+body:not(:has(.atwar-shell)) :where(h2){line-height:var(--atwar-type-line-title)!important}
+
+@media(max-width:850px){
+  :root{--atwar-type-display:27px;--atwar-type-page-title:23px;--atwar-type-section-title:18px}
+}
+@media(max-width:560px){
+  :root{--atwar-type-page-title:22px;--atwar-type-body:13px;--atwar-type-control:13px;--atwar-type-meta:12px}
+}
