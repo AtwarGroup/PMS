@@ -1,9 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
-
-const root = resolve(new URL('..', import.meta.url).pathname);
+const root = fileURLToPath(new URL('../', import.meta.url));
 const ignoredDirectories=new Set(['.git','node_modules']);
 const collectFiles=(directory=root)=>readdirSync(directory,{withFileTypes:true}).flatMap(entry=>{
   if(entry.isDirectory()){
@@ -46,6 +46,7 @@ try {
       if (/type=["']text\/babel["']/i.test(match[0])) continue;
       const moduleScript = /<script[^>]*type=["']module["']/i.test(match[0]);
       const tempFile = join(temp, `${file.replaceAll('/', '_')}-${index++}.${moduleScript ? 'mjs' : 'js'}`);
+    mkdirSync(dirname(tempFile), { recursive: true });
       writeFileSync(tempFile, body);
       try { execFileSync(process.execPath, ['--check', tempFile], { stdio: 'pipe' }); }
       catch (error) { failures.push(`Inline JavaScript syntax: ${file}\n${error.stderr || error.message}`); }
