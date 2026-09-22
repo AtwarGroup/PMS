@@ -82,7 +82,7 @@
       const taskNav=taskModuleOpen?`
         <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
-          <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive-check"></i><span>المكتملة</span></a>
+          <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive"></i><span>المكتملة</span></a>
           ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
           ${executiveAllowed?`<a class="${taskNavActive('executive')?'active':''}" href="${d}tasks/executive.html"><i data-lucide="scan-eye"></i><span>الاطلاع التنفيذي</span></a>`:''}
         </nav>`:'';
