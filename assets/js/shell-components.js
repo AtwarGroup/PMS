@@ -8,7 +8,7 @@
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
-    style.href=new URL('css/typography.css?v=2.5.4',assetRoot).href;
+    style.href=new URL('css/typography.css?v=2.5.4.1',assetRoot).href;
     document.head.append(style);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCanonicalTypography,{once:true});

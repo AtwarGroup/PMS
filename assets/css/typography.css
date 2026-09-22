@@ -40,6 +40,7 @@ button,input,select,textarea{font-family:var(--atwar-type-font)!important}
 .atwar-section-title,.card-title,.panel-title{font-size:var(--atwar-type-section-title)!important;line-height:var(--atwar-type-line-title)!important}
 .atwar-main :where(h3,h4),
 .atwar-card-title,.task-suite-panel-head h2,.section-card h3,.side-card h3{font-size:var(--atwar-type-card-title)!important;line-height:1.5!important}
+.atwar-main :where(h5,h6){font-size:var(--atwar-type-body)!important;line-height:1.6!important}
 .atwar-main :where(p,li,dd,dt,label,td){font-size:var(--atwar-type-body)!important;line-height:var(--atwar-type-line-body)!important}
 .atwar-main :where(th){font-size:var(--atwar-type-meta)!important;line-height:1.6!important}
 .atwar-main :where(small,.muted,.sub,.subtitle,.subtle,.hint,.meta),
@@ -55,6 +56,36 @@ button,input,select,textarea{font-family:var(--atwar-type-font)!important}
 .atwar-notification-head,.atwar-global-notification-copy b{font-size:var(--atwar-type-control)!important}
 .atwar-global-notification-copy small,.atwar-global-notification-time,.atwar-task-save-status{font-size:var(--atwar-type-caption)!important}
 .atwar-footer,.atwar-copyright{font-size:var(--atwar-type-caption)!important}
+
+/* Employee profile and approved job profile use the same scale as Home. */
+.profile-page-head p,.professional-head p,.profile-job-viewer-head p,
+.profile-title,.profile-empty,.professional-empty{font-size:var(--atwar-type-meta)!important;line-height:1.7!important}
+.profile-name{font-size:var(--atwar-type-page-title)!important}
+.profile-state,.job-publication-state{font-size:var(--atwar-type-meta)!important}
+.profile-overview span,.profile-label,.job-fact span,
+.hybrid-summary-card span,.hybrid-section-title span,
+.hybrid-meta span,.kpi-framework-stat span{font-size:var(--atwar-type-meta)!important;line-height:1.6!important}
+.profile-overview strong,.profile-value,.professional-link b,.job-fact b,
+.hybrid-summary-card b,.hybrid-meta b,.report-card h6,
+.kpi-framework-stat b{font-size:var(--atwar-type-body)!important;line-height:1.65!important}
+.profile-overview small,.professional-link small{font-size:var(--atwar-type-meta)!important;line-height:1.6!important}
+.profile-job-viewer-head h4,.job-purpose-card h4,.hybrid-section-title h5,
+.inline-authority-card h5,.inline-kpi-card h5,.kpi-framework h5,.kpi-head h5{font-size:var(--atwar-type-card-title)!important;line-height:1.5!important}
+.job-purpose-card p,.inline-task-card p,.hybrid-details-body,.task-title,
+.authority-meta div,.report-card p,.inline-kpi-measure,.kpi-framework p,
+.kpi-measure-box{font-size:var(--atwar-type-body)!important;line-height:1.8!important}
+.inline-pill,.authority-level,.authority-type,.inline-kpi-frequency,
+.kpi-target-chip,.kpi-quick span,.score-level,.viewer-ack span,.viewer-ack b,.viewer-ack a{
+  font-size:var(--atwar-type-caption)!important;line-height:1.55!important
+}
+.inline-task-no,.task-accent{font-size:var(--atwar-type-meta)!important}
+.inline-kpi-target{font-size:20px!important}
+
+/* Home and shared dashboard cards */
+.home-head h3{font-size:var(--atwar-type-card-title)!important}
+.dash-card b,.quick-card-copy b,.announcement h4{font-size:var(--atwar-type-body)!important;line-height:1.55!important}
+.dash-card small,.quick-card-copy small,.announcement p{font-size:var(--atwar-type-meta)!important;line-height:1.7!important}
+.home-link,.home-head a{font-size:var(--atwar-type-control)!important}
 
 /* Public/auth pages and legacy standalone role pages */
 body:not(:has(.atwar-shell)) :where(p,li,label,input,select,textarea,button){font-size:var(--atwar-type-body)!important;line-height:var(--atwar-type-line-body)!important}
