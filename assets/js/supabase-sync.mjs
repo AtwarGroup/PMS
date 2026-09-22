@@ -47,3 +47,24 @@ export function createRefreshCoordinator({load,onValue,onError,serialize=JSON.st
     dispose(){active=false;queued=false;}
   };
 }
+
+// Share only concurrent reads with exactly the same key. Never cache completed
+// results: subsequent refreshes must see writes and Realtime changes.
+// Each caller still receives the same rejection so its own error handler runs.
+export function createSharedInFlightReads(){
+  const pending=new Map();
+  return {
+    read(key,load){
+      if(pending.has(key))return pending.get(key);
+      const request=Promise.resolve().then(load);
+      pending.set(key,request);
+      // Register both outcomes to avoid unhandled rejection from a detached
+      // finally() promise. Only the original request is returned to callers.
+      request.then(
+        ()=>{if(pending.get(key)===request)pending.delete(key);},
+        ()=>{if(pending.get(key)===request)pending.delete(key);}
+      );
+      return request;
+    }
+  };
+}
