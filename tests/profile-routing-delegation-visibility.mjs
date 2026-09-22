@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=file=>readFileSync(file,'utf8');
+const shell=read('assets/js/shell-components.js');
+const profile=read('profile/index.html');
+const compat=read('assets/js/supabase-firebase-compat.js');
+const tasks=read('assets/js/tasks-page.js');
+const migration=read('supabase/migrations/20260922122500_task_delegation_visibility_and_profile_routes.sql');
+assert.match(shell,/profile\/index\.html\?view=job[^\n]+ملفي الوظيفي/,'Sidebar must open the approved job-only view');
+assert.match(shell,/profile\/index\.html\?view=profile[^\n]+الملف التعريفي/,'Account menu must open the personal profile-only view');
+assert.match(profile,/profile-mode-job[\s\S]*profile-professional/,'Job mode must isolate approved job information');
+assert.match(profile,/profile-mode-profile \.profile-professional\{display:none\}/,'Profile mode must exclude approved job information');
+assert.match(migration,/delegated_by_id uuid references public\.profiles/,'Delegator identity must be persisted');
+assert.match(migration,/t\.delegated_by_id=\(select auth\.uid\(\)\)/,'Delegator must retain task visibility');
+assert.match(migration,/values\(v_task\.creator_id\),\(v_uid\),\(p_target_id\)/,'Creator, delegator and delegatee must be notified');
+assert.match(compat,/delegated_by_id\.eq\.\$\{extra\.participant\}/,'Delegator task query is missing');
+assert.match(tasks,/delegation-badge[\s\S]*مفوّضة/,'Delegated tasks need a visible marker');
+console.log('Profile routing and delegation visibility audit passed.');

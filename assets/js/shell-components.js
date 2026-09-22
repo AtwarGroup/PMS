@@ -3,7 +3,7 @@
   const shellScript=document.currentScript;
   const assetRoot=new URL('../',shellScript?.src||location.href);
   if(!document.querySelector('link[data-atwar-design-system]')){
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.2',assetRoot).href;document.head.append(style);
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.3',assetRoot).href;document.head.append(style);
   }
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
@@ -37,7 +37,7 @@
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
-          ${nav('profile','profile/index.html','circle-user-round','الملف التعريفي')}
+          ${nav('profile','profile/index.html?view=job','badge-check','ملفي الوظيفي')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">
@@ -155,7 +155,7 @@
                 <div class="atwar-account-copy"><b data-user-name>المستخدم</b><span data-user-title>المسمى الوظيفي</span></div>
               </div>
               <div class="atwar-account-links">
-                <a href="${d}profile/index.html" role="menuitem"><i data-lucide="circle-user-round"></i><span>الملف التعريفي</span></a>
+                <a href="${d}profile/index.html?view=profile" role="menuitem"><i data-lucide="circle-user-round"></i><span>الملف التعريفي</span></a>
                 <a href="${d}profile/security.html" role="menuitem"><i data-lucide="key-round"></i><span>تغيير كلمة المرور</span></a>
                 <button type="button" class="danger atwar-account-logout" role="menuitem"><i data-lucide="log-out"></i><span>تسجيل الخروج</span></button>
               </div>
@@ -202,7 +202,7 @@
     }
     const {error}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
     if(error){onError('تعذر تحديث حالة الإشعار الآن.');return false}
-    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/index.html#job-profile`:`${depthPrefix}home.html`;
+    location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/index.html?view=job#job-profile`:`${depthPrefix}home.html`;
     return true;
   };
 

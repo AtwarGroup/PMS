@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.4.31";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.3";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -2272,7 +2272,7 @@ function renderKanban(rows){
     const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
       const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
-      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div><div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
     return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
   }).join('');
@@ -2349,6 +2349,7 @@ function renderTasks(){
             ${t.status==='بانتظار الاعتماد'?'<span class="text-amber-600 font-bold">بانتظار الاعتماد</span>':''}
             ${t.status==='مكتملة'?'<span class="text-emerald-600 font-bold">مكتملة</span>':''}
             ${t.managerNotes?`<span class="text-amber-700 font-bold" title="${escapeHTML(t.managerNotes)}">📝 ملاحظة مدير</span>`:''}
+            ${t.isDelegated?`<span class="delegation-badge" title="المنشئ: ${escapeHTML(t.createdBy||'—')} • المفوِّض: ${escapeHTML(t.delegatedBy||'—')} • المنفذ: ${escapeHTML(t.assign||'—')}">↪ مفوّضة بواسطة ${escapeHTML(t.delegatedBy||'المسؤول السابق')}</span>`:''}
             <span class="text-blue-700 font-black" title="مرفقات المهمة">📎 ${t.attachments?.length||0}</span>
           </div>
         </div>
