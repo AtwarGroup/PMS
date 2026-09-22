@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const code=readFileSync(new URL('../assets/js/supabase-firebase-compat.js',import.meta.url),'utf8');
+const block=code.match(/if\(parts\[0\]==='createdTaskIndex'&&parts\[1\]\)\{([\s\S]*?)\n  \}/)?.[1];
+assert.ok(block,'creator index handler exists');
+assert.match(block,/\.select\('id,assignee_id'\)/);
+assert.match(block,/\.eq\('creator_id',parts\[1\]\)/);
+assert.match(block,/\.is\('deleted_at',null\)/);
+assert.doesNotMatch(block,/visibleTasks|loadChildren|task_activity|task_attachments/);
+console.log('Creator index lightweight query regression test passed.');
