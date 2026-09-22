@@ -5,6 +5,14 @@
   if(!document.querySelector('link[data-atwar-design-system]')){
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.3',assetRoot).href;document.head.append(style);
   }
+  const loadCanonicalTypography=()=>{
+    if(document.querySelector('link[data-atwar-typography]'))return;
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
+    style.href=new URL('css/typography.css?v=2.5.4',assetRoot).href;
+    document.head.append(style);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCanonicalTypography,{once:true});
+  else loadCanonicalTypography();
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
     icon.href=new URL('../../favicon.svg',document.currentScript?.src||location.href).href;
