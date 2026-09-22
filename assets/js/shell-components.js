@@ -3,7 +3,7 @@
   const shellScript=document.currentScript;
   const assetRoot=new URL('../',shellScript?.src||location.href);
   if(!document.querySelector('link[data-atwar-design-system]')){
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.1',assetRoot).href;document.head.append(style);
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.2',assetRoot).href;document.head.append(style);
   }
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';

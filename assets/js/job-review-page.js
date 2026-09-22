@@ -121,7 +121,8 @@ function headerActions() {
   const buttons = [];
   if (me.role === 'admin') buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
   if (editing) buttons.push('<button id="saveBtn" class="review-btn primary">حفظ المسودة</button>');
-  if (!editing && me.role === 'admin' && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
+  if (!editing && me.role === 'admin' && job.status === 'DRAFT' && job.manager_approved_at) buttons.push('<button id="restoreApprovalBtn" class="review-btn primary">استعادة الموافقة وإرسالها للنشر</button>');
+  else if (!editing && me.role === 'admin' && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
   if (!editing && managerReviewing()) buttons.push(`<button id="managerDoneBtn" class="review-btn primary">${!me.manager_id?'إرسال لمدير النظام للاعتماد':'إنهاء المراجعة وإرسالها لمدير النظام'}</button>`);
   if (!editing && me.role === 'admin' && job.status === 'IN_REVIEW') buttons.push('<button id="adminDoneBtn" class="review-btn primary">إنهاء مراجعة المقترحات</button>');
   if (!editing && me.role === 'admin' && job.status === 'MANAGER_APPROVED') buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
@@ -286,6 +287,7 @@ function bindActions() {
   byId('editBtn')?.addEventListener('click',() => {editing = !editing; render();});
   byId('saveBtn')?.addEventListener('click',saveDraft);
   byId('submitBtn')?.addEventListener('click',() => transition('IN_REVIEW'));
+  byId('restoreApprovalBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
   byId('managerDoneBtn')?.addEventListener('click',managerDone);
   byId('adminDoneBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
   byId('publishBtn')?.addEventListener('click',() => transition('PUBLISHED'));
