@@ -81,7 +81,24 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('../login.html');if(a){const{data:target}=await sb.from('profiles').select('id,full_name,email,manager_id,firebase_uid,active,status').eq('firebase_uid',TARGET_FIREBASE_UID).maybeSingle();const allowed=target&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));if(!allowed)location.replace('../home.html');else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
+const a=await authProfile('../login.html');
+if(a){
+  const requestedId=new URLSearchParams(location.search).get('uid');
+  const targetId=requestedId||(String(a.profile.job_title||'').trim()==='المدير المالي'?a.profile.id:'');
+  if(!targetId)location.replace('../home.html');
+  else{
+    const{data:target}=await sb.from('profiles').select('id,full_name,email,job_title,manager_id,active,status').eq('id',targetId).maybeSingle();
+    const isFinancialManager=String(target?.job_title||'').trim()==='المدير المالي';
+    const allowed=isFinancialManager&&target&&target.active!==false&&target.status!=='inactive'&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));
+    if(!allowed)location.replace('../home.html');
+    else{
+      window.ATWAR_FINANCIAL_PROFILE_NAME=target.full_name||target.email||'شاغل وظيفة المدير المالي';
+      window.dispatchEvent(new CustomEvent('atwar-financial-profile-ready',{detail:{name:window.ATWAR_FINANCIAL_PROFILE_NAME}}));
+      document.body.style.visibility='visible';
+      try{lucide.createIcons()}catch{}
+    }
+  }
+}
 </script>
 
     <script type="text/babel">
@@ -196,8 +213,13 @@ const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('..
             return <span ref={spanRef} style={{ display: 'contents' }}></span>;
           };
 
-          const employeeName = "حمزة يوسف عبدالله المزهري"; 
-          const employeeId = "1196";
+          const [employeeName,setEmployeeName] = useState("شاغل وظيفة المدير المالي");
+          useEffect(() => {
+            const syncName = event => setEmployeeName(event?.detail?.name || window.ATWAR_FINANCIAL_PROFILE_NAME || "شاغل وظيفة المدير المالي");
+            if(window.ATWAR_FINANCIAL_PROFILE_NAME) syncName();
+            window.addEventListener('atwar-financial-profile-ready',syncName);
+            return () => window.removeEventListener('atwar-financial-profile-ready',syncName);
+          }, []);
           const jobTitle = "المدير المالي";
           
           const hierarchyInfo = {
@@ -753,7 +775,7 @@ const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('..
               </main>
 
               <footer className="py-12 text-center border-t border-slate-200 mt-12 bg-white print:hidden">
-                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال • Production 1.7C</p>
+                 <p className="text-slate-500 font-bold text-sm">نظام إدارة الأداء - إدارة تطوير الأعمال • Production 2.5.7</p>
               </footer>
             </div>
           );
