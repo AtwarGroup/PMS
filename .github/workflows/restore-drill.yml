@@ -54,7 +54,9 @@ jobs:
           test -n "$latest" || { echo "No encrypted backup found." >&2; exit 1; }
           rclone --config "$config_file" copyto "$target/$latest" "$RUNNER_TEMP/$latest"
           rclone --config "$config_file" copyto "$target/$latest.sha256" "$RUNNER_TEMP/$latest.sha256"
-          (cd "$RUNNER_TEMP" && sha256sum --check "$latest.sha256")
+          expected="$(awk '{print $1}' "$RUNNER_TEMP/$latest.sha256")"
+          actual="$(sha256sum "$RUNNER_TEMP/$latest" | awk '{print $1}')"
+          test "$expected" = "$actual" || { echo "Encrypted backup checksum mismatch." >&2; exit 1; }
           gpg --batch --yes --pinentry-mode loopback \
             --passphrase "$BACKUP_ENCRYPTION_PASSWORD" \
             --output "$RUNNER_TEMP/${latest%.gpg}" \
