@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const source=readFileSync(new URL('../profile/index.html',import.meta.url),'utf8');
+const definition=source.match(/const KPI_WEIGHT_PROPOSAL=(\{[^;]+\});/);
+assert.ok(definition,'The published job proposal must be explicit and version bound');
+const proposal=vm.runInNewContext(`(${definition[1]})`);
+assert.equal(proposal.revision,14);
+assert.equal(proposal.names.length,proposal.weights.length);
+assert.equal(proposal.weights.reduce((sum,weight)=>sum+weight,0),100);
+assert.ok(proposal.weights.every(weight=>weight>0));
+assert.match(source,/مقترحة|مقترح/);
+assert.match(source,/rows\.every\(\(row,index\)=>itemText\(row\)===proposal\.names\[index\]\)/);
+console.log('Proposed KPI weights total 100 and bind to the exact published indicators.');
