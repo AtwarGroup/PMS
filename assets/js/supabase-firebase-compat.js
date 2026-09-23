@@ -166,16 +166,10 @@ function taskPatch(next,previous=null){
   return p;
 }
 
-async function reconcileSubtasks(taskId,nextItems){
-  const {data:existing,error}=await sb.from('subtasks').select('*').eq('task_id',taskId);if(error)throw error;const old=new Map((existing||[]).map(x=>[String(x.id),x]));
-  const keep=[];
-  for(let i=0;i<(nextItems||[]).length;i++){
-    const x=nextItems[i]||{},id=String(x.id||globalThis.crypto?.randomUUID?.()||'');if(!id)continue;keep.push(id);
-    const payload={task_id:taskId,position:i+1,title:String(x.title||''),done:!!x.done};
-    if(old.has(id)){const {error:e}=await sb.from('subtasks').update(payload).eq('id',id);if(e)throw e}else{const {error:e}=await sb.from('subtasks').insert({id,...payload,created_at:iso(x.createdAt)||new Date().toISOString()});if(e)throw e}
-  }
-  const remove=[...old.keys()].filter(id=>!keep.includes(id));if(remove.length){const {error:e}=await sb.from('subtasks').delete().in('id',remove);if(e)throw e}
-}
+function subtaskPayload(items){return (items||[]).map(x=>({
+  id:x.id||globalThis.crypto?.randomUUID?.(),title:String(x.title||''),done:!!x.done,
+  created_at:iso(x.createdAt),completed_at:iso(x.completedAt)
+}));}
 
 export async function runTransaction(r,mutator){
   const path=pathOf(r),parts=path.split('/').filter(Boolean);
@@ -187,7 +181,10 @@ export async function runTransaction(r,mutator){
     const current=structuredClone(cur),next=mutator(structuredClone(current));
     if(next===undefined)return {committed:false,snapshot:new Snap(current,key)};
     const beforeSubs=JSON.stringify(current.subtasks||[]),afterSubs=JSON.stringify(next.subtasks||[]),patch=taskPatch(next,current);
-    const {data,error}=await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
+    const subtasksChanged=beforeSubs!==afterSubs;
+    const {data,error}=subtasksChanged
+      ?await sb.rpc('update_task_with_subtasks_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch,p_subtasks:subtaskPayload(next.subtasks)})
+      :await sb.rpc('update_task_safe',{p_task_id:key,p_expected_revision:Number(current.revision||1),p_patch:patch});
     if(error){
       const conflict=String(error.message||'').includes('ATWAR_CONFLICT');
       if(conflict&&attempt===0)continue;
@@ -195,7 +192,6 @@ export async function runTransaction(r,mutator){
       throw error;
     }
     const row=Array.isArray(data)?data[0]:data;
-    if(beforeSubs!==afterSubs)await reconcileSubtasks(key,next.subtasks||[]);
     const children=await loadChildren([key]),snapTask=taskLegacy(row,children);await emitLocal('tasks');
     if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
     return {committed:true,snapshot:new Snap(snapTask,key)};
