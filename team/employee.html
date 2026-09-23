@@ -49,12 +49,6 @@
 .quick-links a{text-decoration:none;border:1px solid #dbe7f5;background:#fff;color:#176fd3;padding:9px 12px;border-radius:11px;font-size:11px;font-weight:900}
 @media(max-width:1000px){.emp-top{flex-direction:column;align-items:flex-start}.hero-stats{min-width:0;width:100%}.two-col,.three-col{grid-template-columns:1fr}}
 </style>
-<script id="hamzaApprovedProfileRoute">
-(function(){
-  const uid=new URLSearchParams(location.search).get('uid');
-  if(uid==='SK9kgX3MHlOWQMwmnJbfGjCvtha2') location.replace('../profile/financial-manager.html');
-})();
-</script>
 </head>
 <body data-min-role="manager" style="visibility:hidden">
 <div class="atwar-shell">
@@ -113,7 +107,26 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const uid=new URLSearchParams(location.search).get('uid')||'',HAMZA_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2';const a=await authProfile('../login.html');if(a){if(!uid)location.replace('index.html');else{const {data:target,error}=await sb.from('profiles').select('*').eq('id',uid).single();if(error||!target||target.active===false||target.status==='inactive')location.replace('index.html');else{const allowed=['manager','admin'].includes(a.profile.role);if(!allowed)location.replace('../home.html');else if(target.firebase_uid===HAMZA_FIREBASE_UID)location.replace('../profile/financial-manager.html');else{document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}}}
+const uid=new URLSearchParams(location.search).get('uid')||'';
+const a=await authProfile('../login.html');
+if(a){
+  if(!uid)location.replace('index.html');
+  else{
+    const {data:target,error}=await sb.from('profiles').select('id,full_name,email,role,job_title,manager_id,active,status').eq('id',uid).single();
+    if(error||!target||target.active===false||target.status==='inactive')location.replace('index.html');
+    else{
+      const allowed=['manager','admin'].includes(a.profile.role);
+      if(!allowed)location.replace('../home.html');
+      else if(String(target.job_title||'').trim()==='المدير المالي'){
+        location.replace('../profile/financial-manager.html?uid='+encodeURIComponent(target.id));
+      }else{
+        document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;
+        document.body.style.visibility='visible';
+        try{lucide.createIcons()}catch{}
+      }
+    }
+  }
+}
 </script>
 </body>
 </html>
