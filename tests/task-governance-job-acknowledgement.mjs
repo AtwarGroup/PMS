@@ -53,8 +53,8 @@ for(const field of ['employee_code','join_date','work_location','employment_type
 assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
 assert.match(adminUsers,/class="row-save-state" role="status" aria-live="polite"/,'Each account row must expose its own accessible save result');
 assert.match(adminUsers,/button\.textContent='جارٍ الحفظ…'/,'The row save button must show an in-progress state');
-assert.match(adminUsers,/savedCard\.querySelector\('.row-save-state'\)\.textContent='تم حفظ التغييرات بنجاح\.'/,'The row save button must confirm successful persistence');
-assert.doesNotMatch(adminUsers,/async function save\(r\)[\s\S]*?await load\('تم حفظ الحساب/,'Saving one account must not immediately rerender away its success feedback');
+assert.match(adminUsers,/await load\('تم حفظ بيانات الحساب\.'\)/,'Successful saving must refresh the collapsed account card and show confirmation');
+assert.doesNotMatch(adminUsers,/savedCard\.querySelector\('\.edit-toggle'\)\.click\(\)/,'Successful saving must not reopen the editor');
 assert.match(email,/HR_EMAIL[\s\S]*hr@tiradorstores\.com/,'HR must receive the acknowledgement');
 assert.match(email,/attachments:\[\{filename:/,'Email must contain the PDF attachment');
 assert.match(acknowledgement,/unique\(profile_id,job_description_id,job_revision\)/,'One acknowledgement per employee and published revision is required');

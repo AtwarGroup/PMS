@@ -87,7 +87,7 @@ async function save(r){
   const coreChanged=['full_name','job_title','department','role','status','manager_id'].some(key=>(body[key]||null)!==(existing[key]||null));
   const accessChanged=executive!==(existing.permissions||[]).includes('tasks.read_all');
   const detailsChanged=[['employee_code','p_employee_code'],['join_date','p_join_date'],['work_location','p_work_location'],['employment_type','p_employment_type']].some(([oldKey,newKey])=>(existing[oldKey]||null)!==(details[newKey]||null));
-  if(!coreChanged&&!accessChanged&&!detailsChanged){feedback.className='row-save-state';feedback.textContent='لا توجد تغييرات للحفظ.';return}
+  if(!coreChanged&&!accessChanged&&!detailsChanged){r.querySelector('.edit-toggle').click();state('لا توجد تغييرات للحفظ.');return}
   button.disabled=true;button.textContent='جارٍ الحفظ…';feedback.textContent='';feedback.className='row-save-state';
   let stage='بيانات الحساب',completed=[];
   try{
@@ -97,7 +97,7 @@ async function save(r){
     stage='البيانات الإضافية';
     if(detailsChanged){const result=await sb.rpc('admin_update_profile_details',details);if(result.error)throw result.error;Object.assign(existing,{employee_code:details.p_employee_code,join_date:details.p_join_date,work_location:details.p_work_location,employment_type:details.p_employment_type});completed.push(stage)}
     if(r.dataset.id===currentAdminId&&coreChanged){const session=JSON.parse(localStorage.getItem('atwarSession')||'null')||{};localStorage.setItem('atwarSession',JSON.stringify({...session,name:body.full_name,title:body.job_title,role:body.role,managerId:body.manager_id}));window.atwarSyncShellIdentity?.(existing)}
-    feedback.textContent='تم حفظ التغييرات بنجاح.';window.AtwarUI?.toast('تم حفظ التغييرات بنجاح','success');await load('تم حفظ بيانات الحساب.');const savedCard=[...document.querySelectorAll('.account-card')].find(card=>card.dataset.id===body.id);if(savedCard){savedCard.querySelector('.edit-toggle').click();savedCard.querySelector('.row-save-state').textContent='تم حفظ التغييرات بنجاح.'}
+    window.AtwarUI?.toast('تم حفظ التغييرات بنجاح','success');await load('تم حفظ بيانات الحساب.');
   }catch(e){console.error('تعذر حفظ '+stage,e);feedback.className='row-save-state error';feedback.textContent=`تعذر حفظ ${stage}: ${errorText(e)}${completed.length?' (حُفظت: '+completed.join('، ')+')':''}`;window.AtwarUI?.toast(feedback.textContent,'error')}
   finally{button.disabled=false;button.textContent='حفظ التغييرات'}
 }
