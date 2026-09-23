@@ -2,69 +2,48 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – الأدوار والصلاحيات</title>
+<title>الأدوار والصلاحيات | ATWAR ONE</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2">
 <style>
-.roles-wrap{max-width:1050px;margin:0 auto}.role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.role-card{background:#fff;border:1px solid #e3eaf3;border-radius:18px;padding:18px}.role-card h3{margin:0;font-size:16px}.role-card p{font-size:10px;color:#7b8aa5;line-height:1.7}
-.perm{display:flex;align-items:center;gap:7px;padding:8px 0;border-top:1px solid #eef2f7;font-size:10px;font-weight:700}.perm i{width:15px;color:#16a36a}
-.admin-actions{margin-top:16px;display:flex;gap:8px}.admin-actions a{text-decoration:none;border-radius:10px;padding:9px 13px;font-size:10px;font-weight:900}
-.primary{background:#1677ff;color:white}.secondary{background:white;color:#20364f;border:1px solid #dce6f1}
-.badge-count{font-size:9px;color:#1677ff;background:#eaf3ff;border-radius:999px;padding:3px 7px;margin-right:4px}@media(max-width:850px){.role-grid{grid-template-columns:1fr}}
+.roles-wrap{max-width:1200px;margin:auto;display:grid;gap:20px}.roles-intro{color:var(--atwar-muted);line-height:1.8}.role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.role-summary{padding:20px}.role-summary h2{margin:0;font-size:19px}.role-summary p{margin:8px 0 0;color:var(--atwar-muted);font-size:14px;line-height:1.7}.role-summary strong{display:block;margin-top:18px;font-size:27px;color:var(--atwar-navy-800)}.role-summary small{color:var(--atwar-muted)}.matrix-panel{overflow:hidden}.matrix-heading{padding:20px 22px;border-bottom:1px solid var(--atwar-border)}.matrix-heading h2{margin:0;font-size:20px}.matrix-heading p{margin:5px 0 0;color:var(--atwar-muted)}.matrix-scroll{overflow-x:auto}.role-matrix{width:100%;min-width:700px;border-collapse:collapse;text-align:right}.role-matrix th,.role-matrix td{padding:15px 17px;border-bottom:1px solid var(--atwar-border);vertical-align:middle}.role-matrix th{background:var(--atwar-surface-soft);color:var(--atwar-text-soft);font-size:13px}.role-matrix th:first-child{width:37%}.role-matrix tbody tr:last-child td{border-bottom:0}.role-matrix td:first-child{font-weight:800}.role-matrix td:not(:first-child){font-size:13px}.scope{display:inline-block;padding:5px 9px;border-radius:8px;background:var(--atwar-blue-100);color:var(--atwar-blue-600);font-weight:800}.scope.full{background:var(--atwar-success-100);color:var(--atwar-success-600)}.scope.none{background:var(--atwar-surface-soft);color:var(--atwar-muted)}.roles-actions{display:flex;flex-wrap:wrap;gap:9px}@media(max-width:800px){.role-grid{grid-template-columns:1fr}.role-summary{padding:16px}.role-summary strong{margin-top:8px}.roles-wrap{gap:14px}}
 </style>
-<script src="../assets/js/supabase-config.js"></script>
-<script src="../assets/js/supabase-runtime.js"></script>
-<script src="../assets/js/shell-components.js?v=2.5.7"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/supabase-config.js"></script><script src="../assets/js/supabase-runtime.js"></script>
+<script src="../assets/js/shell-components.js?v=2.5.8"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 </head>
-<body style="visibility:hidden">
-<div class="atwar-shell">
-<atwar-sidebar active="admin"></atwar-sidebar>
-<section class="atwar-main"><atwar-header></atwar-header>
-<main class="atwar-content">
-  <div class="roles-wrap">
-    <div style="margin-bottom:18px"><h1 style="margin:0;font-size:28px">الأدوار والصلاحيات</h1><p style="font-size:11px;color:#7b8aa5">مرجع الصلاحيات المعتمدة لكل دور. تغيير دور المستخدم يتم من إدارة الحسابات.</p></div>
-    <div class="role-grid">
-      <section class="role-card"><h3>موظف <span id="countEmployee" class="badge-count"></span></h3><p>النطاق الشخصي للمستخدم.</p>
-        <div class="perm"><i data-lucide="check"></i>الرئيسية والمهام الشخصية</div>
-        <div class="perm"><i data-lucide="check"></i>مساحة عملي والملاحظات والمتابعات</div>
-        <div class="perm"><i data-lucide="check"></i>ملفي الوظيفي</div>
-        <div class="perm"><i data-lucide="check"></i>الإشعارات والبحث ضمن نطاقه</div>
-      </section>
-      <section class="role-card"><h3>مدير <span id="countManager" class="badge-count"></span></h3><p>صلاحيات الموظف + متابعة المرؤوسين المباشرين، مع إسناد مهام جديدة عبر الشجرة التابعة له.</p>
-        <div class="perm"><i data-lucide="check"></i>عرض مؤشرات ومهام المرؤوسين المباشرين</div>
-        <div class="perm"><i data-lucide="check"></i>عرض الفريق المباشر والهيكل المسموح</div>
-        <div class="perm"><i data-lucide="check"></i>إدارة مهامه وما أنشأه شخصيًا للمرؤوسين غير المباشرين</div>
-        <div class="perm"><i data-lucide="check"></i>اعتماد مهام المرؤوسين المباشرين</div>
-      </section>
-      <section class="role-card"><h3>مدير النظام <span id="countAdmin" class="badge-count"></span></h3><p>كامل نطاق النظام والإعدادات الإدارية.</p>
-        <div class="perm"><i data-lucide="check"></i>جميع المهام والمستخدمين</div>
-        <div class="perm"><i data-lucide="check"></i>إدارة الحسابات والأدوار</div>
-        <div class="perm"><i data-lucide="check"></i>إعادة فتح المهام المكتملة</div>
-        <div class="perm"><i data-lucide="check"></i>الوصول إلى الهيكل الإداري الكامل</div>
-      </section>
-    </div>
-    <div class="admin-actions">
-      <a class="primary" href="users.html">إدارة الحسابات</a>
-      <a class="secondary" href="index.html">العودة لإدارة النظام</a>
-    </div>
-  </div>
-<footer class="atwar-footer"><span>ATWAR ONE • Permissions</span><span>Production 2.5.7</span><span>Admin Only</span></footer>
-</main></section></div>
+<body style="visibility:hidden"><div class="atwar-shell"><atwar-sidebar active="admin"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content">
+<div class="roles-wrap">
+<header class="atwar-page-head"><div><h1>الأدوار والصلاحيات</h1><p>مرجع نطاق الوصول المعتمد للأدوار الثلاثة في النظام.</p></div><a class="atwar-btn primary" href="users.html">إدارة الحسابات</a></header>
+<div class="role-grid">
+<section class="role-summary atwar-card"><h2>موظف</h2><p>بياناته ومهامه ومساحة عمله الشخصية.</p><strong id="countEmployee">—</strong><small>حساب في هذا الدور</small></section>
+<section class="role-summary atwar-card"><h2>مدير</h2><p>صلاحيات الموظف ومتابعة الفريق ضمن التسلسل الإداري المسموح.</p><strong id="countManager">—</strong><small>حساب في هذا الدور</small></section>
+<section class="role-summary atwar-card"><h2>مدير النظام</h2><p>إدارة النظام والمستخدمين والوصول الإداري الكامل.</p><strong id="countAdmin">—</strong><small>حساب في هذا الدور</small></section>
+</div>
+<section class="matrix-panel atwar-card" aria-labelledby="matrixTitle"><div class="matrix-heading"><h2 id="matrixTitle">مصفوفة الوصول</h2><p>يُطبَّق الوصول وفق دور الحساب وعلاقته بالسجل. «حسب العلاقة» تعني أن الوصول يتوقف على الملكية أو التسلسل الإداري.</p></div><div class="matrix-scroll"><table class="role-matrix"><thead><tr><th scope="col">الوظيفة</th><th scope="col">موظف</th><th scope="col">مدير</th><th scope="col">مدير النظام</th></tr></thead><tbody>
+<tr><td>الصفحة الرئيسية والملف الوظيفي</td><td><span class="scope">خاص به</span></td><td><span class="scope">خاص به</span></td><td><span class="scope full">متاح</span></td></tr>
+<tr><td>المهام ومساحة العمل</td><td><span class="scope">حسب العلاقة</span></td><td><span class="scope">حسب العلاقة</span></td><td><span class="scope full">نطاق النظام</span></td></tr>
+<tr><td>الفريق والهيكل التنظيمي</td><td><span class="scope none">غير متاح</span></td><td><span class="scope">النطاق المسموح</span></td><td><span class="scope full">نطاق النظام</span></td></tr>
+<tr><td>اعتماد مهام المرؤوسين المباشرين</td><td><span class="scope none">غير متاح</span></td><td><span class="scope">المرؤوسون المباشرون</span></td><td><span class="scope full">نطاق النظام</span></td></tr>
+<tr><td>إدارة حسابات المستخدمين وأدوارهم</td><td><span class="scope none">غير متاح</span></td><td><span class="scope none">غير متاح</span></td><td><span class="scope full">متاح</span></td></tr>
+<tr><td>إعادة فتح المهام المكتملة</td><td><span class="scope none">غير متاح</span></td><td><span class="scope none">غير متاح</span></td><td><span class="scope full">متاح</span></td></tr>
+</tbody></table></div></section>
+<div class="roles-actions"><a class="atwar-btn" href="index.html">العودة لإدارة النظام</a></div>
+</div></main></section></div>
 <script type="module">
 const sb=await window.atwarGetSupabase();
-async function authProfile(loginPath){
-  const {data:{session},error:se}=await sb.auth.getSession();
-  if(se||!session?.user){location.href=loginPath;return null;}
-  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
-  }
+const {data:{session},error:sessionError}=await sb.auth.getSession();
+if(sessionError||!session?.user){location.replace('../login.html')}else{
+ const {data:profile,error}=await sb.from('profiles').select('id,role,active,status').eq('id',session.user.id).single();
+ if(error||!profile||profile.active===false||profile.status==='inactive'){location.replace('../login.html')}
+ else if(profile.role!=='admin'){location.replace('../home.html')}
+ else{
   window.atwarSyncShellIdentity?.(profile,session.user);
-  return {session,user:session.user,profile};
+  document.body.style.visibility='visible';
+  const {data:rows,error:countsError}=await sb.from('profiles').select('role');
+  if(!countsError){for(const [role,id] of [['employee','countEmployee'],['manager','countManager'],['admin','countAdmin']])document.getElementById(id).textContent=rows.filter(row=>row.role===role).length.toLocaleString('ar-SA')}
+  else console.error('تعذر تحميل أعداد الأدوار',countsError);
+  window.lucide?.createIcons();
+ }
 }
-
-const a=await authProfile('../login.html');if(a){if(a.profile.role!=='admin')location.replace('../home.html');else{const {data:rows,error}=await sb.from('profiles').select('role');if(error)console.error(error);document.getElementById('countEmployee').textContent=(rows||[]).filter(x=>x.role==='employee').length;document.getElementById('countManager').textContent=(rows||[]).filter(x=>x.role==='manager').length;document.getElementById('countAdmin').textContent=(rows||[]).filter(x=>x.role==='admin').length;document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
-</script>
-</body></html>
+</script></body></html>

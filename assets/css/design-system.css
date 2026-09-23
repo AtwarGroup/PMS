@@ -115,3 +115,12 @@ button:disabled,[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
 @media(max-width:700px){.atwar-hero{align-items:flex-start;flex-direction:column;padding:19px;border-radius:18px}.atwar-hero h1{font-size:22px}.atwar-toolbar{align-items:stretch;flex-direction:column}.atwar-toolbar>*{width:100%!important}.atwar-view-switch{width:max-content!important}.atwar-dialog-actions{flex-direction:column}.atwar-dialog-actions .atwar-btn{width:100%}}
 @media(max-width:520px){.atwar-metrics{grid-template-columns:1fr 1fr;gap:8px}.atwar-metric{min-height:76px;padding:12px}.atwar-page-head h1{font-size:23px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Shared enterprise surface rules for internal modules. */
+.atwar-main .atwar-content{min-width:0;padding-bottom:36px}
+.atwar-content :where(.card,.box,.panel,.section-card,.side-card,.kpi-card,.role-card){border-radius:var(--atwar-radius-card);border-color:var(--atwar-border);box-shadow:var(--atwar-shadow-card)}
+.atwar-content :where(table){border-collapse:collapse}
+.atwar-content :where(input,select,textarea){accent-color:var(--atwar-blue-600)}
+.atwar-content :where(a,button){touch-action:manipulation}
+.atwar-content :where(.atwar-page-head,.atwar-panel-head) h1{font-weight:900}
+@media(max-width:700px){.atwar-content :where(.atwar-page-head,.atwar-page-actions){align-items:stretch}.atwar-content :where(.atwar-page-actions) .atwar-btn{flex:1}}

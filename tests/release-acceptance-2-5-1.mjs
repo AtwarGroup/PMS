@@ -11,7 +11,7 @@ walk(root);
 const protectedPages=html.filter(file=>readFileSync(file,'utf8').includes('shell-components.js'));
 for(const file of protectedPages){
   const source=readFileSync(file,'utf8');
-  assert.match(source,/shell-components\.js\?v=2\.5\.7/,'Stale shell cache version: '+file);
+  assert.match(source,/shell-components\.js\?v=2\.5\.8/,'Stale shell cache version: '+file);
   assert.match(source,/ui-feedback\.js\?v=2\.5\.2/,'Missing synchronous feedback: '+file);
   assert.match(source,/session-service\.js\?v=2\.5\.2/,'Missing synchronous session service: '+file);
   assert.match(source,/shared\.css\?v=2\.5\.2/,'Stale shared theme: '+file);
@@ -34,7 +34,7 @@ assert.match(review,/إرسال لمدير النظام للاعتماد/,'CEO/t
 assert.match(review,/MANAGER_APPROVED[\s\S]*بانتظار المراجعة النهائية والاعتماد/,'Manager handoff state must remain visible');
 assert.match(profile,/data-inline-job="description"[\s\S]*data-inline-job="tasks"[\s\S]*data-inline-job="authority"[\s\S]*data-inline-job="performance"/,'Job profile content must remain inline');
 assert.match(profile,/hashMode=\{[^}]*'\#job-profile':'description'[^}]*'\#job-performance':'performance'[^}]*\}\[location\.hash\][\s\S]*renderInlineJob\(hashMode/,'Job profile deep links must open every published section inline');
-assert.match(read('profile/kpi.html'),/location\.replace\('index\.html#job-performance'\)/,'Legacy KPI route must return to the inline employee profile');
+assert.match(read('profile/kpi.html'),/بطاقة الأداء المتوازن[\s\S]*المنظور المالي[\s\S]*المستفيدون[\s\S]*العمليات الداخلية[\s\S]*التعلم والنمو/,'KPI route must show the balanced scorecard');
 assert.match(executive,/id="listView"[\s\S]*id="kanbanView"/,'Executive view must offer list and Kanban');
 assert.match(users,/admin_set_executive_task_access[\s\S]*admin_update_profile_details/,'Account save must persist executive and profile fields');
 assert.match(notificationMigration,/add column if not exists read_at[\s\S]*notifications_update_read_policy/,'Notifications must retain a protected read state');
