@@ -5,7 +5,7 @@ const asArray = value => Array.isArray(value) ? value : [];
 const itemText = value => typeof value === 'string' ? value : (value?.text || value?.name || '');
 const statusLabels = {DRAFT:'مسودة',IN_REVIEW:'قيد المراجعة',CHANGES_REQUESTED:'تحتاج تعديل',MANAGER_APPROVED:'موافقة المدير مكتملة',PUBLISHED:'منشورة',ARCHIVED:'مؤرشفة'};
 const sectionLabels = {PURPOSE:'الغرض الوظيفي',RESPONSIBILITIES:'المهام والمسؤوليات',AUTHORITIES:'الصلاحيات',KPIS:'مؤشرات الأداء',REPORTS:'التقارير والمخرجات',QUALIFICATIONS:'المؤهلات'};
-let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], activeTab = 'overview', editing = false;
+let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], weightReferences = [], activeTab = 'overview', editing = false;
 
 function toast(message) {
   const node = byId('toast');
@@ -92,12 +92,20 @@ function authoritiesView() {
   return `<section class="content-card"><h2>مصفوفة الصلاحيات</h2><div class="matrix-wrap"><table class="permission-matrix"><thead><tr><th>الإجراء</th><th>مستوى الصلاحية</th><th>النطاق والحد</th><th>التصعيد</th></tr></thead><tbody>${rows.map((item,index) => `<tr><td><b>${esc(itemText(item))}</b>${proposalActions('AUTHORITIES',index)}</td><td class="type">${esc(item.type || 'تنفيذ')}</td><td>${esc([item.scope,item.limit].filter(Boolean).join(' — ') || 'وفق التفويض المعتمد')}</td><td>${esc(item.escalation || 'المدير المباشر')}</td></tr>`).join('')}</tbody></table></div>${managerReviewing() ? '<button class="review-btn" data-propose="ADD" data-section="AUTHORITIES" data-index="-1">إضافة صلاحية مقترحة</button>' : ''}</section>`;
 }
 
+function referenceWeightsView() {
+  if (!weightReferences.length) return '';
+  const total=weightReferences.reduce((sum,row)=>sum+Number(row.weight_percent),0);
+  const draftNames=asArray(job.content?.kpis).map(itemText);
+  const namesMatch=weightReferences.length===draftNames.length&&weightReferences.every((row,index)=>row.indicator_name===draftNames[index]);
+  return `<section class="content-card scorecard-reference"><h2>أوزان بطاقة الأداء المرجعية</h2><p>الأوزان كما أرسلها صاحب النظام للوظيفة ${esc(job.title)}. إجماليها <b>${esc(total)}٪</b>. مرجع للمراجعة، ولا يغيّر المؤشرات في المسودة أو الوصف المنشور تلقائيًا.</p><div class="matrix-wrap"><table class="permission-matrix"><thead><tr><th scope="col">#</th><th scope="col">المؤشر في البطاقة المرجعية</th><th scope="col">الوزن</th></tr></thead><tbody>${weightReferences.map(row=>`<tr><td>${row.kpi_position}</td><td>${esc(row.indicator_name)}</td><td><b>${Number(row.weight_percent)}٪</b></td></tr>`).join('')}</tbody></table></div><p class="reference-note">${namesMatch?'أسماء وترتيب مؤشرات المسودة مطابقان لهذه البطاقة.':'أسماء أو ترتيب مؤشرات المسودة يختلف عن البطاقة المرجعية؛ يلزم توفيق المؤشرات في مسار المراجعة قبل الاعتماد.'} • مرجع الإصدار ${weightReferences[0].source_revision}.</p></section>`;
+}
+
 function measurementView() {
   const content = job.content || {};
   const metrics = asArray(content.kpis).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.measure || '')}</p><div class="metric-meta"><span>المستهدف: ${esc(item.target || 'يحدد')}</span><span>${esc(item.frequency || '')}</span></div>${proposalActions('KPIS',index)}</article>`).join('');
   const reports = asArray(content.reports).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.recipient ? 'المستلم: ' + item.recipient : '')}</p><div class="metric-meta"><span>${esc(item.frequency || '')}</span><span>${esc(item.display_rule || 'داخل النظام')}</span></div>${proposalActions('REPORTS',index)}</article>`).join('');
   const formCards = forms.map(item => `<a class="form-link" href="${esc(item.file_url || '#')}" ${item.file_url ? 'target="_blank"' : ''}><b>${esc(item.title)}</b><span>${esc(item.form_type)} • الإصدار ${esc(item.version)}</span><small>${esc(item.usage_note || item.description || '')}</small></a>`).join('');
-  return `<div class="content-stack"><section class="content-card"><h2>مؤشرات الأداء</h2><div class="measurement-grid">${metrics || '<div class="empty-state">لا توجد مؤشرات.</div>'}</div></section><section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
+  return `<div class="content-stack">${referenceWeightsView()}<section class="content-card"><h2>مؤشرات الأداء في المسودة الحالية</h2><div class="measurement-grid">${metrics || '<div class="empty-state">لا توجد مؤشرات.</div>'}</div></section><section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
 }
 
 function valueText(value) {
@@ -300,12 +308,15 @@ async function loadRelated() {
     sb.from('job_description_change_requests').select('*').eq('job_description_id',job.id).order('created_at'),
     sb.from('job_description_forms').select('usage_note,display_order,form_library(*)').eq('job_description_id',job.id).order('display_order'),
     sb.from('job_description_comments').select('*').eq('job_description_id',job.id).order('created_at'),
-    me.role === 'admin' ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]})
+    me.role === 'admin' ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
+    sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position')
   ]);
   proposals = responses[0].data || [];
   forms = (responses[1].data || []).map(item => ({...item.form_library,usage_note:item.usage_note}));
   comments = responses[2].data || [];
   assignments = responses[3].data || [];
+  if (responses[4].error) throw responses[4].error;
+  weightReferences = (responses[4].data || []).filter(row => row.source_revision === responses[4].data?.[0]?.source_revision);
 }
 
 async function boot() {
