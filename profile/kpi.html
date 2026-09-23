@@ -1,52 +1,44 @@
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مؤشرات الأداء</title><script>location.replace('index.html#job-performance')</script><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.7"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script><link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2"><style>.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.kpi-card{background:#fff;border:1px solid #e6edf5;border-radius:20px;padding:20px;box-shadow:0 5px 14px rgba(20,45,80,.045)}.bar{height:8px;background:#edf2f7;border-radius:999px;overflow:hidden;margin-top:12px}.fill{height:100%;background:#1677ff}</style></head><body>
-<div class="atwar-shell">
-  <atwar-sidebar active="profile"></atwar-sidebar>
-  <section class="atwar-main">
-    <atwar-header></atwar-header>
-<main class="atwar-content">
-<section id="profileDataHost" style="min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:24px">
-  <div style="width:min(680px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 10px 30px rgba(20,45,80,.05)">
-    <div style="font-size:22px;font-weight:900">مؤشرات الأداء</div>
-    <p style="margin:10px auto 0;font-size:11px;color:#7b8aa5">جاري التحقق من البيانات المعتمدة...</p>
-  </div>
-</section>
-</main>
-  </section>
-</div>
-<script src="../assets/js/shared.js"></script>
-<script src="../assets/js/roles-config.js"></script>
-<script src="../assets/js/start-page-config.js"></script>
-<script src="../assets/js/supabase-config.js"></script>
-<script src="../assets/js/supabase-runtime.js"></script>
-<script src="../assets/js/permissions.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded',()=>{
- const s=document.querySelector('[data-global-search]');
- if(s) s.addEventListener('keydown',e=>{
-   if(e.key==='Enter' && s.value.trim()) location.href='../search/index.html?q='+encodeURIComponent(s.value.trim());
- });
-});
-</script>
-<div class="atwar-copyright">جميع الحقوق محفوظة © ATWAR ONE 2026 - إدارة تطوير الأعمال</div>
-
-
-
-
-<script type="module" id="realProfileDataBinding">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بطاقة الأداء المتوازن | ATWAR ONE</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@1.47.0"></script>
+<link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2">
+<style>
+.scorecard{display:grid;gap:20px;max-width:1200px;margin:auto}.scorecard-intro{color:var(--atwar-muted);line-height:1.8}.perspectives{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.perspective{padding:18px;border-top:4px solid var(--axis-color,var(--atwar-blue-600));min-height:152px}.perspective h2{margin:0 0 8px;font-size:17px}.perspective p{margin:0;color:var(--atwar-muted);font-size:13px;line-height:1.7}.perspective strong{display:block;margin-top:12px;font-size:22px;color:var(--atwar-text)}.kpi-list{display:grid;gap:12px}.kpi-item{padding:18px}.kpi-item h3{margin:0 0 8px;font-size:17px}.kpi-details{display:flex;gap:8px;flex-wrap:wrap}.kpi-details span{padding:5px 9px;background:var(--atwar-surface-soft);border-radius:8px;color:var(--atwar-text-soft);font-size:13px}.kpi-item p{margin:10px 0 0;color:var(--atwar-muted);font-size:13px;line-height:1.8}.source-note{padding:16px 20px;background:var(--atwar-blue-100);border:1px solid #cfe2fa;border-radius:var(--atwar-radius-card);line-height:1.8;color:var(--atwar-navy-800)}@media(max-width:980px){.perspectives{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.perspectives{grid-template-columns:1fr}.scorecard{gap:14px}}
+</style><script src="../assets/js/supabase-config.js"></script><script src="../assets/js/supabase-runtime.js"></script><script src="../assets/js/shell-components.js?v=2.5.8"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script></head>
+<body style="visibility:hidden"><div class="atwar-shell"><atwar-sidebar active="profile"></atwar-sidebar><section class="atwar-main"><atwar-header></atwar-header><main class="atwar-content"><div class="scorecard">
+<header class="atwar-page-head"><div><h1>بطاقة الأداء المتوازن</h1><p>المحاور الأربعة ومؤشرات الوصف الوظيفي المعتمد.</p></div><a class="atwar-btn" href="index.html">ملفي الوظيفي</a></header>
+<div class="perspectives" aria-label="محاور بطاقة الأداء">
+<section class="perspective atwar-card" style="--axis-color:#1769e0"><h2>المنظور المالي</h2><p>القيمة المالية وكفاءة استخدام الموارد.</p><strong>لم يبدأ القياس</strong></section>
+<section class="perspective atwar-card" style="--axis-color:#15946a"><h2>المستفيدون</h2><p>جودة الخدمة ورضا المستفيدين.</p><strong>لم يبدأ القياس</strong></section>
+<section class="perspective atwar-card" style="--axis-color:#d47b00"><h2>العمليات الداخلية</h2><p>كفاءة الإجراءات والنتائج التشغيلية.</p><strong>لم يبدأ القياس</strong></section>
+<section class="perspective atwar-card" style="--axis-color:#7656d7"><h2>التعلم والنمو</h2><p>تطوير القدرات والتحسين المستمر.</p><strong>لم يبدأ القياس</strong></section>
+</div><div class="source-note">المحاور إطار للعرض. لا تُحتسب درجة الأداء حتى تُعتمد علاقة كل مؤشر بمحوره وتُسجَّل نتائج قياس فعلية لكل فترة.</div>
+<section class="atwar-panel" aria-labelledby="kpiHeading"><div class="atwar-panel-head"><div><h2 id="kpiHeading">مؤشرات الوصف الوظيفي</h2><p id="publicationState">جاري تحميل الوصف الوظيفي المعتمد…</p></div></div><div id="kpiList" class="kpi-list" aria-live="polite"></div></section>
+</div></main></section></div>
+<script type="module">
 const sb=await window.atwarGetSupabase();
-async function authProfile(loginPath){
-  const {data:{session},error:se}=await sb.auth.getSession();
-  if(se||!session?.user){location.href=loginPath;return null;}
-  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
+const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const valueOf=(item,keys)=>keys.map(key=>item?.[key]).find(value=>value!==undefined&&value!==null&&String(value).trim()!=='');
+const list=document.getElementById('kpiList'),state=document.getElementById('publicationState');
+const {data:{session},error:sessionError}=await sb.auth.getSession();
+if(sessionError||!session?.user){location.replace('../login.html')}else{
+ const {data:profile,error}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
+ if(error||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){location.replace('../login.html')}
+ else{
+  document.body.style.visibility='visible';window.atwarSyncShellIdentity?.(profile,session.user);window.lucide?.createIcons();
+  let job=null,queryError=null;
+  const assignmentResult=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();
+  const jobId=assignmentResult.data?.job_description_id||profile.job_description_id;
+  queryError=assignmentResult.error;
+  if(jobId){const result=await sb.from('job_descriptions').select('id,title,published_at,published_snapshot').eq('id',jobId).maybeSingle();job=result.data;queryError=result.error}
+  if(!job&&!queryError&&profile.job_title){const result=await sb.from('job_descriptions').select('id,title,published_at,published_snapshot').eq('title',profile.job_title).maybeSingle();job=result.data;queryError=result.error}
+  if(queryError){state.textContent='تعذر تحميل بيانات الوصف الوظيفي';list.innerHTML='<div class="atwar-state"><p>تعذر عرض المؤشرات الآن. حاول تحديث الصفحة.</p></div>'}
+  else if(!job?.published_at||!job?.published_snapshot){state.textContent='لا يوجد وصف وظيفي منشور لهذا الحساب';list.innerHTML='<div class="atwar-state"><div><h3>لم تُنشر مؤشرات معتمدة بعد</h3><p>ستظهر مؤشرات الوصف الوظيفي هنا بعد اعتماده ونشره.</p></div></div>'}
+  else{
+   const indicators=Array.isArray(job.published_snapshot.content?.kpis)?job.published_snapshot.content.kpis:[];
+   state.textContent=`${job.published_snapshot.title||job.title} · ${indicators.length.toLocaleString('ar-SA')} مؤشر معتمد`;
+   list.innerHTML=indicators.length?indicators.map(item=>{const name=valueOf(item,['text','name','title','indicator','kpi'])||'مؤشر دون عنوان';const target=valueOf(item,['target','target_value']);const frequency=valueOf(item,['frequency','measurement_frequency']);const weight=valueOf(item,['weight']);const source=valueOf(item,['source','data_source']);return `<article class="kpi-item atwar-card"><h3>${escapeHtml(name)}</h3><div class="kpi-details">${target?`<span>المستهدف: ${escapeHtml(target)}</span>`:''}${frequency?`<span>الدورية: ${escapeHtml(frequency)}</span>`:''}${weight?`<span>الوزن: ${escapeHtml(weight)}</span>`:''}<span>النتيجة الفعلية: لم تُسجل</span></div>${source?`<p>مصدر القياس: ${escapeHtml(source)}</p>`:''}</article>`}).join(''):'<div class="atwar-state"><div><h3>لا توجد مؤشرات في الوصف المنشور</h3><p>أضف المؤشرات إلى الوصف الوظيفي ثم اعتمد إصدارًا جديدًا.</p></div></div>';
   }
-  window.atwarSyncShellIdentity?.(profile,session.user);
-  return {session,user:session.user,profile};
+ }
 }
-
-const host=document.getElementById('profileDataHost'),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function empty(){host.innerHTML='<div style="width:min(560px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:34px 28px;text-align:center"><div style="font-size:22px;font-weight:900">لا توجد بيانات معتمدة</div><p style="font-size:11px;line-height:1.9;color:#7b8aa5">لم تتم إضافة بيانات مؤشرات الأداء المعتمدة لهذا الحساب حتى الآن.</p></div>'}const a=await authProfile('../login.html');if(a){const data=a.profile.kpis||a.profile.kpi||null;if(!data)empty();else{const rows=Array.isArray(data)?data:Object.entries(data).map(([name,value])=>({name,value}));host.innerHTML=`<div style="width:min(900px,100%);background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:28px"><h1 style="margin-top:0">مؤشرات الأداء</h1><div style="display:grid;gap:10px">${rows.map(x=>`<div style="border:1px solid #e7edf5;border-radius:12px;padding:12px"><b>${esc(x.name||x.title||x.kpi||'مؤشر')}</b><div style="color:#607087;margin-top:5px">${esc(x.value??x.score??x.target??'—')}</div></div>`).join('')}</div></div>`}}
-</script>
-</body>
-</html>
+</script></body></html>

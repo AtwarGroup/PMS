@@ -5,7 +5,7 @@
 <title>ATWAR ONE – البحث</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.7"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.5.8"></script><script src="../assets/js/ui-feedback.js?v=2.5.2"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2">
 <style>
 .search-hero{max-width:850px;margin:12px auto 28px;text-align:center}
@@ -27,11 +27,11 @@
 <main class="atwar-content">
 <section class="search-hero">
 <h1>البحث في ATWAR ONE</h1>
-<p>ابحث عن مهمة، موظف، وصف وظيفي، مؤشر أداء أو صفحة داخل النظام.</p>
+<p>ابحث عن مهمة، موظف أو صفحة داخل النظام.</p>
 <div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
 </section>
 <section id="results"></section>
-<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>Production 2.5.7</span><span>Supabase Live Search</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>نظام إدارة الأداء المؤسسي</span><span>Supabase Live Search</span></footer>
 </main></section></div>
 
 <script src="../assets/js/roles-config.js"></script>
@@ -54,6 +54,6 @@ async function authProfile(loginPath){
 
 const input=document.getElementById('query'),results=document.getElementById('results');let pages=[],people=[],tasks=[],profile=null;const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function render(q=''){q=String(q).trim().toLowerCase();if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));const peopleRows=people.filter(x=>`${x.full_name||''} ${x.email||''} ${x.job_title||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.full_name||x.email||'مستخدم',meta:x.job_title||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.id)}`,kind:'موظف'}));const taskRows=tasks.filter(x=>`${x.title||''} ${x.description||''} ${x.notes||''} ${x.assignee_name_snapshot||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assignee_name_snapshot||''}`,icon:'square-check-big',href:`../tasks/index.html?task=${encodeURIComponent(x.id)}`,kind:'مهمة'}));const rows=[...taskRows,...peopleRows,...pageRows];results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';try{lucide.createIcons()}catch{}}
-const a=await authProfile('../login.html');if(a){profile=a.profile;const [pr,tr]=await Promise.all([sb.from('profiles').select('id,full_name,email,role,job_title,manager_id,active,status').eq('active',true).eq('status','active').order('full_name'),sb.from('tasks').select('*').order('updated_at',{ascending:false})]);people=profile.role==='employee'?[]:(pr.data||[]).filter(x=>profile.role==='admin'||x.manager_id===profile.id);tasks=tr.data||[];pages=[{title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},{title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},{title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])];const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q)}input.addEventListener('input',e=>render(e.target.value));
+const a=await authProfile('../login.html');if(a){profile=a.profile;const [pr,tr]=await Promise.all([sb.from('profiles').select('id,full_name,email,role,job_title,manager_id,active,status').eq('active',true).eq('status','active').order('full_name'),sb.from('tasks').select('*').order('updated_at',{ascending:false})]);people=profile.role==='employee'?[]:(pr.data||[]).filter(x=>profile.role==='admin'||x.manager_id===profile.id);tasks=tr.data||[];pages=[{title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},{title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},{title:'بطاقة الأداء المتوازن',meta:'مؤشرات الوصف الوظيفي المعتمد',icon:'chart-no-axes-combined',href:'../profile/kpi.html',keys:'مؤشرات أداء بطاقة متوازنة مالي مستفيدون عمليات تعلم نمو'},{title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])];const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q)}input.addEventListener('input',e=>render(e.target.value));
 </script>
 </body></html>

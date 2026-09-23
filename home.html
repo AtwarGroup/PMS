@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ATWAR ONE – الرئيسية</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="assets/js/shell-components.js?v=2.5.7"></script><script src="assets/js/ui-feedback.js?v=2.5.2"></script><script src="assets/js/session-service.js?v=2.5.2"></script><link rel="stylesheet" href="assets/css/shared.css?v=2.5.2">
+<script src="assets/js/shell-components.js?v=2.5.8"></script><script src="assets/js/ui-feedback.js?v=2.5.2"></script><script src="assets/js/session-service.js?v=2.5.2"></script><link rel="stylesheet" href="assets/css/shared.css?v=2.5.2">
 <style>
 .dash-card,.home-card{background:#fff;border:1px solid #e6edf5;border-radius:18px;box-shadow:0 5px 14px rgba(20,45,80,.045)}
 .dash-card{padding:18px;display:flex;align-items:center;justify-content:space-between}
@@ -12,7 +12,8 @@
 .team-mini-grid{padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.mini-member{border:1px solid #e6edf5;border-radius:14px;padding:13px}.mini-avatar{width:38px;height:38px;border-radius:50%;background:#e9eff8;display:grid;place-items:center;font-weight:900;margin-bottom:10px}.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:12px;font-size:9px;color:#7b8aa5;text-align:center}.mini-stats b{display:block;font-size:16px;color:#176fd3}
 .quick-card-copy{min-width:0;display:flex!important;flex-direction:column;align-items:flex-start;gap:3px}.quick-card-copy .dash-num,.quick-card-copy b,.quick-card-copy small{display:block!important;width:100%;position:static!important;margin:0!important;line-height:1.45}.quick-card-copy .dash-num{font-size:28px;line-height:1}.quick-card-copy b{font-size:13px;white-space:nowrap}.quick-card-copy small{font-size:9px;color:#7b8aa5;white-space:normal}
 .announcement{padding:14px 16px;border-bottom:1px solid #edf2f7}.announcement:last-child{border-bottom:0}.announcement.important{background:#fffaf0;border-right:5px solid #efa11a}.announcement h4{margin:0 0 5px;font-size:14px}.announcement p{margin:0;color:#53657b;font-size:11px;line-height:1.8;white-space:pre-wrap}
-@media(max-width:1100px){.team-mini-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1100px){.team-mini-grid{grid-template-columns:repeat(2,1fr)}.home-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){.home-metrics{gap:9px!important}.home-events{grid-template-columns:1fr!important}.dash-card{padding:13px;gap:6px}.dash-ico{width:40px;height:40px;flex-shrink:0}}
 </style>
 </head><body style="visibility:hidden">
 <div class="atwar-shell">
@@ -30,7 +31,7 @@
     </div>
   </div>
 
-  <section style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
+  <section class="home-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
     <div class="dash-card" data-task-scope="COMPLETED" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small id="homeStatCompletedScope">هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
     <div class="dash-card" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>المهام المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
     <div class="dash-card" data-task-scope="OVERDUE" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
@@ -57,7 +58,7 @@
     <div id="announcementFeed"><div class="announcement"><p>لا توجد إعلانات منشورة حاليًا.</p></div></div>
   </section>
 
-  <section id="homeTeamEvents" style="display:grid;grid-template-columns:2fr 1.15fr;gap:16px">
+  <section id="homeTeamEvents" class="home-events" style="display:grid;grid-template-columns:2fr 1.15fr;gap:16px">
     
   </section>
 
@@ -65,7 +66,7 @@
   
 
 
-<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>Production 1.8.0</span><span>Supabase Live Data</span></footer>
+<footer class="atwar-footer"><span>جميع الحقوق محفوظة © ATWAR ONE 2026</span><span>نظام إدارة الأداء المؤسسي</span><span>Supabase Live Data</span></footer>
 </main>
 
   </section>

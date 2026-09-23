@@ -3,7 +3,7 @@
   const shellScript=document.currentScript;
   const assetRoot=new URL('../',shellScript?.src||location.href);
   if(!document.querySelector('link[data-atwar-design-system]')){
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.3',assetRoot).href;document.head.append(style);
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.8',assetRoot).href;document.head.append(style);
   }
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
@@ -46,6 +46,7 @@
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('profile','profile/index.html?view=job','badge-check','ملفي الوظيفي')}
+          ${nav('scorecard','profile/kpi.html','chart-no-axes-combined','بطاقة الأداء')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">
