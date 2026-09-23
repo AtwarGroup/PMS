@@ -27,7 +27,9 @@ if(sessionError||!session?.user){location.replace('../login.html')}else{
  else{
   document.body.style.visibility='visible';window.atwarSyncShellIdentity?.(profile,session.user);window.lucide?.createIcons();
   let job=null,queryError=null;
-  const jobId=profile.job_description_id||profile.job_id;
+  const assignmentResult=await sb.from('employee_job_assignments').select('job_description_id').eq('profile_id',profile.id).maybeSingle();
+  const jobId=assignmentResult.data?.job_description_id||profile.job_description_id;
+  queryError=assignmentResult.error;
   if(jobId){const result=await sb.from('job_descriptions').select('id,title,published_at,published_snapshot').eq('id',jobId).maybeSingle();job=result.data;queryError=result.error}
   if(!job&&!queryError&&profile.job_title){const result=await sb.from('job_descriptions').select('id,title,published_at,published_snapshot').eq('title',profile.job_title).maybeSingle();job=result.data;queryError=result.error}
   if(queryError){state.textContent='تعذر تحميل بيانات الوصف الوظيفي';list.innerHTML='<div class="atwar-state"><p>تعذر عرض المؤشرات الآن. حاول تحديث الصفحة.</p></div>'}
@@ -35,7 +37,7 @@ if(sessionError||!session?.user){location.replace('../login.html')}else{
   else{
    const indicators=Array.isArray(job.published_snapshot.content?.kpis)?job.published_snapshot.content.kpis:[];
    state.textContent=`${job.published_snapshot.title||job.title} · ${indicators.length.toLocaleString('ar-SA')} مؤشر معتمد`;
-   list.innerHTML=indicators.length?indicators.map(item=>{const name=valueOf(item,['name','title','indicator','kpi'])||'مؤشر دون عنوان';const target=valueOf(item,['target','target_value']);const frequency=valueOf(item,['frequency','measurement_frequency']);const weight=valueOf(item,['weight']);const source=valueOf(item,['source','data_source']);return `<article class="kpi-item atwar-card"><h3>${escapeHtml(name)}</h3><div class="kpi-details">${target?`<span>المستهدف: ${escapeHtml(target)}</span>`:''}${frequency?`<span>الدورية: ${escapeHtml(frequency)}</span>`:''}${weight?`<span>الوزن: ${escapeHtml(weight)}</span>`:''}<span>النتيجة الفعلية: لم تُسجل</span></div>${source?`<p>مصدر القياس: ${escapeHtml(source)}</p>`:''}</article>`}).join(''):'<div class="atwar-state"><div><h3>لا توجد مؤشرات في الوصف المنشور</h3><p>أضف المؤشرات إلى الوصف الوظيفي ثم اعتمد إصدارًا جديدًا.</p></div></div>';
+   list.innerHTML=indicators.length?indicators.map(item=>{const name=valueOf(item,['text','name','title','indicator','kpi'])||'مؤشر دون عنوان';const target=valueOf(item,['target','target_value']);const frequency=valueOf(item,['frequency','measurement_frequency']);const weight=valueOf(item,['weight']);const source=valueOf(item,['source','data_source']);return `<article class="kpi-item atwar-card"><h3>${escapeHtml(name)}</h3><div class="kpi-details">${target?`<span>المستهدف: ${escapeHtml(target)}</span>`:''}${frequency?`<span>الدورية: ${escapeHtml(frequency)}</span>`:''}${weight?`<span>الوزن: ${escapeHtml(weight)}</span>`:''}<span>النتيجة الفعلية: لم تُسجل</span></div>${source?`<p>مصدر القياس: ${escapeHtml(source)}</p>`:''}</article>`}).join(''):'<div class="atwar-state"><div><h3>لا توجد مؤشرات في الوصف المنشور</h3><p>أضف المؤشرات إلى الوصف الوظيفي ثم اعتمد إصدارًا جديدًا.</p></div></div>';
   }
  }
 }
