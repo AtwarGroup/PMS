@@ -243,7 +243,7 @@ const authorityTone=type=>/اعتماد|قرار/.test(type)?'approve':/تنفي
 const metaCell=(label,value)=>value?`<div class="hybrid-meta"><span>${esc(label)}</span><b>${esc(value)}</b></div>`:'';
 function scoreScale(item){
   const raw=item?.scale||item?.scoring||item?.levels;
-  if(!Array.isArray(raw)||raw.length!==5)return '<span class="kpi-unset">لم تُعتمد حدود المستويات الخمسة لهذا المؤشر.</span>';
+  if(!Array.isArray(raw)||raw.length!==5)return `<div class="kpi-five-levels" aria-label="حدود التقييم لم تعتمد بعد">${[1,2,3,4,5].map(level=>`<div class="kpi-level"><b>${level}</b><span>—</span></div>`).join('')}</div><span class="kpi-unset">حدود التقييم بانتظار الاعتماد</span>`;
   return `<div class="kpi-five-levels">${raw.map((level,index)=>`<div class="kpi-level"><b>${esc(level?.score||level?.level||index+1)}</b><span>${esc(level?.label||level?.range||level?.value||'غير محدد')}</span></div>`).join('')}</div>`;
 }
 function kpiFramework(rows,job){
