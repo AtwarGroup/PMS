@@ -81,7 +81,19 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-const TARGET_FIREBASE_UID='SK9kgX3MHlOWQMwmnJbfGjCvtha2',a=await authProfile('../login.html');if(a){const{data:target}=await sb.from('profiles').select('id,full_name,email,manager_id,firebase_uid,active,status').eq('firebase_uid',TARGET_FIREBASE_UID).maybeSingle();const allowed=target&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));if(!allowed)location.replace('../home.html');else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}}
+const a=await authProfile('../login.html');
+if(a){
+  const requestedId=new URLSearchParams(location.search).get('uid');
+  const targetId=requestedId||(String(a.profile.job_title||'').trim()==='المدير المالي'?a.profile.id:'');
+  if(!targetId)location.replace('../home.html');
+  else{
+    const{data:target}=await sb.from('profiles').select('id,full_name,email,job_title,manager_id,active,status').eq('id',targetId).maybeSingle();
+    const isFinancialManager=String(target?.job_title||'').trim()==='المدير المالي';
+    const allowed=isFinancialManager&&target&&target.active!==false&&target.status!=='inactive'&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));
+    if(!allowed)location.replace('../home.html');
+    else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}
+  }
+}
 </script>
 
     <script type="text/babel">
