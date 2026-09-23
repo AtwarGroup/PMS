@@ -71,7 +71,7 @@ async function atwarLogout(){
   try{
     if(window.ATWAR_SUPABASE?.auth?.signOut) await window.ATWAR_SUPABASE.auth.signOut();
     else if(window.ATWAR_SUPABASE_CONFIG){
-      const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm');
       const c=window.ATWAR_SUPABASE_CONFIG;
       await createClient(c.url,c.publishableKey).auth.signOut();
     }
