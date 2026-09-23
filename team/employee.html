@@ -117,9 +117,7 @@ if(a){
     else{
       const allowed=['manager','admin'].includes(a.profile.role);
       if(!allowed)location.replace('../home.html');
-      else if(String(target.job_title||'').trim()==='المدير المالي'){
-        location.replace('../profile/financial-manager.html?uid='+encodeURIComponent(target.id));
-      }else{
+      else{
         document.getElementById('employeeProfileMessage').textContent=`لم يتم تجهيز واعتماد الملف الوظيفي الخاص بـ ${target.full_name||target.email||'الموظف'} حتى الآن.`;
         document.body.style.visibility='visible';
         try{lucide.createIcons()}catch{}
