@@ -315,6 +315,9 @@ export function onValue(r,callback,errorCallback){
   });
   const refresh=coordinator.refresh;
   _listeners.set(refresh,listenerPath);refresh();
-  const timer=setInterval(refresh,60000);
-  return ()=>{coordinator.dispose();clearInterval(timer);_listeners.delete(refresh)};
+  const refreshWhenVisible=()=>{if(document.visibilityState==='visible')refresh()};
+  const timer=setInterval(refreshWhenVisible,120000);
+  const onVisibilityChange=()=>{if(document.visibilityState==='visible')refresh()};
+  document.addEventListener('visibilitychange',onVisibilityChange);
+  return ()=>{coordinator.dispose();clearInterval(timer);document.removeEventListener('visibilitychange',onVisibilityChange);_listeners.delete(refresh)};
 }
