@@ -45,16 +45,16 @@
 <div class="task-suite-panel-head"><div><h2>إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
 <div class="recurring-form-layout">
   <div class="recurring-form-block"><h3>بيانات المهمة</h3><div class="form-grid">
-    <div class="field wide"><label>عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
-    <div class="field"><label>المسند إليه</label><select id="assignee"></select></div>
-    <div class="field"><label>الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
-    <div class="field wide"><label>الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
+    <div class="field wide"><label for="title">عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
+    <div class="field"><label for="assignee">المسند إليه</label><select id="assignee"></select></div>
+    <div class="field"><label for="priority">الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
+    <div class="field wide"><label for="desc">الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
   </div></div>
   <div class="recurring-form-block"><h3>إعدادات التكرار</h3><div class="form-grid">
-    <div class="field"><label>التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
-    <div class="field"><label>كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help">كل أسبوع</div></div>
-    <div class="field"><label>موعد أول إنشاء</label><input id="next" type="datetime-local"></div>
-    <div class="field"><label>مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء المهمة حتى استحقاقها.</div></div>
+    <div class="field"><label for="recurrence">التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
+    <div class="field"><label for="interval">كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help">كل أسبوع</div></div>
+    <div class="field"><label for="next">موعد أول إنشاء</label><input id="next" type="datetime-local"></div>
+    <div class="field"><label for="dueOffset">مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء المهمة حتى استحقاقها.</div></div>
   </div></div>
 </div>
 <div class="recurring-actions">
@@ -67,7 +67,7 @@
   <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
   <button id="run" class="btn">تشغيل المستحق الآن</button>
 </div>
-<div class="recurring-toolbar"><input id="recurringSearch" class="recurring-search" type="search" placeholder="ابحث باسم القالب أو المسؤول"><div class="recurring-view-switch" aria-label="طريقة عرض المهام الدورية"><button id="recurringListButton" type="button">قائمة</button><button id="recurringKanbanButton" type="button">كانبان</button></div></div>
+<div class="recurring-toolbar"><input id="recurringSearch" class="recurring-search" type="search" placeholder="ابحث باسم القالب أو المسؤول"><div class="recurring-view-switch" aria-label="طريقة عرض المهام الدورية"><button id="recurringListButton" type="button" aria-pressed="false">قائمة</button><button id="recurringKanbanButton" type="button" aria-pressed="false">كانبان</button></div></div>
 <div id="list" class="recurring-cards">جاري التحميل...</div>
 </section>
 <footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>نظام إدارة الأداء المؤسسي</span><span>محرك الجدولة</span></footer>
@@ -120,6 +120,7 @@ function recurringOwner(x){return people.find(p=>p.id===x.assignee_id)?.full_nam
 function renderRecurringRows(){
  const q=document.getElementById('recurringSearch').value.trim().toLowerCase(),rows=recurringRows.filter(x=>!q||`${x.title} ${recurringOwner(x)}`.toLowerCase().includes(q)),host=document.getElementById('list');
  document.getElementById('recurringListButton').classList.toggle('active',recurringView==='LIST');document.getElementById('recurringKanbanButton').classList.toggle('active',recurringView==='KANBAN');
+ document.getElementById('recurringListButton').setAttribute('aria-pressed',String(recurringView==='LIST'));document.getElementById('recurringKanbanButton').setAttribute('aria-pressed',String(recurringView==='KANBAN'));
  if(!rows.length){host.className='recurring-cards';host.innerHTML='<div class="atwar-state"><div><div class="atwar-state-icon"><i data-lucide="repeat-2"></i></div><h3>لا توجد قوالب مطابقة</h3><p>أنشئ القالب الأول أو غيّر عبارة البحث.</p></div></div>';return}
  if(recurringView==='LIST'){host.className='recurring-table-wrap';host.innerHTML=`<table class="recurring-table"><thead><tr><th>القالب</th><th>المسؤول</th><th>التكرار</th><th>التشغيل القادم</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.active?'':'paused'}"><td>${esc(x.title)}</td><td>${esc(recurringOwner(x))}</td><td>${esc(recurrenceText(x.recurrence,x.interval_count))}</td><td>${esc(dt(x.next_run_at))}</td><td><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></td><td><div class="recurring-table-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> تفعيل</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></td></tr>`).join('')}</tbody></table>`}
  else{host.className='recurring-cards';host.innerHTML=rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(recurringOwner(x))}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join('')}
