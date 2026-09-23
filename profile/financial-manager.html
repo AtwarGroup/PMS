@@ -91,7 +91,12 @@ if(a){
     const isFinancialManager=String(target?.job_title||'').trim()==='المدير المالي';
     const allowed=isFinancialManager&&target&&target.active!==false&&target.status!=='inactive'&&(a.profile.id===target.id||a.profile.role==='admin'||(a.profile.role==='manager'&&target.manager_id===a.profile.id));
     if(!allowed)location.replace('../home.html');
-    else{document.body.style.visibility='visible';try{lucide.createIcons()}catch{}}
+    else{
+      window.ATWAR_FINANCIAL_PROFILE_NAME=target.full_name||target.email||'شاغل وظيفة المدير المالي';
+      window.dispatchEvent(new CustomEvent('atwar-financial-profile-ready',{detail:{name:window.ATWAR_FINANCIAL_PROFILE_NAME}}));
+      document.body.style.visibility='visible';
+      try{lucide.createIcons()}catch{}
+    }
   }
 }
 </script>
@@ -208,8 +213,13 @@ if(a){
             return <span ref={spanRef} style={{ display: 'contents' }}></span>;
           };
 
-          const employeeName = "حمزة يوسف عبدالله المزهري"; 
-          const employeeId = "1196";
+          const [employeeName,setEmployeeName] = useState("شاغل وظيفة المدير المالي");
+          useEffect(() => {
+            const syncName = event => setEmployeeName(event?.detail?.name || window.ATWAR_FINANCIAL_PROFILE_NAME || "شاغل وظيفة المدير المالي");
+            if(window.ATWAR_FINANCIAL_PROFILE_NAME) syncName();
+            window.addEventListener('atwar-financial-profile-ready',syncName);
+            return () => window.removeEventListener('atwar-financial-profile-ready',syncName);
+          }, []);
           const jobTitle = "المدير المالي";
           
           const hierarchyInfo = {
