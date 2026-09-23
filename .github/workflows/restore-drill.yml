@@ -1,0 +1,76 @@
+name: ATWAR Backup Restore Drill
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atwar-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore-drill:
+    name: Restore latest backup into disposable database
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: backup-restore-drill
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      RESTORE_DRILL_DB_URL: ${{ secrets.RESTORE_DRILL_DB_URL }}
+      RCLONE_CONFIG_BASE64: ${{ secrets.RCLONE_CONFIG_BASE64 }}
+      BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      GDRIVE_BACKUP_FOLDER: ${{ vars.GDRIVE_BACKUP_FOLDER }}
+      ALLOW_RESTORE_DRILL: "yes"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Validate restore drill secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for name in SUPABASE_DB_URL RESTORE_DRILL_DB_URL RCLONE_CONFIG_BASE64 BACKUP_ENCRYPTION_PASSWORD; do
+            test -n "${!name:-}" || { echo "Missing GitHub secret: $name" >&2; exit 1; }
+          done
+
+      - name: Install restore clients
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rclone gnupg
+          docker pull postgres:17.6
+
+      - name: Download and decrypt latest backup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          config_file="$RUNNER_TEMP/rclone.conf"
+          printf '%s' "$RCLONE_CONFIG_BASE64" | base64 --decode > "$config_file"
+          chmod 600 "$config_file"
+          target="gdrive:${GDRIVE_BACKUP_FOLDER:-ATWAR ONE Backups}"
+          latest="$(rclone --config "$config_file" lsf "$target" --files-only --include 'ATWAR_ONE_*.tar.gz.gpg' | sort -r | head -n 1)"
+          test -n "$latest" || { echo "No encrypted backup found." >&2; exit 1; }
+          rclone --config "$config_file" copyto "$target/$latest" "$RUNNER_TEMP/$latest"
+          rclone --config "$config_file" copyto "$target/$latest.sha256" "$RUNNER_TEMP/$latest.sha256"
+          expected="$(awk '{print $1}' "$RUNNER_TEMP/$latest.sha256")"
+          actual="$(sha256sum "$RUNNER_TEMP/$latest" | awk '{print $1}')"
+          test "$expected" = "$actual" || { echo "Encrypted backup checksum mismatch." >&2; exit 1; }
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$BACKUP_ENCRYPTION_PASSWORD" \
+            --output "$RUNNER_TEMP/${latest%.gpg}" \
+            --decrypt "$RUNNER_TEMP/$latest"
+          tar -C "$RUNNER_TEMP" -xzf "$RUNNER_TEMP/${latest%.gpg}"
+          echo "BACKUP_DIR=$RUNNER_TEMP/${latest%.tar.gz.gpg}" >> "$GITHUB_ENV"
+
+      - name: Restore and verify disposable database
+        shell: bash
+        run: bash scripts/backup/restore-drill.sh "$BACKUP_DIR"
+
+      - name: Remove runner copies
+        if: always()
+        shell: bash
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -name 'ATWAR_ONE_*' -exec rm -rf -- {} +
+          rm -f "$RUNNER_TEMP/rclone.conf"
