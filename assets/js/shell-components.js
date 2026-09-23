@@ -46,7 +46,6 @@
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('profile','profile/index.html?view=job','badge-check','ملفي الوظيفي')}
-          ${nav('scorecard','profile/kpi.html','chart-no-axes-combined','بطاقة الأداء')}
         </nav>
         <div class="atwar-spacer"></div>
         <div class="atwar-side-section">
