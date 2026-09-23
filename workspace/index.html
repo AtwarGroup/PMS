@@ -11,9 +11,9 @@
 .ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
 .ws-head h1{font-size:28px;margin:0}.ws-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
 .ws-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
-.ws-card{background:#fff;border:1px solid #e5edf6;border-radius:20px;padding:18px;box-shadow:0 5px 16px rgba(20,45,80,.04)}
+.ws-card{background:var(--atwar-surface);border:1px solid var(--atwar-border);border-radius:var(--atwar-radius-card);padding:20px;box-shadow:var(--atwar-shadow-card)}
 .ws-card h3{margin:0 0 14px;font-size:16px}
-.note-input{width:100%;min-height:145px;border:1px solid #e2e8f0;border-radius:15px;padding:14px;font-family:inherit;font-size:13px;resize:vertical;outline:none;background:#fffdf4}
+.note-input{width:100%;min-height:145px;border:1px solid var(--atwar-border-strong);border-radius:var(--atwar-radius-control);padding:14px;font-family:inherit;font-size:14px;resize:vertical;background:#fff} .note-input:focus{border-color:var(--atwar-blue-500);box-shadow:0 0 0 3px rgba(38,132,255,.12);outline:0}
 .note-actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
 .note-actions small{color:#8a96a8}.note-actions button{border:0;background:#0b1d3a;color:#fff;padding:9px 13px;border-radius:10px;font-family:inherit;font-weight:900;cursor:pointer}
 .quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -37,6 +37,7 @@
 .workspace-main-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 .workspace-main-grid .ws-card{min-height:470px}.workspace-note-card .note-input{min-height:330px}.workspace-follow-card .follow-list{max-height:390px}
 @media(max-width:900px){.workspace-main-grid{grid-template-columns:1fr}.workspace-main-grid .ws-card{min-height:auto}}
+@media(max-width:600px){.workspace-main-grid{gap:12px}.workspace-note-card .note-input{min-height:220px}.workspace-main-grid .ws-card{padding:16px}.follow-head{align-items:flex-start;flex-direction:column}.follow-add{width:100%}}
 </style>
 </head>
 <body>
@@ -45,13 +46,13 @@
 <section class="atwar-main">
 <atwar-header></atwar-header>
 <main class="atwar-content">
-<div class="ws-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد، محفوظة في حسابك.</p></div></div><div class="workspace-main-grid">
+<header class="atwar-page-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد.</p></div></header><div class="workspace-main-grid">
   <section class="ws-card workspace-note-card">
     <h3><i data-lucide="notebook-pen" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
-    <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية محفوظة في حسابك ويمكن الرجوع إليها من أي جهاز.</p>
-    <textarea id="personalNote" class="note-input" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره..."></textarea>
+    <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية يمكنك الرجوع إليها من أي جهاز.</p>
+    <textarea id="personalNote" class="note-input" aria-label="ملاحظاتي الشخصية" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره..."></textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
-      <span style="font-size:9px;color:#93a0b2">يتم الحفظ في Supabase لحسابك فقط.</span>
+      <span style="font-size:9px;color:#93a0b2">ملاحظاتك خاصة بحسابك.</span>
       <button type="button" onclick="saveNote()" class="save-note">حفظ الملاحظة</button>
     </div>
     <div id="savedNotice" class="saved-notice" style="display:none">تم الحفظ</div>
@@ -59,16 +60,16 @@
   <section class="ws-card workspace-follow-card">
     <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
     <div id="workspaceFollowForm" class="follow-form">
-      <input id="wfTitle" placeholder="عنوان المتابعة"><input id="wfDate" type="date">
-      <select id="wfTask"><option value="">بدون ارتباط بمهمة</option></select>
+      <input id="wfTitle" aria-label="عنوان المتابعة" placeholder="عنوان المتابعة"><input id="wfDate" aria-label="موعد المتابعة" type="date">
+      <select id="wfTask" aria-label="المهمة المرتبطة"><option value="">بدون ارتباط بمهمة</option></select>
       <div style="font-size:9px;color:#8a97a9;margin:5px 2px 0">الارتباط اختياري ويحتفظ بمرجع للمهمة فقط دون نسخ بياناتها.</div>
-      <textarea id="wfNote" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
+      <textarea id="wfNote" aria-label="تفاصيل المتابعة" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px"><button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button><button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button></div>
     </div>
     <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • مساحة عملي الشخصية</span><span>Production 2.5.2</span><span>ملاحظات ومتابعات خاصة • دون تكرار إدارة المهام</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • مساحة عملي الشخصية</span><span>نظام إدارة الأداء المؤسسي</span><span>ملاحظات ومتابعات خاصة • دون تكرار إدارة المهام</span></footer>
 </main></section></div>
 
 <script src="../assets/js/supabase-config.js"></script>
