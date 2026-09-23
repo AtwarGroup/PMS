@@ -25,71 +25,12 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Run task refresh coalescing regression
-        run: node tests/task-refresh-coalescing.mjs
-      - name: Run system rating hardening checks
-        run: node tests/system-rating-hardening.mjs
-      - name: Run browser dependency pinning audit
-        run: node tests/dependency-pinning.mjs
-      - name: Run person-independent profile routing audit
-        run: node tests/no-person-specific-routes.mjs
-      - name: Run guarded backup restore drill audit
-        run: node tests/backup-restore-drill.mjs
-      - name: Run lightweight creator index regression
-        run: node tests/creator-index-lightweight.mjs
-      - name: Run system audit
-        run: node tests/system-audit.mjs
-      - name: Run phase-one audit
-        run: node tests/phase-one-audit.mjs
-      - name: Run phase-two audit
-        run: node tests/phase-two-core.mjs
-      - name: Run phase-three quality gate
-        run: node tests/phase-three-quality-gate.mjs
-      - name: Run job-library governance audit
-        run: node tests/job-library-governance.mjs
-      - name: Run organization-linked job library and announcements audit
-        run: node tests/job-library-organization-announcements.mjs
-      - name: Run protected job review proposals and forms audit
-        run: node tests/job-review-proposals-and-forms.mjs
-      - name: Run professional job content and review-page audit
-        run: node tests/job-library-professional-review.mjs
-      - name: Run Arabic job-title matching and Power BI portal audit
-        run: node tests/job-library-matching-portal.mjs
-      - name: Run current HR roles and selective update audit
-        run: node tests/hr-current-roles.mjs
-      - name: Run login and authenticated-startup no-flash audit
-        run: node tests/login-no-flash.mjs
-      - name: Run task deletion ownership audit
-        run: node tests/task-delete-ownership.mjs
-      - name: Run task update conflict retry and creator deletion audit
-        run: node tests/task-update-conflict-retry.mjs
-      - name: Run minimal task patch and protected manager-note audit
-        run: node tests/task-minimal-patch.mjs
-      - name: Run phase-four UX safety audit
-        run: node tests/phase-four-ux-safety.mjs
-      - name: Run unified UI design-system audit
-        run: node tests/ui-design-system.mjs
-      - name: Run unified system foundation audit
-        run: node tests/unified-system-foundation.mjs
-      - name: Run user requirements 2.5.2 audit
-        run: node tests/user-requirements-2-5-2.mjs
-      - name: Run release 2.5.1 acceptance audit
-        run: node tests/release-acceptance-2-5-1.mjs
-      - name: Run Kanban workflow and self-service password audit
-        run: node tests/tasks-kanban-password.mjs
-      - name: Run weekly encrypted backup configuration audit
-        run: node tests/weekly-backup-config.mjs
-      - name: Run task governance and job acknowledgement audit
-        run: node tests/task-governance-job-acknowledgement.mjs
-      - name: Run phase-two information architecture audit
-        run: node tests/phase-two-information-architecture.mjs
-      - name: Run phase-two unified task workspace audit
-        run: node tests/phase-two-unified-tasks.mjs
-      - name: Run phase-two team boundary audit
-        run: node tests/phase-two-team-boundary.mjs
-      - name: Run phase-two workspace and notifications audit
-        run: node tests/phase-two-workspace-notifications.mjs
-      - name: Run phase-two closeout audit
-        run: node tests/phase-two-closeout.mjs
-      - name: Run phase-three shared relations foundation audit
-        run: node tests/phase-three-work-engine-foundation.mjs
+      - name: Run every JavaScript regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in tests/*.mjs; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
