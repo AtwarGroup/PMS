@@ -83,7 +83,7 @@ jobs:
           gpg --batch --yes --pinentry-mode loopback --cipher-algo AES256 \
             --passphrase "$BACKUP_ENCRYPTION_PASSWORD" \
             --symmetric --output "$RUNNER_TEMP/$name.tar.gz.gpg" "$RUNNER_TEMP/$name.tar.gz"
-          sha256sum "$RUNNER_TEMP/$name.tar.gz.gpg" > "$RUNNER_TEMP/$name.tar.gz.gpg.sha256"
+          (cd "$RUNNER_TEMP" && sha256sum "$name.tar.gz.gpg" > "$name.tar.gz.gpg.sha256")
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Upload encrypted backup to Google Drive
