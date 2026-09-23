@@ -53,12 +53,12 @@
     <textarea id="personalNote" class="note-input" aria-label="ملاحظاتي الشخصية" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره..."></textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
       <span style="font-size:9px;color:#93a0b2">ملاحظاتك خاصة بحسابك.</span>
-      <button type="button" onclick="saveNote()" class="save-note">حفظ الملاحظة</button>
+      <button type="button" onclick="saveNote()" class="atwar-btn primary save-note">حفظ الملاحظة</button>
     </div>
-    <div id="savedNotice" class="saved-notice" style="display:none">تم الحفظ</div>
+    <div id="savedNotice" class="saved-notice" role="status" aria-live="polite" style="display:none">تم الحفظ</div>
   </section>
   <section class="ws-card workspace-follow-card">
-    <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="follow-add" type="button">+ إضافة متابعة</button></div>
+    <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="atwar-btn primary follow-add" type="button">+ إضافة متابعة</button></div>
     <div id="workspaceFollowForm" class="follow-form">
       <input id="wfTitle" aria-label="عنوان المتابعة" placeholder="عنوان المتابعة"><input id="wfDate" aria-label="موعد المتابعة" type="date">
       <select id="wfTask" aria-label="المهمة المرتبطة"><option value="">بدون ارتباط بمهمة</option></select>
@@ -66,7 +66,7 @@
       <textarea id="wfNote" aria-label="تفاصيل المتابعة" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px"><button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button><button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button></div>
     </div>
-    <div id="workspaceFollowList" class="follow-list"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
+    <div id="workspaceFollowList" class="follow-list" aria-live="polite"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
 <footer class="atwar-footer"><span>ATWAR ONE • مساحة عملي الشخصية</span><span>نظام إدارة الأداء المؤسسي</span><span>ملاحظات ومتابعات خاصة • دون تكرار إدارة المهام</span></footer>
