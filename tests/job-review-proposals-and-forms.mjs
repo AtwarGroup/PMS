@@ -5,5 +5,5 @@ assert.match(sql,/using \(private\.job_library_role\(\)='admin'\)\s+with check \
 assert.match(sql,/create table if not exists public\.job_description_change_requests/i);assert.match(sql,/alter table public\.job_description_change_requests enable row level security/i);assert.match(sql,/manager_id=\(select auth\.uid\(\)\)/i);
 assert.match(sql,/create table if not exists public\.form_library/i);assert.match(sql,/create table if not exists public\.job_description_forms/i);assert.doesNotMatch(sql,/user_metadata|service_role/i);
 assert.match(library,/اقتراح تعديل/);assert.match(library,/مقارنة مقترحات المدير/);assert.match(library,/قبول وتطبيق/);assert.match(library,/مصفوفة الصلاحيات/);assert.match(library,/دون تغيير النسخة الرئيسية/);
-assert.match(profile,/مهامي الوظيفية/);assert.match(profile,/حدود صلاحيتي/);assert.match(profile,/كيف يُقاس عملي/);assert.match(profile,/published_snapshot/);assert.match(forms,/ربط بالوظيفة/);
+assert.match(profile,/مهامي الوظيفية/);assert.match(profile,/حدود صلاحيتي/);assert.match(profile,/بطاقة قياس مؤشرات الأداء/);assert.match(profile,/published_snapshot/);assert.match(forms,/ربط بالوظيفة/);
 console.log('Protected manager proposals, permission matrix, employee view and forms directory audit passed.');

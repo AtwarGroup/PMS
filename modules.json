@@ -44,13 +44,6 @@
       "label": "مكتبة الوظائف"
     },
     {
-      "id": "kpi",
-      "path": "profile/kpi.html",
-      "minRole": "employee",
-      "status": "redirect",
-      "navigation": "hidden"
-    },
-    {
       "id": "executive-tasks",
       "path": "tasks/executive.html",
       "minRole": "manager",
@@ -123,12 +116,6 @@
     {
       "id": "users",
       "path": "admin/users.html",
-      "minRole": "admin",
-      "status": "stable"
-    },
-    {
-      "id": "roles",
-      "path": "admin/roles.html",
       "minRole": "admin",
       "status": "stable"
     }
