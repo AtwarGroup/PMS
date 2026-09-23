@@ -51,9 +51,9 @@ assert.match(profileIndex,/content\.reports[\s\S]*report-grid/,'Published output
 assert.match(profileIndex,/scoreScale\(item\)/,'KPI scoring details must be expandable when the published data provides them');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
 assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
-assert.match(adminUsers,/class="row-save-state" aria-live="polite"/,'Each account row must expose its own accessible save result');
+assert.match(adminUsers,/class="row-save-state" role="status" aria-live="polite"/,'Each account row must expose its own accessible save result');
 assert.match(adminUsers,/button\.textContent='جارٍ الحفظ…'/,'The row save button must show an in-progress state');
-assert.match(adminUsers,/button\.textContent='✓ تم الحفظ'/,'The row save button must confirm successful persistence');
+assert.match(adminUsers,/savedCard\.querySelector\('.row-save-state'\)\.textContent='تم حفظ التغييرات بنجاح\.'/,'The row save button must confirm successful persistence');
 assert.doesNotMatch(adminUsers,/async function save\(r\)[\s\S]*?await load\('تم حفظ الحساب/,'Saving one account must not immediately rerender away its success feedback');
 assert.match(email,/HR_EMAIL[\s\S]*hr@tiradorstores\.com/,'HR must receive the acknowledgement');
 assert.match(email,/attachments:\[\{filename:/,'Email must contain the PDF attachment');

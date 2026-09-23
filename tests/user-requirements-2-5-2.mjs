@@ -29,7 +29,7 @@ assert.match(completed,/scope=COMPLETED/,'completed archive must use unified tas
 
 for(const mode of ['description','tasks','authority','performance'])assert.match(profile,new RegExp(`data-inline-job="${mode}"`),`inline profile mode ${mode} missing`);
 assert.match(profile,/profileJobViewer/,'inline job viewer missing');
-assert.match(users,/تم الحفظ/,'admin save feedback missing');
+assert.match(users,/تم حفظ التغييرات بنجاح/,'admin save feedback missing');
 assert.match(users,/manager_id/,'direct manager field missing');
 assert.match(users,/join_date/,'additional employee data missing');
 
