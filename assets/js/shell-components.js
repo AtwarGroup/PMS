@@ -193,7 +193,11 @@
         else if(typeof window.logoutUser==='function')window.logoutUser();
         else location.href=d+'landing.html';
       });
-      if(mode!=='tasks')setTimeout(()=>window.atwarInitGlobalNotifications?.(this,d),0);
+      if(mode!=='tasks'){
+        const initNotifications=()=>window.atwarInitGlobalNotifications?.(this,d);
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initNotifications,{once:true});
+        else initNotifications();
+      }
     }
   }
 
@@ -230,6 +234,7 @@
     const ago=ts=>{if(!ts)return'';const d=Math.max(0,Date.now()-new Date(ts).getTime()),m=Math.floor(d/60000);if(m<1)return'الآن';if(m<60)return`منذ ${m} د`;const h=Math.floor(m/60);return h<24?`منذ ${h} س`:`منذ ${Math.floor(h/24)} يوم`};
     async function refresh(){
       try{
+        if(typeof window.atwarGetSupabase!=='function')throw new Error('Supabase runtime unavailable');
         const sb=await window.atwarGetSupabase();
         const {data:{session}}=await sb.auth.getSession();
         if(!session?.user){list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
