@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ATWAR ONE – الحسابات</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@1.47.0"></script><script src="../assets/js/supabase-config.js"></script><script>
 window.atwarGetSupabase=window.atwarGetSupabase||async function(){
   if(window.ATWAR_SUPABASE)return window.ATWAR_SUPABASE;
-  const m=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+  const m=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm");
   window.ATWAR_SUPABASE=m.createClient(window.ATWAR_SUPABASE_CONFIG.url,window.ATWAR_SUPABASE_CONFIG.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   return window.ATWAR_SUPABASE;
 };
@@ -13,7 +13,7 @@ window.atwarGetSupabase=window.atwarGetSupabase||async function(){
 <div id="state" class="msg"></div><section class="card"><div class="head"><span>الاسم</span><span>المسمى</span><span>القسم</span><span>الدور</span><span>المدير المباشر</span><span>الحالة</span><span></span></div><div id="list">جاري التحميل...</div></section>
 <div id="passwordDialog" class="password-dialog" hidden><div class="password-box" role="dialog" aria-modal="true" aria-labelledby="passwordDialogTitle"><h3 id="passwordDialogTitle" style="margin:0 0 6px">تغيير كلمة المرور</h3><div id="passwordTarget" class="hint" style="margin-bottom:12px"></div><label style="display:block;font-size:11px;font-weight:900;margin:8px 0 5px">كلمة المرور الجديدة</label><input id="resetPassword1" type="password" minlength="6" autocomplete="new-password"><label style="display:block;font-size:11px;font-weight:900;margin:10px 0 5px">تأكيد كلمة المرور</label><input id="resetPassword2" type="password" minlength="6" autocomplete="new-password"><div id="passwordState" class="msg"></div><div class="password-actions"><button id="confirmPasswordReset" class="btn" type="button">حفظ كلمة المرور</button><button id="cancelPasswordReset" class="btn secondary" type="button">إلغاء</button></div></div></div><footer class="atwar-footer"><span>ATWAR ONE • Admin Users</span><span>Production 1.7H</span><span>Auth + Profiles</span></footer></main></section></div>
 <script type="module">
-import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm';
 const c=window.ATWAR_SUPABASE_CONFIG; const sb=await window.atwarGetSupabase();
 let users=[];
 let currentAdminId=null;
