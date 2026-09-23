@@ -31,6 +31,8 @@ jobs:
         run: node tests/system-rating-hardening.mjs
       - name: Run browser dependency pinning audit
         run: node tests/dependency-pinning.mjs
+      - name: Run guarded backup restore drill audit
+        run: node tests/backup-restore-drill.mjs
       - name: Run lightweight creator index regression
         run: node tests/creator-index-lightweight.mjs
       - name: Run system audit
