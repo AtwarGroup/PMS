@@ -11,7 +11,7 @@ walk(root);
 const protectedPages=html.filter(file=>readFileSync(file,'utf8').includes('shell-components.js'));
 for(const file of protectedPages){
   const source=readFileSync(file,'utf8');
-  assert.match(source,/shell-components\.js\?v=2\.5\.8/,'Stale shell cache version: '+file);
+  assert.match(source,/shell-components\.js\?v=2\.5\.9/,'Stale shell cache version: '+file);
   assert.match(source,/ui-feedback\.js\?v=2\.5\.2/,'Missing synchronous feedback: '+file);
   assert.match(source,/session-service\.js\?v=2\.5\.2/,'Missing synchronous session service: '+file);
   assert.match(source,/shared\.css\?v=2\.5\.2/,'Stale shared theme: '+file);

@@ -227,7 +227,12 @@
     const markAll=headerEl.querySelector('[data-global-mark-read]');
     if(!button||!panel||!list||!badge)return;
     headerEl.dataset.notificationsReady='1';
-    button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();panel.classList.toggle('hidden')});
+    button.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      const opening=panel.classList.contains('hidden');
+      panel.classList.toggle('hidden',!opening);
+      if(opening){list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">تحديث الإشعارات...</div>';void refresh()}
+    });
     panel.addEventListener('click',e=>e.stopPropagation());
     document.addEventListener('click',()=>panel.classList.add('hidden'));
     const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -237,7 +242,7 @@
         if(typeof window.atwarGetSupabase!=='function')throw new Error('Supabase runtime unavailable');
         const sb=await window.atwarGetSupabase();
         const {data:{session}}=await sb.auth.getSession();
-        if(!session?.user){list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
+        if(!session?.user){badge.textContent='0';badge.classList.add('hidden');list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
         const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
         if(error)throw error;
         const rows=data||[];
