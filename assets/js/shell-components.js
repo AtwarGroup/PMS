@@ -62,13 +62,14 @@
       }catch(error){console.warn('Notification sound unavailable:',error)}
     }
   };
-  document.addEventListener('pointerdown',()=>{
+  const unlockNotificationAudio=()=>{
     if(!window.atwarNotificationSound.enabled())return;
     try{
       const Context=window.AudioContext||window.webkitAudioContext;
-      if(Context){audioContext ||= new Context();if(audioContext.state==='suspended')void audioContext.resume()}
+      if(Context){audioContext ||= new Context();if(audioContext.state==='suspended')void audioContext.resume();document.removeEventListener('pointerdown',unlockNotificationAudio)}
     }catch{}
-  },{once:true});
+  };
+  document.addEventListener('pointerdown',unlockNotificationAudio);
 
   class AtwarSidebar extends HTMLElement{
     connectedCallback(){
