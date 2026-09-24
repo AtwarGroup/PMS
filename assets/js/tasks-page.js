@@ -2081,6 +2081,7 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
       [`createdTaskIndex/${task.createdByUid}/${newRef.key}`]:ownerUid
     };
     await update(ref(db),changes);
+    if(window.atwarNotificationSound?.enabled())window.atwarNotificationSound.play('new');
     await notifyTaskAssigned(task,ownerUid,newRef.key);
     if(openDetails)selectedTaskKey=`${ownerUid}::${newRef.key}`;
     setSaveStatus('saved');
@@ -2925,6 +2926,7 @@ function handleImport(e){
       }
 
       await update(ref(db),changes);
+      if(window.atwarNotificationSound?.enabled())window.atwarNotificationSound.play('new');
       showToast(`تم استيراد ${rows.length} مهمة بنجاح في عملية واحدة.`,`success`);
     }catch(error){
       console.error(error);
