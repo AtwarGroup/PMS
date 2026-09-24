@@ -35,6 +35,6 @@ assert.match(users,/join_date/,'additional employee data missing');
 
 for(const file of ['tasks/index.html','tasks/executive.html','recurring/index.html','profile/index.html','workspace/index.html','admin/users.html']){
   const source=read(file);
-  assert.doesNotMatch(source,/\?v=2\.5\.1/,`${file} still uses stale cache key`);
+  assert.doesNotMatch(source,/\?v=2\.5\.1(?!\d)/,`${file} still uses stale cache key`);
 }
 console.log('User requirements 2.5.2 audit passed.');
