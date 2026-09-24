@@ -13,6 +13,6 @@ assert.match(migration,/v_event := case when v_return then 'reclaimed'/,
   'The return event must remain in the task activity history');
 assert.match(shell,/if\(opening\)\{list\.innerHTML=[^\n]+void refresh\(\)/,
   'Opening the bell must fetch the current notifications');
-assert.match(tasks,/shell-components\.js\?v=2\.5\.9/,
+assert.match(tasks,/shell-components\.js\?v=2\.5\.10/,
   'The task page must load the refreshed bell');
 console.log('Delegation notification lifecycle audit passed.');

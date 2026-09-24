@@ -26,6 +26,49 @@
     try{return JSON.parse(localStorage.getItem('atwarSession')||'null')}catch{return null}
   }
   const rank={employee:1,manager:2,admin:3};
+  const soundSetting='atwar-notification-sound';
+  const soundTypes={assigned:'new',TASK_ASSIGNED:'new',TASK_DELEGATED:'new',approved:'approved',TASK_APPROVED:'approved',completed:'completed',TASK_COMPLETED:'completed'};
+  let audioContext=null;
+  window.atwarNotificationSound={
+    enabled:()=>localStorage.getItem(soundSetting)!=='off',
+    setEnabled(value){localStorage.setItem(soundSetting,value?'on':'off')},
+    observe(rows,userId){
+      if(!userId)return;
+      const key=`atwar-sound-seen-${userId}`;
+      const previous=sessionStorage.getItem(key);
+      const newest=rows.reduce((max,row)=>Math.max(max,new Date(row.created_at||row.createdAt||0).getTime()||0),0);
+      if(previous!==null&&this.enabled()&&document.visibilityState==='visible'){
+        const fresh=rows.filter(row=>!row.read_at&&!row.read&&new Date(row.created_at||row.createdAt||0).getTime()>Number(previous));
+        const kind=fresh.map(row=>soundTypes[row.type]).find(type=>type==='approved'||type==='completed')||fresh.map(row=>soundTypes[row.type]).find(Boolean);
+        if(kind)this.play(kind);
+      }
+      sessionStorage.setItem(key,String(Math.max(Number(previous)||0,newest,Date.now()-(previous===null?0:86400000))));
+    },
+    play(kind){
+      try{
+        const Context=window.AudioContext||window.webkitAudioContext;
+        if(!Context)return;
+        audioContext ||= new Context();
+        if(audioContext.state==='suspended'){void audioContext.resume();return}
+        const notes=kind==='approved'?[660,880]:kind==='completed'?[523,659,784]:[660,784];
+        notes.forEach((frequency,index)=>{
+          const start=audioContext.currentTime+index*.12;
+          const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
+          oscillator.type='sine';oscillator.frequency.value=frequency;
+          gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.035,start+.018);
+          gain.gain.exponentialRampToValueAtTime(.0001,start+.19);
+          oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+.2);
+        });
+      }catch(error){console.warn('Notification sound unavailable:',error)}
+    }
+  };
+  document.addEventListener('pointerdown',()=>{
+    if(!window.atwarNotificationSound.enabled())return;
+    try{
+      const Context=window.AudioContext||window.webkitAudioContext;
+      if(Context){audioContext ||= new Context();if(audioContext.state==='suspended')void audioContext.resume()}
+    }catch{}
+  },{once:true});
 
   class AtwarSidebar extends HTMLElement{
     connectedCallback(){
@@ -93,7 +136,7 @@
             <i data-lucide="bell"></i><span id="notificationBadge" class="hidden atwar-notification-badge">0</span>
           </button>
           <div id="notificationPanel" class="hidden atwar-task-notification-panel">
-            <div class="atwar-notification-head"><b>الإشعارات</b><button onclick="markAllNotificationsRead()">مسح جميع الإشعارات</button></div>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button onclick="markAllNotificationsRead()">مسح جميع الإشعارات</button></div>
             <div id="notificationList" class="atwar-notification-list"></div>
           </div>
         </div>
@@ -106,7 +149,7 @@
             <i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span>
           </button>
           <div class="atwar-task-notification-panel hidden" data-global-notification-panel>
-            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-global-mark-read>مسح جميع الإشعارات</button></div>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button type="button" data-global-mark-read>مسح جميع الإشعارات</button></div>
             <div class="atwar-notification-list" data-global-notification-list><div style="padding:24px;text-align:center;font-size:10px;color:#94a3b8">جاري تحميل الإشعارات...</div></div>
             <a href="${d}notifications/index.html" style="display:block;padding:10px 14px;text-align:center;font-size:10px;font-weight:900;color:#2563eb;text-decoration:none;border-top:1px solid #eef2f7">عرض جميع الإشعارات</a>
           </div>
@@ -180,6 +223,12 @@
       }
       window.lucide?.createIcons();
       const accountTrigger=this.querySelector('.atwar-account-trigger');
+      const soundToggle=this.querySelector('[data-sound-toggle]');
+      if(soundToggle){
+        const updateLabel=()=>{soundToggle.textContent=window.atwarNotificationSound.enabled()?'🔊 الصوت مفعّل':'🔇 الصوت مكتوم'};
+        updateLabel();
+        soundToggle.addEventListener('click',()=>{window.atwarNotificationSound.setEnabled(!window.atwarNotificationSound.enabled());updateLabel()});
+      }
       const accountMenu=this.querySelector('.atwar-account-menu');
       accountTrigger?.addEventListener('click',event=>{
         event.preventDefault();event.stopPropagation();
@@ -246,6 +295,7 @@
         const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
         if(error)throw error;
         const rows=data||[];
+        window.atwarNotificationSound.observe(rows,session.user.id);
         const unread=rows.filter(row=>!row.read_at);badge.textContent=unread.length>99?'99+':String(unread.length);badge.classList.toggle('hidden',unread.length===0);
         list.innerHTML=rows.length?rows.slice(0,8).map(n=>`<button type="button" data-global-notification-id="${esc(n.id)}" class="atwar-global-notification-item ${n.read_at?'':'is-unread'}"><span class="atwar-global-notification-icon">🔔</span><span class="atwar-global-notification-copy"><b>${esc(n.title||n.type||'إشعار')}</b><small>${esc(n.message||n.detail||'')}</small></span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
         list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
@@ -260,6 +310,8 @@
     }
     await refresh();
     headerEl._atwarRefreshNotifications=refresh;
+    const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000);
+    window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
   };
 
   window.atwarSyncShellIdentity=function(profile,authUser){
