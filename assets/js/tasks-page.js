@@ -900,6 +900,7 @@ function subscribeNotifications(){
     notifications=snapshot.exists()
       ?Object.entries(snapshot.val()).map(([key,v])=>({_key:key,...v})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0))
       :[];
+    window.atwarNotificationSound?.observe(notifications,currentUser.uid);
     renderNotifications();
   },error=>console.error('Notifications:',error));
 }
