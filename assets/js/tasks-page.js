@@ -1251,7 +1251,8 @@ function subscribeVisibleTasks(){
         // صلاحية tasks.read_all مخصصة لصفحة «الاطلاع التنفيذي» فقط.
         // مساحة المهام التشغيلية تظل مقيدة بالمستخدم وفريقه المباشر حتى لو
         // أعادت RLS صفوفًا إضافية لحامل الصلاحية التنفيذية.
-        if(!ownerUid||!scopedUidSet.has(ownerUid))continue;
+        const createdByMe=String(task.createdByUid||'')===String(currentUser?.uid||'');
+        if(!ownerUid||(!scopedUidSet.has(ownerUid)&&!createdByMe))continue;
         const ownerRows=ownerData.get(ownerUid)||[];
         ownerRows.push({...task,_ownerUid:ownerUid});
         ownerData.set(ownerUid,ownerRows);
@@ -2205,7 +2206,7 @@ function filteredTasks(){
       if(t.status!=='بانتظار الاعتماد')return false;
       if(currentProfile?.role==='manager'){
         const owner=users.find(u=>String(u.uid)===String(t._ownerUid));
-        if(String(owner?.managerUid||'')!==String(currentUser?.uid||''))return false;
+        if(String(owner?.managerUid||'')!==String(currentUser?.uid||'')&&String(t.createdByUid||'')!==String(currentUser?.uid||''))return false;
       }
       if(currentProfile?.role==='employee')return false;
     }

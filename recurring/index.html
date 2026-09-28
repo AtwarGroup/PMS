@@ -42,7 +42,7 @@
 </section>
 
 <section class="task-suite-panel">
-<div class="task-suite-panel-head"><div><h2>إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
+<div class="task-suite-panel-head"><div><h2 id="formHeading">إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
 <div class="recurring-form-layout">
   <div class="recurring-form-block"><h3>بيانات المهمة</h3><div class="form-grid">
     <div class="field wide"><label for="title">عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
@@ -58,7 +58,7 @@
   </div></div>
 </div>
 <div class="recurring-actions">
-  <div id="msg" class="meta"></div><button id="add" class="btn">إضافة المهمة الدورية</button>
+  <div id="msg" class="meta"></div><div><button id="cancelEdit" type="button" class="btn secondary" hidden>إلغاء التعديل</button> <button id="add" class="btn">إضافة المهمة الدورية</button></div>
 </div>
 </section>
 
@@ -80,7 +80,7 @@
 <script type="module">
 const sb=await window.atwarGetSupabase();
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let me=null,people=[],recurringRows=[],recurringView=localStorage.getItem('atwarRecurringView')==='LIST'?'LIST':'KANBAN';
+let me=null,people=[],recurringRows=[],editingId=null,recurringView=localStorage.getItem('atwarRecurringView')==='LIST'?'LIST':'KANBAN';
 const labelMap={daily:'يوم',weekly:'أسبوع',monthly:'شهر',yearly:'سنة'};
 const displayMap={daily:'يومي',weekly:'أسبوعي',monthly:'شهري',yearly:'سنوي'};
 function dt(v){try{return new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(v))}catch{return v||''}}
@@ -109,8 +109,8 @@ function resetForm(){
  setDefaultNext();updateIntervalHelp();
 }
 async function load(){
- const r=await sb.from('recurring_task_templates').select('id,title,assignee_id,recurrence,interval_count,next_run_at,due_offset_days,priority,active').order('next_run_at');
- const rows=r.data||[];recurringRows=rows;
+ const r=await sb.from('recurring_task_templates').select('id,title,description,assignee_id,recurrence,interval_count,next_run_at,due_offset_days,priority,active').order('next_run_at');
+ if(r.error){window.AtwarUI?.toast(r.error.message,{type:'error'});return}const rows=r.data||[];recurringRows=rows;
  const now=Date.now(),activeRows=rows.filter(x=>x.active),dueRows=activeRows.filter(x=>new Date(x.next_run_at).getTime()<=now),nextRow=activeRows.find(x=>new Date(x.next_run_at).getTime()>now);
  document.getElementById('templateCount').textContent=rows.length;document.getElementById('activeTemplateCount').textContent=activeRows.length;document.getElementById('dueTemplateCount').textContent=dueRows.length;document.getElementById('nextTemplateRun').textContent=nextRow?new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'short'}).format(new Date(nextRow.next_run_at)):'—';
  renderRecurringRows();
@@ -122,10 +122,20 @@ function renderRecurringRows(){
  document.getElementById('recurringListButton').classList.toggle('active',recurringView==='LIST');document.getElementById('recurringKanbanButton').classList.toggle('active',recurringView==='KANBAN');
  document.getElementById('recurringListButton').setAttribute('aria-pressed',String(recurringView==='LIST'));document.getElementById('recurringKanbanButton').setAttribute('aria-pressed',String(recurringView==='KANBAN'));
  if(!rows.length){host.className='recurring-cards';host.innerHTML='<div class="atwar-state"><div><div class="atwar-state-icon"><i data-lucide="repeat-2"></i></div><h3>لا توجد قوالب مطابقة</h3><p>أنشئ القالب الأول أو غيّر عبارة البحث.</p></div></div>';return}
- if(recurringView==='LIST'){host.className='recurring-table-wrap';host.innerHTML=`<table class="recurring-table"><thead><tr><th>القالب</th><th>المسؤول</th><th>التكرار</th><th>التشغيل القادم</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.active?'':'paused'}"><td>${esc(x.title)}</td><td>${esc(recurringOwner(x))}</td><td>${esc(recurrenceText(x.recurrence,x.interval_count))}</td><td>${esc(dt(x.next_run_at))}</td><td><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></td><td><div class="recurring-table-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> تفعيل</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></td></tr>`).join('')}</tbody></table>`}
- else{host.className='recurring-cards';host.innerHTML=rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(recurringOwner(x))}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join('')}
+ if(recurringView==='LIST'){host.className='recurring-table-wrap';host.innerHTML=`<table class="recurring-table"><thead><tr><th>القالب</th><th>المسؤول</th><th>التكرار</th><th>التشغيل القادم</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.active?'':'paused'}"><td>${esc(x.title)}</td><td>${esc(recurringOwner(x))}</td><td>${esc(recurrenceText(x.recurrence,x.interval_count))}</td><td>${esc(dt(x.next_run_at))}</td><td><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></td><td><div class="recurring-table-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> تفعيل</label><button class="atwar-btn edit" data-id="${x.id}">تعديل</button><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></td></tr>`).join('')}</tbody></table>`}
+ else{host.className='recurring-cards';host.innerHTML=rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(recurringOwner(x))}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(recurrenceText(x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn edit" data-id="${x.id}">تعديل</button><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join('')}
+}
+function stopEditing(){editingId=null;resetForm();document.getElementById('formHeading').textContent='إضافة مهمة دورية';document.getElementById('add').textContent='إضافة المهمة الدورية';document.getElementById('cancelEdit').hidden=true}
+function editRecurring(id){
+ const row=recurringRows.find(x=>x.id===id);if(!row)return;
+ editingId=id;
+ for(const [field,value] of Object.entries({title:row.title,desc:row.description||'',assignee:row.assignee_id,priority:row.priority,recurrence:row.recurrence,interval:row.interval_count,dueOffset:row.due_offset_days}))document.getElementById(field).value=value;
+ const date=new Date(row.next_run_at);document.getElementById('next').value=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+ updateIntervalHelp();document.getElementById('formHeading').textContent='تعديل المهمة الدورية';document.getElementById('add').textContent='حفظ التعديلات';document.getElementById('cancelEdit').hidden=false;
+ document.getElementById('formHeading').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function bindRecurringActions(){
+ document.querySelectorAll('.edit').forEach(x=>x.onclick=()=>editRecurring(x.dataset.id));
  document.querySelectorAll('.active').forEach(x=>x.onchange=async()=>{const r=await sb.from('recurring_task_templates').update({active:x.checked}).eq('id',x.dataset.id);if(r.error){window.AtwarUI?.toast(r.error.message,{type:'error'});x.checked=!x.checked}else{window.AtwarUI?.toast(x.checked?'تم تفعيل القالب':'تم إيقاف القالب',{type:'success'});await load()}});
  document.querySelectorAll('.del').forEach(x=>x.onclick=async()=>{const approved=await window.AtwarUI.confirm({title:'حذف المهمة الدورية',message:'سيتم حذف القالب ولن تُنشأ منه مهام جديدة. المهام المنشأة سابقًا لن تتأثر.',confirmText:'حذف القالب',danger:true});if(!approved)return;const r=await sb.from('recurring_task_templates').delete().eq('id',x.dataset.id);if(r.error)window.AtwarUI.toast(r.error.message,{type:'error'});else{window.AtwarUI.toast('تم حذف القالب الدوري',{type:'success'});await load()}});
 }
@@ -139,23 +149,29 @@ else{
  else{
   window.atwarSyncShellIdentity?.(p,session.user);
   const pr=await sb.from('profiles').select('id,full_name,email,manager_id,role,active,status').eq('active',true).eq('status','active').order('full_name');
-  people=(pr.data||[]).filter(x=>p.role==='admin'||x.id===p.id||x.manager_id===p.id);
+  if(pr.error)throw pr.error;
+  const all=pr.data||[],descendants=new Set([p.id]);let changed=true;
+  while(changed){changed=false;for(const x of all)if(x.manager_id&&descendants.has(x.manager_id)&&!descendants.has(x.id)){descendants.add(x.id);changed=true}}
+  people=all.filter(x=>p.role==='admin'||descendants.has(x.id));
   document.getElementById('assignee').innerHTML=people.map(x=>`<option value="${x.id}">${esc(x.full_name||x.email)}</option>`).join('');
   resetForm();await load();
  }
 }
 document.getElementById('recurrence').addEventListener('change',updateIntervalHelp);
 document.getElementById('interval').addEventListener('input',updateIntervalHelp);
+document.getElementById('cancelEdit').onclick=()=>stopEditing();
 document.getElementById('add').onclick=async()=>{
  const title=document.getElementById('title').value.trim(),assignee=document.getElementById('assignee').value,next=document.getElementById('next').value;
  const msg=document.getElementById('msg');
  if(!title||!assignee||!next){msg.className='meta error';msg.textContent='العنوان والمسند إليه وموعد أول إنشاء حقول مطلوبة.';return}
  const payload={owner_id:me.id,assignee_id:assignee,title,description:document.getElementById('desc').value.trim()||null,priority:document.getElementById('priority').value,recurrence:document.getElementById('recurrence').value,interval_count:Number(document.getElementById('interval').value||1),next_run_at:new Date(next).toISOString(),due_offset_days:Number(document.getElementById('dueOffset').value||0)};
  const b=document.getElementById('add');b.disabled=true;
- const r=await sb.from('recurring_task_templates').insert(payload);
+let r;
+ if(editingId){delete payload.owner_id;r=await sb.from('recurring_task_templates').update(payload).eq('id',editingId).select('id').maybeSingle()}
+ else r=await sb.from('recurring_task_templates').insert(payload);
  b.disabled=false;
- if(r.error){msg.className='meta error';msg.textContent='تعذر الإضافة: '+r.error.message;return}
- resetForm();msg.className='meta success';msg.textContent='تمت إضافة المهمة الدورية بنجاح وتم تفريغ الحقول.';await load();
+ if(r.error||editingId&&!r.data){msg.className='meta error';msg.textContent='تعذر الحفظ: '+(r.error?.message||'لم يُعثر على القالب أو ليست لديك صلاحية تعديله.');return}
+ const wasEditing=!!editingId;stopEditing();msg.className='meta success';msg.textContent=wasEditing?'تم حفظ تعديل المهمة الدورية. يسري التعديل على المهام القادمة.':'تمت إضافة المهمة الدورية بنجاح وتم تفريغ الحقول.';await load();
 };
 document.getElementById('run').onclick=async()=>{const button=document.getElementById('run');button.disabled=true;button.textContent='جارٍ تشغيل المستحق…';const r=await sb.rpc('run_recurring_tasks_safe');button.disabled=false;button.textContent='تشغيل المستحق الآن';if(r.error)window.AtwarUI?.toast(r.error.message,{type:'error'});else{window.AtwarUI?.toast(`تم إنشاء ${r.data||0} مهمة مستحقة.`,{type:'success'});await load()}};
 try{lucide.createIcons()}catch{}
