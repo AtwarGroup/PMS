@@ -34,7 +34,15 @@ function ackHtml(ack){
   const accepted=new Intl.DateTimeFormat('ar-SA',{dateStyle:'long',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(ack.accepted_at)),retry=ack.email_status!=='sent';
   return `<section class="job-acknowledgement accepted"><div class="ack-success"><span class="ack-success-mark">✓</span><div><h2>تم اعتماد إقرارك</h2><p>سُجلت الموافقة بتاريخ ${esc(accepted)} على الإصدار ${esc(ack.job_revision)}.</p></div></div>${retry?`<p class="ack-email-warning">تم حفظ الإقرار، لكن إرسال البريد لم يكتمل. يمكنك إعادة المحاولة دون تكرار الإقرار.</p><div class="ack-actions"><button class="ack-retry" id="ackRetry">إعادة إرسال ملف PDF</button><span class="ack-status" id="ackStatus"></span></div>`:'<p>تم إرسال ملف PDF إلى بريدك ومديرك المباشر والموارد البشرية.</p>'}</section>`;
 }
-async function send(context){const pdfBase64=await makePdf(context),{data,error}=await sb.functions.invoke('send-job-acknowledgement',{body:{acknowledgementId:context.acknowledgement.id,pdfBase64}});if(error||!data?.sent)throw new Error(data?.error||error?.message||'تعذر إرسال رسالة الإقرار.')}
+async function send(context){
+  const pdfBase64=await makePdf(context);
+  const {data,error}=await sb.functions.invoke('send-job-acknowledgement',{body:{acknowledgementId:context.acknowledgement.id,pdfBase64}});
+  if(error||!data?.sent){
+    let detail=data?.error;
+    try{if(!detail&&error?.context)detail=(await error.context.clone().json())?.error}catch{}
+    throw new Error(detail||error?.message||'تعذر إرسال رسالة الإقرار.');
+  }
+}
 function wire(context){
   document.querySelectorAll('[data-profile-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-profile-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.profile-panel').forEach(x=>x.classList.toggle('active',x.id===`tab-${b.dataset.profileTab}`))});
   const requestedTab=new URLSearchParams(location.search).get('tab');if(requestedTab)document.querySelector(`[data-profile-tab="${requestedTab}"]`)?.click();
