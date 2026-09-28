@@ -5,6 +5,8 @@ const asArray = value => Array.isArray(value) ? value : [];
 const itemText = value => typeof value === 'string' ? value : (value?.text || value?.name || '');
 const statusLabels = {DRAFT:'مسودة',IN_REVIEW:'قيد المراجعة',CHANGES_REQUESTED:'تحتاج تعديل',MANAGER_APPROVED:'موافقة المدير مكتملة',PUBLISHED:'منشورة',ARCHIVED:'مؤرشفة'};
 const sectionLabels = {PURPOSE:'الغرض الوظيفي',RESPONSIBILITIES:'المهام والمسؤوليات',AUTHORITIES:'الصلاحيات',KPIS:'مؤشرات الأداء',REPORTS:'التقارير والمخرجات',QUALIFICATIONS:'المؤهلات'};
+let stagePermissions = new Set();
+const canStage=stage=>me?.role==='admin'||stagePermissions.has(stage);
 let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], weightReferences = [], activeTab = 'overview', editing = false;
 
 function toast(message) {
@@ -28,7 +30,7 @@ async function adminApi(body) {
 }
 
 function managerReviewing() {
-  return me.role !== 'admin' && job.reviewer_id === me.id && ['IN_REVIEW','CHANGES_REQUESTED'].includes(job.status);
+  return job.reviewer_id === me.id && ['IN_REVIEW','CHANGES_REQUESTED'].includes(job.status);
 }
 
 function quality() {
@@ -47,7 +49,7 @@ function quality() {
 function reviewerResolution() {
   if(job.status === 'MANAGER_APPROVED')return {state:'approved',text:'تمت مراجعة المدير وإرسال الوصف إلى مدير النظام. الحالة الآن: بانتظار المراجعة النهائية والاعتماد.'};
   if(job.status === 'PUBLISHED')return {state:'approved',text:'تم اعتماد الوصف ونشره، وهو ظاهر الآن للموظفين المرتبطين بهذه الوظيفة.'};
-  if (me.role !== 'admin') {
+  if (!canStage('DRAFT') && !canStage('ASSIGN') && !canStage('FINAL_REVIEW') && !canStage('PUBLISH')) {
     if(job.reviewer_id === me.id && !me.manager_id)return {state:'',text:'أنت المراجع الأعلى لهذه الوظيفة. بعد استكمال المراجعة استخدم «إرسال لمدير النظام للاعتماد» لتنتقل مباشرة إلى مسؤول النظام.'};
     return job.reviewer_id === me.id
       ? {state:'', text:'أنت المدير المباشر المكلّف بمراجعة هذه الوظيفة، ويمكنك اقتراح تعديل أو حذف أو إضافة دون تغيير النسخة الرئيسية.'}
@@ -83,7 +85,7 @@ function overviewView() {
   const content = job.content || {};
   const linked = assignments.filter(item => item.job_description_id === job.id);
   const linkedIds = new Set(linked.map(item => item.profile_id));
-  const assignmentCard = me.role === 'admin' ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.status === 'PUBLISHED' ? 'الوصف ظاهر الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
+  const assignmentCard = canStage('ASSIGN') ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.status === 'PUBLISHED' ? 'الوصف ظاهر الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
   return `<div class="content-stack">${assignmentCard}<section class="content-card"><h2>الغرض الوظيفي</h2><div class="purpose-text">${esc(job.purpose || 'غير محدد')}</div>${proposalActions('PURPOSE',-1)}</section><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
 }
 
@@ -113,7 +115,7 @@ function valueText(value) {
 }
 
 function reviewView() {
-  const comparisons = proposals.map(item => `<article class="comparison-card ${item.status}"><div class="comparison-head"><span class="tag">${{ADD:'إضافة',MODIFY:'تعديل',DELETE:'حذف',COMMENT:'ملاحظة'}[item.action]}</span><b>${sectionLabels[item.section] || item.section}${item.item_index !== null ? ` • البند ${item.item_index + 1}` : ''}</b><span class="tag">${{PENDING:'بانتظار القرار',ACCEPTED:'مقبول',REJECTED:'مرفوض',REVISED:'عُدل وقُبل'}[item.status]}</span></div><div class="compare-columns"><div><small>النص الحالي</small><p>${esc(valueText(item.original_value) || '—')}</p></div><div><small>اقتراح المدير</small><p>${esc(valueText(item.proposed_value) || '—')}</p></div></div><p><b>السبب:</b> ${esc(item.reason)}</p>${me.role === 'admin' && item.status === 'PENDING' ? `<div class="item-actions"><button data-decision="ACCEPTED" data-proposal="${item.id}">قبول وتطبيق</button><button data-decision="REVISED" data-proposal="${item.id}">تعديل ثم قبول</button><button data-decision="REJECTED" data-proposal="${item.id}">رفض</button></div>` : ''}</article>`).join('');
+  const comparisons = proposals.map(item => `<article class="comparison-card ${item.status}"><div class="comparison-head"><span class="tag">${{ADD:'إضافة',MODIFY:'تعديل',DELETE:'حذف',COMMENT:'ملاحظة'}[item.action]}</span><b>${sectionLabels[item.section] || item.section}${item.item_index !== null ? ` • البند ${item.item_index + 1}` : ''}</b><span class="tag">${{PENDING:'بانتظار القرار',ACCEPTED:'مقبول',REJECTED:'مرفوض',REVISED:'عُدل وقُبل'}[item.status]}</span></div><div class="compare-columns"><div><small>النص الحالي</small><p>${esc(valueText(item.original_value) || '—')}</p></div><div><small>اقتراح المدير</small><p>${esc(valueText(item.proposed_value) || '—')}</p></div></div><p><b>السبب:</b> ${esc(item.reason)}</p>${canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at && item.status === 'PENDING' ? `<div class="item-actions"><button data-decision="ACCEPTED" data-proposal="${item.id}">قبول وتطبيق</button><button data-decision="REVISED" data-proposal="${item.id}">تعديل ثم قبول</button><button data-decision="REJECTED" data-proposal="${item.id}">رفض</button></div>` : ''}</article>`).join('');
   const commentRows = comments.map(item => `<div class="comment">${esc(item.body)}<small>${new Date(item.created_at).toLocaleString('ar-SA')}</small></div>`).join('');
   return `<div class="content-stack"><section class="content-card"><h2>مقترحات المدير</h2><p class="purpose-text">اقتراحات المدير لا تغيّر النسخة الرئيسية أو المنشورة؛ يراجع مسؤول النظام كل نقطة ويقرر قبولها أو تعديلها أو رفضها.</p><div class="comparison-list">${comparisons || '<div class="empty-state">لا توجد مقترحات.</div>'}</div></section><section class="content-card"><h2>ملاحظات المراجعة</h2><div class="comment-list">${commentRows || '<div class="empty-state">لا توجد ملاحظات.</div>'}</div><div class="compose"><input id="commentBody" placeholder="أضف ملاحظة واضحة"><button id="commentBtn" class="review-btn">إضافة</button></div></section></div>`;
 }
@@ -127,13 +129,14 @@ function editView() {
 
 function headerActions() {
   const buttons = [];
-  if (me.role === 'admin') buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
+  if (canStage('DRAFT') || (canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED')) buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
   if (editing) buttons.push('<button id="saveBtn" class="review-btn primary">حفظ المسودة</button>');
-  if (!editing && me.role === 'admin' && job.status === 'DRAFT' && job.manager_approved_at) buttons.push('<button id="restoreApprovalBtn" class="review-btn primary">استعادة الموافقة وإرسالها للنشر</button>');
-  else if (!editing && me.role === 'admin' && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
+  if (!editing && canStage('DRAFT') && job.status === 'DRAFT' && job.manager_approved_at) buttons.push('<button id="restoreApprovalBtn" class="review-btn primary">استعادة الموافقة وإرسالها للنشر</button>');
+  else if (!editing && canStage('DRAFT') && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
   if (!editing && managerReviewing()) buttons.push(`<button id="managerDoneBtn" class="review-btn primary">${!me.manager_id?'إرسال لمدير النظام للاعتماد':'إنهاء المراجعة وإرسالها لمدير النظام'}</button>`);
-  if (!editing && me.role === 'admin' && job.status === 'IN_REVIEW') buttons.push('<button id="adminDoneBtn" class="review-btn primary">إنهاء مراجعة المقترحات</button>');
-  if (!editing && me.role === 'admin' && job.status === 'MANAGER_APPROVED') buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
+  if (!editing && canStage('FINAL_REVIEW') && job.reviewer_id === me.id && job.status === 'IN_REVIEW') buttons.push('<button id="adminDoneBtn" class="review-btn primary">إنهاء مراجعة المقترحات</button>');
+  if (!editing && canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at) buttons.push('<button id="finalReviewBtn" class="review-btn primary">إنهاء المراجعة النهائية</button>');
+  if (!editing && canStage('PUBLISH') && job.status === 'MANAGER_APPROVED' && job.final_reviewed_at) buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
   return buttons.join('');
 }
 
@@ -271,6 +274,8 @@ async function managerDone() {
   toast('تم الإرسال إلى مدير النظام للمراجعة والاعتماد');
 }
 
+async function finishFinalReview(){const result=await sb.rpc('finish_job_final_review',{p_job_id:job.id});if(result.error)return toast(result.error.message);job=result.data;render();toast('اكتملت المراجعة النهائية وانتقلت مهمة النشر للمسؤول عنها')}
+
 async function assignEmployee() {
   const profileId = byId('assignmentEmployee')?.value;
   if (!profileId) return toast('اختر الموظف أولًا');
@@ -307,6 +312,7 @@ function bindActions() {
   byId('restoreApprovalBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
   byId('managerDoneBtn')?.addEventListener('click',managerDone);
   byId('adminDoneBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
+  byId('finalReviewBtn')?.addEventListener('click',finishFinalReview);
   byId('publishBtn')?.addEventListener('click',() => transition('PUBLISHED'));
   byId('commentBtn')?.addEventListener('click',addComment);
   byId('assignEmployeeBtn')?.addEventListener('click',assignEmployee);
@@ -317,7 +323,7 @@ async function loadRelated() {
     sb.from('job_description_change_requests').select('*').eq('job_description_id',job.id).order('created_at'),
     sb.from('job_description_forms').select('usage_note,display_order,form_library(*)').eq('job_description_id',job.id).order('display_order'),
     sb.from('job_description_comments').select('*').eq('job_description_id',job.id).order('created_at'),
-    me.role === 'admin' ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
+    canStage('ASSIGN') ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
     sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position')
   ]);
   proposals = responses[0].data || [];
@@ -335,22 +341,20 @@ async function boot() {
   me = profile.data;
   if (!me) return location.href = '../profile/job-description.html';
   window.atwarSyncShellIdentity?.(me,session.user);
-  if (me.role === 'admin') {
-    const result = await adminApi({action:'list'});
-    users = (result.users || []).filter(user => user.active !== false && user.status !== 'inactive');
-  } else users = [me];
+  const stages=await sb.from('job_stage_owners').select('stage,profile_id');if(stages.error)throw stages.error;stagePermissions=new Set((stages.data||[]).filter(x=>x.profile_id===me.id).map(x=>x.stage));
+  if(canStage('DRAFT')||canStage('ASSIGN')||canStage('FINAL_REVIEW')){const directory=await sb.rpc('job_stage_directory');if(directory.error)throw directory.error;users=directory.data||[]}else users=[me];
   const id = new URLSearchParams(location.search).get('id');
   if (!id) throw new Error('لم يتم تحديد الوظيفة المطلوبة');
   const response = await sb.from('job_descriptions').select('*').eq('id',id).maybeSingle();
   if (response.error || !response.data) throw new Error(response.error?.message || 'الوصف غير موجود أو غير متاح');
   job = response.data;
-  if (me.role !== 'admin' && job.reviewer_id !== me.id) return location.href = '../profile/job-description.html';
+  if (!canStage('DRAFT')&&!canStage('ASSIGN')&&!canStage('FINAL_REVIEW')&&!canStage('PUBLISH')&&job.reviewer_id !== me.id) return location.href = '../profile/job-description.html';
   await loadRelated();
   byId('reviewState').hidden = true;
   byId('reviewApp').hidden = false;
   document.body.style.visibility = 'visible';
   render();
-  if(me.role==='admin')void dispatchPublicationEmails();
+  if(canStage('PUBLISH'))void dispatchPublicationEmails();
 }
 
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {activeTab = button.dataset.tab; editing = false; render();});

@@ -18,12 +18,14 @@ window.atwarGetSupabase=window.atwarGetSupabase||async function(){
 <tr><td>إدارة الحسابات والأدوار</td><td>غير متاح</td><td>غير متاح</td><td>متاح</td></tr>
 <tr><td>إعادة فتح المهام المكتملة</td><td>غير متاح</td><td>غير متاح</td><td>متاح</td></tr>
 </tbody></table></div><p class="hint">هذه المصفوفة مرجع توضيحي، وتُطبق صلاحيات التنفيذ عبر سياسات قاعدة البيانات والخدمة.</p></section>
+<section class="card" id="jobStagePermissions" aria-labelledby="jobStageTitle"><div class="atwar-panel-head"><div><h2 id="jobStageTitle">مسؤوليات مراحل الوصف الوظيفي</h2><p>شخص مسؤول لكل مرحلة. تظل إدارة الحسابات منفصلة عن صلاحيات الأوصاف.</p></div></div><div id="jobStageOwners" class="create-grid" aria-live="polite"></div><p class="hint">عند تغيير مسؤول المراجعة النهائية أو النشر تنتقل إليه المهام المفتوحة في المرحلة نفسها.</p></section>
 <div id="passwordDialog" class="password-dialog" hidden><div class="password-box" role="dialog" aria-modal="true" aria-labelledby="passwordDialogTitle"><h3 id="passwordDialogTitle" style="margin:0 0 6px">تغيير كلمة المرور</h3><div id="passwordTarget" class="hint" style="margin-bottom:12px"></div><label style="display:block;font-size:11px;font-weight:900;margin:8px 0 5px">كلمة المرور الجديدة</label><input id="resetPassword1" type="password" minlength="6" autocomplete="new-password"><label style="display:block;font-size:11px;font-weight:900;margin:10px 0 5px">تأكيد كلمة المرور</label><input id="resetPassword2" type="password" minlength="6" autocomplete="new-password"><div id="passwordState" class="msg"></div><div class="password-actions"><button id="confirmPasswordReset" class="btn" type="button">حفظ كلمة المرور</button><button id="cancelPasswordReset" class="btn secondary" type="button">إلغاء</button></div></div></div><footer class="atwar-footer"><span>ATWAR ONE • Admin Users</span><span>نظام إدارة الأداء المؤسسي</span><span>Auth + Profiles</span></footer></main></section></div>
 <script type="module">
 import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm';
 const c=window.ATWAR_SUPABASE_CONFIG; const sb=await window.atwarGetSupabase();
 let users=[];
 let currentAdminId=null;
+const jobStages=[['DRAFT','إعداد المقترح الأولي'],['ASSIGN','ربط الأوصاف بالموظفين'],['FINAL_REVIEW','المراجعة النهائية'],['PUBLISH','الاعتماد والنشر']];
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const state=(m,e=false,id='state')=>{const x=document.getElementById(id);x.textContent=m;x.className='msg'+(e?' err':'')};
 const errorText=e=>{if(typeof e==='string')return e;if(typeof e?.message==='string'&&e.message&&e.message!=='[object Object]')return e.message;if(typeof e?.error==='string')return e.error;if(e?.error)return errorText(e.error);if(typeof e?.details==='string')return e.details;return 'تعذر إكمال الطلب. يرجى تحديث الصفحة والمحاولة مجددًا.'};
@@ -67,6 +69,7 @@ async function load(successMessage=''){
   }catch(e){console.error(e);state('تعذر تحميل المستخدمين: '+errorText(e),true);document.getElementById('list').innerHTML='';return}
   for(const [id,count] of [['totalUsers',users.length],['employeeUsers',users.filter(u=>u.role==='employee').length],['managerUsers',users.filter(u=>u.role==='manager').length],['adminUsers',users.filter(u=>u.role==='admin').length]])document.getElementById(id).textContent=count.toLocaleString('ar-SA');
   document.getElementById('nManager').innerHTML=managerOptions();
+  await renderJobStageOwners();
   const managerName=new Map(users.map(u=>[u.id,u.full_name]));
   document.getElementById('list').innerHTML=users.map(u=>`<article class="account-card" data-id="${u.id}" data-role="${esc(u.role)}" data-search="${esc([u.full_name,u.email,u.job_title,u.department].filter(Boolean).join(' '))}"><div class="account-card-head"><div class="account-identity"><span class="account-avatar" aria-hidden="true">${esc((u.full_name||u.email||'م').trim().slice(0,2))}</span><div><h3>${esc(u.full_name||u.email||'بلا اسم')}</h3><p>${esc(u.email||'بلا بريد')}</p></div></div><div class="account-tags"><span class="role-tag role-${esc(u.role)}">${esc(roleName(u.role))}</span><span class="status-tag ${u.status==='active'?'is-active':'is-inactive'}">${u.status==='active'?'نشط':'غير نشط'}</span></div></div><div class="account-facts"><div><small>المسمى الوظيفي</small><b>${esc(u.job_title||'غير محدد')}</b></div><div><small>الإدارة</small><b>${esc(u.department||'غير محددة')}</b></div><div><small>المدير المباشر</small><b>${esc(managerName.get(u.manager_id)||'بدون مدير')}</b></div></div><div class="account-card-actions"><button class="btn secondary edit-toggle" type="button" aria-expanded="false">تعديل بيانات الحساب</button><button class="btn secondary reset-password" type="button">تغيير كلمة المرور</button></div><div class="account-editor" hidden><div class="edit-grid"><label>الاسم<input class="name" value="${esc(u.full_name||'')}"></label><label>المسمى<input class="title" value="${esc(u.job_title||'')}"></label><label>القسم<input class="dept" value="${esc(u.department||'')}"></label><label>الدور<select class="role"><option value="employee" ${u.role==='employee'?'selected':''}>موظف</option><option value="manager" ${u.role==='manager'?'selected':''}>مدير</option><option value="admin" ${u.role==='admin'?'selected':''}>مدير نظام</option></select></label><label>المدير المباشر<select class="manager">${managerOptions(u.manager_id||'',u.id)}</select></label><label>الحالة<select class="status"><option value="active" ${u.status==='active'?'selected':''}>نشط</option><option value="inactive" ${u.status==='inactive'?'selected':''}>غير نشط</option></select></label><label class="executive-label"><input class="executive-access" type="checkbox" ${(u.permissions||[]).includes('tasks.read_all')?'checked':''}> صلاحية الاطلاع التنفيذي</label></div><details class="profile-extra"><summary>بيانات الملف التعريفي الإضافية</summary><div class="profile-extra-grid"><label>الرقم الوظيفي<input class="employee-code" value="${esc(u.employee_code||'')}"></label><label>تاريخ الانضمام<input class="join-date" type="date" value="${esc(u.join_date||'')}"></label><label>الموقع / الفرع<input class="work-location" value="${esc(u.work_location||'')}"></label><label>نوع الموظف<input class="employment-type" value="${esc(u.employment_type||'')}"></label></div></details><div class="editor-actions"><button class="btn save" type="button">حفظ التغييرات</button><button class="btn secondary close-editor" type="button">إلغاء</button>${u.id===currentAdminId?'':`<button class="btn danger delete" type="button">حذف الحساب</button>`}<span class="row-save-state" role="status" aria-live="polite"></span></div></div></article>`).join('')||'<div class="account-empty">لا يوجد مستخدمون.</div>';
   document.querySelectorAll('.edit-toggle').forEach(button=>button.onclick=()=>{const editor=button.closest('.account-card').querySelector('.account-editor'),open=editor.hidden;editor.hidden=!open;button.setAttribute('aria-expanded',String(open));button.textContent=open?'إغلاق التعديل':'تعديل بيانات الحساب'});
@@ -76,6 +79,22 @@ async function load(successMessage=''){
   document.querySelectorAll('.reset-password').forEach(b=>b.onclick=()=>openPasswordDialog(b.closest('.account-card')));
   filterAccounts();
   state(successMessage||`تم تحميل ${users.length} مستخدمًا.`);
+}
+async function renderJobStageOwners(){
+ const host=document.getElementById('jobStageOwners');
+ const result=await sb.from('job_stage_owners').select('stage,profile_id');
+ if(result.error){host.textContent='تعذر تحميل مسؤوليات الأوصاف: '+errorText(result.error);return}
+ const owners=new Map((result.data||[]).map(x=>[x.stage,x.profile_id]));
+ const active=users.filter(x=>x.active&&x.status==='active');
+ host.innerHTML=jobStages.map(([stage,label])=>`<div><label for="stage-${stage}">${label}</label><select id="stage-${stage}" data-job-stage="${stage}">${active.map(u=>`<option value="${u.id}" ${owners.get(stage)===u.id?'selected':''}>${esc(u.full_name||u.email)} — ${esc(roleName(u.role))}</option>`).join('')}</select><small class="hint" data-stage-state="${stage}"></small></div>`).join('');
+ host.querySelectorAll('[data-job-stage]').forEach(select=>select.onchange=async()=>{
+   const prior=owners.get(select.dataset.jobStage),feedback=host.querySelector(`[data-stage-state="${select.dataset.jobStage}"]`);
+   select.disabled=true;feedback.textContent='جارٍ الحفظ…';
+   const result=await sb.rpc('set_job_stage_owner',{p_stage:select.dataset.jobStage,p_profile_id:select.value});
+   if(result.error){select.value=prior;feedback.textContent=errorText(result.error);window.AtwarUI?.toast(feedback.textContent,'error')}
+   else{owners.set(select.dataset.jobStage,select.value);feedback.textContent='تم الحفظ ونقل المهام المفتوحة';window.AtwarUI?.toast('تم تحديث مسؤول المرحلة','success')}
+   select.disabled=false;
+ });
 }
 async function save(r){
   const button=r.querySelector('.save'),feedback=r.querySelector('.row-save-state'),existing=users.find(x=>x.id===r.dataset.id);
