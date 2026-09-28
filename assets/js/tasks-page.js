@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.7";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.8";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -407,7 +407,7 @@ function canReassignTaskTo(task,uid){
   return isDescendantOf(target,currentUser.uid);
 }
 function canDeleteTask(task){
-  if(!task||!currentProfile||!currentUser)return false;
+  if(!task||!currentProfile||!currentUser||task.jobWorkflow)return false;
   if(isExecutiveReadOnlyTask(task))return false;
   if(currentProfile.role==='admin')return true;
   return task.status!=='مكتملة' &&
@@ -415,7 +415,7 @@ function canDeleteTask(task){
 }
 
 function canApproveTask(task){
-  if(!task||!currentProfile||!currentUser)return false;
+  if(!task||!currentProfile||!currentUser||task.jobWorkflow)return false;
   if(isExecutiveReadOnlyTask(task))return false;
 
   const taskOwnerUid=String(task._ownerUid||task.assignUid||'');
@@ -459,7 +459,7 @@ function isExecutiveReadOnlyTask(task){
     && String(owner?.managerUid||'')!==String(currentUser?.uid||'');
 }
 function canEditTaskField(task,field){
-  if(!task||!currentProfile)return false;
+  if(!task||!currentProfile||task.jobWorkflow)return false;
   if(isExecutiveReadOnlyTask(task))return false;
 
   const status=String(task.status||'قيد الانتظار');
@@ -2259,6 +2259,7 @@ function selectTaskFromBoard(task){
 async function handleKanbanDrop(taskKey,targetStatus){
   const task=tasks.find(t=>compositeKey(t)===taskKey);
   if(!task||task.status===targetStatus)return;
+  if(task.jobWorkflow){showToast('نفّذ الإجراء من الوصف الوظيفي ليتحدث وضع المهمة تلقائيًا.','warning');return;}
   selectedTaskKey=taskKey;
   if(task.status==='قيد الانتظار'&&targetStatus==='قيد التنفيذ')return startSelectedTask();
   if(task.status==='قيد التنفيذ'&&targetStatus==='بانتظار الاعتماد')return completeSelectedTask();
@@ -2280,7 +2281,7 @@ function renderKanban(rows){
     const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
       const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
-      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
     return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
   }).join('');
@@ -2341,7 +2342,7 @@ function renderTasks(){
 
     card.innerHTML=`
       <div class="flex items-center gap-3 min-h-[44px]">
-        <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="تغيير حالة الإنجاز">${t.status==='مكتملة'?'✓':''}</button>
+        <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="${t.jobWorkflow?'تُغلق من الوصف الوظيفي':'تغيير حالة الإنجاز'}" ${t.jobWorkflow?'disabled':''}>${t.status==='مكتملة'?'✓':''}</button>
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 min-w-0">
@@ -2364,7 +2365,7 @@ function renderTasks(){
       </div>
       ${operationalStrip}`;
     const btn=card.querySelector('button');
-    btn.onclick=async(e)=>{e.stopPropagation();await toggleCompleteByKey(key)};
+    btn.onclick=async(e)=>{e.stopPropagation();if(t.jobWorkflow)return;await toggleCompleteByKey(key)};
     box.appendChild(card);
   });
   renderKanban(rows);
@@ -2422,7 +2423,7 @@ function subtaskProgress(task){
   return Math.round((items.filter(x=>x&&x.done).length/items.length)*100);
 }
 function canEditSubtasks(task){
-  if(!task||!currentProfile)return false;
+  if(!task||!currentProfile||task.jobWorkflow)return false;
   if(task.status==='مكتملة'||task.status==='بانتظار الاعتماد')return false;
   if(currentProfile.role==='employee')return isTaskOwner(task);
   return true;
@@ -2690,6 +2691,8 @@ function renderDetails(){
       : '<span>✓</span><span>تم — إغلاق التفاصيل</span>';
   }
 
+  const jobLink=document.getElementById('jobWorkflowLink');
+  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
   const lockHint=document.getElementById('taskLockHint');
   if(lockHint){
     if(task.status==='بانتظار الاعتماد'){
@@ -2706,7 +2709,7 @@ function renderDetails(){
   document.getElementById('detailTitle').value=task.title||'';
   document.getElementById('detailStatus').value=task.status||'قيد الانتظار';
   const statusSelect=document.getElementById('detailStatus');
-  statusSelect.disabled=currentProfile?.role==='employee' || task.status==='بانتظار الاعتماد' || task.status==='مكتملة';
+  statusSelect.disabled=!!task.jobWorkflow || currentProfile?.role==='employee' || task.status==='بانتظار الاعتماد' || task.status==='مكتملة';
   document.getElementById('detailPriority').value=task.priority||'normal';
   document.getElementById('detailStart').value=task.start||'';
   document.getElementById('detailEnd').value=task.end||'';
@@ -2727,9 +2730,9 @@ function renderDetails(){
   const workflowHint=document.getElementById('taskWorkflowHint');
   const isOwner=String(task._ownerUid||'')===String(currentUser?.uid||'');
 
-  workflowBox.classList.toggle('hidden',!isOwner);
-  startBtn.classList.toggle('hidden',!isOwner || task.status!=='قيد الانتظار');
-  completeBtn.classList.toggle('hidden',!isOwner || task.status!=='قيد التنفيذ');
+  workflowBox.classList.toggle('hidden',!isOwner||!!task.jobWorkflow);
+  startBtn.classList.toggle('hidden',!isOwner || !!task.jobWorkflow || task.status!=='قيد الانتظار');
+  completeBtn.classList.toggle('hidden',!isOwner || !!task.jobWorkflow || task.status!=='قيد التنفيذ');
 
   if(isOwner){
     const ownerHasManager=String((getUserByUid(currentUser.uid)||currentProfile)?.managerUid||'')!=='';
