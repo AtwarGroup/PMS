@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {calcDuration,calcDelay} from '../assets/js/tasks-core.mjs';
+const sql=readFileSync(new URL('../supabase/migrations/20260928160157_job_workflow_three_day_deadline.sql',import.meta.url),'utf8');
+assert.match(sql,/new\.due_date:=new\.start_date\+2/);
+assert.match(sql,/due_date=t\.start_date\+2/);
+assert.match(sql,/old\.status='مكتملة' and new\.status='قيد الانتظار'/);
+assert.match(sql,/pg_trigger_depth\(\)>1/);
+assert.equal(calcDuration('2026-09-28','2026-09-30'),3);
+assert.equal(calcDelay('2026-09-30',null,'قيد الانتظار',null,[],new Date(2026,8,30)),0);
+assert.equal(calcDelay('2026-09-30',null,'قيد الانتظار',null,[],new Date(2026,9,1)),1);
