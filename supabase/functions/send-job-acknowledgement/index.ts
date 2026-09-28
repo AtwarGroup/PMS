@@ -89,8 +89,12 @@ Deno.serve(async request=>{
   }
 
   const rowResponse=await dbRequest(`job_description_acknowledgements?select=*&id=eq.${encodeURIComponent(acknowledgementId)}&profile_id=eq.${encodeURIComponent(String(user.id??''))}&limit=1`);
+  if(!rowResponse.ok){
+    console.error('Acknowledgement lookup failed:',rowResponse.status,await rowResponse.text());
+    return new Response(JSON.stringify({error:'تعذر الوصول إلى سجل الإقرار. أعد المحاولة أو تواصل مع مدير النظام.'}),{status:502,headers:{...jsonHeaders,...corsHeaders}});
+  }
   const rows=await rowResponse.json() as Array<Record<string,unknown>>;
-  if(!rowResponse.ok||!rows.length)return new Response('Acknowledgement not found',{status:404,headers:corsHeaders});
+  if(!rows.length)return new Response(JSON.stringify({error:'لم يُعثر على إقرار لهذا الحساب.'}),{status:404,headers:{...jsonHeaders,...corsHeaders}});
   const row=rows[0];
   if(row.email_status==='sent')return new Response(JSON.stringify({sent:true,alreadySent:true}),{headers:{...jsonHeaders,...corsHeaders}});
 
