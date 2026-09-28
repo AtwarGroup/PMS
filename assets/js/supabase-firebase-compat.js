@@ -83,6 +83,7 @@ function taskLegacy(t,children,profileNames=new Map()){
     reopenedAt:ms(t.reopened_at)||null,reopenedBy:t.reopened_by_name_snapshot||'',completedAt:ms(t.completed_at)||null,
     cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
     activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
+    jobWorkflow:t.legacy_metadata?.job_workflow||null,
     _relationalId:t.id
   };
 }

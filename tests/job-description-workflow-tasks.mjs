@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const sql=readFileSync(new URL('../supabase/migrations/20260928154208_job_description_workflow_tasks.sql',import.meta.url),'utf8');
+const tasks=readFileSync(new URL('../assets/js/tasks-page.js',import.meta.url),'utf8');
+const compat=readFileSync(new URL('../assets/js/supabase-firebase-compat.js',import.meta.url),'utf8');
+assert.match(sql,/unique \(job_description_id,phase,cycle_key,recipient_id\)/,'One task per workflow phase, cycle and employee');
+assert.match(sql,/job_revision=p_cycle::integer/,'Previously acknowledged published revisions must not create another task');
+assert.match(sql,/if tg_op='UPDATE' and old.job_description_id=new.job_description_id then return new;/,'Unchanged employee links must not resend work');
+assert.match(sql,/create trigger job_workflow_ack after insert/,'Acknowledgement must close its task');
+assert.match(sql,/create trigger guard_job_workflow_task_before_change/,'Workflow tasks cannot be closed manually');
+assert.match(compat,/jobWorkflow:t\.legacy_metadata\?\.job_workflow\|\|null/);
+assert.match(tasks,/jobLink\.href=workflow\.phase==='EMPLOYEE_ACK'/,'The task must open its authoritative job page');
