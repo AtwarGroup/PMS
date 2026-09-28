@@ -663,7 +663,13 @@ async function loadManagerUserTree(managerUid,rootProfile){
   return [...found.values()];
 }
 
+// تجديد رمز الجلسة يرسل حدث Auth جديدًا للمستخدم نفسه. إعادة التهيئة هنا
+// كانت تمسح الفلتر وقائمة المكلفين أثناء بقاء الصفحة مفتوحة.
+let initializedAuthUid=null;
 onAuthStateChanged(auth,async(user)=>{
+  const incomingUid=user?.uid||null;
+  if(incomingUid&&incomingUid===initializedAuthUid)return;
+  initializedAuthUid=incomingUid;
   clearTaskListeners();
   clearTimeout(completedStatsRefreshTimer);
   completedStatsRefreshQueued=false;
@@ -752,6 +758,7 @@ onAuthStateChanged(auth,async(user)=>{
     setTimeout(()=>checkOverdueNotifications(),1200);
 
   }catch(error){
+    if(initializedAuthUid===incomingUid)initializedAuthUid=null;
     console.error('Supabase database connection error:',error);
 
     const msg=error?.message==='database-timeout'
