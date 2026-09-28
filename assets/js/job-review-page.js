@@ -256,6 +256,7 @@ async function transition(status) {
   const response = await sb.from('job_descriptions').update(payload).eq('id',job.id).select().maybeSingle();
   if (response.error || !response.data) return toast(response.error?.message || 'تعذر تغيير حالة الوصف');
   job = response.data;
+  if(status==='PUBLISHED')void dispatchPublicationEmails();
   render();
   toast(status === 'PUBLISHED' ? 'اعتُمد الوصف ونُشرت نسخة الموظف' : 'تم تحديث مسار المراجعة');
 }
@@ -276,8 +277,16 @@ async function assignEmployee() {
   const response = await sb.from('employee_job_assignments').upsert({profile_id:profileId,job_description_id:job.id,assigned_by:me.id,updated_by:me.id},{onConflict:'profile_id'});
   if (response.error) return toast(response.error.message);
   await loadRelated();
+  if(job.status==='PUBLISHED')void dispatchPublicationEmails();
   render();
   toast(job.status === 'PUBLISHED' ? 'تم الربط وإشعار الموظف' : 'تم الربط؛ سيظهر الوصف للموظف بعد النشر');
+}
+
+async function dispatchPublicationEmails(){
+  try{
+    const {data,error}=await sb.functions.invoke('send-job-publication-notifications',{body:{}});
+    if(error||data?.failed)console.warn('Publication emails pending retry:',data?.error||error?.message||data);
+  }catch(error){console.warn('Publication emails pending retry:',error)}
 }
 
 async function addComment() {
@@ -341,6 +350,7 @@ async function boot() {
   byId('reviewApp').hidden = false;
   document.body.style.visibility = 'visible';
   render();
+  if(me.role==='admin')void dispatchPublicationEmails();
 }
 
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {activeTab = button.dataset.tab; editing = false; render();});
