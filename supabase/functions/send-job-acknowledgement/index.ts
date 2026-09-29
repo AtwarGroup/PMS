@@ -57,7 +57,7 @@ function emailHtml(row:Record<string,unknown>){
         </div>
         <p style="line-height:2;color:#52627a">${escapeHtml(row.acknowledgement_text)}</p>
         <p style="line-height:2;color:#52627a">مرفق نسخة PDF من الوصف الوظيفي والإقرار المعتمد.</p>
-        <a href="${escapeHtml(`${APP_BASE_URL}/profile/job-description.html`)}" style="display:inline-block;margin-top:8px;background:#2474e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:9px;font-weight:700">عرض الوصف في ATWAR ONE</a>
+        <a href="${escapeHtml(`${APP_BASE_URL}/profile/job-description.html`)}" style="display:inline-block;margin-top:8px;background:#2474e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:9px;font-weight:700" dir="rtl"><span dir="rtl">عرض الوصف في</span>&nbsp;<span dir="ltr" style="direction:ltr;unicode-bidi:embed">ATWAR ONE</span></a>
         <p style="font-size:12px;color:#8a96a8;margin:22px 0 0">هذه رسالة آلية مرسلة إلى الموظف ومديره المباشر والموارد البشرية.</p>
       </div>
     </div>
