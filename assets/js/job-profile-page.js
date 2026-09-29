@@ -16,9 +16,9 @@ async function makePdf({profile,manager,job,acknowledgement}){
   if(!window.jspdf?.jsPDF)throw new Error('تعذر تحميل أداة إنشاء ملف PDF. حدّث الصفحة وحاول مجددًا.');
   const response=await fetch(FONT_URL);if(!response.ok)throw new Error('تعذر تحميل الخط العربي الخاص بملف PDF.');
   const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',compress:true});
-  doc.addFileToVFS('Tajawal.ttf',buffer64(await response.arrayBuffer()));doc.addFont('Tajawal.ttf','Tajawal','normal');doc.setFont('Tajawal');doc.setR2L(true);
+  doc.addFileToVFS('Tajawal.ttf',buffer64(await response.arrayBuffer()));doc.addFont('Tajawal.ttf','Tajawal','normal');doc.setFont('Tajawal');doc.setLanguage?.('ar-SA');
   const snapshot=job.published_snapshot||{},content=snapshot.content||{};let y=18;
-  const page=h=>{if(y+h>282){doc.addPage();doc.setFont('Tajawal');doc.setR2L(true);y=18}};
+  const page=h=>{if(y+h>282){doc.addPage();doc.setFont('Tajawal');y=18}};
   const write=(value,size=10,color=[31,49,78])=>{const valueText=String(value??'').trim();if(!valueText)return;doc.setFontSize(size);doc.setTextColor(...color);const lines=doc.splitTextToSize(valueText,174),h=Math.max(7,lines.length*size*.48+3);page(h);doc.text(lines,195,y,{align:'right'});y+=h};
   const section=(title,rows)=>{const values=arr(rows).map(txt).filter(Boolean);if(!values.length)return;y+=2;write(title,13,[23,105,224]);values.forEach((v,i)=>write(`${i+1}. ${v}`))};
   doc.setFillColor(12,35,71);doc.rect(0,0,210,34,'F');doc.setTextColor(255,255,255);doc.setFontSize(21);doc.text('ATWAR ONE',195,15,{align:'right'});doc.setFontSize(12);doc.text('إقرار الاطلاع على الوصف الوظيفي',195,25,{align:'right'});y=44;
