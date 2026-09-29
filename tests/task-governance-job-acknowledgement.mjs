@@ -36,8 +36,10 @@ assert.match(governance,/v_task\.assignee_id=v_uid and private\.manages_user\(p_
 assert.match(profile,/type="checkbox"/,'Job acknowledgement must require a checkbox');
 assert.match(profile,/acknowledge_job_description/,'Acknowledgement must be stored through the governed RPC');
 assert.match(profile,/send-job-acknowledgement/,'Acknowledgement PDF must invoke the email function');
-assert.match(profile,/setLanguage\?\.\('ar-SA'\)/,'Acknowledgement PDF must declare Arabic document language');
-assert.doesNotMatch(profile,/setR2L\(true\)/,'Acknowledgement PDF must not reverse all text globally; jsPDF Arabic shaping handles Arabic while Latin remains readable');
+const pdfRenderer=read('assets/js/job-ack-pdf.js');
+assert.match(pdfRenderer,/setLanguage\?\.\('ar-SA'\)/,'Acknowledgement PDF must declare Arabic document language');
+assert.match(pdfRenderer,/ctx\.direction='rtl'/,'Acknowledgement PDF must use native Arabic text shaping');
+assert.doesNotMatch(pdfRenderer,/doc\.text\(lines/,'Acknowledgement PDF must avoid jsPDF text rendering that corrupts Arabic on mobile');
 assert.match(profileIndex,/employee_job_assignments/,'My Profile must resolve the signed-in employee job assignment');
 assert.match(profileIndex,/hasPublishedJob/,'My Profile must reveal a published linked job description');
 assert.doesNotMatch(profileIndex,/else\{document\.getElementById\('profileLoading'\).*profileUnderConstruction/s,'My Profile must not be restricted to one hard-coded employee');

@@ -1,9 +1,9 @@
+import {createJobAcknowledgementPdf} from './job-ack-pdf.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='../assets/css/job-profile.css?v=2.4.17';document.head.append(css);
 const sb=await window.atwarGetSupabase(),host=document.getElementById('jobProfile');
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const arr=v=>Array.isArray(v)?v:[],txt=x=>typeof x==='string'?x:(x?.text||x?.name||'');
 const ACK_TEXT='أقر بأنني اطلعت على الوصف الوظيفي المعتمد، وأوافق على تنفيذ المهام والمسؤوليات والصلاحيات ومؤشرات الأداء الواردة فيه، وأتحمل مسؤولية الالتزام بها ضمن الأنظمة والسياسات والتوجيهات المعتمدة.';
-const FONT_URL='https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/tajawal/Tajawal-Regular.ttf';
 
 const taskCards=rows=>`<div class="task-cards">${arr(rows).map((x,i)=>`<article class="task-card"><span>${i+1}</span><div><b>${esc(txt(x))}</b></div><em>${esc(x?.type||'تنفيذ')}</em></article>`).join('')}</div>`;
 const authorityMatrix=rows=>`<div class="employee-matrix"><div class="employee-matrix-head"><span>الإجراء</span><span>مستوى الصلاحية</span><span>حدود الصلاحية</span><span>متى أرفع للمدير؟</span></div>${arr(rows).map(x=>`<div class="employee-matrix-row"><b>${esc(txt(x))}</b><span class="level-pill">${esc(x?.type||'تنفيذ')}</span><span>${esc([x?.scope,x?.limit].filter(Boolean).join(' — ')||'وفق التفويض')}</span><span>${esc(x?.escalation||'عند تجاوز الصلاحية')}</span></div>`).join('')}</div>`;
@@ -11,22 +11,14 @@ const metrics=rows=>`<div class="metric-grid">${arr(rows).map(x=>`<article><b>${
 const panels=(c,forms)=>`<nav class="profile-tabs" aria-label="أقسام الملف الوظيفي"><button class="active" data-profile-tab="tasks">مهامي الوظيفية</button><button data-profile-tab="authority">حدود صلاحيتي</button><button data-profile-tab="performance">بطاقة قياس مؤشرات الأداء KPI's</button>${forms.length?'<button data-profile-tab="forms">النماذج المرتبطة</button>':''}</nav><section id="tab-tasks" class="profile-panel active"><div class="panel-heading"><span>01</span><div><h2>المهام والمسؤوليات الوظيفية</h2><p>نطاق العمل الأساسي والنتائج المتوقع تحقيقها في هذا الدور.</p></div></div>${taskCards(c.responsibilities)}</section><section id="tab-authority" class="profile-panel"><div class="panel-heading"><span>02</span><div><h2>حدود الصلاحيات</h2><p>ما يمكنك تنفيذه أو اعتماده، ومتى يلزم الرفع للمدير المباشر.</p></div></div>${authorityMatrix(c.authorities)}</section><section id="tab-performance" class="profile-panel"><div class="panel-heading"><span>03</span><div><h2>مؤشرات قياس الأداء</h2><p>المؤشرات والمستهدفات ودورية القياس المعتمدة لتقييم أداء الوظيفة.</p></div></div>${metrics(c.kpis)}${arr(c.reports).length?`<div class="panel-heading reports-heading"><span>04</span><div><h2>التقارير والمخرجات</h2><p>المخرجات الدورية والجهات المستفيدة منها.</p></div></div>${taskCards(c.reports)}`:''}</section>${forms.length?`<section id="tab-forms" class="profile-panel"><div class="panel-heading"><span>05</span><div><h2>النماذج والأدلة المرتبطة</h2><p>النماذج المعتمدة اللازمة لتنفيذ العمل.</p></div></div><div class="linked-form-grid">${forms.map(f=>`<a href="${esc(f.file_url||'#')}" ${f.file_url?'target="_blank" rel="noopener"':''}><b>${esc(f.title)}</b><span>${esc(f.form_type)} • الإصدار ${esc(f.version)}</span><small>${esc(f.usage_note||f.description||'')}</small></a>`).join('')}</div></section>`:''}`;
 const revisionOf=job=>{const n=Number(job?.published_snapshot?.revision??job?.revision??1);return Number.isFinite(n)&&n>0?n:1};
 
-function buffer64(buffer){const bytes=new Uint8Array(buffer);let s='';for(let i=0;i<bytes.length;i+=32768)s+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(s)}
 async function makePdf({profile,manager,job,acknowledgement}){
-  if(!window.jspdf?.jsPDF)throw new Error('تعذر تحميل أداة إنشاء ملف PDF. حدّث الصفحة وحاول مجددًا.');
-  const response=await fetch(FONT_URL);if(!response.ok)throw new Error('تعذر تحميل الخط العربي الخاص بملف PDF.');
-  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4',compress:true});
-  doc.addFileToVFS('Tajawal.ttf',buffer64(await response.arrayBuffer()));doc.addFont('Tajawal.ttf','Tajawal','normal');doc.setFont('Tajawal');doc.setLanguage?.('ar-SA');
-  const snapshot=job.published_snapshot||{},content=snapshot.content||{};let y=18;
-  const page=h=>{if(y+h>282){doc.addPage();doc.setFont('Tajawal');y=18}};
-  const write=(value,size=10,color=[31,49,78])=>{const valueText=String(value??'').trim();if(!valueText)return;doc.setFontSize(size);doc.setTextColor(...color);const lines=doc.splitTextToSize(valueText,174),h=Math.max(7,lines.length*size*.48+3);page(h);doc.text(lines,195,y,{align:'right'});y+=h};
-  const section=(title,rows)=>{const values=arr(rows).map(txt).filter(Boolean);if(!values.length)return;y+=2;write(title,13,[23,105,224]);values.forEach((v,i)=>write(`${i+1}. ${v}`))};
-  doc.setFillColor(12,35,71);doc.rect(0,0,210,34,'F');doc.setTextColor(255,255,255);doc.setFontSize(21);doc.text('ATWAR ONE',195,15,{align:'right'});doc.setFontSize(12);doc.text('إقرار الاطلاع على الوصف الوظيفي',195,25,{align:'right'});y=44;
-  write(`الموظف: ${profile.full_name||profile.email}`,11);write(`البريد الإلكتروني: ${profile.email||'—'}`);write(`الإدارة: ${profile.department||snapshot.family||'—'}`);write(`المدير المباشر: ${manager?.full_name||'غير محدد'}`);write(`المسمى الوظيفي: ${snapshot.title||job.title||'—'}`,11);write(`إصدار الوصف: ${revisionOf(job)}`);write(`تاريخ ووقت الموافقة: ${new Intl.DateTimeFormat('ar-SA',{dateStyle:'long',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(acknowledgement.accepted_at))}`);
-  if(snapshot.purpose){write('الغرض من الوظيفة',13,[23,105,224]);write(snapshot.purpose)}section('المهام والمسؤوليات',content.responsibilities);section('الصلاحيات',content.authorities);section('مؤشرات الأداء',content.kpis);section('التقارير والمخرجات',content.reports);
-  const q=content.qualifications||{};if(q.education||q.experience||q.skills){write('المؤهلات المطلوبة',13,[23,105,224]);write(`المؤهل: ${q.education||'—'}`);write(`الخبرة: ${q.experience||'—'}`);write(`المهارات: ${q.skills||'—'}`)}
-  write('نص الإقرار',13,[23,105,224]);write(ACK_TEXT,11);write(`رقم الإقرار: ${acknowledgement.id}`,8,[100,116,139]);
-  const count=doc.getNumberOfPages();for(let i=1;i<=count;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120,132,148);doc.text(`صفحة ${i} من ${count}`,105,291,{align:'center'})}return doc.output('datauristring').split(',')[1];
+  const snapshot=job.published_snapshot||{};
+  return createJobAcknowledgementPdf({
+    employeeName:profile.full_name||profile.email,email:profile.email,
+    department:profile.department||snapshot.family,managerName:manager?.full_name,
+    title:snapshot.title||job.title,revision:revisionOf(job),acceptedAt:acknowledgement.accepted_at,
+    purpose:snapshot.purpose,content:snapshot.content,acknowledgementText:ACK_TEXT,id:acknowledgement.id
+  });
 }
 
 function ackHtml(ack){
