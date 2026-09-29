@@ -77,38 +77,50 @@ Deno.serve(async request=>{
   if(!userResponse.ok)return new Response('Invalid session',{status:401,headers:corsHeaders});
   const user=await userResponse.json() as {id?:string};
 
-  let body:{acknowledgementId?:string,pdfBase64?:string};
+  let body:{acknowledgementId?:string,pdfBase64?:string,adminResend?:boolean};
   try{body=await request.json();}catch{return new Response('Invalid JSON body',{status:400,headers:corsHeaders});}
   const acknowledgementId=String(body.acknowledgementId??'');
   if(!/^[0-9a-f-]{36}$/i.test(acknowledgementId))return new Response('Invalid acknowledgement id',{status:400,headers:corsHeaders});
 
-  let pdf:{clean:string,bytes:Uint8Array};
-  try{pdf=decodeBase64(String(body.pdfBase64??''));}catch{return new Response('Invalid PDF encoding',{status:400,headers:corsHeaders});}
-  if(pdf.bytes.length<100||pdf.bytes.length>8*1024*1024||new TextDecoder().decode(pdf.bytes.slice(0,4))!=='%PDF'){
-    return new Response('Invalid or oversized PDF',{status:400,headers:corsHeaders});
+  const isAdminResend=body.adminResend===true;
+  let pdf:{clean:string,bytes:Uint8Array}|null=null;
+  if(!isAdminResend){
+    try{pdf=decodeBase64(String(body.pdfBase64??''));}catch{return new Response('Invalid PDF encoding',{status:400,headers:corsHeaders});}
+    if(pdf.bytes.length<100||pdf.bytes.length>8*1024*1024||new TextDecoder().decode(pdf.bytes.slice(0,4))!=='%PDF')return new Response('Invalid or oversized PDF',{status:400,headers:corsHeaders});
   }
 
-  const rowResponse=await dbRequest(`job_description_acknowledgements?select=*&id=eq.${encodeURIComponent(acknowledgementId)}&profile_id=eq.${encodeURIComponent(String(user.id??''))}&limit=1`);
-  if(!rowResponse.ok){
-    console.error('Acknowledgement lookup failed:',rowResponse.status,await rowResponse.text());
-    return new Response(JSON.stringify({error:'تعذر الوصول إلى سجل الإقرار. أعد المحاولة أو تواصل مع مدير النظام.'}),{status:502,headers:{...jsonHeaders,...corsHeaders}});
+  const lookup=isAdminResend
+    ? `job_description_acknowledgements?select=*&id=eq.${encodeURIComponent(acknowledgementId)}&limit=1`
+    : `job_description_acknowledgements?select=*&id=eq.${encodeURIComponent(acknowledgementId)}&profile_id=eq.${encodeURIComponent(String(user.id??''))}&limit=1`;
+  if(isAdminResend){
+    const adminResponse=await dbRequest(`profiles?select=role&id=eq.${encodeURIComponent(String(user.id??''))}&limit=1`);
+    const adminRows=adminResponse.ok?await adminResponse.json() as Array<{role?:string}>:[];
+    if(adminRows[0]?.role!=='admin')return new Response('Administrator permission required',{status:403,headers:corsHeaders});
   }
+  const rowResponse=await dbRequest(lookup);
+  if(!rowResponse.ok)return new Response(JSON.stringify({error:'تعذر الوصول إلى سجل الإقرار.'}),{status:502,headers:{...jsonHeaders,...corsHeaders}});
   const rows=await rowResponse.json() as Array<Record<string,unknown>>;
-  if(!rows.length)return new Response(JSON.stringify({error:'لم يُعثر على إقرار لهذا الحساب.'}),{status:404,headers:{...jsonHeaders,...corsHeaders}});
+  if(!rows.length)return new Response(JSON.stringify({error:'لم يُعثر على الإقرار.'}),{status:404,headers:{...jsonHeaders,...corsHeaders}});
   const row=rows[0];
-  if(row.email_status==='sent')return new Response(JSON.stringify({sent:true,alreadySent:true}),{headers:{...jsonHeaders,...corsHeaders}});
+  if(!isAdminResend&&row.email_status==='sent')return new Response(JSON.stringify({sent:true,alreadySent:true}),{headers:{...jsonHeaders,...corsHeaders}});
+  if(isAdminResend&&row.email_status!=='sent')return new Response(JSON.stringify({error:'إعادة الإرسال متاحة للإقرار المرسل فقط.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
 
-  const claim=await dbRequest(`job_description_acknowledgements?id=eq.${acknowledgementId}&email_status=in.(pending,failed)`,{
-    method:'PATCH',body:JSON.stringify({email_status:'processing',email_last_error:null,updated_at:new Date().toISOString()}),
-  });
-  const claimed=await claim.json() as unknown[];
-  if(!claim.ok||!claimed.length)return new Response('Acknowledgement email is already being processed',{status:409,headers:corsHeaders});
+  if(isAdminResend){
+    const path=String(row.pdf_path??'');
+    if(!path)return new Response(JSON.stringify({error:'لا توجد نسخة PDF محفوظة للإقرار.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
+    const stored=await fetch(`${SUPABASE_URL}/storage/v1/object/job-acknowledgements/${path}`,{headers:serviceHeaders()});
+    if(!stored.ok)return new Response(JSON.stringify({error:'تعذر قراءة ملف الإقرار المحفوظ.'}),{status:502,headers:{...jsonHeaders,...corsHeaders}});
+    const bytes=new Uint8Array(await stored.arrayBuffer());pdf={clean:btoa(String.fromCharCode(...bytes)),bytes};
+  }else{
+    const claim=await dbRequest(`job_description_acknowledgements?id=eq.${acknowledgementId}&email_status=in.(pending,failed)`,{method:'PATCH',body:JSON.stringify({email_status:'processing',email_last_error:null,updated_at:new Date().toISOString()})});
+    const claimed=await claim.json() as unknown[];if(!claim.ok||!claimed.length)return new Response('Acknowledgement email is already being processed',{status:409,headers:corsHeaders});
+  }
 
-  const digest=await sha256(pdf.bytes);
+  const digest=await sha256(pdf!.bytes);
   const pdfPath=`${row.profile_id}/${acknowledgementId}.pdf`;
   try{
     const upload=await fetch(`${SUPABASE_URL}/storage/v1/object/job-acknowledgements/${pdfPath}`,{
-      method:'POST',headers:serviceHeaders({'Content-Type':'application/pdf','x-upsert':'true'}),body:pdf.bytes,
+      method:'POST',headers:serviceHeaders({'Content-Type':'application/pdf','x-upsert':'true'}),body:pdf!.bytes,
     });
     if(!upload.ok)throw new Error(`PDF storage failed: ${await upload.text()}`);
 
@@ -121,9 +133,9 @@ Deno.serve(async request=>{
       method:'POST',headers:{...jsonHeaders,Authorization:`Bearer ${RESEND_API_KEY}`},
       body:JSON.stringify({
         from:EMAIL_FROM,to:[employeeEmail],cc,reply_to:EMAIL_REPLY_TO,
-        subject:`إقرار الوصف الوظيفي: ${String(row.employee_name_snapshot??'الموظف')}`,
-        html:emailHtml(row),
-        attachments:[{filename:`ATWAR_JOB_ACK_${acknowledgementId}.pdf`,content:pdf.clean}],
+        subject:`${isAdminResend?'نسخة مصححة — ':''}إقرار الوصف الوظيفي: ${String(row.employee_name_snapshot??'الموظف')}`,
+        html:isAdminResend?emailHtml(row).replace('تم اعتماد إقرار الموظف','إعادة إرسال النسخة المصححة من إقرار الموظف'):emailHtml(row),
+        attachments:[{filename:`ATWAR_JOB_ACK_${acknowledgementId}.pdf`,content:pdf!.clean}],
       }),
     });
     const result=await send.json();
