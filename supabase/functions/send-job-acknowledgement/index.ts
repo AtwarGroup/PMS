@@ -84,10 +84,8 @@ Deno.serve(async request=>{
 
   const isAdminResend=body.adminResend===true;
   let pdf:{clean:string,bytes:Uint8Array}|null=null;
-  if(!isAdminResend){
-    try{pdf=decodeBase64(String(body.pdfBase64??''));}catch{return new Response('Invalid PDF encoding',{status:400,headers:corsHeaders});}
-    if(pdf.bytes.length<100||pdf.bytes.length>8*1024*1024||new TextDecoder().decode(pdf.bytes.slice(0,4))!=='%PDF')return new Response('Invalid or oversized PDF',{status:400,headers:corsHeaders});
-  }
+  try{pdf=decodeBase64(String(body.pdfBase64??''));}catch{return new Response('Invalid PDF encoding',{status:400,headers:corsHeaders});}
+  if(pdf.bytes.length<100||pdf.bytes.length>8*1024*1024||new TextDecoder().decode(pdf.bytes.slice(0,4))!=='%PDF')return new Response('Invalid or oversized PDF',{status:400,headers:corsHeaders});
 
   const lookup=isAdminResend
     ? `job_description_acknowledgements?select=*&id=eq.${encodeURIComponent(acknowledgementId)}&limit=1`
@@ -105,13 +103,7 @@ Deno.serve(async request=>{
   if(!isAdminResend&&row.email_status==='sent')return new Response(JSON.stringify({sent:true,alreadySent:true}),{headers:{...jsonHeaders,...corsHeaders}});
   if(isAdminResend&&row.email_status!=='sent')return new Response(JSON.stringify({error:'إعادة الإرسال متاحة للإقرار المرسل فقط.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
 
-  if(isAdminResend){
-    const path=String(row.pdf_path??'');
-    if(!path)return new Response(JSON.stringify({error:'لا توجد نسخة PDF محفوظة للإقرار.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
-    const stored=await fetch(`${SUPABASE_URL}/storage/v1/object/job-acknowledgements/${path}`,{headers:serviceHeaders()});
-    if(!stored.ok)return new Response(JSON.stringify({error:'تعذر قراءة ملف الإقرار المحفوظ.'}),{status:502,headers:{...jsonHeaders,...corsHeaders}});
-    const bytes=new Uint8Array(await stored.arrayBuffer());pdf={clean:btoa(String.fromCharCode(...bytes)),bytes};
-  }else{
+  if(!isAdminResend){
     const claim=await dbRequest(`job_description_acknowledgements?id=eq.${acknowledgementId}&email_status=in.(pending,failed)`,{method:'PATCH',body:JSON.stringify({email_status:'processing',email_last_error:null,updated_at:new Date().toISOString()})});
     const claimed=await claim.json() as unknown[];if(!claim.ok||!claimed.length)return new Response('Acknowledgement email is already being processed',{status:409,headers:corsHeaders});
   }
