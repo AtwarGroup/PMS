@@ -378,7 +378,8 @@ function assignableUsers(){
       isActiveProfile(u) &&
       (
         String(u.uid)===String(currentUser.uid) ||
-        isDescendantOf(u,currentUser.uid)
+        ((currentProfile.permissions||[]).includes('tasks.assign_indirect') && isDescendantOf(u,currentUser.uid)) ||
+        String(u.managerUid||'')===String(currentUser.uid)
       )
     );
   }
@@ -404,7 +405,7 @@ function canReassignTaskTo(task,uid){
   if(String(uid)===String(currentUser.uid))return true;
   // المدير يستطيع تفويض أي مهمة واقعة تحت مسؤوليته إلى أي موظف في شجرته،
   // سواء أنشأ المهمة بنفسه أو استلمها من مديره الأعلى.
-  return isDescendantOf(target,currentUser.uid);
+  return String(target.managerUid||'')===String(currentUser.uid) || ((currentProfile.permissions||[]).includes('tasks.assign_indirect') && isDescendantOf(target,currentUser.uid));
 }
 function canDeleteTask(task){
   if(!task||!currentProfile||!currentUser||task.jobWorkflow)return false;
