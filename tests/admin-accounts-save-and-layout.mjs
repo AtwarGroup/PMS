@@ -14,7 +14,7 @@ assert.match(page,/if\(detailsChanged\)\{const result=await sb\.rpc/);
 assert.match(page,/completed\.length\?' \(حُفظت:/);
 assert.match(page,/document\.body\.style\.visibility='visible'/);
 assert.match(page,/class="account-card"/);
-assert.match(page,/if\(!coreChanged&&!accessChanged&&!detailsChanged\)\{r\.querySelector\('\.edit-toggle'\)\.click\(\)/);
+assert.match(page,/if\(!coreChanged&&!accessChanged&&!indirectChanged&&!detailsChanged\)\{r\.querySelector\('\.edit-toggle'\)\.click\(\)/);
 assert.match(page,/await load\('تم حفظ بيانات الحساب\.'\)/);
 assert.doesNotMatch(page,/savedCard\.querySelector\('\.edit-toggle'\)\.click\(\)/);
 assert.match(css,/\.account-list\{display:grid;grid-template-columns:repeat\(2/);
