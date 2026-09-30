@@ -2798,11 +2798,11 @@ function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;
 function updateStats(){
   if(isCompletedArchiveView()){
     const today=localDateISO(),month=today.slice(0,7);
-    const completionDate=t=>t.actualEnd||(t.completedAt?localDateISO(new Date(t.completedAt)):'');
+    const completionDate=t=>t.completedAt?localDateISO(new Date(t.completedAt)):(t.actualEnd||'');
     const completedThisMonth=tasks.filter(t=>completionDate(t).startsWith(month)).length;
     const measurable=tasks.filter(t=>completionDate(t)&&t.end);
-    const onTime=measurable.filter(t=>completionDate(t)<=t.end).length;
-    const late=measurable.filter(t=>completionDate(t)>t.end).length;
+    const onTime=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)===0).length;
+    const late=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
     const durations=tasks.map(t=>{
       const end=completionDate(t);if(!t.start||!end)return null;
       const days=Math.round((new Date(end+'T00:00:00')-new Date(t.start+'T00:00:00'))/86400000);

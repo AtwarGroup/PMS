@@ -16,6 +16,6 @@ assert.match(sql,/v_event := case when v_return then 'reclaimed'/,
 assert.match(bridge,/isDelegated:!!t\.delegated_by_id&&t\.delegated_by_id!==t\.assignee_id/,
   'The badge should represent an active delegation only');
 assert.match(page,/supabase-firebase-compat\.js\?v=2\.5\.17/);
-assert.match(html,/tasks-page\.js\?v=2\.5\.17/);
+assert.match(html,/tasks-page\.js\?v=2\.5\.18/);
 console.log('Delegation return and badge state audit passed.');
 
