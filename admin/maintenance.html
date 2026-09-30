@@ -15,15 +15,17 @@ const {data:{session}}=await sb.auth.getSession();if(!session?.user)location.rep
 const {data:me}=await sb.from('profiles').select('id,full_name,email,role,job_title,department,manager_id,active,status').eq('id',session.user.id).single();if(me?.role!=='admin')location.replace('../home.html');else{window.atwarSyncShellIdentity?.(me,session.user);document.body.style.visibility='visible'}
 async function load(){
  const week=new Date(Date.now()-7*864e5).toISOString();
- const [active,deleted,email,errors,audit]=await Promise.all([
-  sb.from('tasks').select('id',{count:'exact',head:true}).is('deleted_at',null),
+ const [active,deleted,email,errors,audit,attention]=await Promise.all([
+  sb.from('tasks').select('id',{count:'exact',head:true}).is('deleted_at',null).is('cancelled_at',null).in('status',['قيد الانتظار','قيد التنفيذ','بانتظار الاعتماد']),
   sb.rpc('list_deleted_tasks'),
   sb.from('email_notification_outbox').select('id,event_type,status,attempts,last_error,created_at,recipient_email').order('created_at',{ascending:false}).limit(30),
-  sb.from('app_error_logs').select('id,error_type,message,page_path,created_at').gte('created_at',week).order('created_at',{ascending:false}).limit(30),
-  sb.from('admin_audit_log').select('id,action,actor_name_snapshot,target_type,created_at').order('created_at',{ascending:false}).limit(30)
+  sb.from('app_error_logs').select('id,error_type,message,page_path,created_at',{count:'exact'}).gte('created_at',week).order('created_at',{ascending:false}).limit(30),
+  sb.from('admin_audit_log').select('id,action,actor_name_snapshot,target_type,created_at').order('created_at',{ascending:false}).limit(30),
+  sb.from('email_notification_outbox').select('id',{count:'exact',head:true}).in('status',['failed','processing'])
  ]);
+ const failed=[active,deleted,email,errors,audit,attention].find(result=>result.error);if(failed)throw failed.error;
  const deletedData=deleted.data||[],emailData=email.data||[],errorData=errors.data||[],auditData=audit.data||[];
- document.getElementById('activeTasks').textContent=active.count??0;document.getElementById('deletedTasks').textContent=deletedData.length;document.getElementById('failedEmails').textContent=emailData.filter(x=>x.status==='failed'||x.status==='processing').length;document.getElementById('recentErrors').textContent=errorData.length;
+ document.getElementById('activeTasks').textContent=active.count??0;document.getElementById('deletedTasks').textContent=deletedData.length;document.getElementById('failedEmails').textContent=attention.count??0;document.getElementById('recentErrors').textContent=errors.count??0;
  document.getElementById('emailRows').innerHTML=emailData.length?emailData.map(x=>`<div class="row"><div class="row-main"><b class="${x.status==='sent'?'ok':x.status==='failed'?'danger':''}">${esc(x.status)} • ${esc(x.event_type)}</b><small>${esc(x.recipient_email)} • ${date(x.created_at)}${x.last_error?` • ${esc(x.last_error)}`:''}</small></div>${x.status==='failed'?`<button class="btn retry" data-id="${esc(x.id)}">إعادة المحاولة</button>`:''}</div>`).join(''):'<div class="empty">لا توجد رسائل مسجلة.</div>';
  document.getElementById('deletedRows').innerHTML=deletedData.length?deletedData.map(x=>`<div class="row"><div class="row-main"><b>${esc(x.title)}</b><small>${esc(x.assignee_name_snapshot||'')} • حُذفت ${date(x.deleted_at)}</small></div><button class="btn restore" data-id="${esc(x.id)}">استعادة</button></div>`).join(''):'<div class="empty">سلة المحذوفات فارغة.</div>';
  document.getElementById('errorRows').innerHTML=errorData.length?errorData.map(x=>`<div class="row"><div class="row-main"><b class="danger">${esc(x.error_type)} — ${esc(x.message)}</b><small>${esc(x.page_path)} • ${date(x.created_at)}</small></div></div>`).join(''):'<div class="empty">لا توجد أخطاء خلال آخر 7 أيام.</div>';
