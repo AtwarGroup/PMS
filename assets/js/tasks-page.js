@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.8";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.16";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
 
@@ -415,34 +415,23 @@ function canDeleteTask(task){
     String(task.createdByUid||'')===String(currentUser.uid||'');
 }
 
+function taskRequiresApproval(task){
+  if(task?.jobWorkflow)return true;
+  const owner=String(task?._ownerUid||task?.assignUid||'');
+  const creator=String(task?.createdByUid||'');
+  return task?.completionRequiresApproval!==false || !creator || creator!==owner;
+}
+function taskApprovalRecipient(task){
+ const owner=String(task?._ownerUid||task?.assignUid||''),creator=String(task?.approvalCommissionerUid||task?.createdByUid||'');
+ if(creator&&creator!==owner)return creator;
+ return String(getUserByUid(owner)?.managerUid||'');
+}
 function canApproveTask(task){
-  if(!task||!currentProfile||!currentUser||task.jobWorkflow)return false;
-  if(isExecutiveReadOnlyTask(task))return false;
-
-  const taskOwnerUid=String(task._ownerUid||task.assignUid||'');
-  if(taskOwnerUid && taskOwnerUid===String(currentUser.uid||''))return false;
-
-  // مدير النظام يستطيع اعتماد أي مهمة ليست مهمته الشخصية.
-  if(currentProfile.role==='admin')return true;
-
-  // المدير يستطيع الاعتماد إذا كان المدير المباشر للمكلّف،
-  // أو إذا كان هو منشئ المهمة لأي مستخدم آخر.
-  if(currentProfile.role!=='manager')return false;
-
-  if(String(task.createdByUid||'')===String(currentUser.uid||''))return true;
-
-  let owner=null;
-  if(taskOwnerUid){
-    owner=users.find(u=>String(u.uid||'')===taskOwnerUid)||null;
-  }
-  if(!owner && task.assign){
-    const targetName=String(task.assign||'').trim().toLowerCase();
-    owner=users.find(u=>
-      String(u.name||'').trim().toLowerCase()===targetName ||
-      String(u.email||'').trim().toLowerCase()===targetName
-    )||null;
-  }
-  return !!owner?.managerUid && String(owner.managerUid)===String(currentUser.uid);
+ if(!task||!currentProfile||!currentUser||task.jobWorkflow||isExecutiveReadOnlyTask(task))return false;
+ const owner=String(task._ownerUid||task.assignUid||'');
+ if(owner===String(currentUser.uid||''))return false;
+ if(currentProfile.role==='admin')return true;
+ return currentProfile.role==='manager'&&taskApprovalRecipient(task)===String(currentUser.uid);
 }
 
 
@@ -1101,7 +1090,7 @@ async function notifyManagerOfEmployeeAction(task,action){
   if(String(task._ownerUid)!==String(currentUser.uid))return;
 
   const employee=users.find(u=>u.uid===currentUser.uid);
-  const managerUid=employee?.managerUid;
+  const managerUid=action==='submitted'?taskApprovalRecipient(task):employee?.managerUid;
   if(!managerUid)return;
 
   const employeeName=employee?.name||currentProfile?.name||currentUser.email||'الموظف';
@@ -1176,16 +1165,7 @@ function subscribeVisibleTasks(){
       rows.forEach(t=>merged.set(compositeKey(t),t));
     }
 
-    const needsMyApproval=(task)=>{
-      if(!currentUser||!currentProfile||task.status!=='بانتظار الاعتماد')return false;
-      if(currentProfile.role==='admin')return true;
-      if(currentProfile.role==='manager'){
-        if(String(task.createdByUid||'')===String(currentUser.uid||''))return true;
-        const owner=users.find(u=>String(u.uid)===String(task._ownerUid));
-        return String(owner?.managerUid||'')===String(currentUser.uid);
-      }
-      return false;
-    };
+    const needsMyApproval=task=>task.status==='بانتظار الاعتماد'&&canApproveTask(task);
 
     tasks=[...merged.values()].sort((a,b)=>{
       const aa=needsMyApproval(a)?0:1;
@@ -1711,13 +1691,13 @@ async function completeSelectedTask(){
   }
 
   const owner=getUserByUid(currentUser.uid)||currentProfile;
-  const hasDirectManager=String(owner?.managerUid||'').trim()!=='';
+  const requiresApproval=taskRequiresApproval(task);
 
   const updated=await transactTask(task,['قيد التنفيذ'],next=>{
     const currentChecklist=normalizeSubtasks(next);
     if(currentChecklist.length && currentChecklist.some(x=>!x.done))return false;
     next.progress=100;
-    if(hasDirectManager){
+    if(requiresApproval){
       next.status='بانتظار الاعتماد';
       next.submittedAt=Date.now();
       next.actualEnd='';
@@ -1728,19 +1708,19 @@ async function completeSelectedTask(){
     }
     return true;
   },{
-    activityType:hasDirectManager?'submitted':'completed',
-    activityDetail:hasDirectManager?'تم إنهاء العمل وإرسال المهمة للاعتماد':'تم إنهاء المهمة مباشرة لعدم وجود مدير مباشر',
+    activityType:requiresApproval?'submitted':'completed',
+    activityDetail:requiresApproval?'تم إنهاء العمل وإرسال المهمة للمكلّف لاعتمادها':'تم إكمال المهمة الذاتية مباشرة',
     conflictMessage:'تعذر إنهاء المهمة لأن بياناتها تغيرت. راجع المهام الفرعية والحالة الحالية.'
   });
   if(!updated)return;
-  if(hasDirectManager)await notifyManagerOfEmployeeAction(updated,'submitted');
+  if(requiresApproval)await notifyManagerOfEmployeeAction(updated,'submitted');
   renderDetails();
 }
 
 async function approveSelectedTask(){
   const task=selectedTask(); if(!task)return;
   if(!canApproveTask(task)){
-    showToast('لا يمكن اعتماد المهمة بواسطة المسؤول عنها. الاعتماد متاح للمدير المباشر أو مدير النظام.','warning');
+    showToast('لا يمكن اعتماد المهمة بواسطة المسؤول عنها. الاعتماد متاح للمكلّف أو مدير النظام.','warning');
     return;
   }
   if(task.status!=='بانتظار الاعتماد')return;
@@ -2736,12 +2716,12 @@ function renderDetails(){
   completeBtn.classList.toggle('hidden',!isOwner || !!task.jobWorkflow || task.status!=='قيد التنفيذ');
 
   if(isOwner){
-    const ownerHasManager=String((getUserByUid(currentUser.uid)||currentProfile)?.managerUid||'')!=='';
+    const requiresApproval=taskRequiresApproval(task);
     workflowHint.textContent=
       task.status==='قيد الانتظار'?'ابدأ المهمة عند بدء العمل الفعلي.':
-      task.status==='قيد التنفيذ'?(ownerHasManager?'حدّث نسبة الإنجاز والملاحظات ثم أرسلها للاعتماد عند الاكتمال.':'حدّث نسبة الإنجاز والملاحظات ثم أكمل المهمة عند الانتهاء.'):
-      task.status==='بانتظار الاعتماد'?'تم إرسال المهمة للمدير وهي بانتظار الاعتماد.':
-      'تم اعتماد وإكمال المهمة.';
+      task.status==='قيد التنفيذ'?(requiresApproval?'حدّث نسبة الإنجاز والملاحظات ثم أرسلها للاعتماد عند الاكتمال.':'حدّث نسبة الإنجاز والملاحظات ثم أكمل المهمة عند الانتهاء.'):
+      task.status==='بانتظار الاعتماد'?'تم إرسال المهمة لجهة الاعتماد وهي بانتظار المراجعة.':
+      (taskRequiresApproval(task)?'تم اعتماد وإكمال المهمة.':'اكتملت المهمة الذاتية دون طلب اعتماد.');
   }
 
   const approvalBox=document.getElementById('managerApprovalActions');
