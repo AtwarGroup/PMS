@@ -321,3 +321,6 @@ export function onValue(r,callback,errorCallback){
   document.addEventListener('visibilitychange',onVisibilityChange);
   return ()=>{coordinator.dispose();clearInterval(timer);document.removeEventListener('visibilitychange',onVisibilityChange);_listeners.delete(refresh)};
 }
+
+// Refresh this client's task listeners after direct attachment writes.
+export async function refreshTaskData(){await emitLocal('tasks');}
