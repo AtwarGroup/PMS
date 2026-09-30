@@ -306,7 +306,11 @@ async function addComment() {
 function bindActions() {
   document.querySelectorAll('[data-propose]').forEach(button => button.onclick = () => createProposal(button.dataset.section,Number(button.dataset.index),button.dataset.propose));
   document.querySelectorAll('[data-decision]').forEach(button => button.onclick = () => decideProposal(button.dataset.proposal,button.dataset.decision));
-  byId('editBtn')?.addEventListener('click',() => {editing = !editing; render();});
+  byId('editBtn')?.addEventListener('click',() => {
+    editing = !editing;
+    if (editing && activeTab === 'review') activeTab = 'responsibilities';
+    render();
+  });
   byId('saveBtn')?.addEventListener('click',saveDraft);
   byId('submitBtn')?.addEventListener('click',() => transition('IN_REVIEW'));
   byId('restoreApprovalBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
