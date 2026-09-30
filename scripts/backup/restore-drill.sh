@@ -28,19 +28,32 @@ test -s "$backup_dir/database.dump" || {
 
 docker run --rm postgres:17.6 pg_isready --dbname="$drill_url"
 docker run --rm --volume "$backup_dir:/backup:ro" postgres:17.6 \
-  pg_restore --dbname="$drill_url" --clean --if-exists --no-owner --no-privileges \
+  pg_restore --dbname="$drill_url" --clean --if-exists --no-owner --no-privileges --exit-on-error \
   /backup/database.dump
 
-docker run --rm postgres:17.6 psql "$drill_url" -v ON_ERROR_STOP=1 <<'SQL'
-select to_regclass('public.tasks') is not null as tasks_table_exists;
-select to_regclass('public.profiles') is not null as profiles_table_exists;
-select count(*) >= 0 as tasks_readable from public.tasks;
-select count(*) >= 0 as profiles_readable from public.profiles;
-select count(*) = 0 as valid_task_dates
-from public.tasks
-where start_date is not null
-  and due_date is not null
-  and due_date < start_date;
+docker run --rm -i postgres:17.6 psql -X "$drill_url" -v ON_ERROR_STOP=1 <<'SQL'
+do $verify$
+begin
+  if to_regclass('public.tasks') is null then
+    raise exception 'Restored tasks table is missing';
+  end if;
+  if to_regclass('public.profiles') is null then
+    raise exception 'Restored profiles table is missing';
+  end if;
+
+  -- These reads must also fail the drill if the restored tables are inaccessible.
+  perform count(*) from public.tasks;
+  perform count(*) from public.profiles;
+  if exists (
+    select 1 from public.tasks
+    where start_date is not null
+      and due_date is not null
+      and due_date < start_date
+  ) then
+    raise exception 'Restored task dates are invalid';
+  end if;
+end;
+$verify$;
 SQL
 
 echo "Disposable database restore drill passed."
