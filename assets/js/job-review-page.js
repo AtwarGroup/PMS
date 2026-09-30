@@ -107,11 +107,31 @@ function referenceWeightsView() {
   return `<section class="content-card scorecard-reference"><h2>أوزان بطاقة الأداء المرجعية</h2><p>الأوزان كما أرسلها صاحب النظام للوظيفة ${esc(job.title)}. إجماليها <b>${esc(total)}٪</b>. مرجع للمراجعة، ولا يغيّر المؤشرات في المسودة أو الوصف المنشور تلقائيًا.</p><div class="matrix-wrap"><table class="permission-matrix"><thead><tr><th scope="col">#</th><th scope="col">المؤشر في البطاقة المرجعية</th><th scope="col">الوزن</th></tr></thead><tbody>${weightReferences.map(row=>`<tr><td>${row.kpi_position}</td><td>${esc(row.indicator_name)}</td><td><b>${Number(row.weight_percent)}٪</b></td></tr>`).join('')}</tbody></table></div><p class="reference-note">${namesMatch?'أسماء وترتيب مؤشرات المسودة مطابقان لهذه البطاقة.':'أسماء أو ترتيب مؤشرات المسودة يختلف عن البطاقة المرجعية؛ يلزم توفيق المؤشرات في مسار المراجعة قبل الاعتماد.'} • مرجع الإصدار ${weightReferences[0].source_revision}.</p></section>`;
 }
 
+
+function scaleProposalsView(){
+ const pending=asArray(job.content?.kpis).filter(item=>!Array.isArray(item.scale||item.scoring||item.levels)||(item.scale||item.scoring||item.levels).length!==5).filter(item=>window.AtwarKpiProposals?.find(item,job));
+ if(!pending.length)return '';
+ const allowed=canStage('DRAFT')||(canStage('FINAL_REVIEW')&&job.status==='MANAGER_APPROVED');
+ return `<section class="content-card"><h2>حدود التقييم المقترحة</h2><p>توجد مقترحات لـ ${pending.length} مؤشر. المستوى ٣ يحقق المستهدف؛ المستوى ٤ و٥ يتطلبان أداء أعلى أو أدلة جودة وتحسين للمؤشرات المحدودة بـ١٠٠٪ أو صفر حالات. لا تقيّم فترة بلا حالات مستحقة، ولا تعتمد نتيجة خارج النطاق الحسابي للمؤشر.</p>${allowed?'<button id="useScaleProposalsBtn" class="review-btn primary">استخدام الحدود المقترحة في المسودة</button>':''}<p>تخضع المسودة لمسار المراجعة والاعتماد والنشر المعتاد.</p></section>`;
+}
+async function useScaleProposals(){
+ if(!(canStage('DRAFT')||(canStage('FINAL_REVIEW')&&job.status==='MANAGER_APPROVED')))return;
+ const kpis=asArray(job.content?.kpis).map(item=>{
+  const existing=item.scale||item.scoring||item.levels;
+  if(Array.isArray(existing)&&existing.length===5)return item;
+  const proposal=window.AtwarKpiProposals?.find(item,job);
+  return proposal?{...item,scale:proposal.scale.map(level=>({...level})),scale_basis:proposal.basis,scale_note:proposal.note}:item;
+ });
+ const response=await sb.from('job_descriptions').update({content:{...job.content,kpis},updated_by:me.id,status:'DRAFT'}).eq('id',job.id).eq('revision',job.revision).select().maybeSingle();
+ if(response.error||!response.data)return toast(response.error?.message||'تغيّر الوصف أثناء المراجعة؛ حدّث الصفحة وأعد المحاولة');
+ job=response.data;editing=false;render();toast('حُفظت الحدود في المسودة للمراجعة والاعتماد');
+}
+
 function measurementView() {
   const content = job.content || {};
   const reports = asArray(content.reports).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.recipient ? 'المستلم: ' + item.recipient : '')}</p><div class="metric-meta"><span>${esc(item.frequency || '')}</span><span>${esc(item.display_rule || 'داخل النظام')}</span></div>${proposalActions('REPORTS',index)}</article>`).join('');
   const formCards = forms.map(item => `<a class="form-link" href="${esc(item.file_url || '#')}" ${item.file_url ? 'target="_blank"' : ''}><b>${esc(item.title)}</b><span>${esc(item.form_type)} • الإصدار ${esc(item.version)}</span><small>${esc(item.usage_note || item.description || '')}</small></a>`).join('');
-  return `<div class="content-stack">${referenceWeightsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
+  return `<div class="content-stack">${referenceWeightsView()}${scaleProposalsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
 }
 
 function valueText(value) {
@@ -128,7 +148,7 @@ function editView() {
   const content = job.content || {};
   if (activeTab === 'overview') return `<section class="content-card edit-grid"><div class="edit-field"><label>المسمى الوظيفي</label><input id="editTitle" value="${esc(job.title)}"></div><div class="edit-field"><label>العائلة الوظيفية</label><input id="editFamily" value="${esc(job.family || '')}"></div><div class="edit-field"><label>المستوى</label><input id="editLevel" value="${esc(job.job_level || '')}"></div><div class="edit-field"><label>المراجع المعتمد</label><select id="editReviewer"><option value="">يتطلب تحديد مسؤول النظام</option>${users.map(user => `<option value="${user.id}" ${job.reviewer_id === user.id ? 'selected' : ''}>${esc(user.full_name)} — ${esc(user.role || '')}</option>`).join('')}</select></div><div class="edit-field" style="grid-column:1/-1"><label>الغرض الوظيفي</label><textarea id="editPurpose">${esc(job.purpose || '')}</textarea></div></section>`;
   const keys = activeTab === 'responsibilities' ? [['responsibilities','المهام والمسؤوليات']] : activeTab === 'authorities' ? [['authorities','الصلاحيات']] : [['kpis','مؤشرات الأداء'],['reports','التقارير والمخرجات']];
-  return `<div class="content-stack">${keys.map(([key,title]) => `<section class="content-card"><h2>${title}</h2><div class="edit-list">${asArray(content[key]).map((item,index) => `<div class="edit-field"><label>البند ${index + 1}</label><textarea data-edit-list="${key}" data-index="${index}">${esc(itemText(item))}</textarea></div>`).join('')}</div></section>`).join('')}</div>`;
+  return `<div class="content-stack">${keys.map(([key,title]) => `<section class="content-card"><h2>${title}</h2><div class="edit-list">${asArray(content[key]).map((item,index) => `<div class="edit-field"><label>البند ${index + 1}</label><textarea data-edit-list="${key}" data-index="${index}">${esc(itemText(item))}</textarea>${key==='kpis'&&Array.isArray(item.scale)?`<div class="hybrid-meta-grid">${item.scale.map((level,levelIndex)=>`<label>حد المستوى ${levelIndex+1}<input data-edit-scale="${index}" data-level-index="${levelIndex}" value="${esc(level.label||level.range||level.value||'')}"></label>`).join('')}<label>أساس التقييم<input data-edit-scale-basis="${index}" value="${esc(item.scale_basis||'')}"></label></div>`:''}</div>`).join('')}</div></section>`).join('')}</div>`;
 }
 
 function headerActions() {
@@ -239,7 +259,7 @@ async function saveDraft() {
     const content = {...(job.content || {})};
     if (activeTab === 'responsibilities') content.responsibilities = collectEdited('responsibilities');
     if (activeTab === 'authorities') content.authorities = collectEdited('authorities');
-    if (activeTab === 'measurement') {content.kpis = collectEdited('kpis'); content.reports = collectEdited('reports');}
+    if (activeTab === 'measurement') {content.kpis = collectEdited('kpis').map((item,index)=>({...item,...(Array.isArray(item.scale)?{scale:item.scale.map((level,levelIndex)=>({...level,label:document.querySelector(`[data-edit-scale="${index}"][data-level-index="${levelIndex}"]`)?.value.trim()||level.label})),scale_basis:document.querySelector(`[data-edit-scale-basis="${index}"]`)?.value.trim()||item.scale_basis}:{} )})); content.reports = collectEdited('reports');}
     payload.content = content;
     if (job.status === 'PUBLISHED') payload.status = 'DRAFT';
   }
@@ -308,6 +328,7 @@ async function addComment() {
 }
 
 function bindActions() {
+  byId('useScaleProposalsBtn')?.addEventListener('click',useScaleProposals);
   document.querySelectorAll('[data-propose]').forEach(button => button.onclick = () => createProposal(button.dataset.section,Number(button.dataset.index),button.dataset.propose));
   document.querySelectorAll('[data-decision]').forEach(button => button.onclick = () => decideProposal(button.dataset.proposal,button.dataset.decision));
   byId('editBtn')?.addEventListener('click',() => {

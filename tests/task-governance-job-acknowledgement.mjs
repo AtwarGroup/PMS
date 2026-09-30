@@ -55,7 +55,7 @@ assert.match(profileIndex,/function renderInlineJob\(mode,context\)/,'The unifie
 assert.match(profileIndex,/inline-task-grid[\s\S]*inline-authority-grid[\s\S]*inline-kpi-grid/,'Tasks, authorities and KPIs must have distinct visual card systems');
 assert.match(profileIndex,/hybrid-details[\s\S]*authority-tone-approve[\s\S]*kpi-framework/,'The profile must use the unified hybrid visual system');
 assert.match(profileIndex,/content\.reports[\s\S]*report-grid/,'Published outputs and reports must remain visible without inventing responsibility links');
-assert.match(profileIndex,/scoreScale\(item\)/,'KPI scoring details must be expandable when the published data provides them');
+assert.match(profileIndex,/scoreScale\(item,job\)/,'KPI scoring details must render the published scale or the matching job proposal');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
 assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
 assert.match(adminUsers,/class="row-save-state" role="status" aria-live="polite"/,'Each account row must expose its own accessible save result');
