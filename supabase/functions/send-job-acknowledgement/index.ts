@@ -101,9 +101,10 @@ Deno.serve(async request=>{
   if(!rows.length)return new Response(JSON.stringify({error:'لم يُعثر على الإقرار.'}),{status:404,headers:{...jsonHeaders,...corsHeaders}});
   const row=rows[0];
   if(!isAdminResend&&row.email_status==='sent')return new Response(JSON.stringify({sent:true,alreadySent:true}),{headers:{...jsonHeaders,...corsHeaders}});
-  if(isAdminResend&&row.email_status!=='sent')return new Response(JSON.stringify({error:'إعادة الإرسال متاحة للإقرار المرسل فقط.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
+  const isCorrection=isAdminResend&&row.email_status==='sent';
+  if(isAdminResend&&!['sent','pending','failed'].includes(String(row.email_status)))return new Response(JSON.stringify({error:'جارٍ إرسال الإقرار بالفعل. حاول لاحقًا.'}),{status:409,headers:{...jsonHeaders,...corsHeaders}});
 
-  if(!isAdminResend){
+  if(!isCorrection){
     const claim=await dbRequest(`job_description_acknowledgements?id=eq.${acknowledgementId}&email_status=in.(pending,failed)`,{method:'PATCH',body:JSON.stringify({email_status:'processing',email_last_error:null,updated_at:new Date().toISOString()})});
     const claimed=await claim.json() as unknown[];if(!claim.ok||!claimed.length)return new Response('Acknowledgement email is already being processed',{status:409,headers:corsHeaders});
   }
@@ -125,8 +126,8 @@ Deno.serve(async request=>{
       method:'POST',headers:{...jsonHeaders,Authorization:`Bearer ${RESEND_API_KEY}`},
       body:JSON.stringify({
         from:EMAIL_FROM,to:[employeeEmail],cc,reply_to:EMAIL_REPLY_TO,
-        subject:`${isAdminResend?'نسخة مصححة — ':''}إقرار الوصف الوظيفي: ${String(row.employee_name_snapshot??'الموظف')}`,
-        html:isAdminResend?emailHtml(row).replace('تم اعتماد إقرار الموظف','إعادة إرسال النسخة المصححة من إقرار الموظف'):emailHtml(row),
+        subject:`${isCorrection?'نسخة مصححة — ':''}إقرار الوصف الوظيفي: ${String(row.employee_name_snapshot??'الموظف')}`,
+        html:isCorrection?emailHtml(row).replace('تم اعتماد إقرار الموظف','إعادة إرسال النسخة المصححة من إقرار الموظف'):emailHtml(row),
         attachments:[{filename:`ATWAR_JOB_ACK_${acknowledgementId}.pdf`,content:pdf!.clean}],
       }),
     });
