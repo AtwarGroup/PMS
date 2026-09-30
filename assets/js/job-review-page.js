@@ -76,6 +76,16 @@ function proposalActions(section, index) {
   return `<div class="item-actions"><button data-propose="MODIFY" data-section="${section}" data-index="${index}">اقتراح تعديل</button><button data-propose="DELETE" data-section="${section}" data-index="${index}">اقتراح حذف</button><button data-propose="COMMENT" data-section="${section}" data-index="${index}">إضافة ملاحظة</button></div>`;
 }
 
+function documentSection(mode){
+ const snapshot={title:job.title,purpose:job.purpose,family:job.family,revision:job.revision,content:job.content};
+ const view=window.AtwarJobDocument.section(mode,{job,snapshot,content:job.content||{},manager:users.find(user=>user.id===job.reviewer_id)});
+ const template=document.createElement('div');template.innerHTML=view.html;
+ const key={tasks:'RESPONSIBILITIES',authority:'AUTHORITIES',performance:'KPIS'}[mode];
+ const items=mode==='performance'?template.querySelectorAll('.kpi-table tbody tr'):template.querySelectorAll('.authority-hybrid-list .hybrid-details');
+ items.forEach((item,index)=>{const actions=proposalActions(key,index);if(actions){const target=mode==='performance'?item.children[1]:item.querySelector('.hybrid-details-body');target.insertAdjacentHTML('beforeend',actions);}});
+ const add=managerReviewing()&&key?`<button class="review-btn" data-propose="ADD" data-section="${key}" data-index="-1">إضافة بند مقترح</button>`:'';
+ return `<section class="atwar-job-document"><div class="profile-job-viewer"><div class="profile-job-viewer-head"><div><h4>${esc(view.title)}</h4><p>${esc(view.subtitle)}</p></div></div><div class="profile-job-viewer-body">${template.innerHTML}${add}</div></div></section>`;
+}
 function responsibilitiesView(rows, limit = 0) {
   const visible = limit ? asArray(rows).slice(0, limit) : asArray(rows);
   return `<div class="responsibility-list">${visible.map((item,index) => `<article class="responsibility-item"><span class="number">${index + 1}</span><div><b>${esc(itemText(item))}</b>${proposalActions('RESPONSIBILITIES',index)}</div></article>`).join('') || '<div class="empty-state">لا توجد مهام مسجلة.</div>'}</div>${managerReviewing() && !limit ? '<button class="review-btn" data-propose="ADD" data-section="RESPONSIBILITIES" data-index="-1">إضافة مهمة مقترحة</button>' : ''}`;
@@ -86,12 +96,7 @@ function overviewView() {
   const linked = assignments.filter(item => item.job_description_id === job.id);
   const linkedIds = new Set(linked.map(item => item.profile_id));
   const assignmentCard = canStage('ASSIGN') ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.status === 'PUBLISHED' ? 'الوصف ظاهر الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
-  return `<div class="content-stack">${assignmentCard}<section class="content-card"><h2>الغرض الوظيفي</h2><div class="purpose-text">${esc(job.purpose || 'غير محدد')}</div>${proposalActions('PURPOSE',-1)}</section><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
-}
-
-function authoritiesView() {
-  const rows = asArray(job.content?.authorities);
-  return `<section class="content-card"><h2>مصفوفة الصلاحيات</h2><div class="matrix-wrap"><table class="permission-matrix"><thead><tr><th>الإجراء</th><th>مستوى الصلاحية</th><th>النطاق والحد</th><th>التصعيد</th></tr></thead><tbody>${rows.map((item,index) => `<tr><td><b>${esc(itemText(item))}</b>${proposalActions('AUTHORITIES',index)}</td><td class="type">${esc(item.type || 'تنفيذ')}</td><td>${esc([item.scope,item.limit].filter(Boolean).join(' — ') || 'وفق التفويض المعتمد')}</td><td>${esc(item.escalation || 'المدير المباشر')}</td></tr>`).join('')}</tbody></table></div>${managerReviewing() ? '<button class="review-btn" data-propose="ADD" data-section="AUTHORITIES" data-index="-1">إضافة صلاحية مقترحة</button>' : ''}</section>`;
+  return `<div class="content-stack">${assignmentCard}${documentSection('description')}<div>${proposalActions('PURPOSE',-1)}</div><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
 }
 
 function referenceWeightsView() {
@@ -104,10 +109,9 @@ function referenceWeightsView() {
 
 function measurementView() {
   const content = job.content || {};
-  const metrics = asArray(content.kpis).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.measure || '')}</p><div class="metric-meta"><span>المستهدف: ${esc(item.target || 'يحدد')}</span><span>${esc(item.frequency || '')}</span></div>${proposalActions('KPIS',index)}</article>`).join('');
   const reports = asArray(content.reports).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.recipient ? 'المستلم: ' + item.recipient : '')}</p><div class="metric-meta"><span>${esc(item.frequency || '')}</span><span>${esc(item.display_rule || 'داخل النظام')}</span></div>${proposalActions('REPORTS',index)}</article>`).join('');
   const formCards = forms.map(item => `<a class="form-link" href="${esc(item.file_url || '#')}" ${item.file_url ? 'target="_blank"' : ''}><b>${esc(item.title)}</b><span>${esc(item.form_type)} • الإصدار ${esc(item.version)}</span><small>${esc(item.usage_note || item.description || '')}</small></a>`).join('');
-  return `<div class="content-stack">${referenceWeightsView()}<section class="content-card"><h2>مؤشرات الأداء في المسودة الحالية</h2><div class="measurement-grid">${metrics || '<div class="empty-state">لا توجد مؤشرات.</div>'}</div></section><section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
+  return `<div class="content-stack">${referenceWeightsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
 }
 
 function valueText(value) {
@@ -159,7 +163,7 @@ function render() {
   byId('managerAlert').innerHTML = `<i data-lucide="${resolution.state === 'danger' ? 'triangle-alert' : 'network'}"></i><span>${esc(resolution.text)}</span>`;
   byId('headerActions').innerHTML = headerActions();
   document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === activeTab));
-  byId('reviewBody').innerHTML = editing && activeTab !== 'review' ? editView() : activeTab === 'overview' ? overviewView() : activeTab === 'responsibilities' ? `<section class="content-card"><h2>المهام والمسؤوليات</h2>${responsibilitiesView(job.content?.responsibilities)}</section>` : activeTab === 'authorities' ? authoritiesView() : activeTab === 'measurement' ? measurementView() : reviewView();
+  byId('reviewBody').innerHTML = editing && activeTab !== 'review' ? editView() : activeTab === 'overview' ? overviewView() : activeTab === 'responsibilities' ? documentSection('tasks') : activeTab === 'authorities' ? documentSection('authority') : activeTab === 'measurement' ? measurementView() : reviewView();
   bindActions();
   window.lucide?.createIcons();
 }

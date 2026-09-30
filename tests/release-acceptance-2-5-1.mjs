@@ -20,7 +20,7 @@ for(const file of protectedPages){
 const tasks=read('assets/js/tasks-page.js');
 const library=read('assets/js/job-library-page.js');
 const review=read('assets/js/job-review-page.js');
-const profile=read('profile/index.html');
+const profile=read('profile/index.html')+read('assets/js/job-document-view.js')+read('assets/css/job-document.css');
 const executive=read('tasks/executive.html');
 const users=read('admin/users.html');
 const shell=read('assets/js/shell-components.js');

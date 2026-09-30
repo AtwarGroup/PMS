@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.2">
   <link rel="stylesheet" href="../assets/css/job-review.css">
   <style>.scorecard-reference{border-right:4px solid #1769e0}.scorecard-reference p{line-height:1.8;color:#485d75}.scorecard-reference .reference-note{margin:12px 0 0;color:#9a640e}.manager-alert.approved{background:#eaf9f2;border-color:#bce8d3;color:#087f5b}</style>
+<link rel="stylesheet" href="../assets/css/job-document.css?v=2.5.14">
+<script src="../assets/js/job-document-view.js?v=2.5.14"></script>
 </head>
 <body style="visibility:hidden">
   <div class="atwar-shell">
@@ -60,10 +62,10 @@
 
             <section class="review-content">
               <nav id="reviewTabs" class="review-tabs" aria-label="أقسام الوصف">
-                <button data-tab="overview" class="active">الوظيفة</button>
-                <button data-tab="responsibilities">المهام والمسؤوليات</button>
-                <button data-tab="authorities">مصفوفة الصلاحيات</button>
-                <button data-tab="measurement">القياس والنماذج</button>
+                <button data-tab="overview" class="active"><i data-lucide="file-badge"></i><span>الوصف الوظيفي</span></button>
+                <button data-tab="responsibilities"><i data-lucide="list-checks"></i><span>المهام والمسؤوليات</span></button>
+                <button data-tab="authorities"><i data-lucide="shield-check"></i><span>حدود الصلاحيات<small>مصفوفة الصلاحيات</small></span></button>
+                <button data-tab="measurement"><i data-lucide="chart-no-axes-combined"></i><span>بطاقة قياس مؤشرات الأداء KPI’s</span></button>
                 <button data-tab="review">المقترحات والملاحظات <span id="proposalCount">0</span></button>
               </nav>
               <div id="reviewBody"></div>
@@ -79,6 +81,6 @@
   <script src="../assets/js/supabase-config.js"></script>
   <script src="../assets/js/supabase-runtime.js"></script>
   <script src="../assets/js/permissions.js"></script>
-  <script type="module" src="../assets/js/job-review-page.js?v=2.5.12-edit-entry"></script>
+  <script type="module" src="../assets/js/job-review-page.js?v=2.5.14"></script>
 </body>
 </html>

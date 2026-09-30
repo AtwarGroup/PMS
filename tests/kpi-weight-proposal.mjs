@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-const source=readFileSync(new URL('../profile/index.html',import.meta.url),'utf8');
+const source=readFileSync(new URL('../assets/js/job-document-view.js',import.meta.url),'utf8');
 const definition=source.match(/const KPI_WEIGHT_PROPOSAL=(\{[^;]+\});/);
 assert.ok(definition,'The published job proposal must be explicit and version bound');
 const proposal=vm.runInNewContext(`(${definition[1]})`);
