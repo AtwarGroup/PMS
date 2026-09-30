@@ -24,7 +24,8 @@ for(const forbidden of ["sb.from('tasks')",'id="teamMetrics"','teamAttentionCoun
 assert.ok(tasks.includes('function renderManagerDashboard()'),'Task workspace must retain team task metrics');
 assert.ok(tasks.includes("String(u.managerUid||'')===String(currentUser.uid)"),'Manager full-task view must remain limited to direct reports');
 assert.ok(tasks.includes("String(task.createdByUid||'')===String(currentUser.uid||'')"),'Manager must retain visibility of tasks they created');
-assert.ok(employee.includes("const allowed=['manager','admin'].includes(a.profile.role)"),'Employee profile route must defer descendant authorization to Supabase RLS');
+const employeePage=read('assets/js/team-employee-page.js');
+assert.ok(employeePage.includes("sb.rpc('get_team_employee_job'"),'Employee profile route must delegate team authorization and published snapshot selection to the scoped RPC');
 assert.ok(!employee.includes('target.manager_id===a.profile.id'),'Employee profile route must not reject permitted indirect descendants client-side');
 
 console.log(`Phase-two team boundary audit passed: ${teamContracts.length+10} contracts.`);
