@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.16";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.17";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
-import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.12";
+import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.13";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
@@ -1945,7 +1945,8 @@ function getTaskAttachmentsController(){
       getCurrentUser:()=>currentUser,
       getCurrentProfile:()=>currentProfile,
       confirmAction:appConfirm,
-      toast:showToast
+      toast:showToast,
+      onChanged:refreshTaskData
     });
   }
   return taskAttachmentsController;

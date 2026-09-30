@@ -9,7 +9,8 @@ export function createTaskAttachmentsController({
   getCurrentUser,
   getCurrentProfile,
   confirmAction,
-  toast
+  toast,
+  onChanged=async()=>{}
 }){
   let uploadBusy=false;
   const deleteLocks=new Set();
@@ -42,6 +43,7 @@ export function createTaskAttachmentsController({
       const sb=await getSupabase();
       const removedRow=await sb.from('task_attachments').delete().eq('id',id);
       if(removedRow.error)throw removedRow.error;
+      await onChanged();
       toast('تم حذف المرفق.','success');
       const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
       if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
@@ -76,6 +78,7 @@ export function createTaskAttachmentsController({
       const row={task_id:taskId,uploader_id:user.uid,uploader_name_snapshot:profile?.name||user.email||'',file_name:file.name,storage_path:storagePath,content_type:file.type||null,size_bytes:file.size};
       const saved=await sb.from('task_attachments').insert(row).select('id,task_id,file_name,storage_path,size_bytes,created_at').single();
       if(saved.error){await sb.storage.from('task-attachments').remove([storagePath]).catch(()=>{});throw saved.error;}
+      await onChanged();
       toast('تم رفع المرفق بنجاح.','success');
     }catch(error){
       console.error('Upload attachment:',error);
