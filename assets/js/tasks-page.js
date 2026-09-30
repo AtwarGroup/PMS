@@ -422,7 +422,7 @@ function taskRequiresApproval(task){
   return task?.completionRequiresApproval!==false || !creator || creator!==owner;
 }
 function taskApprovalRecipient(task){
- const owner=String(task?._ownerUid||task?.assignUid||''),creator=String(task?.createdByUid||'');
+ const owner=String(task?._ownerUid||task?.assignUid||''),creator=String(task?.approvalCommissionerUid||task?.createdByUid||'');
  if(creator&&creator!==owner)return creator;
  return String(getUserByUid(owner)?.managerUid||'');
 }

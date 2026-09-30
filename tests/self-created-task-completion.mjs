@@ -15,6 +15,7 @@ ctx.currentUser.uid='commissioner';assert.equal(ctx.canApproveTask(assigned),tru
 ctx.currentUser.uid='owner';assert.equal(ctx.canApproveTask(assigned),false);
 ctx.currentUser.uid='admin';ctx.currentProfile.role='admin';assert.equal(ctx.canApproveTask(assigned),true);
 assert.equal(ctx.taskApprovalRecipient(assigned),'commissioner');
+assert.equal(ctx.taskApprovalRecipient({...assigned,createdByUid:'employee-creator',approvalCommissionerUid:'actual-commissioner'}),'actual-commissioner');
 assert.equal(ctx.taskApprovalRecipient({...self,completionRequiresApproval:true}),'direct');
 assert.equal(ctx.taskRequiresApproval({...self,jobWorkflow:{}}),true);assert.equal(ctx.canApproveTask({...assigned,jobWorkflow:{}}),false);
 const sql=read('supabase/migrations/20260930184904_self_created_task_completion_and_commissioner_approval.sql');

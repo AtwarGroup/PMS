@@ -78,6 +78,7 @@ function taskLegacy(t,children,profileNames=new Map()){
     delegatedByUid:t.delegated_by_id||'',delegatedBy:currentDelegatorName,delegatedAt:ms(t.delegated_at)||null,
     isDelegated:!!t.delegated_by_id&&t.delegated_by_id!==t.assignee_id,
     completionRequiresApproval:t.completion_requires_approval!==false,
+    approvalCommissionerUid:t.approval_commissioner_id||'',
     start:t.start_date||'',end:t.due_date||'',actualEnd:t.actual_end_date||'',notes:t.notes||'',managerNotes:t.manager_notes||'',revision:Number(t.revision||1),reopenReason:t.reopen_reason||'',
     createdAt:ms(t.created_at),updatedAt:ms(t.updated_at),startedAt:ms(t.started_at)||null,submittedAt:ms(t.submitted_at)||null,
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
