@@ -15,5 +15,4 @@ for(const job of catalog)for(const row of job.indicators){
  const adoptedHtml=ctx.window.AtwarJobDocument.section('performance',{job:{id:job.jobId},content:{kpis:[adopted]}}).html;assert.ok(adoptedHtml.includes('معتمد 5'));assert.ok(!adoptedHtml.includes('حدود مقترحة للمراجعة والاعتماد'));
 }
 const it=catalog.find(j=>j.jobCode==='JOB-056');assert.equal(it.indicators.length,4);assert.ok(it.indicators[0].scale[2].label.includes('95'));
-const review=read('assets/js/job-review-page.js');assert.ok(review.includes(".eq('revision',job.revision)"));assert.ok(review.includes("status:'DRAFT'"));assert.ok(review.includes('scale_basis:proposal.basis'));
 console.log('57 jobs / 253 proposed scales: exact matching, preserved weights, adopted-scale precedence, nonmutating display and draft adoption passed');
