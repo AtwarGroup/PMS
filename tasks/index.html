@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/tasks-tailwind.min.css?v=2.5.6">
   <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.33"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.5.34"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -206,7 +206,7 @@
 <script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
-<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.33" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.34" data-atwar-app-theme="1">
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen atwar-task-page">
@@ -271,11 +271,11 @@
 
     <!-- Stats -->
     <section class="task-suite-metrics">
-      <div class="task-suite-metric"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
-      <div class="task-suite-metric"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
-      <div class="task-suite-metric"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
-      <div class="task-suite-metric"><p id="statPendingLabel">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
-      <div class="task-suite-metric"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+      <div class="task-suite-metric" data-tone="blue"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="task-suite-metric" data-tone="success"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
+      <div class="task-suite-metric" data-tone="blue"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
+      <div class="task-suite-metric" data-tone="warning"><p id="statPendingLabel">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
+      <div class="task-suite-metric" data-tone="danger"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
     </section>
 
     <!-- Manager Dashboard -->

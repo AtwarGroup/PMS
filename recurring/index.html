@@ -6,7 +6,7 @@
 <title>ATWAR ONE – المهام الدورية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.33"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.5.34"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
@@ -25,7 +25,7 @@
 @media(max-width:620px){.form-grid,.recurring-cards{grid-template-columns:1fr}.field.wide{grid-column:auto}.recurring-actions .btn{width:100%}.recurring-actions{align-items:stretch;flex-direction:column}.recurring-toolbar{align-items:stretch;flex-direction:column}.recurring-search{width:100%}.recurring-view-switch{align-self:flex-start}}
 .recurring-card h3{font-size:14px}.recurring-owner,.recurring-toggle{font-size:11px}.recurring-fact span{font-size:10px}.recurring-fact b{font-size:11px}.recurring-table{font-size:11px}.recurring-table td:first-child{font-size:14px}
 </style>
-<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.33" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.34" data-atwar-app-theme="1">
 </head>
 <body data-min-role="manager">
 <div class="atwar-shell">
@@ -36,10 +36,10 @@
 <section class="task-suite-hero"><div><h1>المهام الدورية</h1><p>إنشاء قوالب متكررة منظمة ومتابعة موعد التشغيل القادم وحالة كل قالب.</p></div><span class="task-suite-hero-badge"><i data-lucide="repeat-2"></i> إدارة القوالب المتكررة</span></section>
 
 <section class="atwar-metrics recurring-metrics" aria-label="ملخص المهام الدورية">
-  <article class="atwar-metric"><strong id="templateCount">0</strong><span>إجمالي القوالب</span></article>
-  <article class="atwar-metric success"><strong id="activeTemplateCount">0</strong><span>قوالب نشطة</span></article>
-  <article class="atwar-metric warning"><strong id="dueTemplateCount">0</strong><span>مستحقة الآن</span></article>
-  <article class="atwar-metric purple"><strong id="nextTemplateRun">—</strong><span>أقرب تشغيل</span></article>
+  <article class="atwar-metric" data-tone="blue"><strong id="templateCount">0</strong><span>إجمالي القوالب</span></article>
+  <article class="atwar-metric success" data-tone="success"><strong id="activeTemplateCount">0</strong><span>قوالب نشطة</span></article>
+  <article class="atwar-metric warning" data-tone="warning"><strong id="dueTemplateCount">0</strong><span>مستحقة الآن</span></article>
+  <article class="atwar-metric purple" data-tone="purple"><strong id="nextTemplateRun">—</strong><span>أقرب تشغيل</span></article>
 </section>
 
 <section class="task-suite-panel">
