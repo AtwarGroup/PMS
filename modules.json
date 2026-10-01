@@ -118,6 +118,14 @@
       "path": "admin/users.html",
       "minRole": "admin",
       "status": "stable"
+    },
+    {
+      "id": "projects",
+      "path": "projects/index.html",
+      "minRole": "employee",
+      "status": "stable",
+      "navigation": "primary",
+      "label": "إدارة المشاريع"
     }
   ]
 }
