@@ -9,7 +9,7 @@ const tasks=section('tasks',context).html;assert.ok(tasks.includes('&lt;script&g
 const authorities=section('authority',context).html;for(const text of ['النطاق','الحد','التصعيد'])assert.ok(authorities.includes(text));
 const kpis=section('performance',context).html;assert.ok(kpis.includes('BALANCED SCORECARD FRAMEWORK'));assert.ok(kpis.includes('100%'));for(let score=1;score<=5;score++)assert.ok(kpis.includes('حد '+score));
 assert.ok(section('description',context).html.includes('المدير'));
-for(const path of ['profile/index.html','profile/job-description.html','team/employee.html','job-library/review.html']){assert.ok(read(path).includes('job-document.css?v=2.5.14'));assert.ok(read(path).includes('job-document-view.js?v=2.5.15'));assert.ok(read(path).includes('job-kpi-proposals.js?v=2.5.15'));}
+for(const path of ['profile/index.html','profile/job-description.html','team/employee.html','job-library/review.html']){assert.ok(read(path).includes('job-document.css?v=2.5.14'));assert.ok(read(path).includes('job-document-view.js?v=2.5.21'));assert.ok(read(path).includes('job-kpi-proposals.js?v=2.5.21'));}
 for(const path of ['assets/js/team-employee-page.js','assets/js/job-profile-page.js','assets/js/job-review-page.js'])assert.ok(read(path).includes('AtwarJobDocument'));
 assert.ok(read('assets/js/job-profile-page.js').includes("sb.rpc('acknowledge_job_description'"));
 assert.ok(read('assets/js/job-review-page.js').includes('proposalActions(key,index)'));

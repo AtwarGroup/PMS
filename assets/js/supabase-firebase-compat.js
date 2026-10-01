@@ -58,6 +58,8 @@ async function loadChildren(taskIds){
     sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true}),
     sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',ids).order('created_at',{ascending:false})
   ]);
+  // A failed child read must never become an empty editable collection.
+  for(const response of [ar,sr,fr])if(response.error)throw response.error;
   const activities=new Map(),subtasks=new Map(),attachments=new Map();
   for(const a of ar.data||[]){const x={type:a.event_type||'activity',detail:a.detail||'',userUid:a.actor_id||'',userName:a.actor_name_snapshot||'',createdAt:ms(a.created_at)};(activities.get(a.task_id)||activities.set(a.task_id,[]).get(a.task_id)).push(x)}
   for(const s of sr.data||[]){const x={id:s.id,title:s.title||'',done:!!s.done,createdAt:ms(s.created_at),completedAt:ms(s.completed_at)||null};(subtasks.get(s.task_id)||subtasks.set(s.task_id,[]).get(s.task_id)).push(x)}
