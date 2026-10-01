@@ -39,7 +39,7 @@
 @media(max-width:900px){.workspace-main-grid{grid-template-columns:1fr}.workspace-main-grid .ws-card{min-height:auto}}
 @media(max-width:600px){.workspace-main-grid{gap:12px}.workspace-note-card .note-input{min-height:220px}.workspace-main-grid .ws-card{padding:16px}.follow-head{align-items:flex-start;flex-direction:column}.follow-add{width:100%}}
 </style>
-<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.32" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.33" data-atwar-app-theme="1">
 </head>
 <body>
 <div class="atwar-shell">
@@ -110,7 +110,7 @@ function renderFollowups(){
     const taskLink=x.task_id?(task
       ?`<a class="follow-task" href="${taskUrl(task)}">↗ فتح المهمة: ${esc(task.title||'المهمة')}</a>`
       :'<span class="follow-task missing">المهمة المرتبطة غير متاحة</span>'):'';
-    return `<div class="follow-item"><div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(fdate(x)||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>${fnote(x)?`<div class="follow-note">${esc(fnote(x))}</div>`:''}${taskLink}<div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div></div>`;
+    return `<div class="follow-item" data-follow-state="${esc(x.status||'soon')}"><div class="follow-top"><div><div class="follow-title">${esc(x.title||'متابعة')}</div><div class="follow-meta">${esc(fdate(x)||'بدون تاريخ')} • ${labels[x.status]||'متابعة'}</div></div></div>${fnote(x)?`<div class="follow-note">${esc(fnote(x))}</div>`:''}${taskLink}<div class="follow-actions">${x.status!=='done'?`<button data-follow-done="${esc(x.id)}">تمت المتابعة</button>`:''}<button data-follow-delete="${esc(x.id)}">حذف</button></div></div>`;
   }).join(''):'<div class="follow-empty">لا توجد متابعات مسجلة حالياً.</div>';
   host.querySelectorAll('[data-follow-done]').forEach(b=>b.onclick=async()=>{
     const{error}=await sb.rpc('workspace_complete_followup',{p_followup_id:b.dataset.followDone});
