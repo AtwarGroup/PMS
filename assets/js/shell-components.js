@@ -342,6 +342,8 @@
     window.addEventListener('pagehide',()=>{clearInterval(presenceTimer);presenceTimer=null;document.removeEventListener('visibilitychange',visible)},{once:true});
   };
 
+  window.addEventListener('pageshow',async e=>{if(e.persisted&&typeof window.atwarGetSupabase==='function'){try{window.atwarStartPresence(await window.atwarGetSupabase())}catch{}}});
+
   window.atwarSyncShellIdentity=function(profile,authUser){
     if(!profile&&!authUser)return;
     const previous=getSession()||{};
