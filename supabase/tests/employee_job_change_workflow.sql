@@ -1,0 +1,91 @@
+-- Run transactionally after the migration. Everything is rolled back.
+begin;
+create temporary table qa_change_context(job_id uuid, request_id uuid, second_request uuid, admin_id uuid,manager_id uuid,employee_id uuid,key uuid);
+insert into qa_change_context select gen_random_uuid(),null,null,a.id,m.id,e.id,gen_random_uuid() from public.profiles a,public.profiles m,public.profiles e where a.email='e2e-admin@atwargroup.test' and m.email='e2e-manager@atwargroup.test' and e.email='e2e-employee@atwargroup.test';
+grant all on qa_change_context to authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub',admin_id,'role','authenticated')::text,true) from qa_change_context;
+insert into public.job_descriptions(id,job_code,title,family,purpose,content,reviewer_id,created_by,updated_by)
+select job_id,'JOB-'||(900000000+floor(random()*99999999)::bigint)::text,'QA employee suggestion','QA','QA purpose for transactional employee proposal tests with sufficient content.',
+ '{"responsibilities":[{"text":"Original responsibility"}],"authorities":[],"kpis":[],"reports":[]}'::jsonb,manager_id,admin_id,admin_id from qa_change_context;
+update public.job_descriptions set status='IN_REVIEW',submitted_at=now() where id=(select job_id from qa_change_context);
+update public.job_descriptions set status='MANAGER_APPROVED' where id=(select job_id from qa_change_context);
+select public.finish_job_final_review(job_id) from qa_change_context;
+update public.job_descriptions set status='PUBLISHED' where id=(select job_id from qa_change_context);
+insert into public.employee_job_assignments(profile_id,job_description_id,assigned_by) select employee_id,job_id,admin_id from qa_change_context on conflict(profile_id) do update set job_description_id=excluded.job_description_id,assigned_by=excluded.assigned_by;
+set local role authenticated;
+select set_config('request.jwt.claims',jsonb_build_object('sub',employee_id,'role','authenticated')::text,true) from qa_change_context;
+update qa_change_context set request_id=public.submit_employee_job_change(job_id,(select (published_snapshot->>'revision')::int from public.job_descriptions where id=job_id),'RESPONSIBILITIES','MODIFY',0,'Revised responsibility','QA reason for proposal',key);
+do $$ declare c record;r record;begin
+ select * into c from qa_change_context;select * into r from public.employee_job_change_requests where id=c.request_id;
+ if r.status<>'MANAGER_REVIEW' or r.manager_task_id is null then raise exception 'Manager task missing';end if;
+ if public.submit_employee_job_change(c.job_id,r.published_revision,'RESPONSIBILITIES','MODIFY',0,'Revised responsibility','QA reason',c.key)<>r.id then raise exception 'Idempotency failed';end if;
+ if (select count(*) from public.employee_job_change_requests where requester_id=c.employee_id and client_key=c.key)<>1 then raise exception 'Duplicate request';end if;
+ begin perform public.decide_employee_job_change(r.id,r.version,true,'Unauthorized employee');raise exception 'Employee decided';exception when insufficient_privilege then null;end;
+ begin update public.employee_job_change_requests set status='PUBLISHED' where id=r.id;raise exception 'Direct mutation allowed';exception when insufficient_privilege then null;end;
+ begin update public.tasks set progress=100,status='مكتملة' where id=r.manager_task_id;exception when insufficient_privilege then null;end;
+ if (select status from public.tasks where id=r.manager_task_id)='مكتملة' then raise exception 'Manual workflow completion allowed';end if;
+ if (select published_snapshot->'content'->'responsibilities'->0->>'text' from public.job_descriptions where id=c.job_id)<>'Original responsibility' then raise exception 'Published version mutated';end if;
+ end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',manager_id,'role','authenticated')::text,true) from qa_change_context;
+select public.decide_employee_job_change(request_id,1,true,'Manager supports this proposal') from qa_change_context;
+do $$ declare r record;begin select * into r from public.employee_job_change_requests where id=(select request_id from qa_change_context);
+ if r.status<>'ADMIN_REVIEW' or r.admin_task_id is null then raise exception 'Admin task missing';end if;
+ if (select status from public.tasks where id=r.manager_task_id)<>'مكتملة' then raise exception 'Manager task not closed';end if;
+ begin perform public.decide_employee_job_change(r.id,1,true,'Stale duplicate');raise exception 'Stale version accepted';exception when raise_exception then if sqlerrm not like 'ATWAR_CONFLICT:%' then raise;end if;end;
+ end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',admin_id,'role','authenticated')::text,true) from qa_change_context;
+select public.decide_employee_job_change(request_id,2,true,'Admin approves proposal') from qa_change_context;
+do $$ declare c record;r record;begin select * into c from qa_change_context;select * into r from public.employee_job_change_requests where id=c.request_id;
+ if r.status<>'APPLIED' then raise exception 'Proposal not applied';end if;
+ if (select content->'responsibilities'->0->>'text' from public.job_descriptions where id=c.job_id)<>'Revised responsibility' then raise exception 'Draft not updated';end if;
+ if (select published_snapshot->'content'->'responsibilities'->0->>'text' from public.job_descriptions where id=c.job_id)<>'Original responsibility' then raise exception 'Published changed before publish';end if;
+ if (select status from public.tasks where id=r.admin_task_id)='مكتملة' then raise exception 'Admin task closed before publication';end if;
+ end $$;
+update public.job_descriptions set status='IN_REVIEW',submitted_at=now() where id=(select job_id from qa_change_context);
+update public.job_descriptions set status='MANAGER_APPROVED' where id=(select job_id from qa_change_context);
+select public.finish_job_final_review(job_id) from qa_change_context;
+update public.job_descriptions set status='PUBLISHED' where id=(select job_id from qa_change_context);
+do $$ declare c record;r record;begin select * into c from qa_change_context;select * into r from public.employee_job_change_requests where id=c.request_id;
+ if r.status<>'PUBLISHED' then raise exception 'Publication not tracked';end if;
+ if (select status from public.tasks where id=r.admin_task_id)<>'مكتملة' then raise exception 'Admin task not closed';end if;
+ if not exists(select 1 from public.tasks where assignee_id=c.employee_id and legacy_metadata->'job_workflow'->>'phase'='EMPLOYEE_ACK' and legacy_metadata->'job_workflow'->>'job_id'=c.job_id::text and legacy_metadata->'job_workflow'->>'cycle'=r.published_result_revision::text and status='قيد الانتظار') then raise exception 'New acknowledgement task missing';end if;
+ end $$;
+select set_config('request.jwt.claims',jsonb_build_object('sub',employee_id,'role','authenticated')::text,true) from qa_change_context;
+update qa_change_context set second_request=public.submit_employee_job_change(job_id,(select (published_snapshot->>'revision')::int from public.job_descriptions where id=job_id),'REPORTS','ADD',null,'Proposed report','Report proposal reason',gen_random_uuid());
+select set_config('request.jwt.claims',jsonb_build_object('sub',manager_id,'role','authenticated')::text,true) from qa_change_context;
+select public.decide_employee_job_change(second_request,1,false,'Not required for this role') from qa_change_context;
+do $$ declare r record;begin select * into r from public.employee_job_change_requests where id=(select second_request from qa_change_context);if r.status<>'REJECTED' or (select status from public.tasks where id=r.manager_task_id)<>'مكتملة' then raise exception 'Rejection failed';end if;end $$;
+-- Admin rejection and a changed source item must not overwrite draft work.
+select set_config('request.jwt.claims',jsonb_build_object('sub',employee_id,'role','authenticated')::text,true) from qa_change_context;
+update qa_change_context set second_request=public.submit_employee_job_change(job_id,(select (published_snapshot->>'revision')::int from public.job_descriptions where id=job_id),'PURPOSE','MODIFY',null,'Proposed purpose for QA','Purpose proposal reason',gen_random_uuid());
+select set_config('request.jwt.claims',jsonb_build_object('sub',manager_id,'role','authenticated')::text,true) from qa_change_context;
+select public.decide_employee_job_change(second_request,1,true,'Manager supports purpose review') from qa_change_context;
+select set_config('request.jwt.claims',jsonb_build_object('sub',admin_id,'role','authenticated')::text,true) from qa_change_context;
+update public.job_descriptions set status='DRAFT',purpose='Different draft purpose for the same role, preserve this work.' where id=(select job_id from qa_change_context);
+do $$ declare r record;begin select * into r from public.employee_job_change_requests where id=(select second_request from qa_change_context);
+ begin perform public.decide_employee_job_change(r.id,2,true,'Attempt outdated proposal');raise exception 'Stale item overwritten';exception when raise_exception then if sqlerrm not like 'ATWAR_CONFLICT:%' then raise;end if;end;
+ if (select status from public.employee_job_change_requests where id=r.id)<>'ADMIN_REVIEW' then raise exception 'Conflict changed request';end if;
+ end $$;
+select public.decide_employee_job_change(second_request,2,false,'Source item changed; submit a fresh request') from qa_change_context;
+do $$ declare r record;begin select * into r from public.employee_job_change_requests where id=(select second_request from qa_change_context);
+ if r.status<>'REJECTED' or (select status from public.tasks where id=r.admin_task_id)<>'مكتملة' then raise exception 'Admin rejection failed';end if;end $$;
+-- No manager: route directly to the active system administrator, with a task.
+reset role;
+insert into public.employee_job_assignments(profile_id,job_description_id,assigned_by) select admin_id,job_id,admin_id from qa_change_context on conflict(profile_id) do update set job_description_id=excluded.job_description_id,assigned_by=excluded.assigned_by;
+set local role authenticated;
+update qa_change_context set second_request=public.submit_employee_job_change(job_id,(select (published_snapshot->>'revision')::int from public.job_descriptions where id=job_id),'REPORTS','ADD',null,'Direct admin report suggestion','No manager fallback reason',gen_random_uuid());
+do $$ declare r record;begin select * into r from public.employee_job_change_requests where id=(select second_request from qa_change_context);if r.status<>'ADMIN_REVIEW' or r.manager_task_id is not null or r.admin_task_id is null then raise exception 'No manager fallback failed';end if;end $$;
+-- A different employee cannot see or act on the request, or propose on this job.
+reset role;
+select set_config('request.jwt.claims',jsonb_build_object('sub',(select id from public.profiles where role='employee' and id<>(select employee_id from qa_change_context) and active=true and status='active' limit 1),'role','authenticated')::text,true);
+set local role authenticated;
+do $$ declare c record;begin select * into c from qa_change_context;
+ if exists(select 1 from public.employee_job_change_requests where job_description_id=c.job_id) then raise exception 'Out of scope request visible';end if;
+ begin perform public.submit_employee_job_change(c.job_id,1,'REPORTS','ADD',null,'Out of scope report','Should be blocked',gen_random_uuid());raise exception 'Out of scope proposal allowed';exception when insufficient_privilege then null;end;
+ end $$;
+reset role;
+do $$ begin
+ if has_table_privilege('anon','public.employee_job_change_requests','SELECT') or has_function_privilege('anon','public.submit_employee_job_change(uuid,integer,text,text,integer,text,text,uuid)','EXECUTE') then raise exception 'Anonymous access allowed';end if;
+ end $$;
+select 'PASS: idempotency, employee/manager/admin permissions, version conflict, task lifecycle, published snapshot protection, publication and acknowledgement, manager rejection' as result;
+rollback;

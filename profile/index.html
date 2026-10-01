@@ -247,7 +247,7 @@ function renderInlineJob(mode,context){
  const view=window.AtwarJobDocument.section(mode,context);
  document.getElementById('profileJobViewerTitle').textContent=view.title;
  document.getElementById('profileJobViewerSubtitle').textContent=view.subtitle;
- body.innerHTML=view.html+`<div class="viewer-ack"><span>حالة الإقرار: <b>${context.acknowledgement?'تمت الموافقة على الإصدار '+esc(context.revision):'بانتظار موافقة الموظف'}</b></span><a href="job-description.html">${context.acknowledgement?'عرض سجل الإقرار':'اعتماد الإقرار وإرسال PDF'}</a></div>`;
+ body.innerHTML=view.html+`<div class="viewer-ack"><span>حالة الإقرار: <b>${context.acknowledgement?'تمت الموافقة على الإصدار '+esc(context.revision):'بانتظار موافقة الموظف'}</b></span><a href="job-description.html#employeeJobChanges">اقتراح تعديل ومتابعة الطلبات</a><a href="job-description.html">${context.acknowledgement?'عرض سجل الإقرار':'اعتماد الإقرار وإرسال PDF'}</a></div>`;
  document.querySelectorAll('[data-inline-job]').forEach(button=>{button.classList.toggle('active',button.dataset.inlineJob===mode);button.setAttribute('aria-pressed',String(button.dataset.inlineJob===mode));});
  viewer.classList.remove('hidden');window.lucide?.createIcons();viewer.scrollIntoView({behavior:'smooth',block:'nearest'});
 }

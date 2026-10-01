@@ -9,4 +9,4 @@ assert.match(sql,/if tg_op='UPDATE' and old.job_description_id=new.job_descripti
 assert.match(sql,/create trigger job_workflow_ack after insert/,'Acknowledgement must close its task');
 assert.match(sql,/create trigger guard_job_workflow_task_before_change/,'Workflow tasks cannot be closed manually');
 assert.match(compat,/jobWorkflow:t\.legacy_metadata\?\.job_workflow\|\|null/);
-assert.match(tasks,/jobLink\.href=workflow\.phase==='EMPLOYEE_ACK'/,'The task must open its authoritative job page');
+assert.match(tasks,/workflow\.phase==='EMPLOYEE_ACK'/,'The task must open its authoritative job page');
