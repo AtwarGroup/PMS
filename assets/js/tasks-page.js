@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.22";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.28";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.13";
 
@@ -410,7 +410,7 @@ function canReassignTaskTo(task,uid){
   return String(target.managerUid||'')===String(currentUser.uid) || ((currentProfile.permissions||[]).includes('tasks.assign_indirect') && isDescendantOf(target,currentUser.uid));
 }
 function canDeleteTask(task){
-  if(!task||!currentProfile||!currentUser||task.jobWorkflow)return false;
+  if(!task||!currentProfile||!currentUser||task.jobWorkflow||task.projectId)return false;
   if(isExecutiveReadOnlyTask(task))return false;
   if(currentProfile.role==='admin')return true;
   return task.status!=='مكتملة' &&
@@ -432,6 +432,7 @@ function canApproveTask(task){
  if(!task||!currentProfile||!currentUser||task.jobWorkflow||isExecutiveReadOnlyTask(task))return false;
  const owner=String(task._ownerUid||task.assignUid||'');
  if(owner===String(currentUser.uid||''))return false;
+ if(task.projectId)return taskApprovalRecipient(task)===String(currentUser.uid);
  if(currentProfile.role==='admin')return true;
  return currentProfile.role==='manager'&&taskApprovalRecipient(task)===String(currentUser.uid);
 }
@@ -444,6 +445,7 @@ function isTaskOwner(task){
   return !!task && String(task._ownerUid||'')===String(currentUser?.uid||'');
 }
 function isExecutiveReadOnlyTask(task){
+  if(task?.projectId&&taskApprovalRecipient(task)===String(currentUser?.uid||''))return false;
   if(!(currentProfile?.permissions||[]).includes('tasks.read_all')||currentProfile?.role==='admin')return false;
   const owner=getUserByUid(task?._ownerUid||task?.assignUid||'');
   return !isTaskOwner(task)
@@ -452,6 +454,7 @@ function isExecutiveReadOnlyTask(task){
 }
 function canEditTaskField(task,field){
   if(!task||!currentProfile||task.jobWorkflow)return false;
+  if(task.projectId)return ['قيد الانتظار','قيد التنفيذ'].includes(task.status)&&isTaskOwner(task)&&['progress','notes'].includes(field);
   if(isExecutiveReadOnlyTask(task))return false;
 
   const status=String(task.status||'قيد الانتظار');
@@ -2407,7 +2410,7 @@ function subtaskProgress(task){
   return Math.round((items.filter(x=>x&&x.done).length/items.length)*100);
 }
 function canEditSubtasks(task){
-  if(!task||!currentProfile||task.jobWorkflow)return false;
+  if(!task||!currentProfile||task.jobWorkflow||task.projectId)return false;
   if(task.status==='مكتملة'||task.status==='بانتظار الاعتماد')return false;
   if(currentProfile.role==='employee')return isTaskOwner(task);
   return true;
@@ -2676,7 +2679,8 @@ function renderDetails(){
   }
 
   const jobLink=document.getElementById('jobWorkflowLink');
-  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.policy_id?`../policies/index.html?id=${encodeURIComponent(String(workflow.policy_id))}&version=${encodeURIComponent(String(workflow.policy_version_id||''))}`:workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.policy_id?'فتح السياسة واتخاذ إجراء المرحلة':workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
+  if(jobLink&&task.projectId){jobLink.classList.remove('hidden');jobLink.href='../projects/index.html?id='+encodeURIComponent(task.projectId);jobLink.textContent='فتح المشروع والخطة الزمنية';}
+  if(jobLink&&!task.projectId){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.policy_id?`../policies/index.html?id=${encodeURIComponent(String(workflow.policy_id))}&version=${encodeURIComponent(String(workflow.policy_version_id||''))}`:workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.policy_id?'فتح السياسة واتخاذ إجراء المرحلة':workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
   const lockHint=document.getElementById('taskLockHint');
   if(lockHint){
     if(task.status==='بانتظار الاعتماد'){
@@ -2693,7 +2697,7 @@ function renderDetails(){
   document.getElementById('detailTitle').value=task.title||'';
   document.getElementById('detailStatus').value=task.status||'قيد الانتظار';
   const statusSelect=document.getElementById('detailStatus');
-  statusSelect.disabled=!!task.jobWorkflow || currentProfile?.role==='employee' || task.status==='بانتظار الاعتماد' || task.status==='مكتملة';
+  statusSelect.disabled=!!task.jobWorkflow || !!task.projectId || currentProfile?.role==='employee' || task.status==='بانتظار الاعتماد' || task.status==='مكتملة';
   document.getElementById('detailPriority').value=task.priority||'normal';
   document.getElementById('detailStart').value=task.start||'';
   document.getElementById('detailEnd').value=task.end||'';
@@ -2774,7 +2778,7 @@ function renderDetails(){
       <div class="w-full">
         <div class="flex items-center justify-between gap-2 mb-1">
           <span class="text-[10px] font-black text-slate-500">المسؤول الحالي</span>
-          ${currentProfile?.role==='manager'&&isTaskOwner(task)?'<button type="button" id="delegateTaskButton" class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700" title="تفويض المهمة لموظف تابع"><i data-lucide="user-round-cog" class="w-3.5 h-3.5"></i><span>تفويض المهمة</span></button>':''}
+          ${currentProfile?.role==='manager'&&isTaskOwner(task)&&!task.projectId?'<button type="button" id="delegateTaskButton" class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700" title="تفويض المهمة لموظف تابع"><i data-lucide="user-round-cog" class="w-3.5 h-3.5"></i><span>تفويض المهمة</span></button>':''}
         </div>
         <select id="detailAssignee" class="w-full bg-transparent border-0 font-bold text-sm">
           ${allowed.map(u=>`<option value="${escapeHTML(u.uid)}" ${String(u.uid)===displayedAssigneeUid?'selected':''}>${escapeHTML(u.name||u.email||u.uid)}</option>`).join('')}

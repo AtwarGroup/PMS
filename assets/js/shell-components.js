@@ -25,7 +25,7 @@
     document.head.append(icon);
   }
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -92,6 +92,7 @@
         <nav class="atwar-nav">
           ${nav('home','home.html','home','الرئيسية')}
           ${nav('tasks','tasks/index.html','square-check-big','المهام')}
+          ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
@@ -262,6 +263,13 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
+    if(row.project_id){
+      const {data:project,error}=await sb.from('projects').select('id').eq('id',row.project_id).maybeSingle();
+      if(error||!project){onError('المشروع غير متاح لك حاليًا.');return false}
+      const {error:readError}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
+      if(readError){onError('تعذر تحديث حالة الإشعار.');return false}
+      location.href=`${depthPrefix}projects/index.html?id=${encodeURIComponent(project.id)}&view=chat`;return true;
+    }
     if(row.task_id){
       const {data:task,error}=await sb.from('tasks').select('id,assignee_id,status,deleted_at').eq('id',row.task_id).maybeSingle();
       if(error||!task||task.deleted_at){onError('تعذر العثور على المهمة المرتبطة بهذا الإشعار.');return false}
