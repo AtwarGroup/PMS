@@ -73,6 +73,7 @@ function showToast(message,type='info',duration=3200){
 }
 
 function appConfirm(message,title='تأكيد'){
+  if(window.AtwarUI?.confirm)return window.AtwarUI.confirm({title,message});
   return new Promise(resolve=>{
     const dialog=document.getElementById('appDialog');
     const inputWrap=document.getElementById('appDialogInputWrap');
@@ -93,6 +94,7 @@ function appConfirm(message,title='تأكيد'){
 }
 
 function appPrompt(message,title='إدخال مطلوب',placeholder=''){
+  if(window.AtwarUI?.prompt)return window.AtwarUI.prompt({title,message,placeholder,multiline:true,confirmText:'تأكيد'});
   return new Promise(resolve=>{
     const dialog=document.getElementById('appDialog');
     const inputWrap=document.getElementById('appDialogInputWrap');

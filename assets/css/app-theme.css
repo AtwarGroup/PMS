@@ -1,6 +1,6 @@
 /* ATWAR ONE: one visual contract, loaded after module styles. */
 :root{
-  --atwar-accent:var(--atwar-blue-600);--atwar-hero-bg:var(--atwar-surface);
+  --atwar-muted:#526277;--atwar-accent:var(--atwar-blue-600);--atwar-hero-bg:var(--atwar-surface);
   --bg:var(--atwar-bg);--card:var(--atwar-surface);--line:var(--atwar-border);
   --text:var(--atwar-text);--muted:var(--atwar-muted);--blue:var(--atwar-blue-600);
   --atwar-blue:var(--atwar-blue-600);--atwar-blue-hover:#115cc9;
@@ -87,3 +87,18 @@
 .policy-wrap legend{padding-inline:6px;color:var(--atwar-text-soft);font-weight:700}
 /* Composite cards own their internal gutters. */
 .atwar-main .account-create{padding:0!important}
+/* Dialogs are mounted outside the main shell, so they need the same type scale. */
+.atwar-dialog{color:var(--atwar-text);font-family:var(--atwar-font);overscroll-behavior:contain}
+.atwar-dialog-head h2{font-size:var(--atwar-type-section-title);line-height:1.4;margin:0}
+.atwar-dialog-body{font-size:var(--atwar-type-body);line-height:1.8;overflow-wrap:anywhere}
+.atwar-dialog :is(input,select,textarea,.atwar-btn){font-size:var(--atwar-type-control);font-family:var(--atwar-font)}
+.atwar-dialog .atwar-btn{min-height:40px}.atwar-dialog :is(input,select,textarea):focus-visible{outline:3px solid rgba(38,132,255,.22);outline-offset:2px}
+.atwar-dialog-actions{gap:10px}.atwar-dialog-actions .atwar-btn{min-width:100px}
+.atwar-main :is(.matrix-wrap,.kpi-table-scroll,.access-table-wrap,.executive-table-wrap){min-width:0;max-width:100%;overscroll-behavior-inline:contain}
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn,.policy-link){overflow-wrap:anywhere}
+@media(pointer:coarse){.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn,.policy-link),.atwar-dialog .atwar-btn{min-height:44px!important}}
+@media(max-width:560px){.atwar-dialog-backdrop{padding:12px}.atwar-dialog{max-height:calc(100dvh - 24px);width:100%;border-radius:var(--atwar-radius-card)}.atwar-dialog-head,.atwar-dialog-body,.atwar-dialog-actions{padding:16px}.atwar-dialog-actions .atwar-btn{width:100%}}
+
+/* Supporting text must remain readable on white cards. Status tones are separate. */
+.atwar-main :is(.muted,.subtle,.hint,.meta,.task-sub,.follow-meta,.follow-note,.r-meta,.person-role,.emp-meta,.profile-label,.profile-title,.account-facts small,.professional-link small,.dash-card small,.quick-card-copy small,.job-fact span,.atwar-footer){color:var(--atwar-muted)!important}
+.atwar-global-notification-time{color:var(--atwar-muted)!important}
