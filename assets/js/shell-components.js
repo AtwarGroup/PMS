@@ -19,7 +19,7 @@
     document.head.append(icon);
   }
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -89,6 +89,7 @@
           ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
+          ${nav('policies','policies/index.html','file-check-2','السياسات والإجراءات')}
           ${nav('profile','profile/index.html?view=job','badge-check','ملفي الوظيفي')}
         </nav>
         <div class="atwar-spacer"></div>
