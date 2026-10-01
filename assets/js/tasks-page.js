@@ -2674,7 +2674,7 @@ function renderDetails(){
   }
 
   const jobLink=document.getElementById('jobWorkflowLink');
-  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
+  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
   const lockHint=document.getElementById('taskLockHint');
   if(lockHint){
     if(task.status==='بانتظار الاعتماد'){

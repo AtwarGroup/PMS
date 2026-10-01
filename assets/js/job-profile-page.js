@@ -1,3 +1,4 @@
+import {mountEmployeeChanges} from './employee-job-changes.js?v=2.5.24';
 import {createJobAcknowledgementPdf} from './job-ack-pdf.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='../assets/css/job-profile.css?v=2.4.17';document.head.append(css);
 const sb=await window.atwarGetSupabase(),host=document.getElementById('jobProfile');
@@ -48,7 +49,7 @@ if(!session?.user)location.href='../login.html';else{
       const ackResult=await sb.from('job_description_acknowledgements').select('*').eq('profile_id',profile.id).eq('job_description_id',job.id).eq('job_revision',revisionOf(job)).maybeSingle();const acknowledgement=ackResult.data||null;
       const documentContext={profile,manager,job,snapshot:d,content:c,revision:revisionOf(job)};
       const requested=new URLSearchParams(location.search).get('tab'),mode=['tasks','authority','performance'].includes(requested)?requested:'description';
-      window.AtwarJobDocument.mount(host,documentContext,{mode,heading:'ملفي الوظيفي المعتمد',footer:ackHtml(acknowledgement)+(forms.length?`<section class="qualification-box"><h2>النماذج والأدلة المرتبطة</h2><div class="linked-form-grid">${forms.map(f=>`<a href="${esc(f.file_url||'#')}" target="_blank" rel="noopener"><b>${esc(f.title)}</b><span>${esc(f.usage_note||f.description||'')}</span></a>`).join('')}</div></section>`:'')});wire({profile,manager,job,acknowledgement});
+      window.AtwarJobDocument.mount(host,documentContext,{mode,heading:'ملفي الوظيفي المعتمد',footer:ackHtml(acknowledgement)+'<div id="employeeJobChanges"></div>'+(forms.length?`<section class="qualification-box"><h2>النماذج والأدلة المرتبطة</h2><div class="linked-form-grid">${forms.map(f=>`<a href="${esc(f.file_url||'#')}" target="_blank" rel="noopener"><b>${esc(f.title)}</b><span>${esc(f.usage_note||f.description||'')}</span></a>`).join('')}</div></section>`:'')});wire({profile,manager,job,acknowledgement});await mountEmployeeChanges(document.getElementById('employeeJobChanges'),{sb,profile,job});
     }
   }
 }
