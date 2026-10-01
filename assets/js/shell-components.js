@@ -308,6 +308,7 @@
         const sb=await window.atwarGetSupabase();
         const {data:{session}}=await sb.auth.getSession();
         if(!session?.user){badge.textContent='0';badge.classList.add('hidden');list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
+        window.atwarStartPresence(sb);
         const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
         if(error)throw error;
         const rows=data||[];
@@ -329,6 +330,19 @@
     const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000);
     window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
   };
+
+  // One heartbeat per document; server decides identity and timestamp.
+  let presenceTimer,presencePending=false;
+  window.atwarStartPresence=function(sb){
+    if(presenceTimer)return;
+    const ping=async()=>{if(presencePending||document.visibilityState!=='visible'||!navigator.onLine)return;presencePending=true;try{await sb.rpc('presence_ping')}catch{}finally{presencePending=false}};
+    void ping();presenceTimer=setInterval(ping,45000);
+    const visible=()=>{if(document.visibilityState==='visible')void ping()};
+    document.addEventListener('visibilitychange',visible);
+    window.addEventListener('pagehide',()=>{clearInterval(presenceTimer);presenceTimer=null;document.removeEventListener('visibilitychange',visible)},{once:true});
+  };
+
+  window.addEventListener('pageshow',async e=>{if(e.persisted&&typeof window.atwarGetSupabase==='function'){try{window.atwarStartPresence(await window.atwarGetSupabase())}catch{}}});
 
   window.atwarSyncShellIdentity=function(profile,authUser){
     if(!profile&&!authUser)return;
