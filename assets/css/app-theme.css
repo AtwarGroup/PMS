@@ -85,3 +85,5 @@
 .atwar-main .policy-hero,.atwar-main .box.hero{padding:var(--atwar-page-padding)!important}
 .policy-wrap fieldset{border:1px solid var(--atwar-border);border-radius:var(--atwar-radius-control);padding:14px;min-width:0}
 .policy-wrap legend{padding-inline:6px;color:var(--atwar-text-soft);font-weight:700}
+/* Composite cards own their internal gutters. */
+.atwar-main .account-create{padding:0!important}
