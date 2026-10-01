@@ -8,7 +8,7 @@
   const loadCanonicalTheme=()=>{
     if(document.querySelector('link[data-atwar-app-theme]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarAppTheme='1';
-    style.href=new URL('css/app-theme.css?v=2.5.34',assetRoot).href;document.head.append(style);
+    style.href=new URL('css/app-theme.css?v=2.5.35',assetRoot).href;document.head.append(style);
   };
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
