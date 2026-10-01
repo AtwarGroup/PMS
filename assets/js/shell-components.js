@@ -5,14 +5,20 @@
   if(!document.querySelector('link[data-atwar-design-system]')){
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.8',assetRoot).href;document.head.append(style);
   }
+  const loadCanonicalTheme=()=>{
+    if(document.querySelector('link[data-atwar-app-theme]'))return;
+    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarAppTheme='1';
+    style.href=new URL('css/app-theme.css?v=2.5.26',assetRoot).href;document.head.append(style);
+  };
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
     style.href=new URL('css/typography.css?v=2.5.4.1',assetRoot).href;
     document.head.append(style);
   };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadCanonicalTypography,{once:true});
-  else loadCanonicalTypography();
+  const loadVisualContract=()=>{loadCanonicalTheme();loadCanonicalTypography()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadVisualContract,{once:true});
+  else loadVisualContract();
   if(!document.querySelector('link[rel~="icon"]')){
     const icon=document.createElement('link');icon.rel='icon';icon.type='image/svg+xml';
     icon.href=new URL('../../favicon.svg',document.currentScript?.src||location.href).href;
