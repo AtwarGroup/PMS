@@ -127,11 +127,33 @@ async function useScaleProposals(){
  job=response.data;editing=false;render();toast('حُفظت الحدود في المسودة للمراجعة والاعتماد');
 }
 
+function measurementProposalsView(){
+ const details=window.AtwarKpiProposals?.details(asArray(job.content?.kpis),job);
+ if(!details)return '';
+ const allowed=canStage('DRAFT')||(canStage('FINAL_REVIEW')&&job.status==='MANAGER_APPROVED');
+ return `<section class="content-card"><h2>الأوزان ومصادر القياس المقترحة</h2><p>${esc(details.weightBasis)}</p>${details.reviewNote?`<p>${esc(details.reviewNote)}</p>`:''}${allowed?'<button id="useMeasurementProposalsBtn" class="review-btn primary">استخدام مقترحات القياس في المسودة</button>':''}<p>لا تتغير النسخة المنشورة. تُحفظ القيم الموجودة ويُستكمل الناقص؛ يلزم مراجعة الإجمالي والمصادر قبل الاعتماد.</p></section>`;
+}
+async function useMeasurementProposals(){
+ if(!(canStage('DRAFT')||(canStage('FINAL_REVIEW')&&job.status==='MANAGER_APPROVED')))return;
+ const rows=asArray(job.content?.kpis),details=window.AtwarKpiProposals?.details(rows,job);
+ if(!details)return toast('تغيرت المؤشرات أو الإصدار؛ راجع المقترحات من جديد');
+ const missing=value=>value===undefined||value===null||String(value).trim()==='';
+ const allMissingWeights=rows.every(item=>missing(item.weight));
+ const kpis=rows.map((item,index)=>{const suggestion=details.indicators[index];return {...item,
+ ...(allMissingWeights?{weight:suggestion.weight}:{}),
+ ...(missing(item.unit)?{unit:suggestion.unit}:{}),
+ ...(missing(item.source)&&missing(item.data_source)?{source:suggestion.source}:{}),
+ measurement_note:suggestion.measurementNote,measurement_review_note:details.reviewNote};});
+ const response=await sb.from('job_descriptions').update({content:{...job.content,kpis},updated_by:me.id,status:'DRAFT'}).eq('id',job.id).eq('revision',job.revision).select().maybeSingle();
+ if(response.error||!response.data)return toast(response.error?.message||'تغيّر الوصف أثناء المراجعة؛ حدّث الصفحة وأعد المحاولة');
+ job=response.data;editing=false;render();toast('حُفظت مقترحات القياس في المسودة للمراجعة والاعتماد');
+}
+
 function measurementView() {
   const content = job.content || {};
   const reports = asArray(content.reports).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.recipient ? 'المستلم: ' + item.recipient : '')}</p><div class="metric-meta"><span>${esc(item.frequency || '')}</span><span>${esc(item.display_rule || 'داخل النظام')}</span></div>${proposalActions('REPORTS',index)}</article>`).join('');
   const formCards = forms.map(item => `<a class="form-link" href="${esc(item.file_url || '#')}" ${item.file_url ? 'target="_blank"' : ''}><b>${esc(item.title)}</b><span>${esc(item.form_type)} • الإصدار ${esc(item.version)}</span><small>${esc(item.usage_note || item.description || '')}</small></a>`).join('');
-  return `<div class="content-stack">${referenceWeightsView()}${scaleProposalsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
+  return `<div class="content-stack">${referenceWeightsView()}${measurementProposalsView()}${scaleProposalsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
 }
 
 function valueText(value) {
@@ -328,6 +350,7 @@ async function addComment() {
 }
 
 function bindActions() {
+  byId('useMeasurementProposalsBtn')?.addEventListener('click',useMeasurementProposals);
   byId('useScaleProposalsBtn')?.addEventListener('click',useScaleProposals);
   document.querySelectorAll('[data-propose]').forEach(button => button.onclick = () => createProposal(button.dataset.section,Number(button.dataset.index),button.dataset.propose));
   document.querySelectorAll('[data-decision]').forEach(button => button.onclick = () => decideProposal(button.dataset.proposal,button.dataset.decision));
