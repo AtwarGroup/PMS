@@ -84,7 +84,18 @@ function documentSection(mode){
  const items=mode==='performance'?template.querySelectorAll('.kpi-table tbody tr'):template.querySelectorAll('.authority-hybrid-list .hybrid-details');
  items.forEach((item,index)=>{const actions=proposalActions(key,index);if(actions){const target=mode==='performance'?item.children[1]:item.querySelector('.hybrid-details-body');target.insertAdjacentHTML('beforeend',actions);}});
  const add=managerReviewing()&&key?`<button class="review-btn" data-propose="ADD" data-section="${key}" data-index="-1">إضافة بند مقترح</button>`:'';
- return `<section class="atwar-job-document"><div class="profile-job-viewer"><div class="profile-job-viewer-head"><div><h4>${esc(view.title)}</h4><p>${esc(view.subtitle)}</p></div></div><div class="profile-job-viewer-body">${template.innerHTML}${add}</div></div></section>`;
+ if(mode==='tasks'&&managerReviewing()){
+  const list=template.querySelector('.authority-hybrid-list');
+  const responsibilityAdd='<button class="review-btn" data-propose="ADD" data-section="RESPONSIBILITIES" data-index="-1">إضافة مهمة أو مسؤولية مقترحة</button>';
+  if(list)list.insertAdjacentHTML('afterend',responsibilityAdd);else template.insertAdjacentHTML('afterbegin',responsibilityAdd);
+  template.querySelectorAll('.report-card').forEach((item,index)=>item.insertAdjacentHTML('beforeend',proposalActions('REPORTS',index)));
+  if(!template.querySelector('.report-grid'))template.insertAdjacentHTML('beforeend','<div class="hybrid-section-title"><h5>المخرجات والتقارير المعتمدة</h5></div><div class="report-grid"><div class="empty-state">لا توجد مخرجات أو تقارير مسجلة.</div></div>');
+  template.querySelector('.report-grid').insertAdjacentHTML('afterend',reportProposalAdd());
+ }
+ return `<section class="atwar-job-document"><div class="profile-job-viewer"><div class="profile-job-viewer-head"><div><h4>${esc(view.title)}</h4><p>${esc(view.subtitle)}</p></div></div><div class="profile-job-viewer-body">${template.innerHTML}${mode==='tasks'?'':add}</div></div></section>`;
+}
+function reportProposalAdd(){
+ return managerReviewing()?'<button class="review-btn" data-propose="ADD" data-section="REPORTS" data-index="-1">إضافة مخرج أو تقرير مقترح</button>':'';
 }
 function responsibilitiesView(rows, limit = 0) {
   const visible = limit ? asArray(rows).slice(0, limit) : asArray(rows);
@@ -153,7 +164,7 @@ function measurementView() {
   const content = job.content || {};
   const reports = asArray(content.reports).map((item,index) => `<article class="metric-card"><b>${esc(itemText(item))}</b><p>${esc(item.recipient ? 'المستلم: ' + item.recipient : '')}</p><div class="metric-meta"><span>${esc(item.frequency || '')}</span><span>${esc(item.display_rule || 'داخل النظام')}</span></div>${proposalActions('REPORTS',index)}</article>`).join('');
   const formCards = forms.map(item => `<a class="form-link" href="${esc(item.file_url || '#')}" ${item.file_url ? 'target="_blank"' : ''}><b>${esc(item.title)}</b><span>${esc(item.form_type)} • الإصدار ${esc(item.version)}</span><small>${esc(item.usage_note || item.description || '')}</small></a>`).join('');
-  return `<div class="content-stack">${referenceWeightsView()}${measurementProposalsView()}${scaleProposalsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div></section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
+  return `<div class="content-stack">${referenceWeightsView()}${measurementProposalsView()}${scaleProposalsView()}${documentSection('performance')}<section class="content-card"><h2>التقارير والمخرجات</h2><div class="measurement-grid">${reports || '<div class="empty-state">لا توجد تقارير.</div>'}</div>${reportProposalAdd()}</section><section class="content-card"><h2>النماذج والأدلة المرتبطة</h2><div class="forms-list">${formCards || '<div class="empty-state">لم تُربط نماذج بهذه الوظيفة بعد.</div>'}</div></section></div>`;
 }
 
 function valueText(value) {
