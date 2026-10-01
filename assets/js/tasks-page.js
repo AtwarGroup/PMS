@@ -2241,7 +2241,7 @@ function selectTaskFromBoard(task){
 async function handleKanbanDrop(taskKey,targetStatus){
   const task=tasks.find(t=>compositeKey(t)===taskKey);
   if(!task||task.status===targetStatus)return;
-  if(task.jobWorkflow){showToast('نفّذ الإجراء من الوصف الوظيفي ليتحدث وضع المهمة تلقائيًا.','warning');return;}
+  if(task.jobWorkflow){showToast('نفّذ الإجراء من الوثيقة المرتبطة ليتحدث وضع المهمة تلقائيًا.','warning');return;}
   selectedTaskKey=taskKey;
   if(task.status==='قيد الانتظار'&&targetStatus==='قيد التنفيذ')return startSelectedTask();
   if(task.status==='قيد التنفيذ'&&targetStatus==='بانتظار الاعتماد')return completeSelectedTask();
@@ -2324,7 +2324,7 @@ function renderTasks(){
 
     card.innerHTML=`
       <div class="flex items-center gap-3 min-h-[44px]">
-        <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="${t.jobWorkflow?'تُغلق من الوصف الوظيفي':'تغيير حالة الإنجاز'}" ${t.jobWorkflow?'disabled':''}>${t.status==='مكتملة'?'✓':''}</button>
+        <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="${t.jobWorkflow?'تُغلق من الوثيقة المرتبطة':'تغيير حالة الإنجاز'}" ${t.jobWorkflow?'disabled':''}>${t.status==='مكتملة'?'✓':''}</button>
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 min-w-0">
@@ -2674,7 +2674,7 @@ function renderDetails(){
   }
 
   const jobLink=document.getElementById('jobWorkflowLink');
-  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
+  if(jobLink){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.policy_id?`../policies/index.html?id=${encodeURIComponent(String(workflow.policy_id))}&version=${encodeURIComponent(String(workflow.policy_version_id||''))}`:workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.policy_id?'فتح السياسة واتخاذ إجراء المرحلة':workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
   const lockHint=document.getElementById('taskLockHint');
   if(lockHint){
     if(task.status==='بانتظار الاعتماد'){

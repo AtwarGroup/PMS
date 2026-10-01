@@ -1,0 +1,12 @@
+begin;
+create index policies_preparer_id_idx on public.policies(preparer_id);
+create index policies_reviewer_id_idx on public.policies(reviewer_id);
+create index policies_approver_id_idx on public.policies(approver_id);
+create index policies_ratifier_id_idx on public.policies(ratifier_id);
+create index policies_created_by_idx on public.policies(created_by);
+create index policy_versions_approved_by_idx on public.policy_versions(approved_by);
+create index policy_versions_created_by_idx on public.policy_versions(created_by);
+create index policy_events_actor_id_idx on public.policy_events(actor_id);
+create index policy_events_version_id_idx on public.policy_events(version_id);
+create index policy_comments_actor_id_idx on public.policy_comments(actor_id);
+commit;
