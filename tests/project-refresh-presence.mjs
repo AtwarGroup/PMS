@@ -13,5 +13,5 @@ ctx.query=async b=>{ctx.draftDirty=true;return b.name==='projects'?[{revision:3}
 // Presence failures display unknown rather than inventing online/offline states.
 let ui='';Object.assign(ctx,{presencePending:false,presence:[{user_id:'u',online:true}],tab:'chat',detailOpen:false,host:{querySelector:()=>({set innerHTML(x){ui=x}})},teamPresence:()=>ctx.presence.length?'known':'unknown',rpc:async()=>{throw Error('offline')}});
 vm.runInContext(source.slice(source.indexOf('async function refreshPresence('),source.indexOf('function chat(panel)')),ctx);await ctx.refreshPresence();assert.equal(ui,'unknown');assert.equal(ctx.presencePending,false);
-let restarted=0;Object.assign(ctx,{me:{id:'u'},viewTimer:1,chatTimer:2,clearInterval(){},setInterval(){restarted++;return 3},chatTick(){}});events.pageshow({persisted:true});assert.equal(restarted,2,'Back navigation resumes both project and chat polling');
+let restarted=0;Object.assign(ctx,{me:{id:'u'},viewTimer:1,chatTimer:2,clearInterval(){},setInterval(){restarted++;return 3},chatTick(){},startChatRealtime(){},stopChat(){}});events.pageshow({persisted:true});assert.equal(restarted,2,'Back navigation resumes both project and chat polling');
 console.log('Project refresh protects drafts and detail views; failed presence remains unknown.');
