@@ -7,7 +7,7 @@ const login=readFileSync(resolve(root,'login.html'),'utf8');
 const home=readFileSync(resolve(root,'home.html'),'utf8');
 const permissions=readFileSync(resolve(root,'assets/js/permissions.js'),'utf8');
 
-assert.match(login,/<body class="auth-pending">/,'Login must start in a non-painted authentication state');
+assert.match(login,/<body class="[^"]*\bauth-pending\b[^"]*">/,'Login must start in a non-painted authentication state');
 assert.match(login,/جاري التحقق من جلسة الدخول/,'A stable session-check screen is required');
 assert.match(login,/location\.replace\(/,'Authenticated navigation must replace the login history entry');
 assert.match(login,/classList\.remove\('auth-pending'\)/,'The form may appear only after session verification');

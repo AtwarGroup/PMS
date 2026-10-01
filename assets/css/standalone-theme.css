@@ -1,0 +1,18 @@
+/* Shared identity for entry, help and printable forms. */
+:root{--atwar-public-bg:#f3f6fa;--atwar-public-ink:#17233a;--atwar-public-muted:#526277;--atwar-public-line:#e2e8f0;--atwar-public-blue:#2563eb}
+body.atwar-standalone{font-family:Tajawal,Arial,sans-serif;font-size:14px;line-height:1.75}
+.atwar-standalone :is(button,input,select,textarea){font:inherit;border-radius:10px}
+.atwar-standalone :is(.card,.section,.mini,.role,.app-card){border-radius:14px;border-color:var(--atwar-public-line);box-shadow:0 4px 16px #0f172a06}
+.atwar-standalone :is(.hero,.section-head,.topbar) h1{font-size:26px;line-height:1.4}
+.atwar-standalone :is(.back,.nav a){border-radius:10px}
+.atwar-standalone :is(a,button,input,select,textarea):focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.atwar-standalone .login-wrap .card{border:1px solid var(--atwar-public-line);box-shadow:0 12px 36px #0f172a0b;border-radius:18px}
+.atwar-standalone .login-note{color:var(--atwar-public-muted)}
+body.atwar-help,body.atwar-form,body.atwar-privacy{background:var(--atwar-public-bg);color:var(--atwar-public-ink)}
+.atwar-help .hero,.atwar-privacy .top{background:transparent;color:var(--atwar-public-ink);border:0;border-bottom:1px solid var(--atwar-public-line);border-radius:0;box-shadow:none}
+.atwar-help .hero p,.atwar-privacy .top p{color:var(--atwar-public-muted)}
+.atwar-form main{border:1px solid var(--atwar-public-line);border-radius:14px;box-shadow:0 4px 16px #0f172a06}
+.atwar-form header{border-bottom:1px solid var(--atwar-public-line)}
+.atwar-form :is(input,textarea,select){padding:10px 12px;background:#fff;border:1px solid #d7e0eb}
+@media(max-width:560px){.atwar-form main{margin:12px;padding:16px}.atwar-form .fields{grid-template-columns:1fr}}
+@media print{body.atwar-form{background:#fff}.atwar-form main{box-shadow:none;border:0;margin:0;padding:0}.atwar-form :is(input,textarea){border-radius:0}}
