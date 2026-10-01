@@ -59,7 +59,7 @@ body{min-height:100vh}
 .atwar-search input::placeholder{color:#aebbd0}
 .atwar-search i{position:absolute;right:14px;top:12px;width:18px}
 .atwar-bell{position:relative;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.07)}
-.atwar-badge{position:absolute;top:-3px;left:-3px;background:#ef4444;color:#fff;border-radius:20px;min-width:20px;height:20px;display:grid;place-items:center;font-size:10px;font-weight:900}
+.atwar-bell .atwar-badge{position:absolute;top:-3px;left:-3px;background:#ef4444;color:#fff;border-radius:20px;min-width:20px;height:20px;display:grid;place-items:center;font-size:10px;font-weight:900}
 .atwar-user{display:flex;align-items:center;gap:10px}
 .atwar-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#eef4fb;color:#0b1d3a;font-weight:900;border:3px solid rgba(255,255,255,.3)}
 .atwar-user-name{font-weight:900;font-size:15px}
@@ -610,7 +610,7 @@ atwar-sidebar,atwar-header{display:contents}
 .atwar-bell,.atwar-icon-btn{width:36px!important;height:36px!important;min-width:36px!important;display:grid!important;place-items:center!important;position:relative!important;border:0!important;border-radius:10px!important;background:rgba(255,255,255,.08)!important;color:#fff!important;text-decoration:none!important;cursor:pointer!important}
 .atwar-bell:hover,.atwar-icon-btn:hover{background:rgba(255,255,255,.14)!important}
 .atwar-bell svg,.atwar-icon-btn svg{width:16px!important;height:16px!important}
-.atwar-badge,.atwar-notification-badge{position:absolute!important;top:-5px!important;right:-5px!important;min-width:18px!important;height:18px!important;padding:0 4px!important;border-radius:999px!important;background:#ef4444!important;color:#fff!important;font-size:9px!important;font-weight:900!important;display:flex;align-items:center;justify-content:center}
+.atwar-bell .atwar-badge,.atwar-notification-badge{position:absolute!important;top:-5px!important;right:-5px!important;min-width:18px!important;height:18px!important;padding:0 4px!important;border-radius:999px!important;background:#ef4444!important;color:#fff!important;font-size:9px!important;font-weight:900!important;display:flex;align-items:center;justify-content:center}
 .atwar-shell-logout{width:100%!important;border:0!important;background:transparent!important;color:#ff7777!important;text-align:right!important;cursor:pointer!important;font-family:var(--atwar-font,'Tajawal',sans-serif)!important;font-weight:900!important}
 .atwar-shell-logout:hover{background:rgba(255,255,255,.07)!important}
 .atwar-task-tools{gap:7px!important}

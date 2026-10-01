@@ -1,0 +1,87 @@
+/* ATWAR ONE: one visual contract, loaded after module styles. */
+:root{
+  --atwar-accent:var(--atwar-blue-600);--atwar-hero-bg:var(--atwar-surface);
+  --bg:var(--atwar-bg);--card:var(--atwar-surface);--line:var(--atwar-border);
+  --text:var(--atwar-text);--muted:var(--atwar-muted);--blue:var(--atwar-blue-600);
+  --atwar-blue:var(--atwar-blue-600);--atwar-blue-hover:#115cc9;
+  --jl-blue:var(--atwar-blue-600);--jl-ink:var(--atwar-text);--jl-muted:var(--atwar-muted);--jl-line:var(--atwar-border);--jl-bg:var(--atwar-bg);
+  --jr-blue:var(--atwar-blue-600);--jr-ink:var(--atwar-text);--jr-muted:var(--atwar-muted);--jr-line:var(--atwar-border);--jr-soft:var(--atwar-surface-soft);
+  --atwar-page-padding:24px;--atwar-panel-padding:20px;
+  --atwar-radius-card:16px;--atwar-radius-hero:16px;--atwar-radius-control:10px;
+}
+/* Page headers share the same neutral surface and blue accent. */
+.atwar-main :is(.atwar-page-head,.task-suite-hero,.accounts-hero,.role-header,.library-head,.security-head,.search-hero,.policy-hero,.profile-page-head,.n-head,.head,.employee-hero,.box.hero),
+.atwar-content>.hero{
+  background:var(--atwar-hero-bg)!important;color:var(--atwar-text)!important;
+  border:1px solid var(--atwar-border)!important;border-inline-start:4px solid var(--atwar-accent)!important;
+  border-radius:var(--atwar-radius-card)!important;box-shadow:var(--atwar-shadow-card)!important;
+  padding:var(--atwar-page-padding)!important;margin:0 0 20px!important;min-height:0;
+  text-align:start;
+}
+.atwar-main :is(.atwar-page-head,.task-suite-hero,.accounts-hero,.role-header,.library-head,.security-head,.search-hero,.policy-hero,.profile-page-head,.n-head,.head,.employee-hero,.box.hero) h1,
+.atwar-content>.hero h1{color:var(--atwar-navy-800)!important;margin:0 0 6px!important;font-weight:900;letter-spacing:0}
+.atwar-main :is(.atwar-page-head,.task-suite-hero,.accounts-hero,.role-header,.library-head,.security-head,.search-hero,.policy-hero,.profile-page-head,.n-head,.head,.employee-hero,.box.hero) p,
+.atwar-content>.hero p{color:var(--atwar-muted)!important;margin:0!important;max-width:850px}
+.atwar-main :is(.task-suite-hero-badge,.atwar-hero-badge,.role-kicker,.accounts-hero>div>small,.status-pill),
+#teamScopeLabel{background:var(--atwar-blue-100)!important;color:var(--atwar-blue-600)!important;border-color:var(--atwar-border)!important}
+.atwar-main .summary>div{background:var(--atwar-surface-soft);border-color:var(--atwar-border);border-radius:var(--atwar-radius-control)}
+.atwar-main .summary b{color:var(--atwar-navy-800)!important}.atwar-main .summary span{color:var(--atwar-muted)}
+/* The employee identity panel uses the same surface as other cards. */
+.atwar-main .profile-hero{background:var(--atwar-surface)!important;color:var(--atwar-text)!important;border:1px solid var(--atwar-border)!important;border-radius:var(--atwar-radius-card)!important;box-shadow:var(--atwar-shadow-card)!important;padding:var(--atwar-panel-padding)!important}
+.atwar-main .profile-avatar{background:var(--atwar-blue-100);color:var(--atwar-blue-600);border-color:var(--atwar-border);border-radius:var(--atwar-radius-control)}
+.atwar-main .profile-title{color:var(--atwar-muted)}.atwar-main .profile-state{background:var(--atwar-success-100);color:var(--atwar-success-600);border-color:var(--atwar-border)}
+/* Module cards keep their own layouts and share surface, border and elevation. */
+.atwar-main :is(.admin-card,.ws-card,.policy-box,.security-card,.job-card,.account-card,.team-list,.person,.profile-card,.content-card,.summary-card,.job-change-panel,.job-change-request,.result,.announcement,.assignment-row){
+  border-color:var(--atwar-border);border-radius:var(--atwar-radius-card);box-shadow:var(--atwar-shadow-card);color:var(--atwar-text);
+}
+.atwar-main :is(.admin-card,.ws-card,.policy-box,.security-card,.job-card,.profile-card,.content-card,.summary-card,.job-change-panel,.job-change-request){padding:var(--atwar-panel-padding)}
+.atwar-main :is(.admin-card,.job-card,.person,.result):hover{border-color:#9dbde2;box-shadow:var(--atwar-shadow-raised)}
+.atwar-main :is(.toolbar,.team-toolbar,.big-search,.task-suite-filters,.policy-filter){gap:10px;border-color:var(--atwar-border);border-radius:var(--atwar-radius-card)}
+.atwar-main :is(.dash-ico,.r-icon,.account-avatar,.person-avatar){background:var(--atwar-blue-100);color:var(--atwar-blue-600)}
+.atwar-main .dash-ico.green{background:var(--atwar-success-100);color:var(--atwar-success-600)}
+.atwar-main .dash-ico.red{background:var(--atwar-danger-100);color:var(--atwar-danger-600)}
+.atwar-main .dash-ico.purple{background:var(--atwar-purple-100);color:var(--atwar-purple-600)}
+/* Named action controls only: icon buttons, tabs and task checkboxes keep their layout. */
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn,.policy-link){
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;
+  padding:9px 14px;border:1px solid var(--atwar-border-strong);border-radius:var(--atwar-radius-control);
+  background:var(--atwar-surface);color:var(--atwar-text-soft);font-family:var(--atwar-font);font-weight:800;text-decoration:none;cursor:pointer;
+}
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn,.policy-link):hover{background:var(--atwar-surface-soft);border-color:#9dbde2;filter:none}
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn).primary,
+.atwar-main :is(.btn-primary,.hero-action,.job-change-panel button,#wfSave){background:var(--atwar-blue-600)!important;border-color:var(--atwar-blue-600)!important;color:white!important}
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn,.security-btn).primary:hover{background:var(--atwar-blue-hover)!important}
+.atwar-main :is(.atwar-btn,.btn,.jl-btn,.review-btn).danger{background:var(--atwar-danger-100);color:var(--atwar-danger-600);border-color:#f5bec6}
+.atwar-main .atwar-btn.success{background:var(--atwar-success-600);color:white;border-color:var(--atwar-success-600)}
+.atwar-main :is(.atwar-input,.atwar-select,.atwar-textarea,.field input,.field select,.field textarea,.edit-field input,.edit-field select,.edit-field textarea,.security-field input,.policy-wrap input,.policy-wrap select,.policy-wrap textarea,.create-grid input,.create-grid select,.directory-tools input,.directory-tools select,.follow-form input,.follow-form select,.follow-form textarea){border-color:var(--atwar-border-strong);background:var(--atwar-surface);color:var(--atwar-text);border-radius:var(--atwar-radius-control)}
+.atwar-main :is(.view-tabs,.review-tabs,.account-nav){gap:6px}
+.atwar-main :is(.view-tabs,.review-tabs) button.active{background:var(--atwar-blue-100);color:var(--atwar-blue-600)}
+.atwar-main :is(.badge,.pill,.tag,.status-chip,.role-tag,.status-tag,.policy-tags span){border-radius:var(--atwar-radius-pill);font-weight:800}
+.atwar-main :is(.atwar-panel-head,.directory-head,.home-head,.policy-section) h2{font-size:var(--atwar-type-card-title)!important}
+.atwar-main :is(.atwar-footer,.policy-muted,.r-meta,.person-role){color:var(--atwar-muted)}
+/* Task pages use the same outer gutter as all other internal pages. */
+.task-suite-page{padding:var(--atwar-page-padding)!important}.atwar-content .task-suite-page{padding:0!important}
+.policy-wrap{width:100%;max-width:var(--atwar-content-max);margin-inline:auto}.policy-wrap.policy-document{max-width:1080px}
+.policy-hero .policy-toolbar{margin-bottom:14px}.policy-hero .policy-tags{margin-block:14px}
+.policy-card{display:flex;flex-direction:column;gap:12px}.policy-card h2{margin:0}.policy-card .policy-link{align-self:flex-start;margin-top:auto}.policy-card .policy-muted{margin:0}
+.policy-filter{padding:14px 20px;background:var(--atwar-surface);border:1px solid var(--atwar-border);margin-bottom:16px}
+.policy-step{background:var(--atwar-surface-soft);border:1px solid var(--atwar-border);border-radius:var(--atwar-radius-control)}
+.policy-step.active{background:var(--atwar-blue-100);border-color:var(--atwar-blue-600);color:var(--atwar-blue-600)}
+.policy-step.done{background:var(--atwar-success-100);border-color:#bce2d1;color:var(--atwar-success-600)}
+@media(max-width:850px){:root{--atwar-page-padding:16px;--atwar-panel-padding:16px}.atwar-main :is(.atwar-page-head,.library-head,.role-header,.accounts-hero){align-items:flex-start;flex-direction:column}.atwar-main :is(.task-suite-hero,.policy-hero){width:100%;min-width:0}.atwar-main .policy-form>*{min-width:0}}
+@media(max-width:560px){:root{--atwar-page-padding:12px}.atwar-main :is(.atwar-page-head,.task-suite-hero,.accounts-hero,.role-header,.library-head,.security-head,.search-hero,.policy-hero,.profile-page-head,.n-head,.head,.employee-hero,.box.hero),.atwar-content>.hero{padding:16px!important}.atwar-main :is(.library-actions,.policy-toolbar){align-items:stretch}.atwar-main :is(.library-actions,.policy-toolbar)>button{flex:1}.policy-filter{padding:12px}}
+@media print{.atwar-main :is(.policy-hero,.role-header){background:white!important;box-shadow:none!important;border:0!important;color:#15233b!important}.policy-wrap.policy-document{max-width:none}}
+.atwar-main .policy-card h2{font-size:var(--atwar-type-card-title)!important}
+.atwar-main .n-actions button.active{background:var(--atwar-blue-600);color:white}
+
+.atwar-main .profile-page{padding:var(--atwar-page-padding)!important}
+.atwar-main .emp-meta{color:var(--atwar-muted)}
+.atwar-main .emp-avatar{background:var(--atwar-blue-100);color:var(--atwar-blue-600);border-radius:var(--atwar-radius-card)}
+.atwar-main .hero-stat{background:var(--atwar-surface-soft);border-color:var(--atwar-border)}
+.atwar-main .hero-stat b{color:var(--atwar-navy-800)}.atwar-main .hero-stat span{color:var(--atwar-muted)}
+.atwar-main .emp-tabs button.active{background:var(--atwar-blue-100);color:var(--atwar-blue-600);border-color:var(--atwar-border)}
+
+.atwar-main :is(.card,.box,.panel,.section-card,.side-card,.admin-card,.ws-card,.policy-box,.security-card,.job-card,.profile-card,.content-card,.summary-card,.job-change-panel,.job-change-request){padding:var(--atwar-panel-padding)!important}
+.atwar-main .policy-hero,.atwar-main .box.hero{padding:var(--atwar-page-padding)!important}
+.policy-wrap fieldset{border:1px solid var(--atwar-border);border-radius:var(--atwar-radius-control);padding:14px;min-width:0}
+.policy-wrap legend{padding-inline:6px;color:var(--atwar-text-soft);font-weight:700}
