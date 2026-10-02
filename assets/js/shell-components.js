@@ -93,7 +93,7 @@
           ${nav('home','home.html','home','الرئيسية')}
           ${nav('tasks','tasks/index.html','square-check-big','المهام')}
           ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
-          ${nav('notes','workspace/index.html','notebook-tabs','مساحة عملي')}
+          ${nav('notes','workspace/index.html','notebook-tabs','مساحتي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('policies','policies/index.html','book-open-check','مكتبة السياسات')}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATWAR ONE – مساحتي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+
+<link rel="stylesheet" href="../../assets/css/shared.css?v=2.5.26">
+<style>
+.ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
+.ws-head h1{font-size:28px;margin:0}.ws-head p{margin:5px 0 0;color:#7b8aa5;font-size:12px}
+.ws-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
+.ws-card{background:var(--atwar-surface);border:1px solid var(--atwar-border);border-radius:var(--atwar-radius-card);padding:20px;box-shadow:var(--atwar-shadow-card)}
+.ws-card h3{margin:0 0 14px;font-size:16px}
+.note-input{width:100%;min-height:145px;border:1px solid var(--atwar-border-strong);border-radius:var(--atwar-radius-control);padding:14px;font-family:inherit;font-size:14px;resize:vertical;background:#fff} .note-input:focus{border-color:var(--atwar-blue-500);box-shadow:0 0 0 3px rgba(38,132,255,.12);outline:0}
+.note-actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.note-actions small{color:#8a96a8}.note-actions button{border:0;background:#0b1d3a;color:#fff;padding:9px 13px;border-radius:10px;font-family:inherit;font-weight:900;cursor:pointer}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.quick a{text-decoration:none;background:#f7faff;border:1px solid #e1ebf7;border-radius:14px;padding:15px;color:#263a55}
+.quick b{display:block;font-size:13px;margin-top:8px}.quick small{color:#7a899e;font-size:10px}
+.today-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #edf2f7}
+.today-row:last-child{border-bottom:0}.today-row b{font-size:12px}.today-row span{font-size:10px;color:#74849b}
+.notice{display:none;margin-top:10px;background:#edf9f3;color:#187655;border-radius:10px;padding:9px;font-size:11px;font-weight:800}
+@media(max-width:900px){.ws-grid{grid-template-columns:1fr}}
+
+.follow-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.follow-add{border:0;background:#0b1d3a;color:#fff;border-radius:10px;padding:9px 12px;font-family:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.follow-list{display:grid;gap:9px;max-height:390px;overflow:auto}
+.follow-item{border:1px solid #e4eaf2;border-radius:13px;padding:11px;background:#fff}
+.follow-top{display:flex;justify-content:space-between;gap:10px}.follow-title{font-weight:900;font-size:12px}.follow-meta{font-size:9px;color:#8794a7;margin-top:4px}
+.follow-note{font-size:10px;color:#68778c;line-height:1.7;margin-top:7px}.follow-actions{display:flex;gap:6px;margin-top:8px}.follow-actions button{border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:6px 9px;font-family:inherit;font-size:9px;font-weight:900;cursor:pointer}
+.follow-empty{font-size:11px;color:#7b8aa5;padding:18px;text-align:center;border:1px dashed #dce5ef;border-radius:12px}
+.follow-form{display:none;margin-top:10px;padding:12px;background:#f8fbff;border:1px solid #e0eaf5;border-radius:13px}.follow-form.show{display:block}.follow-form input,.follow-form select,.follow-form textarea{width:100%;box-sizing:border-box;border:1px solid #dfe7f1;border-radius:9px;padding:9px;font-family:inherit;margin-top:7px;background:#fff}.follow-form textarea{min-height:70px}
+.follow-task{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 8px;border-radius:8px;background:#eef6ff;color:#176fd3;text-decoration:none;font-size:9px;font-weight:900}.follow-task:hover{background:#dfeeff}.follow-task.missing{color:#7b8aa5;background:#f1f5f9;pointer-events:none}
+
+.workspace-main-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.workspace-main-grid .ws-card{min-height:470px}.workspace-note-card .note-input{min-height:330px}.workspace-follow-card .follow-list{max-height:390px}
+@media(max-width:900px){.workspace-main-grid{grid-template-columns:1fr}.workspace-main-grid .ws-card{min-height:auto}}
+@media(max-width:600px){.workspace-main-grid{gap:12px}.workspace-note-card .note-input{min-height:220px}.workspace-main-grid .ws-card{padding:16px}.follow-head{align-items:flex-start;flex-direction:column}.follow-add{width:100%}}
+</style>
+<link rel="stylesheet" href="../../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../../assets/css/workspace.css?v=2.5.41">
+<style>.atwar-main{margin:0!important;width:100%!important}.atwar-content{max-width:1240px;margin:auto!important;padding:28px!important}body{background:#f3f6fa}.preview-label{font-size:12px;color:#64748b}</style></head>
+<body>
+<div class="atwar-shell">
+
+<section class="atwar-main">
+
+<main class="atwar-content"><p class="preview-label">معاينة ببيانات تجريبية؛ الإجراءات معطلة.</p>
+<header class="atwar-page-head space-welcome"><div><h1>مساحتي</h1><p>مهامك وقراراتك ومشاريعك؛ بداية واضحة ليومك.</p></div><span id="spaceSync" class="space-sync" role="status">محدّث الآن · تحديث تلقائي</span></header>
+<p id="spaceFocus" class="space-focus">لديك مهمة متأخرة؛ ابدأ بالأقدم.</p>
+<div class="space-grid">
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="calendar-check-2"></i> مهامي اليوم <span id="spaceCounttasks" class="space-count">2</span></h2><a href="../../tasks/index.html?owner=me">جميع مهامي</a></header><div id="spacetasks" class="space-body"><a class="space-row" href="../../tasks/index.html?task=t1&owner=me"><span class="space-row-icon"><i data-lucide="check-square-2"></i></span><span class="space-row-copy"><strong>مراجعة خطة إطلاق الفرع</strong><small>قيد التنفيذ · 2026-10-01</small></span><span class="space-pill late">متأخرة</span></a><a class="space-row" href="../../tasks/index.html?task=t2&owner=me"><span class="space-row-icon"><i data-lucide="check-square-2"></i></span><span class="space-row-copy"><strong>تجهيز تقرير متابعة الأعمال الأسبوعي</strong><small>قيد الانتظار · 2026-10-02</small></span><span class="space-pill ">فتح</span></a></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="stamp"></i> بانتظار قراري <span id="spaceCountdecisions" class="space-count">1</span></h2><a href="../../tasks/index.html">فتح المهام</a></header><div id="spacedecisions" class="space-body"><a class="space-row" href="../../tasks/index.html?task=t3&owner=e"><span class="space-row-icon"><i data-lucide="stamp"></i></span><span class="space-row-copy"><strong>اعتماد مخرجات المرحلة الأولى</strong><small>بانتظار الاعتماد · 2026-10-02</small></span><span class="space-pill ">مراجعة</span></a></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="folder-kanban"></i> مشاريعي <span id="spaceCountprojects" class="space-count">1</span></h2><a href="../../projects/index.html">جميع المشاريع</a></header><div id="spaceprojects" class="space-body"><a class="space-project" href="../../projects/index.html?id=p"><div><strong>إطلاق فرع جديد</strong><span>45%</span></div><progress max="100" value="45" aria-label="تقدم إطلاق فرع جديد"></progress><small>موعد التسليم: 2026-10-22</small></a></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="bell"></i> مستجداتي <span id="spaceCountupdates" class="space-count">1</span></h2><a href="../../notifications/index.html">جميع الإشعارات</a></header><div id="spaceupdates" class="space-body"><button type="button" class="space-row space-update" data-space-notification="n"><span class="space-row-icon"><i data-lucide="bell"></i></span><span class="space-row-copy"><strong>رسالة جديدة في مشروع إطلاق الفرع</strong><small>تمت إضافة تحديث بشأن تجهيزات الموقع.</small></span></button></div></section>
+</div><div class="workspace-main-grid">
+  <section class="ws-card workspace-note-card">
+    <h3><i data-lucide="notebook-pen" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
+    <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية يمكنك الرجوع إليها من أي جهاز.</p>
+    <textarea id="personalNote" class="note-input" aria-label="ملاحظاتي الشخصية" placeholder="اكتب ملاحظة عمل، فكرة، رقم متابعة أو أي شيء تريد تذكره...">متابعة عرض تجهيزات الفرع يوم الأحد.
+مراجعة جدول تسليم المرحلة الثانية.</textarea>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
+      <span style="font-size:9px;color:#93a0b2">ملاحظاتك خاصة بحسابك.</span>
+      <button type="button" onclick="saveNote()" class="atwar-btn primary save-note">حفظ الملاحظة</button>
+    </div>
+    <div id="savedNotice" class="saved-notice" role="status" aria-live="polite" style="display:none">تم الحفظ</div>
+  </section>
+  <section class="ws-card workspace-follow-card">
+    <div class="follow-head"><div><h3 style="margin:0"><i data-lucide="clock-arrow-up" style="width:17px;vertical-align:middle"></i> متابعاتي</h3><div style="font-size:9px;color:#8a97a9;margin-top:4px">الأمور التي تنتظر رداً أو تحتاج متابعة لاحقة.</div></div><button id="workspaceFollowAdd" class="atwar-btn primary follow-add" type="button">+ إضافة متابعة</button></div>
+    <div id="workspaceFollowForm" class="follow-form">
+      <input id="wfTitle" aria-label="عنوان المتابعة" placeholder="عنوان المتابعة"><input id="wfDate" aria-label="موعد المتابعة" type="date">
+      <select id="wfTask" aria-label="المهمة المرتبطة"><option value="">بدون ارتباط بمهمة</option></select>
+      <div style="font-size:9px;color:#8a97a9;margin:5px 2px 0">الارتباط اختياري ويحتفظ بمرجع للمهمة فقط دون نسخ بياناتها.</div>
+      <textarea id="wfNote" aria-label="تفاصيل المتابعة" placeholder="ملاحظة أو ما الذي تنتظره؟"></textarea>
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:8px"><button id="wfCancel" type="button" style="border:1px solid #dce5ef;background:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">إلغاء</button><button id="wfSave" type="button" style="border:0;background:#0b1d3a;color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-weight:900">حفظ</button></div>
+    </div>
+    <div id="workspaceFollowList" class="follow-list" aria-live="polite"><div class="follow-empty">متابعة عرض تجهيزات الموقع · ٤ أكتوبر</div></div>
+  </section>
+</div>
+<footer class="atwar-footer"><span>ATWAR ONE • مساحتي</span><span>نظام إدارة الأداء المؤسسي</span><span>مهام وقرارات ومشاريع • ملاحظات ومتابعات خاصة</span></footer>
+</main></section></div>
+
+
+
+
+
+
+
+
+
+
+<script>document.querySelectorAll("button,input,textarea,select").forEach(e=>e.disabled=true);document.querySelectorAll("a").forEach(e=>e.onclick=x=>x.preventDefault());</script></body></html>

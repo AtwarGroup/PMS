@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {workspaceModel,renderWorkspace,riyadhDay} from '../assets/js/workspace-core.mjs';
+const profile={id:'m',role:'manager'},base={status:'قيد التنفيذ',assignee_id:'m',creator_id:'m',due_date:'2026-10-02',progress:30};
+const tasks=[{...base,id:'today',title:'<script>bad</script>'},{...base,id:'late',due_date:'2026-10-01'},{...base,id:'waiting',status:'بانتظار الاعتماد'},{...base,id:'gone',deleted_at:'now'},{...base,id:'done',status:'مكتملة'},{...base,id:'workflow',task_type:'job_workflow'},{...base,id:'commissioned',assignee_id:'e',status:'بانتظار الاعتماد',approval_commissioner_id:'m'},{...base,id:'other-commissioner',assignee_id:'e',creator_id:'other',status:'بانتظار الاعتماد'},{...base,id:'project-task',project_id:'p',assignee_id:'e',status:'بانتظار الاعتماد'},{...base,id:'private-project',project_id:'q',assignee_id:'other'}];
+const projects=[{id:'p',title:'Project',manager_id:'m',sponsor_id:'a',status:'ACTIVE',due_date:'2026-10-10'},{id:'q',title:'Other project',manager_id:'other',sponsor_id:'a',status:'ACTIVE'}];
+const model=workspaceModel({profile,tasks,projects,directIds:['e'],day:'2026-10-02'});
+assert.deepEqual(model.due.map(t=>t.id),['late','today']);assert.equal(model.overdue,1);
+assert.deepEqual(model.decisions.map(t=>t.id),['workflow','commissioned','project-task']);assert.deepEqual(model.projects.map(p=>p.id),['p']);
+const admin=workspaceModel({profile:{id:'a',role:'admin'},tasks,projects,day:'2026-10-02'});assert.ok(!admin.decisions.some(t=>t.id==='project-task'),'Admins must not receive decisions assigned to the project manager');
+assert.equal(riyadhDay(new Date('2026-10-01T22:00:00Z')),'2026-10-02');
+const html=renderWorkspace(model,[{id:'n',title:'<img src=x>',message:'Hello'}]);assert.ok(!html.tasks.includes('<script>'));assert.ok(html.tasks.includes('&lt;script&gt;'));assert.ok(!html.updates.includes('<img'));assert.ok(html.projects.includes('progress'));assert.ok(renderWorkspace({due:[],decisions:[],projects:[],day:'2026-10-02'}).tasks.includes('لا توجد'));
+console.log('Workspace: personal scope, commissioner/project decisions, overdue exclusions, Riyadh dates and escaped rendering passed.');

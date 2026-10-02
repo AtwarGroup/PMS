@@ -12,9 +12,9 @@ const profile=read('profile/index.html');
 const workspace=read('workspace/index.html');
 const users=read('admin/users.html');
 
-assert.match(shell,/workspace\/index\.html[^\n]+مساحة عملي/,'مساحة عملي must remain in navigation');
-assert.match(workspace,/ملاحظاتك ومتابعاتك الشخصية/,'workspace must be clearly personal');
-assert.match(workspace,/دون تكرار إدارة المهام/,'workspace must state its non-duplicating scope');
+assert.match(shell,/workspace\/index\.html[^\n]+مساحتي/,'مساحتي must remain in navigation');
+assert.match(workspace,/ملاحظاتك خاصة بحسابك/,'workspace must be clearly personal');
+assert.match(workspace,/tasks\/index\.html\?owner=me/,'workspace must state its non-duplicating scope');
 
 assert.match(active,/setTaskViewMode\('LIST'\)/,'active tasks list view missing');
 assert.match(active,/setTaskViewMode\('KANBAN'\)/,'active tasks kanban view missing');
