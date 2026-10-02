@@ -2,10 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ATWAR ONE – ملاحظاتي</title>
+<title>ATWAR ONE – مساحتي</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.36"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.5.41"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
 <style>
 .ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
@@ -40,6 +40,7 @@
 @media(max-width:600px){.workspace-main-grid{gap:12px}.workspace-note-card .note-input{min-height:220px}.workspace-main-grid .ws-card{padding:16px}.follow-head{align-items:flex-start;flex-direction:column}.follow-add{width:100%}}
 </style>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/workspace.css?v=2.5.41">
 </head>
 <body>
 <div class="atwar-shell">
@@ -47,7 +48,14 @@
 <section class="atwar-main">
 <atwar-header></atwar-header>
 <main class="atwar-content">
-<header class="atwar-page-head"><div><h1>مساحة عملي</h1><p>ملاحظاتك ومتابعاتك الشخصية في مكان واحد.</p></div></header><div class="workspace-main-grid">
+<header class="atwar-page-head space-welcome"><div><h1>مساحتي</h1><p>مهامك وقراراتك ومشاريعك؛ بداية واضحة ليومك.</p></div><span id="spaceSync" class="space-sync" role="status">جاري تجهيز مساحتك…</span></header>
+<p id="spaceFocus" class="space-focus">ماذا تحتاج إلى إنجازه اليوم؟</p>
+<div class="space-grid">
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="calendar-check-2"></i> مهامي اليوم <span id="spaceCounttasks" class="space-count">—</span></h2><a href="../tasks/index.html?owner=me">جميع مهامي</a></header><div id="spacetasks" class="space-body"><p class="space-empty">جاري تحميل المهام…</p></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="stamp"></i> بانتظار قراري <span id="spaceCountdecisions" class="space-count">—</span></h2><a href="../tasks/index.html">فتح المهام</a></header><div id="spacedecisions" class="space-body"><p class="space-empty">جاري تحميل المراجعات…</p></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="folder-kanban"></i> مشاريعي <span id="spaceCountprojects" class="space-count">—</span></h2><a href="../projects/index.html">جميع المشاريع</a></header><div id="spaceprojects" class="space-body"><p class="space-empty">جاري تحميل المشاريع…</p></div></section>
+<section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="bell"></i> مستجداتي <span id="spaceCountupdates" class="space-count">—</span></h2><a href="../notifications/index.html">جميع الإشعارات</a></header><div id="spaceupdates" class="space-body"><p class="space-empty">جاري تحميل المستجدات…</p></div></section>
+</div><div class="workspace-main-grid">
   <section class="ws-card workspace-note-card">
     <h3><i data-lucide="notebook-pen" style="width:17px;vertical-align:middle"></i> ملاحظاتي</h3>
     <p style="font-size:10px;color:#7b8aa5;margin:0 0 10px">ملاحظات شخصية يمكنك الرجوع إليها من أي جهاز.</p>
@@ -70,12 +78,13 @@
     <div id="workspaceFollowList" class="follow-list" aria-live="polite"><div class="follow-empty">جاري تحميل متابعاتك...</div></div>
   </section>
 </div>
-<footer class="atwar-footer"><span>ATWAR ONE • مساحة عملي الشخصية</span><span>نظام إدارة الأداء المؤسسي</span><span>ملاحظات ومتابعات خاصة • دون تكرار إدارة المهام</span></footer>
+<footer class="atwar-footer"><span>ATWAR ONE • مساحتي</span><span>نظام إدارة الأداء المؤسسي</span><span>مهام وقرارات ومشاريع • ملاحظات ومتابعات خاصة</span></footer>
 </main></section></div>
 
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script type="module" id="workspaceSupabaseNotes">
+import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.41';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
   const {data:{session},error:se}=await sb.auth.getSession();
@@ -89,7 +98,7 @@ async function authProfile(loginPath){
 }
 
 const noteInput=document.getElementById('personalNote'),savedNotice=document.getElementById('savedNotice');
-let profile=null,followData=[],taskData=[],taskById=new Map(),saving=false;
+let profile=null,followData=[],taskData=[],taskById=new Map(),saving=false,noteLoaded=false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function showNotice(text='تم الحفظ',kind='ok'){
   if(!savedNotice)return;
@@ -136,15 +145,17 @@ async function loadTaskReferences(){
 const a=await authProfile('../login.html');
 if(a){
   profile=a.profile;
-  const[{data:n}]=await Promise.all([
+  void mountWorkspace(sb,profile);
+  const[noteResult]=await Promise.all([
     sb.from('quick_notes').select('*').eq('owner_id',profile.id).order('updated_at',{ascending:false}).limit(1),
-    loadTaskReferences()
+    loadTaskReferences().catch(()=>showNotice('تعذر تحميل روابط المهام.','error'))
   ]);
-  const row=(n||[])[0];noteInput.value=row?.text??row?.note_text??row?.body??row?.content??'';
+  if(noteResult.error){noteInput.disabled=true;showNotice('تعذر تحميل ملاحظتك؛ أعد فتح الصفحة قبل تعديلها.','error');}
+  else{const row=(noteResult.data||[])[0];noteInput.value=row?.text??row?.note_text??row?.body??row?.content??'';noteLoaded=true;}
   await loadFollowups().catch(e=>{console.error(e);document.getElementById('workspaceFollowList').innerHTML='<div class="follow-empty">المتابعات غير متاحة حالياً.</div>'});
 }
 window.saveNote=async function(){
-  if(!profile||saving)return;saving=true;const text=String(noteInput.value||'');
+  if(!profile||saving||!noteLoaded)return;saving=true;const text=String(noteInput.value||'');
   if(text.length>10000){showNotice('الملاحظة يجب ألا تتجاوز 10000 حرف.','error');saving=false;return}
   const{error}=await sb.rpc('workspace_save_note',{p_text:text});
   showNotice(error?'لم يتم حفظ الملاحظة الآن، حاول مرة أخرى.':'تم حفظ الملاحظة ومزامنتها بنجاح',error?'error':'ok');saving=false;
