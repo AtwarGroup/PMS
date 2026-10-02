@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {normalize,searchIndex,findResults,renderResults} from '../assets/js/search-core.mjs';
+assert.equal(normalize('إِدارة الـمشاريع'),'ادارة المشاريع');
+const profile={id:'m',role:'manager'},rows=searchIndex({profile,tasks:[{id:'t',title:'إدارة تقرير',description:'المبيعات الأسبوعية',status:'مكتملة',assignee_id:'e'},{id:'deleted',title:'تقرير',deleted_at:'now'}],people:[{id:'e',full_name:'موظف',manager_id:'m'},{id:'other',full_name:'موظف آخر',manager_id:'x'}],projects:[{id:'p',title:'مشروع',objective:'تقرير المبيعات'},{id:'gone',title:'مشروع',deleted_at:'now'}],jobs:[{id:'j',title:'draft secret',published_snapshot:{title:'وصف منشور',content:{responsibilities:[{text:'تقرير المبيعات'}]}}},{id:'draft',title:'draft secret'}],policies:[{id:'policy',title:'سياسة المبيعات'}],versions:[{id:'v',policy_id:'policy',version_number:1,content:[{body:'تقرير الأسبوع'}]}]});
+assert.equal(rows.filter(x=>x.kind==='people').length,1);assert.equal(rows.filter(x=>x.kind==='jobs').length,1);assert.equal(findResults(rows,'draft secret').length,0);assert.equal(findResults(rows,'تقرير المبيعات').length,4);
+const completed=findResults(rows,'ادارة تقرير')[0];assert.ok(completed.href.includes('scope=COMPLETED'));assert.ok(completed.href.includes('owner=e'));
+assert.equal(findResults(rows,'تقرير','projects').length,1);assert.ok(findResults(rows,'الأسبوع','policies')[0].href.includes('version=v'));
+const html=renderResults([{kind:'tasks',title:'<script>x</script>',href:'../tasks/index.html',meta:'<img>',icon:'search'}],'x');assert.ok(!html.includes('<script>'));assert.ok(html.includes('&lt;script&gt;'));
+assert.ok(renderResults([],'').includes('ابحث'));assert.ok(renderResults([],'missing').includes('لا توجد'));
+console.log('Global search: Arabic normalization, multiword matching, published snapshots, team scope, deleted exclusion, complete task links and safe rendering passed.');
