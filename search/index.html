@@ -15,6 +15,7 @@
 .result{background:#fff;border:1px solid #e5edf6;border-radius:17px;padding:16px;margin-bottom:10px;display:flex;gap:13px;align-items:center;text-decoration:none;color:inherit}
 .result:hover{border-color:#bfd9f8}.r-icon{width:42px;height:42px;border-radius:13px;background:#eef6ff;color:#1677ff;display:grid;place-items:center;flex:none}
 .r-title{font-weight:900;font-size:14px}.r-meta{font-size:10px;color:#8a97a8;margin-top:4px}.empty{text-align:center;padding:50px;color:#8b98aa}
+.search-tools{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:16px;text-align:start;font-size:13px;color:#64748b}.search-tools select{font:inherit;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:white;margin-inline-start:8px}.search-group{max-width:1000px;margin:0 auto 26px}.search-group header{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}.search-group h2{font-size:17px;margin:0}.search-group header span,.search-limit{font-size:12px;color:#64748b}.r-copy{flex:1;min-width:0}.r-title{display:block;overflow-wrap:anywhere}.r-meta{display:block;font-size:12px}.r-open{font-size:12px;color:#64748b;white-space:nowrap}.result{padding:15px 18px;border-radius:12px;box-shadow:none}.search-hero{margin:0 auto 24px}.search-hero p{line-height:1.8}#searchStatus{font-size:12px;text-align:start}@media(max-width:550px){.search-tools{align-items:start;flex-direction:column}.r-open{display:none}}
 </style>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
 </head>
@@ -28,10 +29,10 @@
 <main class="atwar-content">
 <section class="search-hero">
 <h1>البحث في ATWAR ONE</h1>
-<p>ابحث عن مهمة، موظف أو صفحة داخل النظام.</p>
-<div class="big-search"><i data-lucide="search"></i><input id="query" autofocus placeholder="اكتب كلمة البحث..."></div>
-</section>
-<section id="results"></section>
+<p>المهام والمشاريع والأوصاف الوظيفية والسياسات، في بحث واحد.</p>
+<div class="big-search"><i data-lucide="search"></i><input id="query" aria-label="كلمة البحث" autofocus placeholder="اكتب كلمة البحث..."></div>
+<div class="search-tools"><label>نوع النتائج <select id="searchType"><option value="all">كل النتائج</option><option value="tasks">المهام</option><option value="projects">المشاريع</option><option value="jobs">الأوصاف الوظيفية</option><option value="policies">السياسات</option><option value="people">الفريق</option><option value="pages">صفحات النظام</option></select></label><span id="searchCount">جاري التجهيز…</span></div><p id="searchStatus" role="status">جاري تحميل بيانات البحث…</p></section>
+<section id="results" aria-live="polite"></section>
 <footer class="atwar-footer"><span>ATWAR ONE • Search</span><span>نظام إدارة الأداء المؤسسي</span><span>Supabase Live Search</span></footer>
 </main></section></div>
 
@@ -40,21 +41,5 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script src="../assets/js/permissions.js"></script>
-<script type="module" id="liveSearchBinding">
-const sb=await window.atwarGetSupabase();
-async function authProfile(loginPath){
-  const {data:{session},error:se}=await sb.auth.getSession();
-  if(se||!session?.user){location.href=loginPath;return null;}
-  const {data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(pe||!profile||profile.active===false||profile.status==='inactive'||!['employee','manager','admin'].includes(profile.role)){
-    await sb.auth.signOut().catch(()=>{});location.href=loginPath;return null;
-  }
-  window.atwarSyncShellIdentity?.(profile,session.user);
-  return {session,user:session.user,profile};
-}
-
-const input=document.getElementById('query'),results=document.getElementById('results');let pages=[],people=[],tasks=[],profile=null;const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function render(q=''){q=String(q).trim().toLowerCase();if(!q){results.innerHTML='<div class="empty">ابدأ بكتابة كلمة البحث.</div>';return}const pageRows=pages.filter(x=>`${x.title} ${x.meta} ${x.keys}`.toLowerCase().includes(q)).map(x=>({...x,kind:'صفحة'}));const peopleRows=people.filter(x=>`${x.full_name||''} ${x.email||''} ${x.job_title||''}`.toLowerCase().includes(q)).slice(0,10).map(x=>({title:x.full_name||x.email||'مستخدم',meta:x.job_title||x.email||'',icon:'user',href:`../team/employee.html?uid=${encodeURIComponent(x.id)}`,kind:'موظف'}));const taskRows=tasks.filter(x=>`${x.title||''} ${x.description||''} ${x.notes||''} ${x.assignee_name_snapshot||''}`.toLowerCase().includes(q)).slice(0,15).map(x=>({title:x.title||'مهمة',meta:`${x.status||''} • ${x.assignee_name_snapshot||''}`,icon:'square-check-big',href:`../tasks/index.html?task=${encodeURIComponent(x.id)}`,kind:'مهمة'}));const rows=[...taskRows,...peopleRows,...pageRows];results.innerHTML=rows.length?rows.map(x=>`<a class="result" href="${x.href}"><div class="r-icon"><i data-lucide="${x.icon}"></i></div><div><div class="r-title">${esc(x.title)}</div><div class="r-meta">${esc(x.kind)} • ${esc(x.meta||'')}</div></div></a>`).join(''):'<div class="empty">لم يتم العثور على نتائج مطابقة ضمن نطاق صلاحيتك.</div>';try{lucide.createIcons()}catch{}}
-const a=await authProfile('../login.html');if(a){profile=a.profile;const [pr,tr]=await Promise.all([sb.from('profiles').select('id,full_name,email,role,job_title,manager_id,active,status').eq('active',true).eq('status','active').order('full_name'),sb.from('tasks').select('*').order('updated_at',{ascending:false})]);people=profile.role==='employee'?[]:(pr.data||[]).filter(x=>profile.role==='admin'||x.manager_id===profile.id);tasks=tr.data||[];pages=[{title:'المهام',meta:'إدارة المهام',icon:'square-check-big',href:'../tasks/index.html',keys:'مهمة مهام task'},{title:'ملفي الوظيفي',meta:'الملف الوظيفي',icon:'circle-user-round',href:'../profile/index.html',keys:'وظيفة ملف شخصي'},{title:'مساحة عملي',meta:'ملاحظات ومتابعات',icon:'notebook-tabs',href:'../workspace/index.html',keys:'ملاحظات متابعة عملي'},...(profile.role!=='employee'?[{title:'الفريق',meta:'إدارة الفريق',icon:'users',href:'../team/index.html',keys:'فريق موظفين'}]:[]),...(profile.role==='admin'?[{title:'إدارة النظام',meta:'الإعدادات',icon:'settings',href:'../admin/index.html',keys:'ادارة نظام صلاحيات'}]:[])];const q=new URLSearchParams(location.search).get('q')||'';input.value=q;render(q)}input.addEventListener('input',e=>render(e.target.value));
-</script>
+<script type="module" id="liveSearchBinding" src="../assets/js/search-page.mjs?v=2.5.42"></script>
 </body></html>
