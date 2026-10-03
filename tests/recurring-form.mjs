@@ -19,7 +19,7 @@ const editButton=new Node();editButton.dataset.id='existing';
 const doc={getElementById:id=>{assert(nodes.has(id),'Missing '+id);return nodes.get(id);},querySelectorAll:q=>q==='[name="repeatDay"]'?days:q==='[name="repeatDay"]:checked'?days.filter(x=>x.checked):q==='.edit'?[editButton]:[]};
 const me={id:'manager',role:'manager',full_name:'مدير'};
 const people=[me,{id:'employee',full_name:'موظف',manager_id:'manager'}];
-const rows=[{id:'existing',title:'دورية محفوظة',description:'',assignee_id:'employee',priority:'normal',recurrence:'monthly',interval_count:1,next_run_at:'2030-02-28T06:00:00Z',schedule_start_at:'2030-01-31T06:00:00Z',due_offset_days:3,active:true,created_count:0,waiting_for_completion:false,recurrence_rule:{mode:'calendar',pattern:'day',day:31,endMode:'never',days:[]}}];
+const rows=[{id:'ended',title:'انتهى',assignee_id:'employee',recurrence:'daily',interval_count:1,active:false,created_count:2,next_run_at:'2030-01-01T06:00:00Z',recurrence_rule:{mode:'calendar',pattern:'day',endMode:'count',endCount:2}}, {id:'existing',title:'دورية محفوظة',description:'',assignee_id:'employee',priority:'normal',recurrence:'monthly',interval_count:1,next_run_at:'2030-02-28T06:00:00Z',schedule_start_at:'2030-01-31T06:00:00Z',due_offset_days:3,active:true,created_count:0,waiting_for_completion:false,recurrence_rule:{mode:'calendar',pattern:'day',day:31,endMode:'never',days:[]}}];
 let inserted=null,updated=null;
 function query(table){let op='select';const q={
  select(){return q;},eq(){return q;},order(){return q;},single(){return Promise.resolve({data:me});},maybeSingle(){return Promise.resolve({data:{id:'existing'}});},
@@ -31,7 +31,8 @@ const context=vm.createContext({...core,document:doc,window:{atwarGetSupabase:as
 let script=html.split('<script type="module">')[1].split('</script>')[0].replace(/import .*?;\n/,'');
 await vm.runInContext('(async()=>{'+script+'})()',context);
 const el=id=>nodes.get(id);
-assert.equal(el('assignee').value,'');
+assert.doesNotMatch(html,/id="run"|sb\.rpc\('run_recurring_tasks_safe'\)/,'No manual execution in the page');
+assert.equal(el('assignee').value,'');assert.match(el('list').innerHTML,/انتهى التكرار/);
 el('newRecurring').onclick();assert.equal(el('recurringDialog').open,true);assert.equal(el('taskDetailsStep').hidden,false);assert.equal(el('repeatSettingsStep').hidden,true);
 el('title').value='اختبار';await el('add').onclick();assert.equal(inserted,null,'No silent assignee');
 el('assignee').value='employee';el('next').value='2030-10-01T09:00';
