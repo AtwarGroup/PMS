@@ -95,8 +95,8 @@ export function command(state,who,action,data={}){
   if(data.reply&&!state.messages.some(m=>m.id===data.reply&&m.conversation===c.id))fail(400,'الرسالة المردود عليها ليست في المحادثة.');
   const mentions=[...new Set(data.mentions||[])];if(mentions.some(id=>!c.members.includes(id)))fail(400,'الإشارة متاحة لأعضاء المحادثة فقط.');
   let file=null;
-  if(data.file){const f=data.file;const allowed=['image/png','image/jpeg','image/webp','application/pdf','text/plain','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-   if(!allowed.includes(f.type)||typeof f.base64!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(f.base64)||Buffer.byteLength(f.base64,'base64')>3*1024*1024)fail(400,'الملف غير مدعوم أو يتجاوز ٣ ميجابايت.');
+  if(data.file){const f={...data.file};const fallback={docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pdf:'application/pdf',txt:'text/plain',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp'};if(['','application/octet-stream','application/zip','application/x-zip-compressed'].includes(f.type||''))f.type=fallback[String(f.name||'').split('.').pop().toLowerCase()]||f.type;const allowed=['image/png','image/jpeg','image/webp','application/pdf','text/plain','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+   if(!allowed.includes(f.type)||typeof f.base64!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(f.base64)||Buffer.byteLength(f.base64,'base64')>10*1024*1024)fail(400,'الملف غير مدعوم أو يتجاوز ١٠ ميجابايت.');
    file={id:uid(),name:String(f.name).replace(/[\r\n"/\\]/g,'_').slice(0,120)||'ملف',type:f.type,base64:f.base64,size:Buffer.byteLength(f.base64,'base64')};
   }
   const original=data.reply&&state.messages.find(m=>m.id===data.reply);const thread=original?(original.thread||original.id):null;
