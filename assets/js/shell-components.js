@@ -10,6 +10,7 @@
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarAppTheme='1';
     style.href=new URL('css/app-theme.css?v=2.5.36',assetRoot).href;document.head.append(style);
   };
+  if(!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
@@ -263,6 +264,12 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
+    if(row.type==='communication_trial'){
+      const {data,error}=await sb.rpc('communication_trial_notification_open',{p_id:row.id});
+      if(error||!data){onError('المحادثة غير متاحة لك حاليًا.');return false;}
+      location.href=depthPrefix+'communication-trial/?conversation='+encodeURIComponent(data.conversation)+'&message='+encodeURIComponent(data.message);return true;
+    }
+
     if(row.project_id){
       const {data:project,error}=await sb.from('projects').select('id').eq('id',row.project_id).maybeSingle();
       if(error||!project){onError('المشروع غير متاح لك حاليًا.');return false}
