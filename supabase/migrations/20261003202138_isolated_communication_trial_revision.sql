@@ -1,0 +1,10 @@
+create table public.communication_trial_revision(singleton boolean primary key default true check(singleton),version bigint not null default 0);
+insert into public.communication_trial_revision(singleton) values(true);
+alter table public.communication_trial_revision enable row level security;
+revoke all on public.communication_trial_revision from public,anon,authenticated;
+grant select on public.communication_trial_revision to authenticated;
+create policy communication_trial_revision_read on public.communication_trial_revision for select to authenticated using(public.communication_trial_status());
+create function private.communication_trial_signal() returns trigger language plpgsql security definer set search_path='' as $f$ begin update public.communication_trial_revision set version=new.version where singleton;return new;end $f$;
+revoke all on function private.communication_trial_signal() from public,anon,authenticated;
+create trigger communication_trial_signal after update on private.communication_trial_state for each row execute function private.communication_trial_signal();
+alter publication supabase_realtime add table public.communication_trial_revision;
