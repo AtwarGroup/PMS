@@ -7,9 +7,9 @@ const nodes=new Map();
 class Node{
  constructor(value=''){this.value=value;this.hidden=false;this.checked=false;this.dataset={};this.classList={toggle(){}};this.listeners={};this.options=[];}
  addEventListener(type,fn){this.listeners[type]=fn;}
- setAttribute(){} scrollIntoView(){}
+ setAttribute(){} scrollIntoView(){} focus(){} showModal(){this.open=true;} close(){this.open=false;}
 }
-for(const match of html.matchAll(/<(input|select|button|div|h2|strong|p|fieldset|legend)[^>]*\bid="([^"]+)"[^>]*>/g)){
+for(const match of html.matchAll(/<(input|select|button|div|h2|strong|p|fieldset|legend|dialog|span)[^>]*\bid="([^"]+)"[^>]*>/g)){
  const [,tag,id]=match;let value=match[0].match(/\bvalue="([^"]*)"/)?.[1]||'';
  if(tag==='select')value=html.slice(match.index).split('</select>')[0].match(/<option value="([^"]*)"/)?.[1]||'';
  nodes.set(id,new Node(value));
@@ -32,13 +32,18 @@ let script=html.split('<script type="module">')[1].split('</script>')[0].replace
 await vm.runInContext('(async()=>{'+script+'})()',context);
 const el=id=>nodes.get(id);
 assert.equal(el('assignee').value,'');
+el('newRecurring').onclick();assert.equal(el('recurringDialog').open,true);assert.equal(el('taskDetailsStep').hidden,false);assert.equal(el('repeatSettingsStep').hidden,true);
 el('title').value='اختبار';await el('add').onclick();assert.equal(inserted,null,'No silent assignee');
 el('assignee').value='employee';el('next').value='2030-10-01T09:00';
 el('recurrence').value='weekly';days.forEach(x=>x.checked=[0,2].includes(Number(x.value)));el('endMode').value='count';el('endCount').value='4';
+el('configureRepeat').onclick();assert.equal(el('taskDetailsStep').hidden,true);assert.equal(el('repeatSettingsStep').hidden,false);
 el('endMode').listeners.input();assert.equal(el('endCountField').hidden,false);assert.equal(el('endDateField').hidden,true);
-await el('add').onclick();assert.deepEqual(Array.from(inserted.recurrence_rule.days),[0,2]);assert.equal(inserted.assignee_id,'employee');assert.equal(inserted.schedule_start_at,'2030-10-01T06:00:00.000Z');assert.equal(inserted.recurrence_rule.endCount,4);assert.equal(el('assignee').value,'');
+el('confirmRepeat').onclick();assert.equal(el('taskDetailsStep').hidden,false);assert.equal(el('repeatSettingsStep').hidden,true);
+await el('add').onclick();assert.equal(el('recurringDialog').open,false);assert.deepEqual(Array.from(inserted.recurrence_rule.days),[0,2]);assert.equal(inserted.assignee_id,'employee');assert.equal(inserted.schedule_start_at,'2030-10-01T06:00:00.000Z');assert.equal(inserted.recurrence_rule.endCount,4);assert.equal(el('assignee').value,'');
 editButton.onclick();assert.equal(el('assignee').value,'employee');assert.equal(el('monthDay').value,31);assert.equal(el('next').value,'2030-01-31T09:00');
+el('configureRepeat').onclick();el('patternYearly').onclick();assert.equal(el('recurrence').value,'yearly');el('backToDetails').onclick();assert.equal(el('recurrence').value,'monthly');assert.equal(el('title').value,'دورية محفوظة');el('configureRepeat').onclick();
 el('repeatMode').value='completion';el('repeatMode').listeners.input();assert.equal(el('calendarOptions').hidden,true);assert.equal(el('completionHelp').hidden,false);
+el('confirmRepeat').onclick();
 await el('add').onclick();assert.equal(updated.recurrence_rule.mode,'completion');assert(!('owner_id' in updated));assert(!('next_run_at' in updated),'Do not overwrite scheduler state');
 assert.equal(el('assignee').value,'');
 console.log('PASS recurring form: required assignee, conditional controls, save/reset and editing');

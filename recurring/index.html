@@ -26,6 +26,7 @@
 .recurring-card h3{font-size:14px}.recurring-owner,.recurring-toggle{font-size:11px}.recurring-fact span{font-size:10px}.recurring-fact b{font-size:11px}.recurring-table{font-size:11px}.recurring-table td:first-child{font-size:14px}
 .recurrence-editor{display:flex;flex-direction:column;gap:16px}.recurrence-editor .range-heading{margin:4px 0 0;padding-top:16px;border-top:1px solid var(--atwar-border)}
 .field label,.day-choices legend{font-size:14px;color:var(--atwar-text-soft)}.field input,.field select{font-size:16px;min-height:44px}.field-help{font-size:13px;color:var(--atwar-muted);line-height:1.7}.day-choices{display:flex;flex-wrap:wrap;gap:8px;border:0;margin:0;padding:0}.day-choices legend{font-weight:700;margin-bottom:8px}.day-choices label{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--atwar-border);border-radius:9px;background:var(--atwar-surface);font-size:14px}.day-choices label:has(:checked){background:var(--atwar-surface-soft);border-color:var(--atwar-blue-600)}.day-choices input{accent-color:var(--atwar-blue-600);width:17px;height:17px}.recurrence-preview{padding:15px;border-radius:12px;background:var(--atwar-surface);border:1px solid var(--atwar-border);font-size:14px;line-height:1.8}.recurrence-preview strong{color:var(--atwar-blue-600)}.recurrence-preview p{margin:6px 0}.recurrence-preview ol{margin:6px 0 0;padding-inline-start:24px}.recurring-form-layout{align-items:start}.recurring-form-block h3{font-size:18px}[hidden]{display:none!important}
+.recurring-page-actions{display:flex;gap:10px;flex-wrap:wrap}.recurring-dialog{padding:0;border:1px solid var(--atwar-border);border-radius:18px;width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 36px);color:var(--atwar-text);background:var(--atwar-surface,#fff);box-shadow:0 24px 80px #0b1d3a33}.recurring-dialog::backdrop{background:#0b1d3a66;backdrop-filter:blur(3px)}.recurring-dialog[open]{display:flex;flex-direction:column}.recurring-dialog-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--atwar-border);gap:12px}.recurring-dialog-head h2{font-size:22px;margin:4px 0 0}.recurring-dialog-eyebrow{font-size:13px;color:var(--atwar-muted)}.recurring-close{font-size:25px!important;min-width:40px}.recurring-dialog-body{padding:22px 24px;overflow-y:auto;min-height:0}.recurring-dialog .recurring-form-block{background:transparent;border:0;padding:0}.recurring-dialog .form-grid{gap:18px}.recurring-dialog .recurring-actions{margin:0;padding:16px 24px;flex-wrap:wrap;background:var(--atwar-surface-soft);flex-shrink:0}.recurring-actions #msg:empty{display:none}.recurring-actions>div:last-child,.recurring-actions #detailsActions{margin-inline-start:auto;display:flex;gap:8px}.recurring-dialog .meta{font-size:14px}.recurring-summary-button{margin-top:22px;width:100%;display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--atwar-border);border-radius:12px;background:var(--atwar-surface-soft);font:inherit;text-align:start;color:var(--atwar-text);cursor:pointer}.recurring-summary-button>span:nth-child(2){flex:1;min-width:0}.recurring-summary-button strong,.recurring-summary-button #detailsRepeatSummary,.recurring-summary-button small{display:block}.recurring-summary-button strong{font-size:15px}.recurring-summary-button #detailsRepeatSummary{font-size:14px;line-height:1.8;margin:4px 0}.recurring-summary-button small{font-size:12px;color:var(--atwar-muted)}.recurring-summary-icon{color:var(--atwar-blue-600)}.recurring-summary-edit{font-size:14px;color:var(--atwar-blue-600);font-weight:700}.recurrence-patterns{display:grid;grid-template-columns:repeat(4,1fr);padding:4px;background:var(--atwar-surface-soft);border:1px solid var(--atwar-border);border-radius:12px;gap:4px}.recurrence-patterns button{font:inherit;font-size:15px;border:0;background:transparent;border-radius:8px;padding:10px;color:var(--atwar-muted);cursor:pointer}.recurrence-patterns button[aria-pressed="true"]{background:var(--atwar-surface,#fff);color:var(--atwar-blue-600);font-weight:800;box-shadow:0 2px 6px #0b1d3a12}.recurring-dialog :is(button,input,select):focus-visible{outline:3px solid #2563eb66;outline-offset:2px}body:has(.recurring-dialog[open]){overflow:hidden}@media(max-width:620px){.recurring-dialog-head,.recurring-dialog-body{padding:16px}.recurring-dialog .recurring-actions{padding:14px 16px;flex-direction:row}.recurring-dialog .form-grid{grid-template-columns:1fr 1fr}.recurring-dialog .field.wide{grid-column:1/-1}.recurring-dialog .form-grid .field{min-width:0}.recurring-page-actions{width:100%}.recurring-page-actions .primary{flex:1}.recurrence-patterns button{padding:10px 4px}.recurring-dialog .recurring-actions>div{width:100%}.recurring-dialog .recurring-actions button{flex:1}}
 </style>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
 </head>
@@ -44,19 +45,31 @@
   <article class="atwar-metric purple" data-tone="purple"><strong id="nextTemplateRun">—</strong><span>أقرب تشغيل</span></article>
 </section>
 
+
 <section class="task-suite-panel">
-<div class="task-suite-panel-head"><div><h2 id="formHeading">إضافة مهمة دورية</h2><p>حدد المسؤول والتكرار وموعد أول إنشاء، وسيقوم النظام بإنشاء المهام تلقائيًا.</p></div></div>
-<div class="recurring-form-layout">
-  <div class="recurring-form-block"><h3>بيانات المهمة</h3><div class="form-grid">
+<div class="task-suite-panel-head">
+  <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
+  <div class="recurring-page-actions"><button id="newRecurring" type="button" class="atwar-btn primary"><i data-lucide="plus"></i> إضافة مهمة دورية</button><button id="run" class="atwar-btn">تشغيل المستحق الآن</button></div>
+</div>
+<div class="recurring-toolbar"><input id="recurringSearch" class="recurring-search" type="search" placeholder="ابحث باسم القالب أو المسؤول"><div class="recurring-view-switch" aria-label="طريقة عرض المهام الدورية"><button id="recurringListButton" type="button" aria-pressed="false">قائمة</button><button id="recurringKanbanButton" type="button" aria-pressed="false">كانبان</button></div></div>
+<div id="list" class="recurring-cards">جاري التحميل...</div>
+</section>
+<footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>نظام إدارة الأداء المؤسسي</span><span>محرك الجدولة</span></footer>
+</main></section></div>
+
+<dialog id="recurringDialog" class="recurring-dialog" aria-labelledby="formHeading"><div class="recurring-dialog-head"><div><span class="recurring-dialog-eyebrow">المهام الدورية</span><h2 id="formHeading">إضافة مهمة دورية</h2></div><button id="closeRecurring" type="button" class="atwar-btn recurring-close" aria-label="إغلاق">×</button></div>
+<div class="recurring-dialog-body">
+  <div id="taskDetailsStep" aria-label="بيانات المهمة" class="recurring-form-block"><div class="form-grid">
     <div class="field wide"><label for="title">عنوان المهمة</label><input id="title" placeholder="مثال: مراجعة تقرير المبيعات الأسبوعي"></div>
     <div class="field"><label for="assignee">المسند إليه</label><select id="assignee" required><option value="">اختر الموظف</option></select></div>
     <div class="field"><label for="priority">الأولوية</label><select id="priority"><option value="normal">عادية</option><option value="important">مهمة</option><option value="urgent">عاجلة</option></select></div>
     <div class="field wide"><label for="desc">الوصف</label><input id="desc" placeholder="وصف المهمة أو التعليمات (اختياري)"></div>
-  </div></div>
-  <div class="recurring-form-block recurrence-editor"><h3>إعدادات التكرار</h3>
+    <div class="field"><label for="dueOffset">مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء كل مهمة حتى استحقاقها.</div></div>
+  </div><button id="configureRepeat" type="button" class="recurring-summary-button"><span class="recurring-summary-icon"><i data-lucide="repeat-2"></i></span><span><strong>التكرار</strong><span id="detailsRepeatSummary">تحديد الموعد</span><small>اضغط لتعديل إعدادات التكرار</small></span><span class="recurring-summary-edit">تعديل</span></button></div>
+  <div id="repeatSettingsStep" aria-label="إعدادات التكرار" class="recurring-form-block recurrence-editor" hidden>
     <div class="field"><label for="repeatMode">طريقة التكرار</label><select id="repeatMode"><option value="calendar">مواعيد ثابتة</option><option value="completion">بعد اكتمال المهمة واعتمادها</option></select></div>
     <div class="form-grid">
-      <div class="field"><label for="recurrence">نمط التكرار</label><select id="recurrence"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
+      <div class="field wide"><label id="patternLabel">نمط التكرار</label><div class="recurrence-patterns" role="group" aria-labelledby="patternLabel"><button type="button" id="patternDaily" data-pattern="daily" aria-pressed="false">يومي</button><button type="button" id="patternWeekly" data-pattern="weekly" aria-pressed="false">أسبوعي</button><button type="button" id="patternMonthly" data-pattern="monthly" aria-pressed="false">شهري</button><button type="button" id="patternYearly" data-pattern="yearly" aria-pressed="false">سنوي</button><select id="recurrence" hidden aria-label="نمط التكرار"><option value="daily">يومي</option><option value="weekly">أسبوعي</option><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div></div>
       <div class="field" id="intervalField"><label for="interval">كل</label><input id="interval" type="number" min="1" max="365" value="1"><div id="intervalHelp" class="field-help"></div></div>
     </div>
     <div id="calendarOptions">
@@ -74,7 +87,6 @@
     <h3 class="range-heading">نطاق التكرار</h3>
     <div class="form-grid">
       <div class="field"><label for="next">تاريخ ووقت البداية</label><input id="next" type="datetime-local"><div class="field-help">بتوقيت الرياض؛ تُراجع المواعيد كل ٥ دقائق.</div></div>
-      <div class="field"><label for="dueOffset">مهلة الإنجاز بالأيام</label><input id="dueOffset" type="number" min="0" max="365" value="0"><div class="field-help">من تاريخ إنشاء كل مهمة حتى استحقاقها.</div></div>
       <div class="field wide"><label for="endMode">نهاية التكرار</label><select id="endMode"><option value="never">دون تاريخ نهاية</option><option value="date">حتى تاريخ محدد</option><option value="count">بعد عدد من المهام</option></select></div>
       <div class="field" id="endDateField" hidden><label for="endDate">تاريخ النهاية (شامل)</label><input id="endDate" type="date"></div>
       <div class="field" id="endCountField" hidden><label for="endCount">إجمالي عدد المهام</label><input id="endCount" type="number" min="1" max="10000" value="12"><div class="field-help" id="createdHelp">يبدأ احتساب العدد مع الإعدادات الجديدة.</div></div>
@@ -83,20 +95,9 @@
   </div>
 </div>
 <div class="recurring-actions">
-  <div id="msg" class="meta"></div><div><button id="cancelEdit" type="button" class="btn secondary" hidden>إلغاء التعديل</button> <button id="add" class="btn">إضافة المهمة الدورية</button></div>
+  <div id="msg" class="meta" role="status"></div><div id="detailsActions"><button id="cancelEdit" type="button" class="atwar-btn">إغلاق</button> <button id="add" class="atwar-btn primary">إنشاء المهمة الدورية</button></div><div id="repeatActions" hidden><button id="backToDetails" type="button" class="atwar-btn">رجوع</button> <button id="confirmRepeat" type="button" class="atwar-btn primary">تأكيد التكرار</button></div>
 </div>
-</section>
-
-<section class="task-suite-panel">
-<div class="task-suite-panel-head">
-  <div><h2>المهام الدورية الحالية</h2><p>إدارة القوالب النشطة ومراجعة موعد التشغيل القادم.</p></div>
-  <button id="run" class="btn">تشغيل المستحق الآن</button>
-</div>
-<div class="recurring-toolbar"><input id="recurringSearch" class="recurring-search" type="search" placeholder="ابحث باسم القالب أو المسؤول"><div class="recurring-view-switch" aria-label="طريقة عرض المهام الدورية"><button id="recurringListButton" type="button" aria-pressed="false">قائمة</button><button id="recurringKanbanButton" type="button" aria-pressed="false">كانبان</button></div></div>
-<div id="list" class="recurring-cards">جاري التحميل...</div>
-</section>
-<footer class="atwar-footer"><span>ATWAR ONE • المهام الدورية</span><span>نظام إدارة الأداء المؤسسي</span><span>محرك الجدولة</span></footer>
-</main></section></div>
+</dialog>
 
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
@@ -138,6 +139,7 @@ function updateIntervalHelp(){
  el('monthDayField').hidden=rule.pattern==='ordinal';el('ordinalField').hidden=rule.pattern!=='ordinal';el('weekdayField').hidden=rule.pattern!=='ordinal';
  el('endDateField').hidden=rule.endMode!=='date';el('endCountField').hidden=rule.endMode!=='count';
  const interval=calendar&&kind==='daily'&&rule.pattern==='workdays'?1:Number(el('interval').value);
+ for(const pattern of ['daily','weekly','monthly','yearly'])el('pattern'+pattern[0].toUpperCase()+pattern.slice(1)).setAttribute('aria-pressed',String(kind===pattern));
  el('intervalHelp').textContent=recurrenceText(kind,interval)+(calendar?'':' بعد الاعتماد النهائي');
  try{
   const start=riyadhISO(el('next').value);validateRule(rule,kind,interval,start);
@@ -145,9 +147,10 @@ function updateIntervalHelp(){
   if(rule.endMode==='count'&&rule.endCount<=created)throw Error('عدد المهام يجب أن يزيد عن المنشأ سابقًا: '+created);
   el('createdHelp').textContent=`منشأ منذ بدء العد: ${created}. القوالب القديمة يبدأ عدها من هذا التحديث.`;
   el('repeatSummary').textContent=ruleSummary(rule,kind,interval)+`؛ مهلة الإنجاز ${Number(el('dueOffset').value)} يوم.`;
+  el('detailsRepeatSummary').textContent=el('repeatSummary').textContent;
   const dates=previewDates(rule,kind,interval,start,3,created,new Date().toISOString());
   el('repeatPreview').innerHTML=rule.mode==='completion'?'الموعد التالي يُحسب بعد الاعتماد النهائي للسابقة.':dates.length?'<span>المواعيد الثلاثة القادمة:</span><ol>'+dates.map(date=>`<li>${esc(dt(date))}</li>`).join('')+'</ol>':'لا توجد مواعيد ضمن النطاق المحدد.';
- }catch(error){el('repeatSummary').textContent=error.message;el('repeatPreview').textContent='';}
+ }catch(error){el('repeatSummary').textContent=error.message;el('repeatPreview').textContent='';el('detailsRepeatSummary').textContent='تحديد الموعد';}
 }
 function resetForm(){
  document.getElementById('title').value='';
@@ -178,7 +181,7 @@ function renderRecurringRows(){
  if(recurringView==='LIST'){host.className='recurring-table-wrap';host.innerHTML=`<table class="recurring-table"><thead><tr><th>القالب</th><th>المسؤول</th><th>التكرار</th><th>التشغيل القادم</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.active?'':'paused'}"><td>${esc(x.title)}</td><td>${esc(recurringOwner(x))}</td><td>${esc(ruleSummary(x.recurrence_rule,x.recurrence,x.interval_count))}</td><td>${esc(x.waiting_for_completion?'بانتظار اكتمال واعتماد السابقة':dt(x.next_run_at))}</td><td><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></td><td><div class="recurring-table-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> تفعيل</label><button class="atwar-btn edit" data-id="${x.id}">تعديل</button><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></td></tr>`).join('')}</tbody></table>`}
  else{host.className='recurring-cards';host.innerHTML=rows.map(x=>`<article class="recurring-card ${x.active?'':'paused'}"><div class="recurring-card-head"><h3>${esc(x.title)}</h3><span class="atwar-badge ${x.active?'success':''}">${x.active?'نشط':'متوقف'}</span></div><div class="recurring-owner"><i data-lucide="user-round"></i>${esc(recurringOwner(x))}</div><div class="recurring-facts"><div class="recurring-fact"><span>التكرار</span><b>${esc(ruleSummary(x.recurrence_rule,x.recurrence,x.interval_count))}</b></div><div class="recurring-fact"><span>التشغيل القادم</span><b>${esc(x.waiting_for_completion?'بانتظار اكتمال واعتماد السابقة':dt(x.next_run_at))}</b></div><div class="recurring-fact"><span>مهلة الإنجاز</span><b>${Number(x.due_offset_days||0)} يوم</b></div><div class="recurring-fact"><span>الأولوية</span><b>${({normal:'عادية',important:'مهمة',urgent:'عاجلة'})[x.priority]||'عادية'}</b></div></div><div class="recurring-card-actions"><label class="recurring-toggle"><input type="checkbox" class="active" data-id="${x.id}" ${x.active?'checked':''}> القالب نشط</label><button class="atwar-btn edit" data-id="${x.id}">تعديل</button><button class="atwar-btn danger del" data-id="${x.id}">حذف</button></div></article>`).join('')}
 }
-function stopEditing(){editingId=null;resetForm();document.getElementById('formHeading').textContent='إضافة مهمة دورية';document.getElementById('add').textContent='إضافة المهمة الدورية';document.getElementById('cancelEdit').hidden=true}
+function stopEditing(){editingId=null;resetForm();document.getElementById('formHeading').textContent='إضافة مهمة دورية';document.getElementById('add').textContent='إنشاء المهمة الدورية'}
 function editRecurring(id){
  const row=recurringRows.find(x=>x.id===id);if(!row)return;
  editingId=id;
@@ -188,8 +191,7 @@ function editRecurring(id){
  el('repeatMode').value=rule.mode;el('dailyPattern').value=rule.pattern==='workdays'?'workdays':'day';el('monthPattern').value=rule.pattern==='ordinal'?'ordinal':'day';
  el('monthDay').value=rule.day||date.getUTCDate();el('yearMonth').value=rule.month||date.getUTCMonth()+1;el('ordinal').value=rule.ordinal||1;el('weekday').value=rule.weekday??date.getUTCDay();el('endMode').value=rule.endMode;el('endDate').value=rule.endDate||'';el('endCount').value=rule.endCount||12;
  document.querySelectorAll('[name="repeatDay"]').forEach(x=>x.checked=(rule.days||[]).includes(Number(x.value)));
- updateIntervalHelp();document.getElementById('formHeading').textContent='تعديل المهمة الدورية';document.getElementById('add').textContent='حفظ التعديلات';document.getElementById('cancelEdit').hidden=false;
- document.getElementById('formHeading').scrollIntoView({behavior:'smooth',block:'center'});
+ updateIntervalHelp();document.getElementById('formHeading').textContent='تعديل المهمة الدورية';document.getElementById('add').textContent='حفظ التعديلات';openRecurringDialog();
 }
 function bindRecurringActions(){
  document.querySelectorAll('.edit').forEach(x=>x.onclick=()=>editRecurring(x.dataset.id));
@@ -218,7 +220,33 @@ document.getElementById('recurrence').addEventListener('change',updateIntervalHe
 document.getElementById('interval').addEventListener('input',updateIntervalHelp);
  for(const id of ['repeatMode','dailyPattern','monthPattern','monthDay','yearMonth','ordinal','weekday','endMode','endDate','endCount','next','dueOffset'])el(id).addEventListener('input',updateIntervalHelp);
  document.querySelectorAll('[name="repeatDay"]').forEach(x=>x.addEventListener('change',updateIntervalHelp));
-document.getElementById('cancelEdit').onclick=()=>stopEditing();
+let repeatSnapshot=null;
+const repeatFields=['repeatMode','recurrence','interval','dailyPattern','monthPattern','monthDay','ordinal','weekday','yearMonth','next','endMode','endDate','endCount'];
+function showRecurringStep(repeat){
+ el('taskDetailsStep').hidden=repeat;el('repeatSettingsStep').hidden=!repeat;el('detailsActions').hidden=repeat;el('repeatActions').hidden=!repeat;
+ el('formHeading').textContent=repeat?'إعداد التكرار':editingId?'تعديل المهمة الدورية':'إضافة مهمة دورية';
+ el('msg').textContent='';el(repeat?'repeatMode':'title').focus();
+}
+function openRecurringDialog(){showRecurringStep(false);if(!el('recurringDialog').open)el('recurringDialog').showModal();el('title').focus();}
+function closeRecurringDialog(){if(el('add').disabled)return;if(!el('repeatSettingsStep').hidden)backToDetails();el('recurringDialog').close();}
+function backToDetails(){
+ if(repeatSnapshot){for(const [id,value] of Object.entries(repeatSnapshot.fields))el(id).value=value;document.querySelectorAll('[name="repeatDay"]').forEach(x=>x.checked=repeatSnapshot.days.includes(Number(x.value)));}
+ updateIntervalHelp();showRecurringStep(false);
+}
+function validateCurrentRepeat(){
+ const rule=readRule(),kind=el('recurrence').value,interval=rule.mode==='calendar'&&kind==='daily'&&rule.pattern==='workdays'?1:Number(el('interval').value),start=riyadhISO(el('next').value);
+ validateRule(rule,kind,interval,start);
+ const created=Number(recurringRows.find(x=>x.id===editingId)?.created_count||0);
+ if(rule.endMode==='count'&&rule.endCount<=created)throw Error('العدد الإجمالي يجب أن يزيد عن المنشأ سابقًا: '+created);
+ if(rule.mode==='calendar'&&!previewDates(rule,kind,interval,start,1,created,new Date().toISOString()).length)throw Error('لا توجد مواعيد ضمن نطاق التكرار.');
+}
+ el('newRecurring').onclick=()=>{if(editingId)stopEditing();openRecurringDialog();};
+ el('configureRepeat').onclick=()=>{repeatSnapshot={fields:Object.fromEntries(repeatFields.map(id=>[id,el(id).value])),days:[...document.querySelectorAll('[name="repeatDay"]:checked')].map(x=>Number(x.value))};showRecurringStep(true);};
+ el('backToDetails').onclick=backToDetails;
+ el('confirmRepeat').onclick=()=>{try{validateCurrentRepeat();repeatSnapshot=null;updateIntervalHelp();showRecurringStep(false);el('configureRepeat').focus();}catch(error){el('msg').className='meta error';el('msg').textContent=error.message;}};
+ for(const pattern of ['daily','weekly','monthly','yearly'])el('pattern'+pattern[0].toUpperCase()+pattern.slice(1)).onclick=()=>{el('recurrence').value=pattern;updateIntervalHelp();};
+ el('closeRecurring').onclick=closeRecurringDialog;el('cancelEdit').onclick=closeRecurringDialog;
+ el('recurringDialog').addEventListener('cancel',event=>{event.preventDefault();if(!el('repeatSettingsStep').hidden)backToDetails();else closeRecurringDialog();});
 document.getElementById('add').onclick=async()=>{
  const title=document.getElementById('title').value.trim(),assignee=document.getElementById('assignee').value,next=document.getElementById('next').value;
  const msg=document.getElementById('msg');
@@ -237,7 +265,7 @@ let r;
  else r=await sb.from('recurring_task_templates').insert(payload);
  }catch(error){r={error}}finally{b.disabled=false;}
  if(r.error||editingId&&!r.data){msg.className='meta error';msg.textContent='تعذر الحفظ: '+(r.error?.message||'لم يُعثر على القالب أو ليست لديك صلاحية تعديله.');return}
- const wasEditing=!!editingId;stopEditing();msg.className='meta success';msg.textContent=wasEditing?'تم حفظ تعديل المهمة الدورية. يسري التعديل على المهام القادمة.':'تمت إضافة المهمة الدورية بنجاح وتم تفريغ الحقول.';await load();
+ const wasEditing=!!editingId;closeRecurringDialog();stopEditing();msg.className='meta success';msg.textContent=wasEditing?'تم حفظ تعديل المهمة الدورية. يسري التعديل على المهام القادمة.':'تم إنشاء المهمة الدورية بنجاح.';window.AtwarUI?.toast(msg.textContent,{type:'success'});await load();
 };
 document.getElementById('run').onclick=async()=>{const button=document.getElementById('run');button.disabled=true;button.textContent='جارٍ تشغيل المستحق…';const r=await sb.rpc('run_recurring_tasks_safe');button.disabled=false;button.textContent='تشغيل المستحق الآن';if(r.error)window.AtwarUI?.toast(r.error.message,{type:'error'});else{window.AtwarUI?.toast(`تم إنشاء ${r.data||0} مهمة مستحقة.`,{type:'success'});await load()}};
 try{lucide.createIcons()}catch{}
