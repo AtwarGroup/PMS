@@ -8,9 +8,14 @@ insert into public.recurring_task_templates(owner_id,assignee_id,title,recurrenc
 select auth.uid(),p.id,'__recurrence_count_test__','daily',1,now(),now(),'{"mode":"calendar","pattern":"day","endMode":"count","endCount":2}' from public.profiles p where email='o.abdo@tiradorstores.com';
 insert into public.recurring_task_templates(owner_id,assignee_id,title,recurrence,interval_count,next_run_at)
 select auth.uid(),p.id,'__recurrence_legacy_test__','monthly',1,now()-interval '1 minute' from public.profiles p where email='o.abdo@tiradorstores.com';
+reset role;
 do $$begin
- if public.run_recurring_tasks_safe()<>3 then raise exception 'Expected three first tasks';end if;
- if public.run_recurring_tasks_safe()<>0 then raise exception 'Duplicate creation';end if;
+ if private.materialize_recurring_tasks()<>3 then raise exception 'Expected three first tasks';end if;
+ if private.materialize_recurring_tasks()<>0 then raise exception 'Duplicate creation';end if;
+end $$;
+set local role authenticated;
+do $$begin
+ begin perform public.run_recurring_tasks_safe();raise exception 'Manager run must fail';exception when others then if sqlerrm<>'Administrator permission required' then raise;end if;end;
  begin update public.recurring_task_templates set created_count=500 where title='__recurrence_count_test__';raise exception 'Counter protection failed';exception when others then if sqlerrm<>'Scheduler state cannot be edited' then raise;end if;end;
 end $$;
 reset role;
@@ -45,4 +50,8 @@ do $$begin
  if private.materialize_recurring_tasks()<>0 then raise exception 'Expired range created task';end if;
  if not exists(select 1 from public.recurring_task_templates where title='__recurrence_expired_test__' and not active and created_count=0) then raise exception 'Expired template not ended';end if;
 end $$;
-select 'PASS recurrence creation, approval, count/date ends, no duplicate, legacy, protected counters' result;
+select set_config('request.jwt.claim.sub',(select id::text from public.profiles where email='helpdesk@tiradorstores.com'),true);
+set local role authenticated;
+do $$begin if public.run_recurring_tasks_safe()<>0 then raise exception 'Admin unexpected task';end if;end $$;
+reset role;
+select 'PASS admin-only execution, recurrence creation, approval, count/date ends, no duplicate, legacy, protected counters' result;
