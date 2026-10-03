@@ -207,6 +207,7 @@
 <script src="../assets/js/roles-config.js"></script>
 <script src="../assets/js/start-page-config.js"></script>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
+<style>.task-suite-metrics{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1100px){.task-suite-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){.task-suite-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen atwar-task-page">
@@ -274,8 +275,9 @@
       <div class="task-suite-metric" data-tone="blue"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
       <div class="task-suite-metric" data-tone="success"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
       <div class="task-suite-metric" data-tone="blue"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
-      <div class="task-suite-metric" data-tone="warning"><p id="statPendingLabel">قيد الانتظار</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
-      <div class="task-suite-metric" data-tone="danger"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+      <div class="task-suite-metric" data-tone="warning"><p id="statPendingLabel">لم تبدأ</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
+      <div id="statApprovalCard" class="task-suite-metric" data-tone="purple"><p>بانتظار الاعتماد</p><div id="stat-approval" class="text-lg font-black mt-0.5">0</div></div>
+      <div class="task-suite-metric" data-tone="danger" title="مهام لم تبدأ أو قيد التنفيذ تجاوزت الموعد؛ لا يشمل بانتظار الاعتماد"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
     </section>
 
     <!-- Manager Dashboard -->
@@ -410,7 +412,7 @@
               <div class="px-3 py-2.5 border-b border-slate-100 flex items-center gap-3">
                 <span class="text-slate-400 text-sm">●</span>
                 <select id="detailStatus" onchange="updateSelectedField('status',this.value)" class="w-full bg-transparent font-bold text-sm border-0">
-                  <option value="قيد الانتظار">قيد الانتظار</option>
+                  <option value="قيد الانتظار">لم تبدأ</option>
                   <option value="قيد التنفيذ">قيد التنفيذ</option>
                   <option value="مكتملة">مكتملة</option>
                 </select>
@@ -582,7 +584,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.5.28"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.5.43"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

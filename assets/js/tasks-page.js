@@ -562,10 +562,11 @@ function applyTaskScopeUI(){
   document.getElementById('completedDateFilters')?.classList.toggle('hidden',!archive);
   const totalLabel=document.getElementById('statTotalLabel');
   if(totalLabel)totalLabel.textContent=archive?'إجمالي المهام المكتملة':'إجمالي المهام النشطة';
+  document.getElementById('statApprovalCard')?.classList.toggle('hidden',archive);
   const metricLabels={
     statCompletedLabel:archive?'مكتملة هذا الشهر':'مكتملة',
     statProgressLabel:archive?'مكتملة في الموعد':'قيد التنفيذ',
-    statPendingLabel:archive?'مكتملة بعد الموعد':'قيد الانتظار',
+    statPendingLabel:archive?'مكتملة بعد الموعد':'لم تبدأ',
     statDelayedLabel:archive?'متوسط مدة الإنجاز':'متأخرة'
   };
   Object.entries(metricLabels).forEach(([id,label])=>{const node=document.getElementById(id);if(node)node.textContent=label});
@@ -834,7 +835,7 @@ function renderManagerDashboard(){
   const teamTasks=tasks.filter(t=>team.some(u=>u.uid===t._ownerUid));
   const completed=team.reduce((sum,u)=>sum+Number(completedCountsByOwner.get(String(u.uid))||0),0);
   const total=teamTasks.length+completed;
-  const overdue=teamTasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
+  const overdue=teamTasks.filter(t=>isCurrentlyOverdue(t)).length;
   const inProgress=teamTasks.filter(t=>t.status==='قيد التنفيذ').length;
   const completionRate=total?Math.round((completed/total)*100):0;
 
@@ -849,7 +850,7 @@ function renderManagerDashboard(){
     const tDone=Number(completedCountsByOwner.get(String(u.uid))||0);
     const tTotal=rows.length+tDone;
     const tProgress=rows.filter(t=>t.status==='قيد التنفيذ').length;
-    const tOverdue=rows.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
+    const tOverdue=rows.filter(t=>isCurrentlyOverdue(t)).length;
     const rate=tTotal?Math.round((tDone/tTotal)*100):0;
     return `
       <button type="button" data-team-filter-uid="${escapeHTML(u.uid)}" class="team-card text-right border border-slate-200 rounded-xl px-3 py-2.5 bg-white min-h-[96px]">
@@ -958,7 +959,7 @@ async function createUniqueNotification(uid,key,data){
 async function checkOverdueNotifications(){
   if(!currentUser?.uid||!currentProfile)return;
   const today=localDateISO().replaceAll('-','');
-  const overdueTasks=tasks.filter(t=>t.status!=='مكتملة'&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0);
+  const overdueTasks=tasks.filter(t=>isCurrentlyOverdue(t));
 
   // مهام المستخدم نفسه: إشعار لكل مهمة حتى يعرف المهمة المطلوبة مباشرة.
   const own=overdueTasks.filter(t=>String(t._ownerUid||'')===String(currentUser.uid||''));
@@ -2194,7 +2195,7 @@ function filteredTasks(){
     // Filters coming from the home dashboard.
     if(homeFilterValue==='OPEN' && t.status==='مكتملة')return false;
     if(homeFilterValue==='COMPLETED' && t.status!=='مكتملة')return false;
-    if(homeFilterValue==='OVERDUE' && delay<=0)return false;
+    if(homeFilterValue==='OVERDUE' && !isCurrentlyOverdue(t))return false;
     if(homeFilterValue==='TODAY' && !isToday(t.start) && !isToday(t.end))return false;
     if(homeFilterValue==='APPROVAL'){
       if(t.status!=='بانتظار الاعتماد')return false;
@@ -2257,9 +2258,9 @@ async function handleKanbanDrop(taskKey,targetStatus){
 
 function renderKanban(rows){
   const host=document.getElementById('kanbanBoard');if(!host)return;
-  const isOverdue=t=>!['مكتملة','بانتظار الاعتماد'].includes(t.status)&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
+  const isOverdue=isCurrentlyOverdue;
   const columns=[
-    {status:'قيد الانتظار',label:'قيد الانتظار',color:'#64748b'},
+    {status:'قيد الانتظار',label:'لم تبدأ',color:'#64748b'},
     {status:'قيد التنفيذ',label:'قيد التنفيذ',color:'#2563eb'},
     {status:'بانتظار الاعتماد',label:'بانتظار الاعتماد',color:'#d97706'},
     {status:'OVERDUE',label:'متأخرة',color:'#e11d48',smart:true}
@@ -2297,7 +2298,7 @@ function renderTasks(){
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
     const timingClass=delay>0?'text-rose-600':'text-slate-500';
     const card=document.createElement('div');
-    card.className=`task-card ${selected?'selected':''} ${delay>0&&!isCompletedArchiveView()?'is-overdue':''} ${t.status==='مكتملة'?'is-completed':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
+    card.className=`task-card ${selected?'selected':''} ${isCurrentlyOverdue(t)&&!isCompletedArchiveView()?'is-overdue':''} ${t.status==='مكتملة'?'is-completed':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
       if(selectedTaskKey!==key && pendingAssigneeChange){
@@ -2801,6 +2802,10 @@ function renderDetails(){
 }
 function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 
+function isCurrentlyOverdue(t){
+  return ['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
+}
+
 function updateStats(){
   if(isCompletedArchiveView()){
     const today=localDateISO(),month=today.slice(0,7);
@@ -2822,11 +2827,12 @@ function updateStats(){
     document.getElementById('stat-delayed').textContent=`${average} يوم`;
     return;
   }
-  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-total').textContent=tasks.filter(t=>['قيد الانتظار','قيد التنفيذ','بانتظار الاعتماد'].includes(t.status)).length;
   document.getElementById('stat-completed').textContent=[...completedCountsByOwner.values()].reduce((sum,count)=>sum+Number(count||0),0);
   document.getElementById('stat-progress').textContent=tasks.filter(t=>t.status==='قيد التنفيذ').length;
   document.getElementById('stat-pending').textContent=tasks.filter(t=>t.status==='قيد الانتظار').length;
-  document.getElementById('stat-delayed').textContent=tasks.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
+  document.getElementById('stat-delayed').textContent=tasks.filter(isCurrentlyOverdue).length;
+  document.getElementById('stat-approval').textContent=tasks.filter(t=>t.status==='بانتظار الاعتماد').length;
 }
 
 async function exportToExcel(){
