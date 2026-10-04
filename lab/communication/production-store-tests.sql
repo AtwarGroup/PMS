@@ -1,0 +1,36 @@
+begin;
+do $test$
+declare a uuid:='797d5893-d44d-489c-9109-91da4882acfe';e uuid:='eabb8105-e54d-45a3-90c8-15334698bbfc';outsider uuid;s jsonb;v bigint;t uuid;f uuid:=gen_random_uuid();n uuid:=gen_random_uuid();bad boolean;begin
+ update private.communication_control set enabled=true where singleton;
+ select id into outsider from public.profiles p where active and status='active' and not exists(select 1 from private.communication_trial_access where user_id=p.id) limit 1;
+ perform public.communication_presence(a,jsonb_build_object('device','production-qa-device','active',floor(extract(epoch from now())*1000),'viewing','forbidden-conversation'));
+ if public.communication_load(a)->'state'->'devices'->(a::text||':production-qa-device')->>'viewing' is not null then raise exception 'forged viewing';end if;
+ if not private.communication_actor(outsider) then raise exception 'ordinary employee not enabled';end if;
+ if private.communication_actor(null) or has_function_privilege('authenticated','public.communication_load(uuid)','execute') then raise exception 'unauthorized service grant';end if;
+ s:=public.communication_load(a)->'state';v:=(public.communication_load(a)->>'version')::bigint;
+ s:=jsonb_set(s,'{conversations}',jsonb_build_array(jsonb_build_object('id','production-qa','type','direct','title','','owner',a,'members',jsonb_build_array(a,e))));
+ s:=jsonb_set(s,'{messages}',jsonb_build_array(jsonb_build_object('id','production-qa-message','conversation','production-qa','sender',a,'clientId','production-qa-unique','body','اختبار مؤقت','seq',1,'created',now(),'mentions','[]'::jsonb,'reactions','[]'::jsonb,'file',jsonb_build_object('id',f,'name','test.txt','type','text/plain','size',3))));
+ s:=jsonb_set(s,'{notifications}',jsonb_build_array(jsonb_build_object('id',n,'user',e,'conversation','production-qa','message','production-qa-message','read',false,'delivered',false)));
+ s:=jsonb_set(s,'{seq}','1');
+ if not public.communication_save(a,v,s,jsonb_build_array(jsonb_build_object('id',f,'conversation','production-qa','file',jsonb_build_object('id',f,'name','test.txt','type','text/plain','size',3,'base64','YWJj')))) then raise exception 'save failed';end if;
+ if public.communication_save(a,v,s,'[]') then raise exception 'stale version accepted';end if;
+ if jsonb_array_length(public.communication_load(outsider)->'state'->'messages')<>0 then raise exception 'message leak';end if;
+ if jsonb_array_length(public.communication_load(e)->'state'->'messages')<>1 then raise exception 'member message missing';end if;
+ if jsonb_array_length(public.communication_history(e,'production-qa',2))<>1 then raise exception 'history missing';end if;
+ bad:=false;begin perform public.communication_history(outsider,'production-qa',2);exception when others then bad:=true;end;if not bad then raise exception 'history leak';end if;
+ if public.communication_message(e,'production-qa-message')->>'body'<>'اختبار مؤقت' then raise exception 'message lookup';end if;
+ if public.communication_file(e,f)->>'base64'<>'YWJj' then raise exception 'file mismatch';end if;
+ bad:=false;begin perform public.communication_file(outsider,f);exception when others then bad:=true;end;if not bad then raise exception 'file leak';end if;
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ t:=public.communication_task_command('production-qa-message',null,'اختبار فعلي مؤقت',a,current_date+1);
+ if public.communication_task_command('production-qa-message',null,'اختبار فعلي مؤقت',a,current_date+1)<>t then raise exception 'duplicate task';end if;
+ perform set_config('request.jwt.claim.sub',e::text,true);
+ bad:=false;begin perform public.communication_task_command('production-qa-message',t);exception when others then bad:=true;end;if not bad then raise exception 'task leak';end if;
+ if public.communication_notification_open(n)->>'conversation'<>'production-qa' then raise exception 'notification routing';end if;
+ update private.communication_conversations set payload=jsonb_set(payload,'{members}',jsonb_build_array(a)) where id='production-qa';
+ bad:=false;begin perform public.communication_file(e,f);exception when others then bad:=true;end;if not bad then raise exception 'removed member file leak';end if;
+ bad:=false;begin perform public.communication_notification_open(n);exception when others then bad:=true;end;if not bad then raise exception 'removed member notification leak';end if;
+ update public.profiles set active=false,status='inactive' where id=e;
+ if public.communication_status() then raise exception 'inactive account admitted';end if;
+end $test$;
+rollback;

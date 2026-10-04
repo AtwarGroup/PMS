@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {seed} from '../supabase/functions/communication-trial/model.mjs';
+import {command,snapshot,Fault} from '../supabase/functions/communication/model.mjs';
+const state=seed();state.conversations=[];state.messages=[];state.tasks=[];state.seq=0;
+const c=command(state,'manager','createConversation',{type:'direct',members:['omar']});
+assert.equal(command(state,'omar','createConversation',{type:'direct',members:['manager']}).id,c.id);
+const sent=command(state,'manager','message',{conversation:c.id,clientId:'production-retry-key',body:'رسالة خاصة'});
+assert.equal(command(state,'manager','message',{conversation:c.id,clientId:'production-retry-key',body:'رسالة خاصة'}).id,sent.id);
+assert.equal(state.messages.length,1);assert.equal(snapshot(state,'nora').messages.length,0);
+assert.throws(()=>command(state,'nora','message',{conversation:c.id,clientId:'unauthorized-key',body:'x'}),Fault);
+const g=command(state,'manager','createConversation',{type:'group',title:'مجموعة عمل',members:['omar','nora']});
+assert.throws(()=>command(state,'omar','updateMembers',{conversation:g.id,members:['nora']}),Fault);
+command(state,'manager','message',{conversation:g.id,clientId:'group-message-key',body:'للأعضاء',mentions:['nora']});
+command(state,'manager','updateMembers',{conversation:g.id,members:['omar']});
+assert.equal(snapshot(state,'nora').messages.length,0);
+command(state,'omar','preferences',{sound:true,quiet:true,start:22,end:7});
+assert.equal(snapshot(state,'omar').preferences.sound,true);assert.equal(snapshot(state,'manager').preferences.sound,false);
+console.log('PASS production command model: direct idempotency, message retries, membership isolation, owner-managed groups, personal preferences');
