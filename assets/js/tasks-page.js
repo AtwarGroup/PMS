@@ -1,6 +1,7 @@
+import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
 import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.29";
-import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
+import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.8";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.14";
 
 const compatConfig = {};
@@ -1611,42 +1612,38 @@ async function updateTaskField(task,f,v){
   }
 }
 
+let taskRescheduleBusy=false;
 async function requestSelectedTaskReschedule(){
   const task=selectedTask();
-  if(!task||!isTaskOwner(task)||String(task.createdByUid||'')===String(currentUser?.uid||''))return;
-  const start=await window.AtwarUI.prompt({title:'تاريخ البداية المقترح',message:'اكتب التاريخ بصيغة YYYY-MM-DD.',value:task.start||'',multiline:false});
-  if(start===null)return;
-  const end=await window.AtwarUI.prompt({title:'تاريخ النهاية المقترح',message:'اكتب التاريخ بصيغة YYYY-MM-DD.',value:task.end||'',multiline:false});
-  if(end===null)return;
-  const reason=await window.AtwarUI.prompt({title:'سبب طلب إعادة الجدولة',message:'اشرح سبب الحاجة إلى تغيير المدة.',required:true});
-  if(!reason||reason.trim().length<3)return showToast('سبب إعادة الجدولة مطلوب.','warning');
-  if(start&&end&&end<start)return showToast('تاريخ النهاية المقترح يجب ألا يسبق تاريخ البداية.','warning');
-  const button=document.getElementById('requestRescheduleButton');
+  if(taskRescheduleBusy||!task||!isTaskOwner(task)||!['قيد الانتظار','قيد التنفيذ'].includes(task.status)||String(task.createdByUid||'')===String(currentUser?.uid||''))return;
+  taskRescheduleBusy=true;
+  const actor=currentUser?.uid,button=document.getElementById('requestRescheduleButton');
   if(button)button.disabled=true;
   try{
-    const {error}=await window.ATWAR_SUPABASE.rpc('request_task_reschedule',{
-      p_task_id:task._relationalId||task._key,
-      p_start_date:start||null,
-      p_due_date:end||null,
-      p_reason:reason.trim()
-    });
+    const proposal=await promptTaskReschedule(task);if(!proposal)return;
+    if(currentUser?.uid!==actor)return;
+    const {error}=await window.ATWAR_SUPABASE.rpc('request_task_reschedule',{p_task_id:task._relationalId||task._key,p_start_date:proposal.start,p_due_date:proposal.due,p_reason:proposal.reason});
     if(error)throw error;
     showToast('تم إرسال طلب إعادة الجدولة إلى منشئ المهمة.','success',5000);
-    const hint=document.getElementById('rescheduleRequestHint');if(hint)hint.textContent='الطلب بانتظار قرار منشئ المهمة.';
+    await loadReschedulePanel(task);
   }catch(error){
     console.error('Reschedule request:',error);
     const duplicate=String(error?.message||'').includes('task_reschedule_one_pending_idx');
-    showToast(duplicate?'يوجد طلب إعادة جدولة معلق لهذه المهمة.':'تعذر إرسال طلب إعادة الجدولة.','error',5000);
-    if(button)button.disabled=false;
-  }
+    showToast(duplicate?'يوجد طلب إعادة جدولة معلق لهذه المهمة.':'تعذر إرسال طلب إعادة الجدولة: '+(error?.message||''),'error',5000);
+  }finally{taskRescheduleBusy=false;if(currentUser?.uid===actor){if(button)button.disabled=false;await loadReschedulePanel(task);}}
 }
 
 async function loadReschedulePanel(task){
   const box=document.getElementById('rescheduleDecisionBox');if(!box)return;
   box.classList.add('hidden');box.innerHTML='';
-  if(String(task.createdByUid||'')!==String(currentUser?.uid||'')&&currentProfile?.role!=='admin')return;
+  const mayDecide=String(task.createdByUid||'')===String(currentUser?.uid||'')||currentProfile?.role==='admin';
+  if(!mayDecide&&!isTaskOwner(task))return;
   const {data,error}=await window.ATWAR_SUPABASE.from('task_reschedule_requests').select('*').eq('task_id',task._relationalId||task._key).eq('status','PENDING').order('created_at',{ascending:false}).limit(1).maybeSingle();
-  if(error||!data)return;
+  if(String(selectedTask()?._relationalId||selectedTask()?._key)!==String(task._relationalId||task._key))return;
+  if(error)return;
+  const requestButton=document.getElementById('requestRescheduleButton');if(requestButton)requestButton.disabled=!!data||taskRescheduleBusy;
+  const hint=document.getElementById('rescheduleRequestHint');if(data&&hint)hint.textContent='يوجد طلب إعادة جدولة بانتظار قرار منشئ المهمة.';
+  if(!data||!mayDecide)return;
   box.innerHTML=`<div class="text-xs font-black text-amber-800">طلب إعادة جدولة معلق</div><div class="mt-1 text-[11px] leading-5 text-amber-700">من ${escapeHTML(data.current_start_date||'—')} / ${escapeHTML(data.current_due_date||'—')} إلى ${escapeHTML(data.proposed_start_date||'—')} / ${escapeHTML(data.proposed_due_date||'—')}<br><b>السبب:</b> ${escapeHTML(data.reason||'')}</div><div class="mt-2 flex gap-2"><button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black text-white" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',true)">موافقة وتعديل التواريخ</button><button type="button" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-[11px] font-black text-rose-700" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',false)">رفض</button></div>`;
   box.classList.remove('hidden');
 }
@@ -1656,6 +1653,7 @@ async function decideSelectedTaskReschedule(requestId,approve){
   const {error}=await window.ATWAR_SUPABASE.rpc('decide_task_reschedule',{p_request_id:requestId,p_approve:approve,p_note:note.trim()||null});
   if(error)return showToast('تعذر تسجيل القرار: '+error.message,'error',5000);
   showToast(approve?'تمت الموافقة وتحديث تواريخ المهمة.':'تم رفض طلب إعادة الجدولة.','success',5000);
+  await refreshTaskData();
   renderDetails();
 }
 

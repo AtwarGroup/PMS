@@ -141,3 +141,13 @@ export function sortTaskRows(rows,{sortFilterValue='DEFAULT',isManagerView=false
   };
   return [...sortGroup(approvalRows),...sortGroup(normalRows)];
 }
+
+// Match commissioner/direct-manager/project approver rules used by the database.
+export function canApproveRelationalTask(task,profile,{directIds=[],projects=[]}={}){
+  if(!task||!profile||profile.active===false||profile.status==='inactive'||task.deleted_at||task.task_type==='job_workflow'||task.status!=='بانتظار الاعتماد'||task.assignee_id===profile.id)return false;
+  if(task.project_id){const project=projects.find(p=>p.id===task.project_id&&!p.deleted_at);return !!project&&(task.assignee_id===project.manager_id?project.sponsor_id:project.manager_id)===profile.id;}
+  if(profile.role==='admin')return true;
+  if(profile.role!=='manager')return false;
+  const commissioner=task.approval_commissioner_id||task.creator_id;
+  return commissioner!==task.assignee_id?commissioner===profile.id:directIds.includes(task.assignee_id);
+}

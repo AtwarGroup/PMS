@@ -1,4 +1,4 @@
-import {workspaceModel,renderWorkspace} from './workspace-core.mjs?v=2.5.41';
+import {workspaceModel,renderWorkspace} from './workspace-core.mjs?v=2.5.42';
 async function allRows(makeQuery){let rows=[];for(let from=0;;from+=500){const {data,error}=await makeQuery().range(from,from+499);if(error)throw error;rows.push(...(data||[]));if((data||[]).length<500)return rows;}}
 export async function mountWorkspace(sb,profile){
  const status=document.getElementById('spaceSync');let pending=false;

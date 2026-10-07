@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import {canApproveRelationalTask as can} from '../assets/js/tasks-core.mjs';
+const manager={id:'manager',role:'manager',active:true,status:'active'},admin={id:'admin',role:'admin',active:true,status:'active'};
+const task={status:'بانتظار الاعتماد',assignee_id:'employee',creator_id:'other-manager'};
+assert.equal(can(task,manager,{directIds:['employee']}),false,'Direct reporting alone does not override the task commissioner');
+assert.equal(can({...task,creator_id:'manager'},manager),true);
+assert.equal(can({...task,creator_id:'employee'},manager,{directIds:['employee']}),true,'Self-created task goes to direct manager');
+assert.equal(can({...task,creator_id:'manager',approval_commissioner_id:'other-manager'},manager),false);
+assert.equal(can(task,admin),true);assert.equal(can({...task,assignee_id:'admin'},admin),false,'Admin cannot approve own work');
+assert.equal(can({...task,creator_id:'manager'}, {...manager,active:false,status:'inactive'}),false);
+assert.equal(can({...task,deleted_at:'2026-10-01'},admin),false);
+assert.equal(can({...task,status:'ملغاة'},admin),false);
+const projects=[{id:'p',manager_id:'manager',sponsor_id:'sponsor'}];
+assert.equal(can({...task,project_id:'p'},manager,{projects}),true);
+assert.equal(can({...task,project_id:'p',assignee_id:'manager'}, {id:'sponsor',role:'manager'}, {projects}),true);
+assert.equal(can({...task,project_id:'p'},admin,{projects}),false,'Project approval follows the designated project approver');
+console.log('Approval counters match commissioner, self-task direct manager, project approver, active account and self-approval exclusions.');

@@ -15,6 +15,6 @@ assert.match(migration,/v_task := public\.update_task_safe\(/,'The combined RPC 
 assert.match(migration,/delete from public\.subtasks where task_id = p_task_id/,
   'Removed subtasks must be reconciled within the same transaction');
 assert.match(taskPage,/supabase-firebase-compat\.js\?v=2\.5\.29/);
-assert.match(html,/tasks-page\.js\?v=2\.5\.44/);
+assert.match(html,/tasks-page\.js\?v=2\.5\.45/);
 console.log('Atomic task and subtask save contract passed.');
 
