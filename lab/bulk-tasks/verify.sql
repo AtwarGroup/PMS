@@ -1,0 +1,44 @@
+BEGIN;
+-- This fixture and every task/notification/email row are rolled back.
+update profiles set active=true,status='active' where id='2347fbff-372e-43d1-a2e4-094f5b3159bf';
+DO $$
+declare b uuid:=gen_random_uuid(); a uuid[]:=array['2347fbff-372e-43d1-a2e4-094f5b3159bf'::uuid,'eabb8105-e54d-45a3-90c8-15334698bbfc'::uuid]; r jsonb; n int; tid uuid; path text; outsider uuid;
+begin
+perform set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);
+path:='797d5893-d44d-489c-9109-91da4882acfe/'||b||'/'||gen_random_uuid()||'.txt';
+insert into storage.objects(bucket_id,name,metadata) values('task-batch-attachments',path,'{"size":4,"mimetype":"text/plain"}');
+r:=create_task_batch_safe(b,'اختبار الإسناد الجماعي',a,p_start_date=>current_date-3,p_due_date=>current_date-1,p_attachments=>jsonb_build_array(jsonb_build_object('file_name','test.txt','storage_path',path,'size_bytes',4)));
+if (r->>'count')::int<>2 then raise exception 'count';end if;
+r:=create_task_batch_safe(b,'اختبار الإسناد الجماعي',a||a,p_start_date=>current_date-3,p_due_date=>current_date-1,p_attachments=>jsonb_build_array(jsonb_build_object('file_name','test.txt','storage_path',path,'size_bytes',4)));
+if not (r->>'replayed')::boolean or (select count(*) from tasks where batch_id=b)<>2 then raise exception 'idempotency';end if;
+if (select count(*) from task_batch_attachments where batch_id=b)<>1 then raise exception 'shared upload duplicated';end if;
+begin perform create_task_batch_safe(b,'عنوان متغير',a,p_start_date=>current_date-3,p_due_date=>current_date-1);raise exception 'changed request accepted';exception when raise_exception then if sqlerrm='changed request accepted' then raise;end if;end;
+select count(*) into n from task_batches;
+begin perform create_task_batch_safe(gen_random_uuid(),'invalid recipient',a||gen_random_uuid(),p_due_date=>current_date);raise exception 'invalid recipient accepted';exception when raise_exception then if sqlerrm='invalid recipient accepted' then raise;end if;end;
+if (select count(*) from task_batches)<>n then raise exception 'partial creation';end if;
+select id into tid from tasks where batch_id=b and assignee_id=a[2];
+perform set_config('request.jwt.claim.sub',a[2]::text,true);
+begin perform create_task_batch_safe(gen_random_uuid(),'forbidden',a,p_due_date=>current_date);raise exception 'employee accepted';exception when insufficient_privilege then null;end;
+begin perform task_batch_report(b);raise exception 'employee report accepted';exception when insufficient_privilege then null;end;
+update tasks set status='قيد التنفيذ' where id=tid;
+update tasks set status='بانتظار الاعتماد',progress=100 where id=tid;
+execute 'set local role authenticated';
+if (select count(*) from task_batch_attachments where batch_id=b)<>1 or (select count(*) from storage.objects where bucket_id='task-batch-attachments' and name=path)<>1 then raise exception 'recipient file access';end if;
+begin delete from storage.objects where bucket_id='task-batch-attachments' and name=path;exception when insufficient_privilege then null;end;
+if (select count(*) from storage.objects where bucket_id='task-batch-attachments' and name=path)<>1 then raise exception 'recipient deleted shared file';end if;
+execute 'reset role';
+perform set_config('request.jwt.claim.sub',a[1]::text,true);
+begin perform create_task_batch_safe(gen_random_uuid(),'forbidden',a,p_due_date=>current_date);raise exception 'manager accepted';exception when insufficient_privilege then null;end;
+select id into outsider from profiles where active and status='active' and role='employee' and not(id=any(a)) limit 1;
+if outsider is null then raise exception 'missing outsider fixture';end if;
+perform set_config('request.jwt.claim.sub',outsider::text,true);
+execute 'set local role authenticated';
+if exists(select 1 from task_batch_attachments where batch_id=b) or exists(select 1 from storage.objects where bucket_id='task-batch-attachments' and name=path) then raise exception 'outsider file disclosure';end if;
+execute 'reset role';
+perform set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);
+r:=task_batch_report(b);
+if (select count(*) from jsonb_array_elements(r->0->'tasks') x where (x->>'overdue')::boolean)<>1 then raise exception 'approval counted as overdue';end if;
+if (select count(*) from notifications where task_id in(select id from tasks where batch_id=b))<2 then raise exception 'assignment notification missing';end if;
+end $$;
+ROLLBACK;
+select 'PASS: atomicity, replay, duplicate recipients, invalid recipient rollback, employee/manager guards, independent approval, shared file RLS/download/deletion, overdue exclusions' result;

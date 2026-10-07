@@ -208,6 +208,7 @@
 <script src="../assets/js/start-page-config.js"></script>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
 <style>.task-suite-metrics{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1100px){.task-suite-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){.task-suite-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
+<link rel="stylesheet" href="../assets/css/task-batches.css?v=1.0.0">
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen atwar-task-page">
@@ -346,6 +347,7 @@
       <div id="taskListPanel" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[360px] xl:order-1">
         <div id="listHeaderSticky" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
           <h2 class="font-black text-lg">المهام</h2>
+          <button id="batchFollowButton" type="button" class="batch-action" hidden>متابعة الإسناد الجماعي</button>
           <span id="visibleCount" class="text-xs font-bold text-slate-500">0 مهام</span>
         </div>
           <div id="quickAddBox" role="region" aria-label="إضافة مهمة جديدة" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
@@ -367,6 +369,7 @@
                 <input id="quickAddEnd" type="date" class="w-full border border-blue-200 bg-white rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-400">
               </label>
               <div class="flex gap-2">
+                <button id="bulkAssignButton" type="button" class="batch-action" hidden>إسناد جماعي</button>
                 <button id="quickAddSubmit" type="button" onclick="commitQuickAdd()" class="px-4 py-2.5 rounded-xl bg-blue-600 disabled:opacity-60 disabled:cursor-wait text-white text-xs font-bold whitespace-nowrap">إضافة المهمة</button>
                 <button type="button" onclick="hideQuickAdd()" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500" aria-label="إلغاء">×</button>
               </div>
@@ -584,7 +587,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.5.43"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.5.44"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

@@ -21,7 +21,7 @@ export function createTaskAttachmentsController({
     if(!file?.storagePath){toast('تعذر تحديد مسار المرفق.','error');return;}
     try{
       const sb=await getSupabase();
-      const {data,error}=await sb.storage.from('task-attachments').createSignedUrl(file.storagePath,120);
+      const {data,error}=await sb.storage.from(file.storageBucket||'task-attachments').createSignedUrl(file.storagePath,120);
       if(error)throw error;
       globalThis.open(data.signedUrl,'_blank','noopener');
     }catch(error){
@@ -35,7 +35,7 @@ export function createTaskAttachmentsController({
     if(!lockKey||deleteLocks.has(lockKey))return;
     const task=getSelectedTask();
     const file=selectedAttachment(id);
-    if(!task||!file)return;
+    if(!task||!file||file.sharedBatch)return;
     const confirmed=await confirmAction(`هل تريد حذف المرفق «${file.fileName||'المرفق'}» نهائيًا؟`,'حذف المرفق');
     if(!confirmed)return;
     deleteLocks.add(lockKey);

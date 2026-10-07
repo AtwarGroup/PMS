@@ -1,6 +1,7 @@
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.28";
+import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.29";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.7";
-import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.13";
+import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.14";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
@@ -545,7 +546,10 @@ function withTimeout(promise,ms=8000){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('database-timeout')),ms))
   ]);
 }
+const taskBatchesController=createTaskBatchesController({getProfile:()=>currentProfile,getSupabase:()=>window.atwarGetSupabase(),onChanged:()=>refreshTaskData(),toast:showToast});
+
 function applyRoleUI(){
+  taskBatchesController.syncRole();
   const isEmployee=currentProfile?.role==='employee';
   document.getElementById('importLabel').classList.toggle('hidden',isEmployee);
   document.getElementById('deleteSelectedButton').classList.add('hidden');
@@ -672,6 +676,7 @@ onAuthStateChanged(auth,async(user)=>{
 
   currentUser=user;
   currentProfile=null;
+  taskBatchesController.syncRole();
   users=[];
   tasks=[];
   tasksInitialLoadReady=false;
@@ -2746,7 +2751,7 @@ function renderDetails(){
   document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
   const attachmentsList=document.getElementById('taskAttachmentsList');
   attachmentsList.innerHTML=attachmentCount
-    ? task.attachments.map(file=>{const canDeleteAttachment=task.status!=='مكتملة'&&(currentProfile?.role==='admin'||currentProfile?.role==='manager'||isTaskOwner(task)||String(file.uploaderId||'')===String(currentUser?.uid||''));return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.id)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
+    ? task.attachments.map(file=>{const canDeleteAttachment=!file.sharedBatch&&task.status!=='مكتملة'&&(currentProfile?.role==='admin'||currentProfile?.role==='manager'||isTaskOwner(task)||String(file.uploaderId||'')===String(currentUser?.uid||''));return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.id)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}${file.sharedBatch?' · مرفق جماعي':''}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
     : '<div class="text-[10px] text-blue-500">لا توجد مرفقات حتى الآن.</div>';
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');

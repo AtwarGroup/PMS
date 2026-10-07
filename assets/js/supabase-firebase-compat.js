@@ -50,7 +50,7 @@ function profileLegacy(p){
   };
 }
 
-async function loadChildren(taskIds){
+async function loadChildren(taskIds,taskRows=[]){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
   if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map()};
   const [ar,sr,fr]=await Promise.all([
@@ -64,6 +64,15 @@ async function loadChildren(taskIds){
   for(const a of ar.data||[]){const x={type:a.event_type||'activity',detail:a.detail||'',userUid:a.actor_id||'',userName:a.actor_name_snapshot||'',createdAt:ms(a.created_at)};(activities.get(a.task_id)||activities.set(a.task_id,[]).get(a.task_id)).push(x)}
   for(const s of sr.data||[]){const x={id:s.id,title:s.title||'',done:!!s.done,createdAt:ms(s.created_at),completedAt:ms(s.completed_at)||null};(subtasks.get(s.task_id)||subtasks.set(s.task_id,[]).get(s.task_id)).push(x)}
   for(const f of fr.data||[]){const x={id:f.id,uploaderId:f.uploader_id||'',fileName:f.file_name||'',storagePath:f.storage_path||'',sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at)};(attachments.get(f.task_id)||attachments.set(f.task_id,[]).get(f.task_id)).push(x)}
+  const batchIds=[...new Set(taskRows.map(t=>t.batch_id).filter(Boolean))];
+  if(batchIds.length){
+    const shared=await sb.from('task_batch_attachments').select('*').in('batch_id',batchIds);
+    if(shared.error)throw shared.error;
+    for(const t of taskRows)for(const f of shared.data||[])if(t.batch_id===f.batch_id){
+      const x={id:f.id,uploaderId:f.uploader_id,fileName:f.file_name,storagePath:f.storage_path,sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at),storageBucket:'task-batch-attachments',sharedBatch:true};
+      (attachments.get(t.id)||attachments.set(t.id,[]).get(t.id)).push(x);
+    }
+  }
   return {activities,subtasks,attachments};
 }
 
@@ -88,7 +97,7 @@ function taskLegacy(t,children,profileNames=new Map()){
     cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
     activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
     jobWorkflow:t.legacy_metadata?.job_workflow||null,
-    projectId:t.project_id||null,
+    projectId:t.project_id||null,batchId:t.batch_id||null,
     _relationalId:t.id
   };
 }
@@ -119,7 +128,7 @@ async function visibleTasks(extra=null){
     const profiles=await sb.from('profiles').select('id,full_name,email').in('id',profileIds);
     if(!profiles.error)profileNames=new Map((profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
   }
-  const children=await loadChildren((data||[]).map(x=>x.id));
+  const children=await loadChildren((data||[]).map(x=>x.id),data||[]);
   return (data||[]).map(t=>taskLegacy(t,children,profileNames));
 }
 
@@ -199,7 +208,7 @@ export async function runTransaction(r,mutator){
       throw error;
     }
     const row=Array.isArray(data)?data[0]:data;
-    const children=await loadChildren([key]),snapTask=taskLegacy(row,children);await emitLocal('tasks');
+    const children=await loadChildren([key],[row]),snapTask=taskLegacy(row,children);await emitLocal('tasks');
     if(current.assignUid!==row.assignee_id||(current.status==='بانتظار الاعتماد'&&row.status==='قيد التنفيذ'))await dispatchQueuedTaskEmails();
     return {committed:true,snapshot:new Snap(snapTask,key)};
   }
