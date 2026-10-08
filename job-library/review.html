@@ -14,7 +14,7 @@
 <script src="../assets/js/job-kpi-proposals.js?v=2.5.21"></script>
 <script src="../assets/js/job-document-view.js?v=2.5.21"></script>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
-</head>
+<link rel="stylesheet" href="../assets/css/job-authoring.css?v=2.5.55"></head>
 <body style="visibility:hidden">
   <div class="atwar-shell">
     <atwar-sidebar active="jobLibrary"></atwar-sidebar>
@@ -53,7 +53,7 @@
               </section>
               <section class="summary-card">
                 <h2>مسار الاعتماد</h2>
-                <ol class="approval-path">
+                <ol id="workflowPath" class="approval-path">
                   <li>مسودة مسؤول النظام</li>
                   <li>مراجعة المدير المباشر</li>
                   <li>قرار مسؤول النظام</li>
@@ -68,7 +68,7 @@
                 <button data-tab="responsibilities"><i data-lucide="list-checks"></i><span>المهام والمسؤوليات</span></button>
                 <button data-tab="authorities"><i data-lucide="shield-check"></i><span>حدود الصلاحيات<small>مصفوفة الصلاحيات</small></span></button>
                 <button data-tab="measurement"><i data-lucide="chart-no-axes-combined"></i><span>بطاقة قياس مؤشرات الأداء KPI’s</span></button>
-                <button data-tab="review">المقترحات والملاحظات <span id="proposalCount">0</span></button>
+                <button data-tab="history">الإصدارات وسجل القرارات</button><button data-tab="review">المقترحات والملاحظات <span id="proposalCount">0</span></button>
               </nav>
               <div id="reviewBody"></div>
             </section>
@@ -83,6 +83,6 @@
   <script src="../assets/js/supabase-config.js"></script>
   <script src="../assets/js/supabase-runtime.js"></script>
   <script src="../assets/js/permissions.js"></script>
-  <script type="module" src="../assets/js/job-review-page.js?v=2.5.54"></script>
+  <script type="module" src="../assets/js/job-review-page.js?v=2.5.55"></script>
 </body>
 </html>

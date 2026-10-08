@@ -1,3 +1,4 @@
+import {jobStage} from './job-workflow-model.mjs?v=2.5.55';
 const sb = await window.atwarGetSupabase();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const byId = id => document.getElementById(id);
@@ -5,9 +6,9 @@ const asArray = value => Array.isArray(value) ? value : [];
 const itemText = value => typeof value === 'string' ? value : (value?.text || value?.name || '');
 const statusLabels = {DRAFT:'مسودة',IN_REVIEW:'قيد المراجعة',CHANGES_REQUESTED:'تحتاج تعديل',MANAGER_APPROVED:'موافقة المدير مكتملة',PUBLISHED:'منشورة',ARCHIVED:'مؤرشفة'};
 const sectionLabels = {PURPOSE:'الغرض الوظيفي',RESPONSIBILITIES:'المهام والمسؤوليات',AUTHORITIES:'الصلاحيات',KPIS:'مؤشرات الأداء',REPORTS:'التقارير والمخرجات',QUALIFICATIONS:'المؤهلات'};
-let stagePermissions = new Set();
+let stagePermissions = new Set();let stageOwners=[];
 const canStage=stage=>me?.role==='admin'||stagePermissions.has(stage);
-let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], weightReferences = [], activeTab = 'overview', editing = false;
+let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], weightReferences = [], versions = [], activeTab = 'overview', editing = false;
 
 function toast(message) {
   const node = byId('toast');
@@ -30,23 +31,26 @@ async function adminApi(body) {
 }
 
 function managerReviewing() {
-  return job.reviewer_id === me.id && ['IN_REVIEW','CHANGES_REQUESTED'].includes(job.status);
+  return job.reviewer_id === me.id && job.status === 'IN_REVIEW';
 }
 
 function quality() {
   const content = job.content || {};
   const checks = [
     ['الغرض الوظيفي', (job.purpose || '').trim().length >= 40],
-    ['8 مهام ومسؤوليات على الأقل', asArray(content.responsibilities).length >= 8],
-    ['مصفوفة صلاحيات واضحة', asArray(content.authorities).length >= 4],
-    ['4 مؤشرات أداء على الأقل', asArray(content.kpis).length >= 4],
-    ['تقارير ومخرجات محددة', asArray(content.reports).length >= 2],
+    ['مهام ومسؤوليات محددة', asArray(content.responsibilities).length >= 1],
+    ['مصفوفة صلاحيات واضحة', asArray(content.authorities).length >= 1],
+    ['مؤشرات أداء محددة', asArray(content.kpis).length >= 1],
+    ['تقارير ومخرجات محددة', asArray(content.reports).length >= 1],
     ['مؤهلات الوظيفة', Boolean(content.qualifications?.education)]
   ];
   return {checks, score: Math.round(checks.filter(item => item[1]).length / checks.length * 100)};
 }
 
 function reviewerResolution() {
+  if(job.status === 'CHANGES_REQUESTED')return {state:'warning',text:'أعيد الوصف إلى الإعداد. السبب: '+(job.review_note||'راجع سجل القرارات')};
+  if(job.status === 'MANAGER_APPROVED'&&job.final_reviewed_at)return {state:'approved',text:'اكتملت المراجعة النهائية. الحالة الآن: بانتظار الاعتماد والنشر.'};
+  if(job.reviewer_mode==='override')return {state:'warning',text:'المراجع البديل: '+(users.find(x=>x.id===job.reviewer_id)?.full_name||'المكلّف')+' • السبب: '+job.reviewer_override_reason};
   if(job.status === 'MANAGER_APPROVED')return {state:'approved',text:'تمت مراجعة المدير وإرسال الوصف إلى مدير النظام. الحالة الآن: بانتظار المراجعة النهائية والاعتماد.'};
   if(job.status === 'PUBLISHED')return {state:'approved',text:'تم اعتماد الوصف ونشره، وهو ظاهر الآن للموظفين المرتبطين بهذه الوظيفة.'};
   if (!canStage('DRAFT') && !canStage('ASSIGN') && !canStage('FINAL_REVIEW') && !canStage('PUBLISH')) {
@@ -59,7 +63,7 @@ function reviewerResolution() {
   const linkedUsers = linked.map(item => users.find(user => user.id === item.profile_id)).filter(Boolean);
   const managerIds = [...new Set(linkedUsers.map(user => user.manager_id).filter(Boolean))];
   const missing = linkedUsers.filter(user => !user.manager_id);
-  if (!linkedUsers.length) return {state:'warning', text:'لم تُربط الوظيفة بموظف حتى الآن. يحدد مسؤول النظام المدير عند أول استخدام.'};
+  if (!linkedUsers.length) return {state:'warning', text:job.reviewer_id?'المدير المباشر المراجع: '+(users.find(u=>u.id===job.reviewer_id)?.full_name||'المراجع المسجل'):'سيُحدد المدير المباشر من المرجعية التنظيمية عند الإرسال للمراجعة.'};
   if (missing.length && job.reviewer_id) {
     const explicitReviewer = users.find(user => user.id === job.reviewer_id)?.full_name || 'المراجع المعيّن';
     return {state:'', text:`لا يوجد مدير مباشر للموظف، لذلك سيُرسل الوصف إلى المراجع الذي عيّنه مسؤول النظام: ${explicitReviewer}.`};
@@ -138,20 +142,23 @@ function reviewView() {
 
 function editView() {
   const content = job.content || {};
-  if (activeTab === 'overview') return `<section class="content-card edit-grid"><div class="edit-field"><label>المسمى الوظيفي</label><input id="editTitle" value="${esc(job.title)}"></div><div class="edit-field"><label>العائلة الوظيفية</label><input id="editFamily" value="${esc(job.family || '')}"></div><div class="edit-field"><label>المستوى</label><input id="editLevel" value="${esc(job.job_level || '')}"></div><div class="edit-field"><label>المراجع المعتمد</label><select id="editReviewer"><option value="">يتطلب تحديد مسؤول النظام</option>${users.map(user => `<option value="${user.id}" ${job.reviewer_id === user.id ? 'selected' : ''}>${esc(user.full_name)} — ${esc(user.role || '')}</option>`).join('')}</select></div><div class="edit-field" style="grid-column:1/-1"><label>الغرض الوظيفي</label><textarea id="editPurpose">${esc(job.purpose || '')}</textarea></div></section>`;
+  if (activeTab === 'overview') return `<section class="content-card edit-grid"><div class="edit-field"><label>المسمى الوظيفي</label><input id="editTitle" value="${esc(job.title)}"></div><div class="edit-field"><label>العائلة الوظيفية</label><input id="editFamily" value="${esc(job.family || '')}"></div><div class="edit-field"><label>المستوى</label><input id="editLevel" value="${esc(job.job_level || '')}"></div><div class="edit-field"><label>المراجع المعتمد</label><select id="editReviewer" disabled><option value="">يتطلب تحديد مسؤول النظام</option>${users.map(user => `<option value="${user.id}" ${job.reviewer_id === user.id ? 'selected' : ''}>${esc(user.full_name)} — ${esc(user.role || '')}</option>`).join('')}</select></div><div class="edit-field" style="grid-column:1/-1"><label>الغرض الوظيفي</label><textarea id="editPurpose">${esc(job.purpose || '')}</textarea></div></section>`;
   const keys = activeTab === 'responsibilities' ? [['responsibilities','المهام والمسؤوليات']] : activeTab === 'authorities' ? [['authorities','الصلاحيات']] : [['kpis','مؤشرات الأداء'],['reports','التقارير والمخرجات']];
   return `<div class="content-stack">${keys.map(([key,title]) => `<section class="content-card"><h2>${title}</h2><div class="edit-list">${asArray(content[key]).map((item,index) => `<div class="edit-field"><label>البند ${index + 1}</label><textarea data-edit-list="${key}" data-index="${index}">${esc(itemText(item))}</textarea>${key==='kpis'&&Array.isArray(item.scale)?`<div class="hybrid-meta-grid">${item.scale.map((level,levelIndex)=>`<label>حد المستوى ${levelIndex+1}<input data-edit-scale="${index}" data-level-index="${levelIndex}" value="${esc(level.label||level.range||level.value||'')}"></label>`).join('')}<label>أساس التقييم<input data-edit-scale-basis="${index}" value="${esc(item.scale_basis||'')}"></label></div>`:''}</div>`).join('')}</div></section>`).join('')}</div>`;
 }
 
 function headerActions() {
   const buttons = [];
-  if (canStage('DRAFT') || (canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED')) buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
+  if (canStage('DRAFT') && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push(`<a href="create.html?id=${encodeURIComponent(job.id)}" class="review-btn">${job.status==='PUBLISHED'?'فتح مسودة إصدار جديد':'استكمال إعداد الوصف'}</a>`);
+  if (canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at) buttons.push(`<button id="editBtn" class="review-btn">${editing ? 'إلغاء التعديل' : 'تعديل المسودة'}</button>`);
   if (editing) buttons.push('<button id="saveBtn" class="review-btn primary">حفظ المسودة</button>');
-  if (!editing && canStage('DRAFT') && ['DRAFT','CHANGES_REQUESTED','PUBLISHED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
+  if (!editing && canStage('DRAFT') && ['DRAFT','CHANGES_REQUESTED'].includes(job.status)) buttons.push('<button id="submitBtn" class="review-btn primary">إرسال للمدير</button>');
   if (!editing && managerReviewing()) buttons.push(`<button id="managerDoneBtn" class="review-btn primary">${!me.manager_id?'إرسال لمدير النظام للاعتماد':'إنهاء المراجعة وإرسالها لمدير النظام'}</button>`);
-  if (!editing && canStage('FINAL_REVIEW') && job.reviewer_id === me.id && job.status === 'IN_REVIEW') buttons.push('<button id="adminDoneBtn" class="review-btn primary">إنهاء مراجعة المقترحات</button>');
+
   if (!editing && canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at) buttons.push('<button id="finalReviewBtn" class="review-btn primary">إنهاء المراجعة النهائية</button>');
   if (!editing && canStage('PUBLISH') && job.status === 'MANAGER_APPROVED' && job.final_reviewed_at) buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
+  if (!editing && ((job.status==='IN_REVIEW'&&job.reviewer_id===me.id)||(job.status==='MANAGER_APPROVED'&&(canStage('FINAL_REVIEW')||canStage('PUBLISH'))))) buttons.push('<button id="returnDraftBtn" class="review-btn">إعادة للتعديل</button>');
+  if(!editing&&canStage('PUBLISH')&&job.status==='PUBLISHED')buttons.push('<button id="archiveJobBtn" class="review-btn">أرشفة الوصف</button>');
   return buttons.join('');
 }
 
@@ -159,7 +166,7 @@ function render() {
   const reviewer = users.find(user => user.id === job.reviewer_id);
   const result = quality();
   byId('jobCode').textContent = job.job_code;
-  byId('jobStatus').textContent = statusLabels[job.status] || job.status;
+  byId('jobStatus').textContent = jobStage(job);
   byId('jobTitle').textContent = job.title;
   byId('jobPurpose').textContent = job.purpose || '';
   byId('jobFamily').textContent = job.family || 'غير محددة';
@@ -169,12 +176,17 @@ function render() {
   byId('proposalCount').textContent = proposals.filter(item => item.status === 'PENDING').length;
   byId('qualityScore').innerHTML = `<span>نسبة الاكتمال</span><b>${result.score}%</b>`;
   byId('qualityChecks').innerHTML = result.checks.map(([label,ok]) => `<div class="quality-check ${ok ? 'ok' : 'warn'}"><i data-lucide="${ok ? 'circle-check' : 'triangle-alert'}"></i>${label}</div>`).join('');
+  const path=['إعداد الوصف','مراجعة المدير المباشر','المراجعة النهائية','الاعتماد والنشر','إقرار الموظف'];const position=job.status==='IN_REVIEW'?1:job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?3:2):job.status==='PUBLISHED'?4:0;
+  byId('workflowPath').innerHTML=path.map((label,i)=>`<li class="${i===position?'current':''}" ${i===position?'aria-current="step"':''}>${label}${i===position?' — المرحلة الحالية':''}</li>`).join('');
   const resolution = reviewerResolution();
+  const ownerStage=position===0?'DRAFT':position===2?'FINAL_REVIEW':position===3?'PUBLISH':null;const ownerId=position===1?job.reviewer_id:stageOwners.find(x=>x.stage===ownerStage)?.profile_id;const owner=users.find(x=>x.id===ownerId)?.full_name;const pending=proposals.filter(x=>x.status==='PENDING'&&x.action!=='COMMENT').length;
+  if(owner)resolution.text+=' المسؤول الحالي: '+owner+'.';
+  if(position===2&&pending)resolution.text+=' يوجد '+pending+' مقترحات بانتظار القرار؛ راجع تبويب المقترحات قبل إنهاء المراجعة.';
   byId('managerAlert').className = `manager-alert ${resolution.state}`;
   byId('managerAlert').innerHTML = `<i data-lucide="${resolution.state === 'danger' ? 'triangle-alert' : 'network'}"></i><span>${esc(resolution.text)}</span>`;
   byId('headerActions').innerHTML = headerActions();
   document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === activeTab));
-  byId('reviewBody').innerHTML = editing && activeTab !== 'review' ? editView() : activeTab === 'overview' ? overviewView() : activeTab === 'responsibilities' ? documentSection('tasks') : activeTab === 'authorities' ? documentSection('authority') : activeTab === 'measurement' ? measurementView() : reviewView();
+  byId('reviewBody').innerHTML = editing && activeTab !== 'review' ? editView() : activeTab === 'overview' ? overviewView() : activeTab === 'responsibilities' ? documentSection('tasks') : activeTab === 'authorities' ? documentSection('authority') : activeTab === 'measurement' ? measurementView() : activeTab==='history'?historyView():reviewView();
   bindActions();
   window.lucide?.createIcons();
 }
@@ -223,16 +235,11 @@ async function decideProposal(id,decision) {
     if (input === null || input.trim().length < 2) return;
     value = typeof value === 'object' ? {...value,[record.section === 'KPIS' || record.section === 'REPORTS' ? 'name' : 'text']:input.trim()} : input.trim();
   }
-  if (decision !== 'REJECTED' && record.action !== 'COMMENT') {
-    const update = await sb.from('job_descriptions').update({...applyProposal(record,value),updated_by:me.id}).eq('id',job.id).select().maybeSingle();
-    if (update.error || !update.data) return toast(update.error?.message || 'تعذر تطبيق المقترح');
-    job = update.data;
-  }
-  const rejectedNote = decision === 'REJECTED' ? await window.AtwarUI.prompt({title:'سبب رفض المقترح',message:'سيظهر السبب في سجل المراجعة.',required:true}) : null;
-  if(decision === 'REJECTED' && rejectedNote === null)return;
-  const note = decision === 'REJECTED' ? rejectedNote : null;
-  const response = await sb.from('job_description_change_requests').update({status:decision,proposed_value:value,admin_note:note}).eq('id',id);
-  if (response.error) return toast(response.error.message);
+  const note=decision==='REJECTED'?await window.AtwarUI.prompt({title:'سبب رفض المقترح',required:true}):null;
+  if(decision==='REJECTED'&&note===null)return;
+  const response=await sb.rpc('decide_job_description_proposal',{p_proposal_id:id,p_expected_revision:job.revision,p_decision:decision,p_value:value,p_note:note});
+  if(response.error)return toast(response.error.message);
+  job=response.data;
   await loadRelated();
   render();
   toast(decision === 'REJECTED' ? 'رُفض المقترح' : 'طُبق المقترح على المسودة');
@@ -254,7 +261,7 @@ async function saveDraft() {
     payload.content = content;
     if (job.status === 'PUBLISHED') payload.status = 'DRAFT';
   }
-  const response = await sb.from('job_descriptions').update(payload).eq('id',job.id).select().maybeSingle();
+  const response = await sb.from('job_descriptions').update(payload).eq('id',job.id).eq('revision',job.revision).select().maybeSingle();
   if (response.error || !response.data) return toast(response.error?.message || 'لم يسمح النظام بالحفظ');
   job = response.data;
   editing = false;
@@ -263,15 +270,11 @@ async function saveDraft() {
 }
 
 async function transition(status) {
-  if (status === 'IN_REVIEW') {
-    const resolution = reviewerResolution();
-    if (!job.reviewer_id || resolution.state === 'danger') return toast('يجب أن يعالج مسؤول النظام المدير المراجع أولًا');
-    if (quality().score < 100) return toast('أكمل عناصر الوصف المطلوبة قبل إرساله للمراجعة');
-  }
+  if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;await loadRelated();render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
   if (status === 'MANAGER_APPROVED' && proposals.some(item => item.status === 'PENDING' && item.action !== 'COMMENT')) return toast('اتخذ قرارًا في جميع المقترحات أولًا');
   const payload = {status,updated_by:me.id};
   if (status === 'IN_REVIEW') payload.submitted_at = new Date().toISOString();
-  const response = await sb.from('job_descriptions').update(payload).eq('id',job.id).select().maybeSingle();
+  const response = await sb.from('job_descriptions').update(payload).eq('id',job.id).eq('revision',job.revision).select().maybeSingle();
   if (response.error || !response.data) return toast(response.error?.message || 'تعذر تغيير حالة الوصف');
   job = response.data;
   if(status==='PUBLISHED')void dispatchPublicationEmails();
@@ -355,6 +358,8 @@ function bindActions() {
   byId('submitBtn')?.addEventListener('click',() => transition('IN_REVIEW'));
   byId('managerDoneBtn')?.addEventListener('click',managerDone);
   byId('adminDoneBtn')?.addEventListener('click',() => transition('MANAGER_APPROVED'));
+  byId('archiveJobBtn')?.addEventListener('click',async()=>{if(await window.AtwarUI.confirm({title:'أرشفة الوصف الوظيفي',message:'لن يُستخدم الوصف للإسناد الجديد. تبقى النسخ السابقة محفوظة.'}))await transition('ARCHIVED');});
+  byId('returnDraftBtn')?.addEventListener('click',returnForChanges);
   byId('finalReviewBtn')?.addEventListener('click',finishFinalReview);
   byId('publishBtn')?.addEventListener('click',() => transition('PUBLISHED'));
   byId('commentBtn')?.addEventListener('click',addComment);
@@ -367,6 +372,7 @@ async function loadRelated() {
     sb.from('job_description_forms').select('usage_note,display_order,form_library(*)').eq('job_description_id',job.id).order('display_order'),
     sb.from('job_description_comments').select('*').eq('job_description_id',job.id).order('created_at'),
     canStage('ASSIGN') ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
+    sb.from('job_description_versions').select('revision,action,snapshot,actor_id,change_note,created_at').eq('job_description_id',job.id).order('revision',{ascending:false}).limit(30),
     sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position')
   ]);
   proposals = responses[0].data || [];
@@ -374,7 +380,9 @@ async function loadRelated() {
   comments = responses[2].data || [];
   assignments = responses[3].data || [];
   if (responses[4].error) throw responses[4].error;
-  weightReferences = (responses[4].data || []).filter(row => row.source_revision === responses[4].data?.[0]?.source_revision);
+  versions=responses[4].data||[];
+  if (responses[5].error) throw responses[5].error;
+  weightReferences = (responses[5].data || []).filter(row => row.source_revision === responses[5].data?.[0]?.source_revision);
 }
 
 async function boot() {
@@ -384,7 +392,7 @@ async function boot() {
   me = profile.data;
   if (!me) return location.href = '../profile/job-description.html';
   window.atwarSyncShellIdentity?.(me,session.user);
-  const stages=await sb.from('job_stage_owners').select('stage,profile_id');if(stages.error)throw stages.error;stagePermissions=new Set((stages.data||[]).filter(x=>x.profile_id===me.id).map(x=>x.stage));
+  const stages=await sb.from('job_stage_owners').select('stage,profile_id');if(stages.error)throw stages.error;stageOwners=stages.data||[];stagePermissions=new Set((stages.data||[]).filter(x=>x.profile_id===me.id).map(x=>x.stage));
   if(canStage('DRAFT')||canStage('ASSIGN')||canStage('FINAL_REVIEW')){const directory=await sb.rpc('job_stage_directory');if(directory.error)throw directory.error;users=directory.data||[]}else users=[me];
   const id = new URLSearchParams(location.search).get('id');
   if (!id) throw new Error('لم يتم تحديد الوظيفة المطلوبة');
@@ -399,6 +407,10 @@ async function boot() {
   render();
   if(canStage('PUBLISH'))void dispatchPublicationEmails();
 }
+
+async function returnForChanges(){const reason=await window.AtwarUI.prompt({title:'إعادة الوصف للتعديل',message:'حدد المطلوب تصحيحه؛ يُحفظ السبب وتُفتح مهمة للإعداد.',required:true});if(reason===null)return;const r=await sb.rpc('return_job_description_for_changes',{p_job_id:job.id,p_expected_revision:job.revision,p_reason:reason});if(r.error)return toast(r.error.message);job=r.data;editing=false;await loadRelated();render();toast('أعيد الوصف للتعديل وسُجل السبب');}
+
+function historyView(){const previous=job.published_snapshot;const fields=[['المسمى',previous?.title,job.title],['الغرض',previous?.purpose,job.purpose],...['responsibilities','authorities','kpis','reports','qualifications','relationships'].map(key=>[{responsibilities:'المهام والمسؤوليات',authorities:'الصلاحيات',kpis:'المؤشرات',reports:'المخرجات',qualifications:'المؤهلات',relationships:'العلاقات'}[key],previous?.content?.[key],job.content?.[key]])];const text=value=>typeof value==='object'?JSON.stringify(value,null,2):value||'—';return `<section class="content-card"><h2>مقارنة المسودة بالنسخة المنشورة</h2>${previous?fields.filter(([,a,b])=>JSON.stringify(a)!==JSON.stringify(b)).map(([label,a,b])=>`<article class="comparison-card"><h3>${esc(label)}</h3><div class="compare-columns"><div><small>النسخة المنشورة ${esc(previous.revision)}</small><p style="white-space:pre-wrap">${esc(text(a))}</p></div><div><small>المسودة الحالية</small><p style="white-space:pre-wrap">${esc(text(b))}</p></div></div></article>`).join('')||'<p>لا توجد تغييرات عن المحتوى المنشور.</p>':'<p>لم يُنشر إصدار سابق لهذا الوصف.</p>'}</section><section class="content-card"><h2>سجل الإصدارات والقرارات</h2><div style="overflow:auto"><table class="workflow-history"><thead><tr><th>الإصدار</th><th>الإجراء</th><th>المسؤول</th><th>التاريخ</th><th>السبب</th></tr></thead><tbody>${versions.map(v=>`<tr><td>${v.revision}</td><td>${esc({CREATED:'إنشاء',UPDATED:'تحديث',SUBMITTED:'إرسال للمراجعة',CHANGES_REQUESTED:'إعادة للتعديل',MANAGER_APPROVED:'إنهاء مراجعة المدير',PUBLISHED:'اعتماد ونشر',ARCHIVED:'أرشفة'}[v.action]||v.action)}</td><td>${esc(users.find(u=>u.id===v.actor_id)?.full_name||'المسؤول المسجل')}</td><td>${new Date(v.created_at).toLocaleString('ar-SA')}</td><td>${esc(v.change_note||'—')}</td></tr>`).join('')}</tbody></table></div></section>`;}
 
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {activeTab = button.dataset.tab; editing = false; render();});
 boot().catch(error => {

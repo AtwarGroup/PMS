@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {freshJob,jobValidation,jobStage} from '../assets/js/job-workflow-model.mjs';
+const original={id:'old',title:'وظيفة سابقة',family:'المالية',reviewer_id:'reviewer',status:'PUBLISHED',revision:12,published_snapshot:{revision:10},content:{responsibilities:[{text:'مسؤولية'}],authorities:[{text:'صلاحية'}],reports:[{name:'تقرير'}],kpis:[{name:'مؤشر',weight:100,measure:'نسبة',source:'تقرير',target:'٩٥٪'}],qualifications:{education:'بكالوريوس'}}};
+const draft=freshJob(original);assert.equal(draft.id,undefined);assert.equal(draft.title,'');assert.equal(draft.reviewer_id,null);assert.equal(draft.reviewer_mode,'auto');assert.equal(draft.published_snapshot,undefined);assert.equal(draft.revision,undefined);
+draft.content.responsibilities[0].text='نسخة';assert.equal(original.content.responsibilities[0].text,'مسؤولية');
+draft.title='وظيفة جديدة';draft.purpose='غرض وظيفي واضح ومفصل لشرح المسؤولية الأساسية والمخرجات المطلوبة من الوظيفة';assert.deepEqual(jobValidation(draft),[]);
+draft.content.kpis[0].weight=50;assert.ok(jobValidation(draft).some(x=>x.includes('١٠٠٪')));draft.content.kpis[0].weight=100;draft.content.kpis[0].source='';assert.ok(jobValidation(draft).some(x=>x.includes('مصدر')));
+assert.equal(jobStage({status:'MANAGER_APPROVED'}),'قيد المراجعة النهائية');assert.equal(jobStage({status:'MANAGER_APPROVED',final_reviewed_at:'now'}),'بانتظار الاعتماد والنشر');
+assert.equal(jobStage({status:'CHANGES_REQUESTED'}),'معاد للتعديل');
+console.log('Authoring copy isolation, validation and workflow states passed');

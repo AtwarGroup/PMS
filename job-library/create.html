@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ATWAR ONE – إعداد الوصف الوظيفي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@1.47.0"></script>
+  <script src="../assets/js/shell-components.js?v=2.5.48"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+  <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
+  <link rel="stylesheet" href="../assets/css/job-review.css">
+  <style>.scorecard-reference{border-right:4px solid #1769e0}.scorecard-reference p{line-height:1.8;color:#485d75}.scorecard-reference .reference-note{margin:12px 0 0;color:#9a640e}.manager-alert.approved{background:#eaf9f2;border-color:#bce8d3;color:#087f5b}</style>
+<link rel="stylesheet" href="../assets/css/job-document.css?v=2.5.14">
+<script src="../assets/js/job-kpi-proposals.js?v=2.5.21"></script>
+<script src="../assets/js/job-document-view.js?v=2.5.21"></script>
+<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/job-authoring.css?v=2.5.55">
+</head>
+<body style="visibility:hidden">
+  <div class="atwar-shell">
+    <atwar-sidebar active="jobLibrary"></atwar-sidebar>
+    <section class="atwar-main">
+      <atwar-header></atwar-header>
+      <main class="atwar-content review-page">
+        <a class="back-link" href="index.html"><i data-lucide="arrow-right"></i> العودة إلى مكتبة الوظائف</a>
+        <section id="authoringState" class="loading-card">جاري تجهيز النموذج...</section>
+        <div id="authoringApp" hidden>
+          <header class="role-header"><div class="role-title"><div class="role-kicker">مكتبة الوظائف · مسودة</div><h1 id="authoringTitle">إضافة وصف وظيفي</h1><p>أنشئ وصفًا جديدًا أو انسخ محتوى وصف قائم. يمكنك حفظ المسودة واستكمالها لاحقًا.</p></div><div class="header-actions"><button type="button" id="saveDraft" class="review-btn">حفظ المسودة</button><button type="button" id="sendReview" class="review-btn primary">حفظ وإرسال للمراجعة</button></div></header>
+          <section class="manager-alert" id="authoringNotice" role="status">لا تُنشر المسودة للموظفين قبل اكتمال دورة الموافقات.</section>
+          <div class="review-layout authoring-layout"><aside class="review-summary"><section class="summary-card"><h2>خطوات إعداد الوصف</h2><nav id="authoringSteps" class="authoring-steps"></nav></section><section class="summary-card"><h2>بداية سريعة</h2><div class="edit-field"><label for="copyJob">نسخ محتوى وصف قائم</label><select id="copyJob"><option value="">ابدأ بوصف فارغ</option></select></div><p>يُنسخ المحتوى فقط، دون الموافقات أو ربط الموظفين.</p></section></aside><section class="content-card"><form id="authoringForm" novalidate><div id="authoringBody"></div><div class="authoring-footer"><button type="button" id="previousStep" class="review-btn">السابق</button><button type="button" id="nextStep" class="review-btn primary">التالي</button></div></form></section></div>
+        </div>
+      </main>
+    </section>
+  </div>
+  <div id="toast" class="review-toast"></div>
+  <script src="../assets/js/roles-config.js"></script>
+  <script src="../assets/js/start-page-config.js"></script>
+  <script src="../assets/js/supabase-config.js"></script>
+  <script src="../assets/js/supabase-runtime.js"></script>
+  <script src="../assets/js/permissions.js"></script>
+  <script type="module" src="../assets/js/job-authoring-page.js?v=2.5.55"></script>
+</body>
+</html>
