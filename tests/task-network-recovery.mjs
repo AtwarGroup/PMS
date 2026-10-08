@@ -22,8 +22,10 @@ const sb={
 };
 const onlineHandlers=new Set(),visibilityHandlers=new Set();
 const document={visibilityState:'visible',addEventListener:(_,fn)=>visibilityHandlers.add(fn),removeEventListener:(_,fn)=>visibilityHandlers.delete(fn)};
-sb.channel=()=>({on(){return this},subscribe(){return this}});
-const ctx={document,setInterval:()=>1,clearInterval:()=>{},window:{atwarGetSupabase:async()=>sb,addEventListener:(_,fn)=>onlineHandlers.add(fn),removeEventListener:(_,fn)=>onlineHandlers.delete(fn)},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,console,crypto:globalThis.crypto};
+let channelStatus,timerCallback,clock=0;
+class TestDate extends Date {static now(){return clock;}}
+sb.channel=()=>({on(){return this},subscribe(fn){channelStatus=fn;fn('SUBSCRIBED');return this}});
+const ctx={Date:TestDate,document,setInterval:(fn,ms)=>{assert.equal(ms,15000);timerCallback=fn;return 1},clearInterval:()=>{timerCallback=null},window:{atwarGetSupabase:async()=>sb,addEventListener:(_,fn)=>onlineHandlers.add(fn),removeEventListener:(_,fn)=>onlineHandlers.delete(fn)},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,console,crypto:globalThis.crypto};
 const bridge=await vm.runInNewContext(`(async()=>{${source}\nreturn {runTransaction,onValue};})()`,ctx);
 const ref={path:'tasksByUser/user/test-task'};
 const edit=task=>({...task,desc:'saved after reconnect'});
@@ -55,5 +57,12 @@ document.visibilityState='hidden';row.title='hidden change';
 for(const refresh of onlineHandlers)refresh();await settle();assert.equal(delivered.length,2);
 document.visibilityState='visible';for(const refresh of visibilityHandlers)refresh();await settle();
 assert.equal(delivered.at(-1),'hidden change');
-stop();assert.equal(onlineHandlers.size,0);assert.equal(visibilityHandlers.size,0);
+row.title='missed realtime update';channelStatus('CHANNEL_ERROR');
+clock+=15000;timerCallback();await settle();assert.equal(delivered.at(-1),'missed realtime update');
+row.title='reconnected channel';channelStatus('SUBSCRIBED');await settle();
+assert.equal(delivered.at(-1),'reconnected channel','Subscription recovery must reload missed changes');
+row.title='healthy polling';clock+=15000;timerCallback();await settle();
+assert.equal(delivered.at(-1),'reconnected channel','Healthy channels must retain the slower polling interval');
+clock+=120000;timerCallback();await settle();assert.equal(delivered.at(-1),'healthy polling');
+stop();assert.equal(timerCallback,null);assert.equal(onlineHandlers.size,0);assert.equal(visibilityHandlers.size,0);
 console.log('Actual bridge subscriptions: online recovery, retained data on failure, hidden-tab recovery and listener cleanup passed.');

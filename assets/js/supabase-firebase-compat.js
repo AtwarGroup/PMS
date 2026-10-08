@@ -302,6 +302,7 @@ async function emitLocal(scope='all'){
   for(const result of results)if(result.status==='rejected')console.warn('compat listener',result.reason);
 }
 let _realtimeChannel=null;
+let _realtimeHealthy=false;
 function ensureRealtime(){
   if(_realtimeChannel)return;
   try{
@@ -312,7 +313,11 @@ function ensureRealtime(){
       .on('postgres_changes',{event:'*',schema:'public',table:'task_attachments'},()=>emitLocal('tasks'))
       .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},()=>emitLocal('notifications'))
       .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},()=>emitLocal('profiles'))
-      .subscribe();
+      .subscribe(status=>{
+        _realtimeHealthy=status==='SUBSCRIBED';
+        // Re-read changes missed while the channel was disconnected.
+        if(_realtimeHealthy)emitLocal('all');
+      });
   }catch(e){console.warn('Realtime unavailable; polling fallback remains active.',e)}
 }
 export function onValue(r,callback,errorCallback){
@@ -328,7 +333,12 @@ export function onValue(r,callback,errorCallback){
   const refresh=coordinator.refresh;
   _listeners.set(refresh,listenerPath);refresh();
   const refreshWhenVisible=()=>{if(document.visibilityState==='visible')refresh()};
-  const timer=setInterval(refreshWhenVisible,120000);
+  let lastPollAt=Date.now();
+  const timer=setInterval(()=>{
+    if(_realtimeHealthy&&Date.now()-lastPollAt<120000)return;
+    lastPollAt=Date.now();
+    refreshWhenVisible();
+  },15000);
   const onVisibilityChange=()=>{if(document.visibilityState==='visible')refresh()};
   document.addEventListener('visibilitychange',onVisibilityChange);
   window.addEventListener('online',refreshWhenVisible);

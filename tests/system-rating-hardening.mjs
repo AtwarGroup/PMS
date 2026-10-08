@@ -11,7 +11,7 @@ assert.match(migration, /j\.reviewer_id\s*=\s*\(select auth\.uid\(\)\)/);
 
 const bridge = read('assets/js/supabase-firebase-compat.js');
 assert.match(bridge, /document\.visibilityState==='visible'/);
-assert.match(bridge, /setInterval\(refreshWhenVisible,120000\)/);
+assert.match(bridge, /_realtimeHealthy&&Date\.now\(\)-lastPollAt<120000/);
 assert.match(bridge, /removeEventListener\('visibilitychange',onVisibilityChange\)/);
 assert.doesNotMatch(bridge, /setInterval\(refresh,60000\)/);
 
