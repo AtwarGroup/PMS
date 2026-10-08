@@ -2209,7 +2209,7 @@ function filteredTasks(){
       if(currentProfile?.role==='employee')return false;
     }
 
-    if(status==='DELAYED'&&delay<=0)return false;
+    if(status==='DELAYED'&&!isCurrentlyOverdue(t))return false;
     if(status==='TODAY'&&!isToday(t.start)&&!isToday(t.end))return false;
     if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&String(t.status||'').trim()!==String(status).trim())return false;
     if(isCompletedArchiveView()&&(completedFrom||completedTo)){
@@ -2272,7 +2272,7 @@ function renderKanban(rows){
     const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
       const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
-      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${delay>0?'text-rose-600':'text-slate-400'}">${delay>0?'متأخرة '+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${isCurrentlyOverdue(t)?'text-rose-600':'text-slate-400'}">${delay>0?(isCurrentlyOverdue(t)?'متأخرة ':'تأخر التسليم ')+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
     return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
   }).join('');
@@ -2321,7 +2321,7 @@ function renderTasks(){
           <span><b class="text-slate-400">البداية:</b> <span class="font-bold text-slate-700">${smartDate(t.start)}</span></span>
           <span><b class="text-slate-400">النهاية:</b> <span class="font-bold text-slate-700">${smartDate(t.end)}</span></span>
           <span class="hide-mobile"><b class="text-slate-400">المدة:</b> <span class="font-bold text-slate-700">${calcDuration(t.start,t.end)} يوم</span></span>
-          <span><b class="text-slate-400">التأخير:</b> <span class="font-black ${delay>0?'text-rose-600':'text-slate-700'}">${delay} يوم</span></span>
+          <span><b class="text-slate-400">${isCurrentlyOverdue(t)?'التأخير:':'تأخر التسليم:'}</b> <span class="font-black ${isCurrentlyOverdue(t)?'text-rose-600':'text-slate-700'}">${delay} يوم</span></span>
           <span class="flex items-center gap-1.5">
             <b class="text-slate-400">الإنجاز:</b>
             <span class="font-black text-slate-700">${normalizeProgress(t.progress)}%</span>
