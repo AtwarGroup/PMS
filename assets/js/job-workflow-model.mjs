@@ -1,5 +1,5 @@
 export const stageLabels={DRAFT:'مسودة',IN_REVIEW:'قيد مراجعة المدير',CHANGES_REQUESTED:'معاد للتعديل',PUBLISHED:'معتمد ومنشور',ARCHIVED:'مؤرشف'};
-export function jobStage(job){return job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?'بانتظار الاعتماد والنشر':'قيد المراجعة النهائية'):stageLabels[job.status]||job.status;}
+export function jobStage(job){if(job.scheduled_effective_date)return job.schedule_status==='BLOCKED'?'تعذر بدء السريان — يحتاج مراجعة':'معتمد بانتظار السريان';return job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?'بانتظار الاعتماد والنشر':'قيد المراجعة النهائية'):stageLabels[job.status]||job.status;}
 export function pendingChanges(rows){return rows.filter(x=>x.status==='PENDING'&&x.action!=='COMMENT');}
 // Object key ordering is not a business change; array ordering remains meaningful.
 function canonical(value){return Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;}
@@ -24,3 +24,8 @@ export function jobValidation(job){
  return issues;
 }
 export function freshJob(source){return {title:'',family:source?.family||'',job_level:source?.job_level||'',purpose:source?.purpose||'',reports_to_title:'',reports_to_job_id:null,reference_profile_id:null,reviewer_id:null,reviewer_mode:'auto',reviewer_override_reason:'',content:structuredClone(source?.content||{responsibilities:[],authorities:[],kpis:[],reports:[],qualifications:{education:'',experience:'',skills:''},relationships:{internal:'',external:''}})};}
+
+export function riyadhToday(now=new Date()){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(x=>x.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`;}
+export function periodicDue(review,today=riyadhToday()){return Boolean(review?.enabled&&!review.needs_changes&&review.due_on<=today);}
+
+export function addReviewMonths(date,months){const [year,month,day]=date.split('-').map(Number);const target=new Date(Date.UTC(year,month-1+months,1));const last=new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate();target.setUTCDate(Math.min(day,last));return target.toISOString().slice(0,10);}

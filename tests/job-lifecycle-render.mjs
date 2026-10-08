@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {renderJobLifecycle} from '../assets/js/job-lifecycle-view.mjs';
+const common={job:{id:'job',status:'MANAGER_APPROVED',final_reviewed_at:'now',reviewer_id:'manager',published_snapshot:{revision:4}},periodicReview:null,periodicEvents:[],users:[{id:'manager',role:'manager',full_name:'مدير مباشر'},{id:'admin',role:'admin',full_name:'مسؤول النظام'}],stageOwners:[{stage:'DRAFT',profile_id:'admin'}],me:{id:'admin'},canStage:()=>true,today:'2026-10-09',effectiveChoice:'2026-11-01'};
+assert.match(renderJobLifecycle(common),/value="2026-11-01"/);
+assert.match(renderJobLifecycle({...common,scheduled:{status:'PENDING',effective_date:'2026-11-01'}}),/النسخة السارية رقم 4/);
+const periodic={reviewer_id:'manager',enabled:true,due_on:'2026-10-09',interval_months:6};
+const managerView=renderJobLifecycle({...common,job:{...common.job,status:'PUBLISHED'},periodicReview:periodic,me:{id:'manager'},canStage:()=>false});
+assert.match(managerView,/completePeriodicReview/);assert.match(managerView,/requestPeriodicChange/);assert.doesNotMatch(managerView,/savePeriodicReview/);
+const pending=renderJobLifecycle({...common,job:{...common.job,status:'PUBLISHED'},periodicReview:{...periodic,needs_changes:true}});
+assert.match(pending,/طلب تحديث لدى مسؤول الإعداد/);assert.doesNotMatch(pending,/id="completePeriodicReview"/);
+const xss=renderJobLifecycle({...common,scheduled:{status:'BLOCKED',effective_date:'2026-11-01',note:'<script>alert(1)</script>'}});assert.doesNotMatch(xss,/<script>/);assert.match(xss,/&lt;script&gt;/);
+console.log('Actual lifecycle renderer: date preservation, prior version, owner actions and escaping passed');

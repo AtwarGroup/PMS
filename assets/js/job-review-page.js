@@ -1,4 +1,5 @@
-import {jobStage,publicationChanges} from './job-workflow-model.mjs?v=2.5.58';
+import {renderJobLifecycle} from './job-lifecycle-view.mjs?v=2.5.59';
+import {jobStage,publicationChanges,riyadhToday,periodicDue} from './job-workflow-model.mjs?v=2.5.59';
 const sb = await window.atwarGetSupabase();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const byId = id => document.getElementById(id);
@@ -8,6 +9,8 @@ const statusLabels = {DRAFT:'مسودة',IN_REVIEW:'قيد المراجعة',CHA
 const sectionLabels = {PURPOSE:'الغرض الوظيفي',RESPONSIBILITIES:'المهام والمسؤوليات',AUTHORITIES:'الصلاحيات',KPIS:'مؤشرات الأداء',REPORTS:'التقارير والمخرجات',QUALIFICATIONS:'المؤهلات'};
 let stagePermissions = new Set();let stageOwners=[];
 const canStage=stage=>me?.role==='admin'||stagePermissions.has(stage);
+let effectiveChoice='',lifecycleDirty=false,refreshingLifecycle=false;
+let schedules=[],periodicReview=null,periodicEvents=[];
 let session, me, job, users = [], assignments = [], proposals = [], forms = [], comments = [], weightReferences = [], versions = [], activeTab = 'overview', editing = false;
 
 function toast(message) {
@@ -48,6 +51,7 @@ function quality() {
 }
 
 function reviewerResolution() {
+  const scheduled=openSchedule();if(scheduled)return {state:scheduled.status==='BLOCKED'?'danger':'approved',text:scheduled.status==='BLOCKED'?scheduled.note:`اعتمد الوصف ويبدأ سريانه في ${scheduled.effective_date}. تبقى النسخة السارية الحالية متاحة حتى الموعد.`};
   if(job.status === 'CHANGES_REQUESTED')return {state:'warning',text:'أعيد الوصف إلى الإعداد. السبب: '+(job.review_note||'راجع سجل القرارات')};
   if(job.status === 'MANAGER_APPROVED'&&job.final_reviewed_at)return {state:'approved',text:'اكتملت المراجعة النهائية. الحالة الآن: بانتظار الاعتماد والنشر.'};
   if(job.reviewer_mode==='override')return {state:'warning',text:'المراجع البديل: '+(users.find(x=>x.id===job.reviewer_id)?.full_name||'المكلّف')+' • السبب: '+job.reviewer_override_reason};
@@ -110,8 +114,8 @@ function overviewView() {
   const content = job.content || {};
   const linked = assignments.filter(item => item.job_description_id === job.id);
   const linkedIds = new Set(linked.map(item => item.profile_id));
-  const assignmentCard = canStage('ASSIGN') ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.status === 'PUBLISHED' ? 'الوصف ظاهر الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
-  return `<div class="content-stack">${assignmentCard}${documentSection('description')}<div>${proposalActions('PURPOSE',-1)}</div><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
+  const assignmentCard = canStage('ASSIGN') ? `<section class="content-card"><h2>ربط الوصف بالموظف</h2><p class="purpose-text">اختر الموظف ليظهر الوصف في ملفه الوظيفي. إذا كان الوصف قيد المراجعة فسيظهر له بعد الاعتماد والنشر.</p><div class="compose"><select id="assignmentEmployee"><option value="">اختر الموظف</option>${users.filter(user => !linkedIds.has(user.id)).map(user => `<option value="${user.id}">${esc(user.full_name)} — ${esc(user.job_title || user.email || '')}</option>`).join('')}</select><button id="assignEmployeeBtn" class="review-btn primary">ربط وإشعار الموظف</button></div><div class="comment-list">${linked.map(item => {const user=users.find(row=>row.id===item.profile_id);return `<div class="comment"><b>${esc(user?.full_name || item.profile_id)}</b><small>${job.published_snapshot ? 'النسخة السارية ظاهرة الآن في الملف الوظيفي' : 'سيظهر بعد الاعتماد والنشر'}</small></div>`}).join('') || '<div class="empty-state">لم يُربط هذا الوصف بموظف.</div>'}</div></section>` : '';
+  return `<div class="content-stack">${lifecycleView()}${assignmentCard}${documentSection('description')}<div>${proposalActions('PURPOSE',-1)}</div><section class="mini-grid"><article class="mini-stat"><b>${asArray(content.responsibilities).length}</b><span>مهمة ومسؤولية</span></article><article class="mini-stat"><b>${asArray(content.authorities).length}</b><span>صلاحية وحد</span></article><article class="mini-stat"><b>${asArray(content.kpis).length}</b><span>مؤشر أداء</span></article><article class="mini-stat"><b>${asArray(content.reports).length + forms.length}</b><span>تقرير ونموذج</span></article></section><section class="content-card"><h2>أبرز المهام</h2>${responsibilitiesView(content.responsibilities,4)}</section></div>`;
 }
 
 function referenceWeightsView() {
@@ -156,8 +160,8 @@ function headerActions() {
   if (!editing && managerReviewing()) buttons.push(`<button id="managerDoneBtn" class="review-btn primary">${!me.manager_id?'إرسال لمدير النظام للاعتماد':'إنهاء المراجعة وإرسالها لمدير النظام'}</button>`);
 
   if (!editing && canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at) buttons.push('<button id="finalReviewBtn" class="review-btn primary">إنهاء المراجعة النهائية</button>');
-  if (!editing && canStage('PUBLISH') && job.status === 'MANAGER_APPROVED' && job.final_reviewed_at) buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد ونشر</button>');
-  if (!editing && ((job.status==='IN_REVIEW'&&job.reviewer_id===me.id)||(job.status==='MANAGER_APPROVED'&&(canStage('FINAL_REVIEW')||canStage('PUBLISH'))))) buttons.push('<button id="returnDraftBtn" class="review-btn">إعادة للتعديل</button>');
+  if (!editing && canStage('PUBLISH') && job.status === 'MANAGER_APPROVED' && job.final_reviewed_at && !openSchedule()) buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد وتحديد السريان</button>');
+  if (!editing && !openSchedule() && ((job.status==='IN_REVIEW'&&job.reviewer_id===me.id)||(job.status==='MANAGER_APPROVED'&&(canStage('FINAL_REVIEW')||canStage('PUBLISH'))))) buttons.push('<button id="returnDraftBtn" class="review-btn">إعادة للتعديل</button>');
   if(!editing&&canStage('PUBLISH')&&job.status==='PUBLISHED')buttons.push('<button id="archiveJobBtn" class="review-btn">أرشفة الوصف</button>');
   return buttons.join('');
 }
@@ -271,14 +275,18 @@ async function saveDraft() {
 
 async function transition(status) {
   if(status==='PUBLISHED'){
+    if(activeTab!=='overview'){activeTab='overview';render();return toast('راجع تاريخ السريان ثم اضغط الاعتماد');}
+    const date=byId('effectiveDate')?.value;if(!date||date<riyadhToday())return toast('حدد تاريخ السريان من اليوم أو بعده');
     const impact=await sb.rpc('get_job_publication_impact',{p_job_id:job.id,p_expected_revision:job.revision});
     if(impact.error)return toast(impact.error.message);
     const changes=publicationChanges(job),counts=impact.data;
     const message=[changes.firstPublication?'هذا أول إصدار معتمد للوصف.':`الإصدار المنشور الحالي: ${counts.published_revision}`,
       changes.changed.length?'الأجزاء المتغيرة: '+changes.changed.join('، '):'لا توجد تغييرات في محتوى الوصف مقارنة بالنسخة المنشورة.',
       `الموظفون المرتبطون: ${counts.linked_count}، منهم ${counts.active_count} حسابات نشطة و${counts.inactive_count} غير نشطة.`,
-      'عند النشر تصبح النسخة الجديدة متاحة للموظفين المرتبطين وتُفتح مهام إقرار الإصدار الجديد حسب الدورة الحالية.'];
-    if(!await window.AtwarUI.confirm({title:'مراجعة أثر الاعتماد والنشر',message:message.join('\n\n'),confirmText:'اعتماد ونشر الإصدار'}))return;
+      `تاريخ السريان: ${byId('effectiveDate')?.value||riyadhToday()}. تصبح النسخة الجديدة متاحة وتُفتح مهام الإقرار عند بدء السريان، وتبقى النسخة الحالية متاحة حتى ذلك الوقت.`];
+    if(!await window.AtwarUI.confirm({title:'مراجعة أثر الاعتماد والنشر',message:message.join('\n\n'),confirmText:'اعتماد الإصدار'}))return;
+    const release=await sb.rpc('approve_job_effective_date',{p_job_id:job.id,p_expected_revision:job.revision,p_effective_date:byId('effectiveDate')?.value||riyadhToday()});
+    if(release.error)return toast(release.error.message);job=release.data;await loadRelated();render();if(job.status==='PUBLISHED')void dispatchPublicationEmails();return toast(job.status==='PUBLISHED'?'اعتُمد الوصف وبدأ سريانه':'اعتُمد الوصف وحُفظ موعد السريان');
   }
   if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;await loadRelated();render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
   if (status === 'MANAGER_APPROVED' && proposals.some(item => item.status === 'PENDING' && item.action !== 'COMMENT')) return toast('اتخذ قرارًا في جميع المقترحات أولًا');
@@ -372,6 +380,12 @@ function bindActions() {
   byId('returnDraftBtn')?.addEventListener('click',returnForChanges);
   byId('finalReviewBtn')?.addEventListener('click',finishFinalReview);
   byId('publishBtn')?.addEventListener('click',() => transition('PUBLISHED'));
+  for(const id of ['periodicOwner','periodicDue','periodicInterval','periodicEnabled'])byId(id)?.addEventListener('change',()=>{lifecycleDirty=true;});
+  byId('effectiveDate')?.addEventListener('change',e=>{effectiveChoice=e.target.value;});
+  byId('cancelEffectiveDate')?.addEventListener('click',cancelEffectiveDate);
+  byId('savePeriodicReview')?.addEventListener('click',savePeriodicReview);
+  byId('requestPeriodicChange')?.addEventListener('click',requestPeriodicChange);
+  byId('completePeriodicReview')?.addEventListener('click',completePeriodicReview);
   byId('commentBtn')?.addEventListener('click',addComment);
   byId('assignEmployeeBtn')?.addEventListener('click',assignEmployee);
 }
@@ -383,8 +397,14 @@ async function loadRelated() {
     sb.from('job_description_comments').select('*').eq('job_description_id',job.id).order('created_at'),
     canStage('ASSIGN') ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
     sb.from('job_description_versions').select('revision,action,snapshot,actor_id,change_note,created_at').eq('job_description_id',job.id).order('revision',{ascending:false}).limit(30),
-    sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position')
+    sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position'),
+    sb.from('job_publication_schedules').select('*').eq('job_description_id',job.id).order('approved_at',{ascending:false}),
+    sb.from('job_periodic_reviews').select('*').eq('job_description_id',job.id).maybeSingle(),
+    sb.from('job_periodic_review_events').select('*').eq('job_description_id',job.id).order('reviewed_at',{ascending:false}).limit(20)
   ]);
+  for(const response of responses.slice(6))if(response.error)throw response.error;
+  schedules=responses[6].data||[];periodicReview=responses[7].data||null;periodicEvents=responses[8].data||[];
+  const scheduled=openSchedule();job.scheduled_effective_date=scheduled?.effective_date;job.schedule_status=scheduled?.status;
   proposals = responses[0].data || [];
   forms = (responses[1].data || []).map(item => ({...item.form_library,usage_note:item.usage_note}));
   comments = responses[2].data || [];
@@ -420,7 +440,7 @@ async function boot() {
 
 async function returnForChanges(){const reason=await window.AtwarUI.prompt({title:'إعادة الوصف للتعديل',message:'حدد المطلوب تصحيحه؛ يُحفظ السبب وتُفتح مهمة للإعداد.',required:true});if(reason===null)return;const r=await sb.rpc('return_job_description_for_changes',{p_job_id:job.id,p_expected_revision:job.revision,p_reason:reason});if(r.error)return toast(r.error.message);job=r.data;editing=false;await loadRelated();render();toast('أعيد الوصف للتعديل وسُجل السبب');}
 
-function historyView(){const previous=job.published_snapshot;const fields=[['المسمى',previous?.title,job.title],['الغرض',previous?.purpose,job.purpose],...['responsibilities','authorities','kpis','reports','qualifications','relationships'].map(key=>[{responsibilities:'المهام والمسؤوليات',authorities:'الصلاحيات',kpis:'المؤشرات',reports:'المخرجات',qualifications:'المؤهلات',relationships:'العلاقات'}[key],previous?.content?.[key],job.content?.[key]])];const text=value=>typeof value==='object'?JSON.stringify(value,null,2):value||'—';return `<section class="content-card"><h2>مقارنة المسودة بالنسخة المنشورة</h2>${previous?fields.filter(([,a,b])=>JSON.stringify(a)!==JSON.stringify(b)).map(([label,a,b])=>`<article class="comparison-card"><h3>${esc(label)}</h3><div class="compare-columns"><div><small>النسخة المنشورة ${esc(previous.revision)}</small><p style="white-space:pre-wrap">${esc(text(a))}</p></div><div><small>المسودة الحالية</small><p style="white-space:pre-wrap">${esc(text(b))}</p></div></div></article>`).join('')||'<p>لا توجد تغييرات عن المحتوى المنشور.</p>':'<p>لم يُنشر إصدار سابق لهذا الوصف.</p>'}</section><section class="content-card"><h2>سجل الإصدارات والقرارات</h2><div style="overflow:auto"><table class="workflow-history"><thead><tr><th>الإصدار</th><th>الإجراء</th><th>المسؤول</th><th>التاريخ</th><th>السبب</th></tr></thead><tbody>${versions.map(v=>`<tr><td>${v.revision}</td><td>${esc({CREATED:'إنشاء',UPDATED:'تحديث',SUBMITTED:'إرسال للمراجعة',CHANGES_REQUESTED:'إعادة للتعديل',MANAGER_APPROVED:'إنهاء مراجعة المدير',PUBLISHED:'اعتماد ونشر',ARCHIVED:'أرشفة'}[v.action]||v.action)}</td><td>${esc(users.find(u=>u.id===v.actor_id)?.full_name||'المسؤول المسجل')}</td><td>${new Date(v.created_at).toLocaleString('ar-SA')}</td><td>${esc(v.change_note||'—')}</td></tr>`).join('')}</tbody></table></div></section>`;}
+function versionHistoryView(){const previous=job.published_snapshot;const fields=[['المسمى',previous?.title,job.title],['الغرض',previous?.purpose,job.purpose],...['responsibilities','authorities','kpis','reports','qualifications','relationships'].map(key=>[{responsibilities:'المهام والمسؤوليات',authorities:'الصلاحيات',kpis:'المؤشرات',reports:'المخرجات',qualifications:'المؤهلات',relationships:'العلاقات'}[key],previous?.content?.[key],job.content?.[key]])];const text=value=>typeof value==='object'?JSON.stringify(value,null,2):value||'—';return `<section class="content-card"><h2>مقارنة المسودة بالنسخة المنشورة</h2>${previous?fields.filter(([,a,b])=>JSON.stringify(a)!==JSON.stringify(b)).map(([label,a,b])=>`<article class="comparison-card"><h3>${esc(label)}</h3><div class="compare-columns"><div><small>النسخة المنشورة ${esc(previous.revision)}</small><p style="white-space:pre-wrap">${esc(text(a))}</p></div><div><small>المسودة الحالية</small><p style="white-space:pre-wrap">${esc(text(b))}</p></div></div></article>`).join('')||'<p>لا توجد تغييرات عن المحتوى المنشور.</p>':'<p>لم يُنشر إصدار سابق لهذا الوصف.</p>'}</section><section class="content-card"><h2>سجل الإصدارات والقرارات</h2><div style="overflow:auto"><table class="workflow-history"><thead><tr><th>الإصدار</th><th>الإجراء</th><th>المسؤول</th><th>التاريخ</th><th>السبب</th></tr></thead><tbody>${versions.map(v=>`<tr><td>${v.revision}</td><td>${esc({CREATED:'إنشاء',UPDATED:'تحديث',SUBMITTED:'إرسال للمراجعة',CHANGES_REQUESTED:'إعادة للتعديل',MANAGER_APPROVED:'إنهاء مراجعة المدير',PUBLISHED:'اعتماد ونشر',ARCHIVED:'أرشفة'}[v.action]||v.action)}</td><td>${esc(users.find(u=>u.id===v.actor_id)?.full_name||'المسؤول المسجل')}</td><td>${new Date(v.created_at).toLocaleString('ar-SA')}</td><td>${esc(v.change_note||'—')}</td></tr>`).join('')}</tbody></table></div></section>`;}
 
 document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () => {activeTab = button.dataset.tab; editing = false; render();});
 boot().catch(error => {
@@ -428,3 +448,35 @@ boot().catch(error => {
   document.body.style.visibility = 'visible';
   byId('reviewState').textContent = 'تعذر فتح المراجعة: ' + error.message;
 });
+
+function openSchedule(){return schedules.find(s=>['PENDING','BLOCKED'].includes(s.status));}
+
+function lifecycleView(){return renderJobLifecycle({job,scheduled:openSchedule(),periodicReview,periodicEvents,users,stageOwners,me,canStage,today:riyadhToday(),effectiveChoice});}
+
+async function cancelEffectiveDate(){
+ const s=openSchedule(),note=await window.AtwarUI.prompt({title:'إلغاء جدولة السريان',message:'يسجل السبب ويعود الوصف إلى بانتظار الاعتماد. النسخة السارية تبقى متاحة.',required:true});if(note===null)return;
+ const r=await sb.rpc('cancel_job_effective_date',{p_schedule_id:s.id,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('ألغيت الجدولة وسُجل السبب');
+}
+async function savePeriodicReview(){
+ const r=await sb.rpc('save_job_periodic_review',{p_job_id:job.id,p_expected_revision:periodicReview?.revision||0,p_reviewer_id:byId('periodicOwner')?.value,p_due_on:byId('periodicDue')?.value,p_interval_months:Number(byId('periodicInterval')?.value),p_enabled:byId('periodicEnabled')?.value==='true'});
+ if(r.error)return toast(r.error.message);lifecycleDirty=false;await loadRelated();render();toast('حُفظ إعداد المراجعة الدورية');
+}
+async function completePeriodicReview(){
+ const note=await window.AtwarUI.prompt({title:'خلاصة المراجعة الدورية',message:'أكد أن النسخة السارية مناسبة ولم تستلزم تعديلًا.',value:'تمت المراجعة ولا توجد تغييرات.',required:true});if(note===null)return;
+ const r=await sb.rpc('complete_job_periodic_review',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('سُجلت المراجعة وحدد موعدها التالي دون تغيير الإصدار');
+}
+
+async function refreshLifecycle(){
+ if(!job||editing||lifecycleDirty||refreshingLifecycle||document.visibilityState==='hidden'||document.activeElement?.matches('input,select,textarea'))return;
+ refreshingLifecycle=true;try{const r=await sb.from('job_descriptions').select('*').eq('id',job.id).maybeSingle();if(r.error||!r.data)return;job=r.data;await loadRelated();render();}catch(error){console.warn('تعذر تحديث حالة دورة الوصف',error.message);}finally{refreshingLifecycle=false;}
+}
+setInterval(refreshLifecycle,60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refreshLifecycle();});
+window.addEventListener('beforeunload',e=>{if(lifecycleDirty){e.preventDefault();e.returnValue='';}});
+
+async function requestPeriodicChange(){
+ const note=await window.AtwarUI.prompt({title:'طلب تحديث الوصف بعد المراجعة الدورية',message:'وضح التعديلات المطلوبة. يُحفظ الطلب وتُفتح مهمة لمسؤول إعداد الأوصاف، وتبقى النسخة السارية دون تغيير.',required:true});if(note===null)return;
+ const r=await sb.rpc('request_job_periodic_change',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');
+}
+
+function historyView(){const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}
