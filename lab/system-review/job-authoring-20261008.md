@@ -16,3 +16,5 @@ Validation: 83 JavaScript test groups; authenticated database role lifecycle tes
 Security advisors: no new RLS table exposure. Intentional signed-in SECURITY DEFINER return RPC checks active user, current stage/assigned reviewer, expected revision and reason. Remaining advisory categories predate this change.
 
 UI preview lab/job-authoring-preview.html uses actual authoring module with synthetic in-memory directory and no production database or saving.
+
+Extended database test: acknowledgement retries return the same record; two subsequent publications leave exactly one pending acknowledgement task for the latest revision. Superseded pending tasks are retired without falsely marking employee acknowledgement complete. Published snapshot read is locked during acknowledgement.

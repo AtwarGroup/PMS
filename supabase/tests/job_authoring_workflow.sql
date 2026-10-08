@@ -54,10 +54,31 @@ do $$ declare j public.job_descriptions%rowtype;r uuid; old_snapshot jsonb; payl
  j:=public.decide_job_description_proposal(r,j.revision,'ACCEPTED');assert j.content#>>'{responsibilities,0,text}'='المهمة الثانية بعد التعديل';
  j:=public.finish_job_final_review(j.id);assert j.final_reviewed_at is not null;
  update public.job_descriptions set status='PUBLISHED' where id=j.id returning * into j;assert j.published_snapshot is not null;
+ insert into public.employee_job_assignments(profile_id,job_description_id,assigned_by,updated_by) values('eabb8105-e54d-45a3-90c8-15334698bbfc',j.id,(select auth.uid()),(select auth.uid())) on conflict(profile_id) do update set job_description_id=excluded.job_description_id,updated_by=excluded.updated_by;
  old_snapshot:=j.published_snapshot;
  payload:=current_setting('test.payload')::jsonb||jsonb_build_object('title','عنوان مسودة جديدة');
  j:=public.save_job_description_draft(j.id,j.revision,payload);assert j.status='DRAFT' and j.published_snapshot=old_snapshot;
 end $$;
+select set_config('request.jwt.claim.sub','eabb8105-e54d-45a3-90c8-15334698bbfc',true);
+do $$ declare a uuid;b uuid;begin
+ select id into a from public.acknowledge_job_description(current_setting('test.job_id')::uuid,'rollback authoring test');
+ select id into b from public.acknowledge_job_description(current_setting('test.job_id')::uuid,'rollback authoring test');assert a=b;
+end $$;
+select set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);
+do $$ declare j public.job_descriptions%rowtype; payload jsonb;begin
+ for i in 1..2 loop
+  select * into j from public.job_descriptions where id=current_setting('test.job_id')::uuid;
+  if j.status='PUBLISHED' then j:=public.save_job_description_draft(j.id,j.revision,current_setting('test.payload')::jsonb);end if;
+  j:=public.submit_job_description_draft(j.id,j.revision);
+  perform set_config('request.jwt.claim.sub','2347fbff-372e-43d1-a2e4-094f5b3159bf',true);j:=public.complete_job_description_review(j.id);
+  perform set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);j:=public.finish_job_final_review(j.id);
+  update public.job_descriptions set status='PUBLISHED' where id=j.id returning * into j;
+ end loop;
+end $$;
 reset role;
+do $$ declare c integer;begin
+ select count(*) into c from private.job_workflow_tasks w join public.tasks t on t.id=w.task_id where w.job_description_id=current_setting('test.job_id')::uuid and w.phase='EMPLOYEE_ACK' and t.status<>'مكتملة' and t.deleted_at is null;
+ assert c=1,'Latest revision must have exactly one pending acknowledgement task';
+end $$;
 select 'PASS: creation, retry, direct manager, role denial, return task, proposal reindex, publication and snapshot preservation' as result;
 rollback;
