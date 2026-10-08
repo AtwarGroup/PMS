@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {publicationChanges} from '../assets/js/job-workflow-model.mjs';
+const content={kpis:[{name:'مؤشر',source:'أ',weight:100}],responsibilities:[{text:'عمل'}]};
+const snapshot={title:'وظيفة',purpose:'غرض',content};
+const job={...structuredClone(snapshot),published_snapshot:structuredClone(snapshot)};
+assert.deepEqual(publicationChanges(job),{firstPublication:false,changed:[]});
+job.content.kpis[0]={weight:100,source:'أ',name:'مؤشر'};
+assert.deepEqual(publicationChanges(job).changed,[]);
+job.content.kpis[0].source='ب';
+assert.deepEqual(publicationChanges(job).changed,['مؤشرات الأداء']);
+job.title='وظيفة جديدة';
+assert.deepEqual(publicationChanges(job).changed,['المسمى','مؤشرات الأداء']);
+assert.equal(publicationChanges({...job,published_snapshot:null}).firstPublication,true);
+console.log('Publication impact detects source and title changes without object-order false positives');

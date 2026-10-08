@@ -1,6 +1,16 @@
 export const stageLabels={DRAFT:'مسودة',IN_REVIEW:'قيد مراجعة المدير',CHANGES_REQUESTED:'معاد للتعديل',PUBLISHED:'معتمد ومنشور',ARCHIVED:'مؤرشف'};
 export function jobStage(job){return job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?'بانتظار الاعتماد والنشر':'قيد المراجعة النهائية'):stageLabels[job.status]||job.status;}
 export function pendingChanges(rows){return rows.filter(x=>x.status==='PENDING'&&x.action!=='COMMENT');}
+// Object key ordering is not a business change; array ordering remains meaningful.
+function canonical(value){return Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;}
+export function publicationChanges(job){
+ const previous=job.published_snapshot;
+ const fields=[['المسمى','title'],['الإدارة','family'],['المستوى الوظيفي','job_level'],['الرئيس المباشر','reports_to_title'],['الغرض الوظيفي','purpose']];
+ const changed=fields.filter(([,key])=>JSON.stringify(canonical(previous?.[key]??''))!==JSON.stringify(canonical(job[key]??''))).map(([label])=>label);
+ for(const [key,label] of [['responsibilities','المهام والمسؤوليات'],['authorities','الصلاحيات'],['kpis','مؤشرات الأداء'],['reports','المخرجات والتقارير'],['qualifications','المؤهلات'],['relationships','العلاقات']])
+  if(JSON.stringify(canonical(previous?.content?.[key]??null))!==JSON.stringify(canonical(job.content?.[key]??null)))changed.push(label);
+ return {firstPublication:!previous,changed};
+}
 export function jobValidation(job){
  const c=job.content||{},issues=[];
  if((job.title||'').trim().length<2)issues.push('المسمى الوظيفي');

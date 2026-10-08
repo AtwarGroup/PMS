@@ -1,4 +1,4 @@
-import {jobStage} from './job-workflow-model.mjs?v=2.5.55';
+import {jobStage,publicationChanges} from './job-workflow-model.mjs?v=2.5.58';
 const sb = await window.atwarGetSupabase();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const byId = id => document.getElementById(id);
@@ -270,6 +270,16 @@ async function saveDraft() {
 }
 
 async function transition(status) {
+  if(status==='PUBLISHED'){
+    const impact=await sb.rpc('get_job_publication_impact',{p_job_id:job.id,p_expected_revision:job.revision});
+    if(impact.error)return toast(impact.error.message);
+    const changes=publicationChanges(job),counts=impact.data;
+    const message=[changes.firstPublication?'هذا أول إصدار معتمد للوصف.':`الإصدار المنشور الحالي: ${counts.published_revision}`,
+      changes.changed.length?'الأجزاء المتغيرة: '+changes.changed.join('، '):'لا توجد تغييرات في محتوى الوصف مقارنة بالنسخة المنشورة.',
+      `الموظفون المرتبطون: ${counts.linked_count}، منهم ${counts.active_count} حسابات نشطة و${counts.inactive_count} غير نشطة.`,
+      'عند النشر تصبح النسخة الجديدة متاحة للموظفين المرتبطين وتُفتح مهام إقرار الإصدار الجديد حسب الدورة الحالية.'];
+    if(!await window.AtwarUI.confirm({title:'مراجعة أثر الاعتماد والنشر',message:message.join('\n\n'),confirmText:'اعتماد ونشر الإصدار'}))return;
+  }
   if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;await loadRelated();render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
   if (status === 'MANAGER_APPROVED' && proposals.some(item => item.status === 'PENDING' && item.action !== 'COMMENT')) return toast('اتخذ قرارًا في جميع المقترحات أولًا');
   const payload = {status,updated_by:me.id};
