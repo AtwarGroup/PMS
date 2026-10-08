@@ -331,7 +331,8 @@ export function onValue(r,callback,errorCallback){
   const timer=setInterval(refreshWhenVisible,120000);
   const onVisibilityChange=()=>{if(document.visibilityState==='visible')refresh()};
   document.addEventListener('visibilitychange',onVisibilityChange);
-  return ()=>{coordinator.dispose();clearInterval(timer);document.removeEventListener('visibilitychange',onVisibilityChange);_listeners.delete(refresh)};
+  window.addEventListener('online',refreshWhenVisible);
+  return ()=>{coordinator.dispose();clearInterval(timer);document.removeEventListener('visibilitychange',onVisibilityChange);window.removeEventListener('online',refreshWhenVisible);_listeners.delete(refresh)};
 }
 
 // Refresh this client's task listeners after direct attachment writes.

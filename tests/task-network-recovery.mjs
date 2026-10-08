@@ -20,8 +20,11 @@ const sb={
   Object.assign(row,args.p_patch,{revision:row.revision+1});return {data:structuredClone(row),error:null};},
  functions:{invoke:async()=>({error:null})}
 };
-const ctx={window:{atwarGetSupabase:async()=>sb},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,console,crypto:globalThis.crypto};
-const bridge=await vm.runInNewContext(`(async()=>{${source}\nreturn {runTransaction};})()`,ctx);
+const onlineHandlers=new Set(),visibilityHandlers=new Set();
+const document={visibilityState:'visible',addEventListener:(_,fn)=>visibilityHandlers.add(fn),removeEventListener:(_,fn)=>visibilityHandlers.delete(fn)};
+sb.channel=()=>({on(){return this},subscribe(){return this}});
+const ctx={document,setInterval:()=>1,clearInterval:()=>{},window:{atwarGetSupabase:async()=>sb,addEventListener:(_,fn)=>onlineHandlers.add(fn),removeEventListener:(_,fn)=>onlineHandlers.delete(fn)},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,console,crypto:globalThis.crypto};
+const bridge=await vm.runInNewContext(`(async()=>{${source}\nreturn {runTransaction,onValue};})()`,ctx);
 const ref={path:'tasksByUser/user/test-task'};
 const edit=task=>({...task,desc:'saved after reconnect'});
 offlineRead=true;await assert.rejects(bridge.runTransaction(ref,edit),/Failed to fetch/);assert.equal(writeCalls,0);
@@ -36,3 +39,21 @@ await Promise.resolve();assert.equal(reads,1);release('fresh');assert.equal((awa
 await assert.rejects(shared.read('same-task-scope',()=>Promise.reject(networkError())),/Failed to fetch/);
 assert.equal(await shared.read('same-task-scope',()=> 'reconnected'),'reconnected');
 console.log('Real bridge: offline reads/writes reject, child-read failures block destructive saves, reconnect recovers, conflict retry preserves unrelated edits, 28 consumers coalesce.');
+
+// Exercise reconnect events through the actual bridge subscription lifecycle.
+const delivered=[],errors=[];
+const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
+const stop=bridge.onValue(ref,snapshot=>delivered.push(snapshot.val().title),error=>errors.push(error.message));
+await settle();assert.deepEqual(delivered,['Test']);
+offlineRead=true;for(const refresh of onlineHandlers)refresh();await settle();
+assert.deepEqual(delivered,['Test'],'A failed refresh must retain the last displayed snapshot');
+assert.deepEqual(errors,['Failed to fetch']);
+offlineRead=false;row.title='updated while disconnected';
+for(const refresh of onlineHandlers)refresh();await settle();
+assert.deepEqual(delivered,['Test','updated while disconnected'],'Returning online must refresh without waiting for polling');
+document.visibilityState='hidden';row.title='hidden change';
+for(const refresh of onlineHandlers)refresh();await settle();assert.equal(delivered.length,2);
+document.visibilityState='visible';for(const refresh of visibilityHandlers)refresh();await settle();
+assert.equal(delivered.at(-1),'hidden change');
+stop();assert.equal(onlineHandlers.size,0);assert.equal(visibilityHandlers.size,0);
+console.log('Actual bridge subscriptions: online recovery, retained data on failure, hidden-tab recovery and listener cleanup passed.');
