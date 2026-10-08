@@ -289,7 +289,32 @@ async function managerDone() {
   toast('تم الإرسال إلى مدير النظام للمراجعة والاعتماد');
 }
 
-async function finishFinalReview(){const result=await sb.rpc('finish_job_final_review',{p_job_id:job.id});if(result.error)return toast(result.error.message);job=result.data;render();toast('اكتملت المراجعة النهائية وانتقلت مهمة النشر للمسؤول عنها')}
+async function finishFinalReview() {
+  const latest = await sb.from('job_description_change_requests').select('*').eq('job_description_id',job.id).order('created_at');
+  if (latest.error) return toast('تعذر التحقق من المقترحات. حاول مرة أخرى قبل إنهاء المراجعة.');
+  proposals = latest.data || [];
+  const pending = proposals.filter(item => item.status === 'PENDING' && item.action !== 'COMMENT');
+  if (pending.length) {
+    editing = false;
+    activeTab = 'review';
+    render();
+    return toast(`يوجد ${pending.length} مقترحات بانتظار القرار. اقبلها أو عدّلها أو ارفضها قبل إنهاء المراجعة.`);
+  }
+  const result = await sb.rpc('finish_job_final_review',{p_job_id:job.id});
+  if (result.error) {
+    if (result.error.message?.includes('Resolve pending proposals first')) {
+      editing = false;
+      activeTab = 'review';
+      await loadRelated();
+      render();
+      return toast('أضيفت مقترحات جديدة بانتظار القرار. راجعها قبل إنهاء المراجعة.');
+    }
+    return toast(result.error.message);
+  }
+  job = result.data;
+  render();
+  toast('اكتملت المراجعة النهائية وانتقلت المهمة لمسؤول النشر');
+}
 
 async function assignEmployee() {
   const profileId = byId('assignmentEmployee')?.value;

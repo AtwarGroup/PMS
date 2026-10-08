@@ -78,7 +78,32 @@ async function createProposal(section,index,action){const original=sourceItem(se
 async function decideProposal(id,decision){const p=proposals.find(x=>x.id===id);if(!p)return;let proposal=p.proposed_value;if(decision==='REVISED'){const v=await window.AtwarUI.prompt({title:'تعديل المقترح قبل اعتماده',value:valueText(proposal),required:true});if(v===null||v.trim().length<2)return;proposal=typeof proposal==='object'?{...proposal,[p.section==='KPIS'||p.section==='REPORTS'?'name':'text']:v.trim()}:v.trim()}if(decision!=='REJECTED'&&p.action!=='COMMENT'){const payload=applyProposal(current,p,proposal);const u=await sb.from('job_descriptions').update({...payload,updated_by:me.id}).eq('id',current.id).select().maybeSingle();if(u.error||!u.data)return toast(u.error?.message||'تعذر تطبيق المقترح');current=u.data;jobs=jobs.map(x=>x.id===current.id?current:x)}const note=decision==='REJECTED'?await window.AtwarUI.prompt({title:'سبب رفض المقترح',required:true}):null;if(decision==='REJECTED'&&note===null)return;const r=await sb.from('job_description_change_requests').update({status:decision,proposed_value:proposal,admin_note:note}).eq('id',id);if(r.error)return toast(r.error.message);await loadReviewData();renderJobs();renderEditor();toast(decision==='REJECTED'?'تم رفض المقترح':'تم تطبيق المقترح على المسودة الإدارية')}
 function applyProposal(job,p,value){if(p.section==='PURPOSE')return{purpose:valueText(value)};const key={RESPONSIBILITIES:'responsibilities',AUTHORITIES:'authorities',KPIS:'kpis',REPORTS:'reports'}[p.section],content={...(job.content||{})},rows=[...arr(content[key])];if(p.action==='ADD')rows.push(value);else if(p.action==='DELETE')rows.splice(p.item_index,1);else rows[p.item_index]=value;content[key]=rows;return{content}}
 async function finishManagerReview(){const r=await sb.rpc('complete_job_description_review',{p_job_id:current.id});if(r.error)return toast(r.error.message);current=r.data;await loadReviewData();renderEditor();toast('تم الإرسال إلى مدير النظام للمراجعة والاعتماد')}
-async function finishFinalReview(){const r=await sb.rpc('finish_job_final_review',{p_job_id:current.id});if(r.error)return toast(r.error.message);current=r.data;renderEditor();toast('اكتملت المراجعة النهائية وانتقلت المهمة لمسؤول النشر')}
+async function finishFinalReview() {
+  const latest = await sb.from('job_description_change_requests').select('*').eq('job_description_id',current.id).order('created_at');
+  if (latest.error) return toast('تعذر التحقق من المقترحات. حاول مرة أخرى قبل إنهاء المراجعة.');
+  proposals = latest.data || [];
+  const pending = proposals.filter(item => item.status === 'PENDING' && item.action !== 'COMMENT');
+  if (pending.length) {
+    editing = false;
+    activeTab = 'proposals';
+    renderEditor();
+    return toast(`يوجد ${pending.length} مقترحات بانتظار القرار. اقبلها أو عدّلها أو ارفضها قبل إنهاء المراجعة.`);
+  }
+  const result = await sb.rpc('finish_job_final_review',{p_job_id:current.id});
+  if (result.error) {
+    if (result.error.message?.includes('Resolve pending proposals first')) {
+      editing = false;
+      activeTab = 'proposals';
+      await loadReviewData();
+      renderEditor();
+      return toast('أضيفت مقترحات جديدة بانتظار القرار. راجعها قبل إنهاء المراجعة.');
+    }
+    return toast(result.error.message);
+  }
+  current = result.data;
+  renderEditor();
+  toast('اكتملت المراجعة النهائية وانتقلت المهمة لمسؤول النشر');
+}
 async function finishAdminReview(){if(proposals.some(x=>x.status==='PENDING'&&x.action!=='COMMENT'))return toast('اتخذ قرارًا في جميع المقترحات أولًا');await transition('MANAGER_APPROVED')}
 function collect(key,original){return [...document.querySelectorAll(`[data-item="${key}"]`)].map((x,i)=>typeof original?.[i]==='object'?{...original[i],[key==='responsibilities'?'text':key==='authorities'?'text':'name']:x.value.trim()}:x.value.trim()).filter(x=>text(x))}
 async function save(extra={}){const c=current.content||{},payload={updated_by:me.id,...extra};if(activeTab==='overview'){payload.title=el('fTitle').value.trim();payload.family=el('fFamily').value.trim();payload.job_level=el('fLevel').value.trim();payload.purpose=el('fPurpose').value.trim();payload.reviewer_id=el('fReviewer').value||null}else if(activeTab==='responsibilities')payload.content={...c,responsibilities:collect('responsibilities',c.responsibilities)};else if(activeTab==='authorities')payload.content={...c,authorities:collect('authorities',c.authorities)};else if(activeTab==='performance')payload.content={...c,kpis:collect('kpis',c.kpis),reports:collect('reports',c.reports)};const r=await sb.from('job_descriptions').update(payload).eq('id',current.id).select().maybeSingle();if(r.error||!r.data)return toast(r.error?.message||'لم يسمح النظام بالحفظ');current=r.data;jobs=jobs.map(x=>x.id===current.id?current:x);editing=false;renderJobs();renderEditor();toast('تم الحفظ وتسجيل إصدار جديد')}
