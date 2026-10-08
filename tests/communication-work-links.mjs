@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {workReferences,workURL,resolveWorkReferences} from '../communication/work-links.mjs';
+const id='00000000-0000-4000-8000-000000000001';
+for(const kind of ['task','project','policy'])assert.deepEqual(workReferences('Hello '+workURL(kind,id)).map(r=>[r.kind,r.id]),[[kind,id]]);
+assert.equal(workReferences('https://evil.example/tasks/index.html?task='+id).length,0);
+assert.equal(workReferences('javascript:alert(1)').length,0);
+assert.throws(()=>workURL('task','<script>'));assert.throws(()=>workURL('bad',id));
+const calls=[];const sb={from(table){calls.push(table);return {select(){return this},in(){return this},is(){return this},then(resolve){return Promise.resolve({data:table==='tasks'?[{id,title:'Authorized'}]:[],error:null}).then(resolve)}}}};
+const cards=await resolveWorkReferences(sb,[{kind:'task',id},{kind:'policy',id}]);assert.equal(cards.get('task:'+id).title,'Authorized');assert.equal(cards.get('policy:'+id).restricted,true);assert.deepEqual(calls,['tasks','policies']);
+const failed=await resolveWorkReferences({from(){return {select(){return this},in(){return this},is(){return this},then(resolve){return Promise.resolve({error:{message:'offline'}}).then(resolve)}}}},[{kind:'task',id}]);assert.equal(failed.get('task:'+id).error,true);
+console.log('Shared work references: fixed routes, valid IDs, caller-scoped resolution and restricted/offline cards passed');

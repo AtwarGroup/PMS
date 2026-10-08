@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import vm from 'node:vm';
+const source=readFileSync(new URL('../assets/js/tasks-page.js',import.meta.url),'utf8');const code=source.slice(source.indexOf('let taskSourceGeneration=0;'),source.indexOf('function clearSelection()'));
+let selected={id:'one'},resolveRPC;const host={rows:[],replaceChildren(){this.rows=[]},append(row){this.rows.push(row)}};const context={document:{getElementById:()=>host,createElement:()=>({})},window:{atwarGetSupabase:async()=>({rpc:()=>new Promise(r=>resolveRPC=r)})},selectedTask:()=>selected,encodeURIComponent};vm.createContext(context);vm.runInContext(code,context);
+const pending=context.loadTaskCommunicationSources(selected);await new Promise(setImmediate);selected={id:'two'};resolveRPC({data:[{conversation:'private',message:'m'}],error:null});await pending;assert.equal(host.rows.length,0,'Late response must not attach wrong conversation to selected task');
+const valid=context.loadTaskCommunicationSources(selected);await new Promise(setImmediate);resolveRPC({data:[{conversation:'c &',message:'m ?'}],error:null});await valid;assert.equal(host.rows.length,1);assert.equal(host.rows[0].href,'../communication/?conversation=c%20%26&message=m%20%3F');
+const denied=context.loadTaskCommunicationSources(selected);await new Promise(setImmediate);resolveRPC({data:null,error:{message:'denied'}});await denied;assert.equal(host.rows.length,0);
+console.log('Task communication source navigation: stale selection, encoded routing and denied access passed');

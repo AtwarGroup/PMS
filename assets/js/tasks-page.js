@@ -2682,6 +2682,7 @@ function renderDetails(){
       : '<span>✓</span><span>تم — إغلاق التفاصيل</span>';
   }
 
+  void loadTaskCommunicationSources(task);
   const jobLink=document.getElementById('jobWorkflowLink');
   if(jobLink&&task.projectId){jobLink.classList.remove('hidden');jobLink.href='../projects/index.html?id='+encodeURIComponent(task.projectId);jobLink.textContent='فتح المشروع والخطة الزمنية';}
   if(jobLink&&!task.projectId){const workflow=task.jobWorkflow;jobLink.classList.toggle('hidden',!workflow);if(workflow){const jobId=String(workflow.job_id||'');jobLink.href=workflow.policy_id?`../policies/index.html?id=${encodeURIComponent(String(workflow.policy_id))}&version=${encodeURIComponent(String(workflow.policy_version_id||''))}`:workflow.request_id?`../job-library/employee-changes.html?id=${encodeURIComponent(String(workflow.request_id))}`:workflow.phase==='EMPLOYEE_ACK'?'../profile/index.html?view=job':`../job-library/review.html?id=${encodeURIComponent(jobId)}`;jobLink.textContent=workflow.policy_id?'فتح السياسة واتخاذ إجراء المرحلة':workflow.request_id?'فتح طلب تعديل الوصف واتخاذ القرار':workflow.phase==='EMPLOYEE_ACK'?'فتح وصفي الوظيفي والإقرار':'فتح الوصف الوظيفي واتخاذ الإجراء';}}
@@ -2802,6 +2803,13 @@ function renderDetails(){
   renderSubtasks(task);
   renderActivityLog(task);
   window.lucide?.createIcons();
+}
+let taskSourceGeneration=0;
+async function loadTaskCommunicationSources(task){
+ const host=document.getElementById('taskCommunicationSources');if(!host)return;const generation=++taskSourceGeneration;host.replaceChildren();
+ try{const sb=await window.atwarGetSupabase();const {data,error}=await sb.rpc('communication_task_sources',{p_task:task.id});if(error||generation!==taskSourceGeneration||selectedTask()?.id!==task.id)return;
+ for(const row of data||[]){const link=document.createElement('a');link.className='text-xs font-bold text-blue-600 hover:underline';link.textContent='فتح الرسالة المرتبطة في الدردشة';link.href='../communication/?conversation='+encodeURIComponent(row.conversation)+'&message='+encodeURIComponent(row.message);host.append(link);}
+ }catch{ /* Task use remains available if communication is unavailable. */ }
 }
 function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 

@@ -1,0 +1,23 @@
+begin;
+select set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);
+do $$ declare t uuid;c text:=gen_random_uuid()::text;m text:=gen_random_uuid()::text; begin
+ t:=public.create_task_safe('اختبار مصدر الدردشة','eabb8105-e54d-45a3-90c8-15334698bbfc','اختبار مؤقت','normal',current_date,current_date+30,'');
+ perform set_config('test.source_task',t::text,true);perform set_config('test.source_conversation',c,true);
+ insert into private.communication_conversations(id,payload) values(c,jsonb_build_object('id',c,'type','direct','members',jsonb_build_array(auth.uid()::text),'owner',auth.uid()::text));
+ insert into private.communication_messages(id,conversation_id,sender_id,client_id,payload) values(m,c,auth.uid(),gen_random_uuid()::text,jsonb_build_object('id',m,'conversation',c,'seq',1,'body','اختبار مؤقت'));
+ insert into private.communication_task_links values(m,t,auth.uid());
+end $$;
+set local role authenticated;
+do $$ begin if jsonb_array_length(public.communication_task_sources(current_setting('test.source_task')::uuid))<>1 then raise exception 'Member creator must see source';end if;end $$;
+select set_config('request.jwt.claim.sub','eabb8105-e54d-45a3-90c8-15334698bbfc',true);
+do $$ begin if public.communication_task_sources(current_setting('test.source_task')::uuid)<>'[]'::jsonb then raise exception 'Task access alone must not reveal conversation';end if;end $$;
+reset role;
+update private.communication_conversations set payload=jsonb_set(payload,'{members}',jsonb_build_array('eabb8105-e54d-45a3-90c8-15334698bbfc')) where id=current_setting('test.source_conversation');
+set local role authenticated;
+do $$ begin if jsonb_array_length(public.communication_task_sources(current_setting('test.source_task')::uuid))<>1 then raise exception 'Member assignee must see source';end if;end $$;
+select set_config('request.jwt.claim.sub','797d5893-d44d-489c-9109-91da4882acfe',true);
+do $$ begin if public.communication_task_sources(current_setting('test.source_task')::uuid)<>'[]'::jsonb then raise exception 'Removed admin member must not see source';end if;end $$;
+select set_config('request.jwt.claim.sub','',true);
+do $$ begin if public.communication_task_sources(current_setting('test.source_task')::uuid)<>'[]'::jsonb then raise exception 'Anonymous must not see source';end if;end $$;
+reset role;
+rollback;
