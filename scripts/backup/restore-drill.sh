@@ -28,19 +28,25 @@ test -s "$backup_dir/database.dump" || {
 
 docker run --rm postgres:17.6 pg_isready --dbname="$drill_url"
 docker run --rm --volume "$backup_dir:/backup:ro" postgres:17.6 \
-  pg_restore --dbname="$drill_url" --clean --if-exists --no-owner --no-privileges \
+  pg_restore --dbname="$drill_url" --exit-on-error --clean --if-exists --no-owner --no-privileges \
   /backup/database.dump
 
-docker run --rm postgres:17.6 psql "$drill_url" -v ON_ERROR_STOP=1 <<'SQL'
-select to_regclass('public.tasks') is not null as tasks_table_exists;
-select to_regclass('public.profiles') is not null as profiles_table_exists;
-select count(*) >= 0 as tasks_readable from public.tasks;
-select count(*) >= 0 as profiles_readable from public.profiles;
-select count(*) = 0 as valid_task_dates
-from public.tasks
-where start_date is not null
-  and due_date is not null
-  and due_date < start_date;
+docker run --rm -i postgres:17.6 psql "$drill_url" -v ON_ERROR_STOP=1 <<'SQL'
+DO $verify$
+BEGIN
+  IF to_regclass('public.tasks') IS NULL OR to_regclass('public.profiles') IS NULL THEN
+    RAISE EXCEPTION 'Restored database is missing tasks or profiles';
+  END IF;
+  PERFORM count(*) FROM public.tasks;
+  PERFORM count(*) FROM public.profiles;
+  IF EXISTS (
+    SELECT 1 FROM public.tasks
+    WHERE start_date IS NOT NULL AND due_date IS NOT NULL AND due_date < start_date
+  ) THEN
+    RAISE EXCEPTION 'Restored tasks contain invalid date ranges';
+  END IF;
+END
+$verify$;
 SQL
 
 echo "Disposable database restore drill passed."
