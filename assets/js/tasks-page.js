@@ -2682,6 +2682,7 @@ function renderDetails(){
       : '<span>✓</span><span>تم — إغلاق التفاصيل</span>';
   }
 
+  const improvementLink=document.getElementById('taskImprovementLink');if(improvementLink)improvementLink.href='../workspace/improvements.html?task='+encodeURIComponent(task.id);
   void loadTaskCommunicationSources(task);
   const jobLink=document.getElementById('jobWorkflowLink');
   if(jobLink&&task.projectId){jobLink.classList.remove('hidden');jobLink.href='../projects/index.html?id='+encodeURIComponent(task.projectId);jobLink.textContent='فتح المشروع والخطة الزمنية';}

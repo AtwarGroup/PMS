@@ -5,7 +5,7 @@
 <title>ATWAR ONE – مساحتي</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.5.41"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.5.48"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
 <style>
 .ws-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
@@ -49,7 +49,7 @@
 <atwar-header></atwar-header>
 <main class="atwar-content">
 <header class="atwar-page-head space-welcome"><div><h1>مساحتي</h1><p>إجراءاتك المطلوبة وطلباتك ومشاريعك؛ متابعة واضحة في مكان واحد.</p></div><span id="spaceSync" class="space-sync" role="status">جاري تجهيز مساحتك…</span></header>
-<p id="spaceFocus" class="space-focus">ماذا تحتاج إلى إنجازه اليوم؟</p>
+<div style="margin-bottom:18px"><a class="atwar-btn" href="improvements.html">مقترحات التحسين والأتمتة</a></div><p id="spaceFocus" class="space-focus">ماذا تحتاج إلى إنجازه اليوم؟</p>
 <div class="space-grid">
 <section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="calendar-check-2"></i> مهامي اليوم <span id="spaceCounttasks" class="space-count">—</span></h2><a href="../tasks/index.html?owner=me">جميع مهامي</a></header><div id="spacetasks" class="space-body"><p class="space-empty">جاري تحميل المهام…</p></div></section>
 <section class="space-panel"><header class="space-panel-head"><h2><i data-lucide="stamp"></i> المطلوب مني <span id="spaceCountdecisions" class="space-count">—</span></h2><a href="../tasks/index.html">فتح المهام</a></header><div id="spacedecisions" class="space-body"><p class="space-empty">جاري تحميل المراجعات…</p></div></section>
@@ -84,7 +84,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script type="module" id="workspaceSupabaseNotes">
-import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.46';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.49';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
   const {data:{session},error:se}=await sb.auth.getSession();

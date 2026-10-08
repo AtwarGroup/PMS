@@ -271,6 +271,13 @@
       location.href=depthPrefix+(row.type==='communication'?'communication/':'communication-trial/')+'?conversation='+encodeURIComponent(data.conversation)+'&message='+encodeURIComponent(data.message);return true;
     }
 
+    if(row.improvement_id){
+      const {data:proposal,error}=await sb.from('improvement_proposals').select('id').eq('id',row.improvement_id).maybeSingle();
+      if(error||!proposal){onError('المقترح غير متاح لك حاليًا.');return false;}
+      const {error:readError}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
+      if(readError){onError('تعذر تحديث حالة الإشعار.');return false;}
+      location.href=depthPrefix+'workspace/improvements.html?id='+encodeURIComponent(proposal.id);return true;
+    }
     if(row.project_id){
       const {data:project,error}=await sb.from('projects').select('id').eq('id',row.project_id).maybeSingle();
       if(error||!project){onError('المشروع غير متاح لك حاليًا.');return false}

@@ -1,0 +1,7 @@
+export const proposalStates={SUBMITTED:'مقدّم',STUDY:'قيد الدراسة',ACCEPTED:'مقبول',DEFERRED:'مؤجّل',NOT_SUITABLE:'غير مناسب حاليًا'};
+export const proposalPriorities={HIGH:'عالية',MEDIUM:'متوسطة',LOW:'منخفضة'};
+export const proposalLink=id=>`../workspace/improvements.html?id=${encodeURIComponent(id)}`;
+export function proposalNext(row){if(row.task_id||row.project_id)return 'مسؤول التنفيذ — متابعة المهمة أو المشروع';return {SUBMITTED:'مسؤول النظام لبدء الدراسة',STUDY:'مسؤول النظام لتقييم الإمكانية وتحديد القرار',ACCEPTED:'مسؤول النظام لتحديد المسؤول والموعد',DEFERRED:'مسؤول النظام لإعادة الدراسة عند توفر الإمكانية',NOT_SUITABLE:'انتهت الدراسة؛ يمكن إعادة فتحها عند تغير الظروف'}[row.status]||'';}
+export function proposalDecisions(row,profile){if(profile?.role!=='admin'||profile.active===false||profile.status==='inactive'||row.task_id||row.project_id)return [];return row.status==='STUDY'?['ACCEPTED','DEFERRED','NOT_SUITABLE']:['SUBMITTED','DEFERRED','NOT_SUITABLE','ACCEPTED'].includes(row.status)?['STUDY']:[];}
+export function proposalNeedsAction(row,profile){return profile?.role==='admin'&&profile.active!==false&&profile.status!=='inactive'&&!row.task_id&&!row.project_id&&['SUBMITTED','STUDY','ACCEPTED'].includes(row.status);}
+export const proposalExecutionStates={PLANNING:'تخطيط',ACTIVE:'قيد التنفيذ',PAUSED:'متوقف مؤقتًا',CLOSED:'مكتمل ومعتمد',CANCELLED:'ملغى',DELETED:'محذوف'};

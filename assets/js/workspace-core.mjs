@@ -1,3 +1,4 @@
+import {proposalStates,proposalNext,proposalNeedsAction,proposalLink} from './improvements-core.mjs?v=1.0.0';
 import {canApproveRelationalTask} from './tasks-core.mjs?v=1.9.8';
 import {weightedProgress} from './projects-core.mjs';
 export const escape=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -11,7 +12,7 @@ export function taskLink(t){
  if(w?.job_id)return `../job-library/review.html?id=${encodeURIComponent(w.job_id)}`;
  return ordinaryTaskLink(t);
 }
-export function requestModel({profile,tasks=[],reschedules=[],changes=[],policies=[],versions=[]}){
+export function requestModel({profile,tasks=[],reschedules=[],changes=[],policies=[],versions=[],proposals=[]}){
  const byTask=new Map(tasks.filter(t=>!t.deleted_at).map(t=>[t.id,t]));const actions=[],tracking=[],replaced=new Set();
  const add=(id,title,href,state,next,note,action=false,date='',taskIds=[])=>{const row={id,title,href,state,next,note,action,date};if(action){actions.push(row);taskIds.filter(Boolean).forEach(x=>replaced.add(x));}else tracking.push(row);};
  for(const r of reschedules){const t=byTask.get(r.task_id);if(!t)continue;const pending=r.status==='PENDING'&&['قيد الانتظار','قيد التنفيذ'].includes(t.status);const action=pending&&(r.task_creator_id===profile.id||profile.role==='admin');if(!action&&r.requester_id!==profile.id)continue;
@@ -22,6 +23,7 @@ export function requestModel({profile,tasks=[],reschedules=[],changes=[],policie
  const stageOwners={PREPARATION:'preparer_id',REVIEW:'reviewer_id',APPROVAL:'approver_id',RATIFICATION:'ratifier_id'},stageNames={PREPARATION:'إعداد',REVIEW:'مراجعة',APPROVAL:'موافقة',RATIFICATION:'اعتماد',APPROVED:'معتمدة'};
  for(const v of versions){const p=policies.find(p=>p.id===v.policy_id);if(!p)continue;const owner=p[stageOwners[v.status]],action=!!owner&&owner===profile.id;const involved=[p.preparer_id,p.reviewer_id,p.approver_id,p.ratifier_id,v.created_by].includes(profile.id);if(!action&&!involved&&profile.role!=='admin')continue;
  add('policy:'+v.id,p.title+' · إصدار '+v.version_number,`../policies/index.html?id=${encodeURIComponent(p.id)}&version=${encodeURIComponent(v.id)}`,stageNames[v.status]||v.status,v.status==='APPROVED'?'اكتمل الاعتماد':owner?'صاحب صلاحية '+stageNames[v.status]:'مسؤول النظام لتحديد صاحب الصلاحية',v.effective_date?'تاريخ السريان: '+v.effective_date:'',action,v.updated_at,[v.current_task_id]);}
+ for(const p of proposals){const action=proposalNeedsAction(p,profile);if(!action&&p.requester_id!==profile.id&&profile.role!=='admin')continue;add('improvement:'+p.id,'مقترح: '+p.title,proposalLink(p.id),proposalStates[p.status]+(p.task_id||p.project_id?' · مرتبط بالتنفيذ':''),proposalNext(p),p.decision_note,action,p.updated_at);}
  tracking.sort((a,b)=>(b.date||'').localeCompare(a.date||''));return {actions,tracking,replaced};
 }
 export function renderRequests(rows,emptyText){return rows.length?rows.map(r=>`<a class="space-row" href="${escape(r.href)}"><span class="space-row-icon"><i data-lucide="${r.action?'stamp':'git-pull-request'}"></i></span><span class="space-row-copy"><strong>${escape(r.title)}</strong><small>${escape(r.state)} · ${escape(r.next)}</small>${r.note?`<small>${escape(r.note)}</small>`:''}</span><span class="space-pill">${r.action?'اتخاذ إجراء':'التفاصيل'}</span></a>`).join(''):`<p class="space-empty">${escape(emptyText)}</p>`;}
