@@ -276,16 +276,16 @@ async function saveDraft() {
 async function transition(status) {
   if(status==='PUBLISHED'){
     if(activeTab!=='overview'){activeTab='overview';render();return toast('راجع تاريخ السريان ثم اضغط الاعتماد');}
-    const date=byId('effectiveDate')?.value;if(!date||date<riyadhToday())return toast('حدد تاريخ السريان من اليوم أو بعده');
-    const impact=await sb.rpc('get_job_publication_impact',{p_job_id:job.id,p_expected_revision:job.revision});
+    const publication=structuredClone(job);const date=byId('effectiveDate')?.value;if(!date||date<riyadhToday())return toast('حدد تاريخ السريان من اليوم أو بعده');
+    const impact=await sb.rpc('get_job_publication_impact',{p_job_id:publication.id,p_expected_revision:publication.revision});
     if(impact.error)return toast(impact.error.message);
-    const changes=publicationChanges(job),counts=impact.data;
+    const changes=publicationChanges(publication),counts=impact.data;
     const message=[changes.firstPublication?'هذا أول إصدار معتمد للوصف.':`الإصدار المنشور الحالي: ${counts.published_revision}`,
       changes.changed.length?'الأجزاء المتغيرة: '+changes.changed.join('، '):'لا توجد تغييرات في محتوى الوصف مقارنة بالنسخة المنشورة.',
       `الموظفون المرتبطون: ${counts.linked_count}، منهم ${counts.active_count} حسابات نشطة و${counts.inactive_count} غير نشطة.`,
-      `تاريخ السريان: ${byId('effectiveDate')?.value||riyadhToday()}. تصبح النسخة الجديدة متاحة وتُفتح مهام الإقرار عند بدء السريان، وتبقى النسخة الحالية متاحة حتى ذلك الوقت.`];
+      `تاريخ السريان: ${date}. تصبح النسخة الجديدة متاحة وتُفتح مهام الإقرار عند بدء السريان، وتبقى النسخة الحالية متاحة حتى ذلك الوقت.`];
     if(!await window.AtwarUI.confirm({title:'مراجعة أثر الاعتماد والنشر',message:message.join('\n\n'),confirmText:'اعتماد الإصدار'}))return;
-    const release=await sb.rpc('approve_job_effective_date',{p_job_id:job.id,p_expected_revision:job.revision,p_effective_date:byId('effectiveDate')?.value||riyadhToday()});
+    const release=await sb.rpc('approve_job_effective_date',{p_job_id:publication.id,p_expected_revision:publication.revision,p_effective_date:date});
     if(release.error)return toast(release.error.message);job=release.data;await loadRelated();render();if(job.status==='PUBLISHED')void dispatchPublicationEmails();return toast(job.status==='PUBLISHED'?'اعتُمد الوصف وبدأ سريانه':'اعتُمد الوصف وحُفظ موعد السريان');
   }
   if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;await loadRelated();render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
@@ -462,8 +462,9 @@ async function savePeriodicReview(){
  if(r.error)return toast(r.error.message);lifecycleDirty=false;await loadRelated();render();toast('حُفظ إعداد المراجعة الدورية');
 }
 async function completePeriodicReview(){
+ const decision={id:job.id,reviewRevision:periodicReview.revision,publishedRevision:Number(job.published_snapshot.revision)};
  const note=await window.AtwarUI.prompt({title:'خلاصة المراجعة الدورية',message:'أكد أن النسخة السارية مناسبة ولم تستلزم تعديلًا.',value:'تمت المراجعة ولا توجد تغييرات.',required:true});if(note===null)return;
- const r=await sb.rpc('complete_job_periodic_review',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('سُجلت المراجعة وحدد موعدها التالي دون تغيير الإصدار');
+ const r=await sb.rpc('complete_job_periodic_review',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('سُجلت المراجعة وحدد موعدها التالي دون تغيير الإصدار');
 }
 
 async function refreshLifecycle(){
@@ -475,8 +476,9 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 window.addEventListener('beforeunload',e=>{if(lifecycleDirty){e.preventDefault();e.returnValue='';}});
 
 async function requestPeriodicChange(){
+ const decision={id:job.id,reviewRevision:periodicReview.revision,publishedRevision:Number(job.published_snapshot.revision)};
  const note=await window.AtwarUI.prompt({title:'طلب تحديث الوصف بعد المراجعة الدورية',message:'وضح التعديلات المطلوبة. يُحفظ الطلب وتُفتح مهمة لمسؤول إعداد الأوصاف، وتبقى النسخة السارية دون تغيير.',required:true});if(note===null)return;
- const r=await sb.rpc('request_job_periodic_change',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
+ const r=await sb.rpc('request_job_periodic_change',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
 }
 
 function historyView(){const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}

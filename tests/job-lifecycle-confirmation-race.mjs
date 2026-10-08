@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {publicationChanges} from '../assets/js/job-workflow-model.mjs';
+const source=readFileSync(new URL('../assets/js/job-review-page.js',import.meta.url),'utf8');
+const transition=source.slice(source.indexOf('async function transition(status)'),source.indexOf('async function managerDone()'));
+const calls=[];
+const context=vm.createContext({structuredClone,publicationChanges,riyadhToday:()=> '2026-10-09',byId:()=>({value:'2026-11-01'}),toast:()=>{},loadRelated:async()=>{},render:()=>{},activeTab:'overview',job:{id:'job',revision:7,title:'نسخة راجعها المستخدم',status:'MANAGER_APPROVED'},window:{AtwarUI:{confirm:async()=>{context.job={id:'job',revision:9,title:'نسخة أخرى'};return true;}}},sb:{rpc:async(name,args)=>{calls.push({name,args});if(name==='get_job_publication_impact'){context.job={id:'job',revision:8,title:'نسخة أحدث'};return {data:{linked_count:1,active_count:1,inactive_count:0}};}return {data:{id:'job',revision:7,status:'MANAGER_APPROVED'}};}}});
+await vm.runInContext(transition+';transition("PUBLISHED");',context);
+assert.equal(calls[1].args.p_expected_revision,7,'Publication must use the revision shown before confirmation, not refreshed global state');
+assert.equal(calls[1].args.p_effective_date,'2026-11-01');
+const start=source.indexOf('async function completePeriodicReview()');const end=source.indexOf('\n}',start)+2;
+const periodic=source.slice(start,end);
+const reviewCalls=[];
+const reviewContext=vm.createContext({job:{id:'job',published_snapshot:{revision:4}},periodicReview:{revision:2},toast:()=>{},loadRelated:async()=>{},render:()=>{},window:{AtwarUI:{prompt:async()=>{reviewContext.periodicReview={revision:3};reviewContext.job.published_snapshot.revision=5;return 'لا توجد تغييرات';}}},sb:{rpc:async(name,args)=>{reviewCalls.push(args);return {data:{}};}}});
+await vm.runInContext(periodic+';completePeriodicReview();',reviewContext);
+assert.equal(reviewCalls[0].p_expected_revision,2);assert.equal(reviewCalls[0].p_published_revision,4);
+console.log('Actual publication/review handlers retain the confirmed revision across asynchronous refreshes');
