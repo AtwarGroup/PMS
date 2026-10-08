@@ -1,4 +1,4 @@
-import {renderJobLifecycle} from './job-lifecycle-view.mjs?v=2.5.59';
+import {renderJobLifecycle} from './job-lifecycle-view.mjs?v=2.5.60';
 import {jobStage,publicationChanges,riyadhToday,periodicDue} from './job-workflow-model.mjs?v=2.5.59';
 const sb = await window.atwarGetSupabase();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -476,7 +476,7 @@ window.addEventListener('beforeunload',e=>{if(lifecycleDirty){e.preventDefault()
 
 async function requestPeriodicChange(){
  const note=await window.AtwarUI.prompt({title:'طلب تحديث الوصف بعد المراجعة الدورية',message:'وضح التعديلات المطلوبة. يُحفظ الطلب وتُفتح مهمة لمسؤول إعداد الأوصاف، وتبقى النسخة السارية دون تغيير.',required:true});if(note===null)return;
- const r=await sb.rpc('request_job_periodic_change',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');
+ const r=await sb.rpc('request_job_periodic_change',{p_job_id:job.id,p_expected_revision:periodicReview.revision,p_published_revision:Number(job.published_snapshot.revision),p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
 }
 
 function historyView(){const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}
