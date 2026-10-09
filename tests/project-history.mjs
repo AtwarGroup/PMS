@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {historyQuery,historyPage,mergeHistory} from '../assets/js/project-history.mjs';
+const stamp='2026-10-09T12:00:00.123456+00:00';
+const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
+let rows=Array.from({length:205},(_,n)=>({id:uuid(n+1),created_at:stamp,project_id:'project'}));
+const calls=[];
+const sb={from(table){assert(['project_messages','project_events'].includes(table));let project,cursor;return {select(){return this;},eq(key,value){assert.equal(key,'project_id');project=value;return this;},or(filter){calls.push(filter);cursor=filter.split('id.lt.')[1].slice(0,-1);return this;},order(){return this;},async limit(size){assert.equal(size,101);return {data:rows.filter(r=>r.project_id===project&&(!cursor||r.id<cursor)).sort((a,b)=>b.id.localeCompare(a.id)).slice(0,size)};}};}};
+const read=async(table,before)=>historyPage((await historyQuery(sb,table,'project',before)).data);
+let first=await read('project_messages');assert.equal(first.rows.length,100);assert(first.more);
+let all=mergeHistory([],first.rows);
+// A head insertion between pages must neither shift nor duplicate older records.
+rows.push({id:uuid(206),created_at:stamp,project_id:'project'});
+const second=await read('project_messages',first.cursor);assert.equal(second.rows.length,100);assert(second.more);
+all=mergeHistory(all,second.rows);
+const third=await read('project_messages',second.cursor);assert.equal(third.rows.length,5);assert.equal(third.more,false);
+all=mergeHistory(all,third.rows);assert.equal(all.length,205);assert.deepEqual(all.map(x=>x.id),Array.from({length:205},(_,i)=>uuid(i+1)));
+assert(calls.every(x=>x.includes('created_at.eq.'+stamp)),'Cursor must preserve Postgres microsecond precision');
+const latest=await read('project_messages');all=mergeHistory(all,latest.rows);assert.equal(all.length,206,'Live refresh keeps previously loaded older messages');assert.equal(new Set(all.map(x=>x.id)).size,206);
+assert.equal((await read('project_events',second.cursor)).rows.length,5);
+assert.throws(()=>historyQuery(sb,'profiles','project'),/Invalid project history table/);
+assert.throws(()=>historyQuery(sb,'project_messages','project',{created_at:stamp+',id.gt.0',id:uuid(1)}),/Invalid history cursor/);
+assert.throws(()=>historyQuery(sb,'project_messages','project',{created_at:stamp,id:'invalid'}),/Invalid history cursor/);
+assert.deepEqual(historyPage([]),{rows:[],more:false,cursor:null});
+console.log('Project history: tied timestamps, microsecond precision, stable paging during insertion, no duplicates and retained older rows passed');
