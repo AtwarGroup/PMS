@@ -1,9 +1,9 @@
-import {workspaceModel,renderWorkspace,requestModel,renderRequests} from './workspace-core.mjs?v=2.5.49';
+import {workspaceModel,renderWorkspace,requestModel,renderRequests} from './workspace-core.mjs?v=2.5.54';
 async function allRows(makeQuery){let rows=[];for(let from=0;;from+=500){const {data,error}=await makeQuery().range(from,from+499);if(error)throw error;rows.push(...(data||[]));if((data||[]).length<500)return rows;}}
 export async function mountWorkspace(sb,profile){
- const status=document.getElementById('spaceSync');let pending=false;
+ const status=document.getElementById('spaceSync');let pending=false,queued=false,suspended=false;
  async function refresh(){
-  if(pending||document.hidden)return;pending=true;status.textContent='جاري تحديث مساحتك…';
+  if(suspended||document.hidden)return;if(pending){queued=true;return;}pending=true;queued=false;status.textContent='جاري تحديث مساحتك…';
   const sections=['tasks','decisions','projects','updates','requests'];
   try{
    const [tasks,projects,members,people,notifications,reschedules,changes,policies,versions,proposals]=await Promise.allSettled([
@@ -32,9 +32,9 @@ export async function mountWorkspace(sb,profile){
    document.querySelectorAll('[data-space-notification]').forEach(b=>b.onclick=async()=>{const row=value(notifications).find(n=>n.id===b.dataset.spaceNotification);await window.atwarOpenNotificationRecord?.(sb,row,'../',message=>{status.textContent=message;});});
    status.textContent=Object.values(failed).some(Boolean)?'بعض الأقسام غير متاحة؛ نعيد المحاولة تلقائيًا.':'محدّث الآن · تحديث تلقائي';window.lucide?.createIcons();
   }catch{status.textContent='تعذر التحديث؛ نعيد المحاولة عند استقرار الاتصال.';}
-  finally{pending=false;}
+  finally{pending=false;if(queued&&!suspended&&!document.hidden){queued=false;void refresh();}}
  }
  await refresh();let timer=setInterval(refresh,60000);
  addEventListener('online',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
- addEventListener('pagehide',()=>{clearInterval(timer);});addEventListener('pageshow',e=>{if(e.persisted){clearInterval(timer);timer=setInterval(refresh,60000);void refresh();}});
+ addEventListener('pagehide',()=>{suspended=true;queued=false;clearInterval(timer);});addEventListener('pageshow',e=>{if(e.persisted){suspended=false;clearInterval(timer);timer=setInterval(refresh,60000);void refresh();}});
 }

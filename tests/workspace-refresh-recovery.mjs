@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs';
+const events=new Map(),elements=new Map();let timer,cycles=0,release,hold=false;
+const element=id=>{if(!elements.has(id))elements.set(id,{textContent:'',innerHTML:''});return elements.get(id);};
+globalThis.document={hidden:false,getElementById:element,querySelectorAll:()=>[],addEventListener:(name,fn)=>events.set(name,fn)};
+globalThis.addEventListener=(name,fn)=>events.set(name,fn);
+globalThis.window={};globalThis.setInterval=fn=>(timer=fn,1);globalThis.clearInterval=()=>{};
+const sb={from(table){const query={select(){return this},is(){return this},eq(){return this},order(){return this},limit(){return this},async range(){if(table==='tasks'){cycles++;if(hold){hold=false;await new Promise(r=>release=r);}}return {data:[],error:null};},then(resolve){return Promise.resolve({data:[],error:null}).then(resolve);}};return query;}};
+await mountWorkspace(sb,{id:'employee',role:'employee'});assert.equal(cycles,1);
+hold=true;const refresh=timer();assert.equal(cycles,2);
+events.get('online')();events.get('online')();events.get('visibilitychange')();assert.equal(cycles,2,'Concurrent requests must not start overlapping reads');
+release();await refresh;await new Promise(r=>setImmediate(r));assert.equal(cycles,3,'Connection and visibility events during loading coalesce into one fresh read');
+hold=true;const leaving=timer();assert.equal(cycles,4);events.get('online')();events.get('pagehide')();release();await leaving;await new Promise(r=>setImmediate(r));assert.equal(cycles,4,'Queued reads must not run after pagehide');
+events.get('online')();assert.equal(cycles,4,'Suspended page must not read');events.get('pageshow')({persisted:true});await new Promise(r=>setImmediate(r));assert.equal(cycles,5,'Returning from browser cache resumes and refreshes');
+document.hidden=true;events.get('online')();assert.equal(cycles,5);document.hidden=false;events.get('visibilitychange')();await new Promise(r=>setImmediate(r));assert.equal(cycles,6);
+console.log('Workspace refresh: inflight reconnect coalescing, page suspension, cache restore and visibility recovery passed');
