@@ -7,6 +7,7 @@ let state=null,active=null,filter='all',reply=null,file=null,mentions=[],sourceM
 let workCards=new Map(),shareBusy=false,shareGeneration=0;
 const olderMessages=new Map(),historyEnded=new Set();
 let historyLoading=false;
+let attachmentReadGeneration=0;
 let notificationTarget=null,editingGroup=null,currentPage='communication',peopleMode=false,conversationView='chat',threadRoot=null,threadFile=null,notificationBaseline=null,notifying=false;
 const sessionChannel=typeof BroadcastChannel!=='undefined'&&!window.COMMUNICATION_REVIEW?null:null;
 const deviceId=sessionStorage.getItem('communication-device')||crypto.randomUUID();sessionStorage.setItem('communication-device',deviceId);let lastActivity=Date.now();
@@ -73,6 +74,7 @@ function renderDetails(){if($('details').hidden||!conv())return;const c=conv(),t
  $('details').innerHTML=`<div class="detail-head"><h3>${task?'تفاصيل المهمة':'تفاصيل المحادثة'}</h3><button id="closeDetails" class="icon" aria-label="إغلاق التفاصيل">×</button></div>${task?`<h3>${esc(task.title)}</h3><p class="hint">${esc(task.status)} · ${esc(task.due)}</p><p class="hint">المسند إليه: ${esc(person(task.assignee)?.name)}</p><button class="primary link-source" data-conversation="${task.conversation}">فتح نقاش المهمة</button>${state.conversations.some(x=>x.id===task.sourceConversation)?`<button class="link-source" data-conversation="${task.sourceConversation}">المحادثة الأصلية</button>`:''}<p class="hint">الحالات والاعتمادات الرسمية ستُربط بمحرك المهام بعد اعتماد التجربة. لا تغيّر هذه النسخة مهام النظام.</p>`:`<p class="hint">${types[c.type]} · ${c.members.length} أعضاء</p>${c.type==='group'&&(c.owner===state.me.id||state.me.role==='admin')?'<button id="manageMembers">إدارة الأعضاء</button>':''}<h4>فريق المحادثة</h4>${c.members.map(id=>`<div class="person">${avatar(id)}<div><strong>${esc(person(id)?.name)}</strong><small>${esc(person(id)?.department)} · ${statuses[person(id)?.status]||'غير متصل'}</small></div></div>`).join('')}<div class="detail-section"><h4>الملفات</h4>${state.messages.filter(m=>m.conversation===active&&m.file).map(m=>`<a class="file" href="#" data-trial-file="${m.file.id}" download>${esc(m.file.name)}</a>`).join('')||'<p class="hint">لا توجد ملفات بعد.</p>'}</div><div class="detail-section"><h4>الرسائل المثبتة</h4>${state.messages.filter(m=>m.conversation===active&&m.pinned).map(m=>`<p class="hint">${esc(m.body)}</p>`).join('')||'<p class="hint">لا توجد رسائل مثبتة.</p>'}</div>`}`;
 }
 function selectConversation(id,openChat=true){
+ attachmentReadGeneration++;
  if(state&&active)store(draftKey(),$('messageInput').value);if(currentPage!=='communication')navigatePage('communication');closeThread();notificationTarget=null;conversationView='chat';active=id;reply=null;file=null;mentions=[];detailTask=null;$('layout').classList.toggle('chat-open',openChat);$('messageInput').value=load(draftKey(),'');renderList();renderHead();renderMessages(true);renderDetails();if(innerWidth>700)$('messageInput').focus();heartbeat();
 }
 async function sync(){if(loading){loadAgain=true;return;}loading=true;const version=epoch;try{
@@ -107,7 +109,20 @@ $('search').oninput=()=>{renderList();renderMessages();};
 $('newMessages').onclick=()=>{$('messages').scrollTop=$('messages').scrollHeight;$('newMessages').hidden=true;markRead();};
 $('messages').onscroll=()=>{if($('messages').scrollHeight-$('messages').scrollTop-$('messages').clientHeight<60){$('newMessages').hidden=true;markRead();}};
 $('attach').onclick=()=>$('fileInput').click();
-$('fileInput').onchange=async()=>{const f=$('fileInput').files[0];if(!f)return;if(f.size>10*1024*1024){notice('حد الملف ١٠ ميجابايت في التجربة.');return;}const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(f);});file={name:f.name,type:attachmentType(f),base64};$('attachmentBar').innerHTML=`<span>مرفق: ${esc(f.name)}</span><button id="cancelFile" class="icon" type="button">×</button>`;$('attachmentBar').hidden=false;$('send').disabled=false;$('fileInput').value='';};
+$('fileInput').onchange=async()=>{
+ const f=$('fileInput').files[0],conversation=active,version=epoch,readGeneration=++attachmentReadGeneration;
+ if(!f)return;
+ const current=()=>conversation===active&&version===epoch&&readGeneration===attachmentReadGeneration;
+ try{
+  if(f.size>10*1024*1024)throw new Error('حد الملف ١٠ ميجابايت في التجربة.');
+  const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(f);});
+  if(!current())return;
+  file={name:f.name,type:attachmentType(f),base64};
+  $('attachmentBar').innerHTML=`<span>مرفق: ${esc(f.name)}</span><button id="cancelFile" class="icon" type="button">×</button>`;
+  $('attachmentBar').hidden=false;$('send').disabled=false;
+ }catch(e){if(current())notice(e?.message||'تعذر قراءة المرفق. اختر الملف مرة أخرى.');}
+ finally{if(current())$('fileInput').value='';}
+};
 $('mention').onclick=()=>{$('mentionChoices').innerHTML=conv().members.filter(id=>id!==state.me.id).map(id=>`<button class="choice" data-mention="${id}">${esc(person(id).name)}</button>`).join('');$('mentionDialog').showModal();};
 $('newChat').onclick=()=>{editingGroup=null;$('chatType').value='direct';$('groupNameField').hidden=true;$('chatType').disabled=false;document.querySelector('#newDialog h2').textContent='محادثة جديدة';document.querySelector('#newForm .primary').textContent='فتح المحادثة';$('memberChoices').innerHTML='<legend>اختر المشاركين</legend>'+state.users.filter(p=>p.id!==state.me.id).map(p=>`<label><input type="checkbox" name="member" value="${p.id}">${esc(p.name)}</label>`).join('');$('newError').textContent='';$('groupName').value='';$('newDialog').showModal();};
 $('chatType').onchange=()=>{$('groupNameField').hidden=$('chatType').value!=='group';};
@@ -141,7 +156,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(b.id==='showDetails'){detailTask=null;$('details').hidden=!$('details').hidden;$('layout').classList.toggle('with-details',!$('details').hidden);renderDetails();}
  if(b.id==='closeDetails'){$('details').hidden=true;$('layout').classList.remove('with-details');}
  if(b.id==='cancelReply'){reply=null;$('replyBar').hidden=true;}
- if(b.id==='cancelFile'){file=null;$('attachmentBar').hidden=true;$('send').disabled=!$('messageInput').value.trim();}
+ if(b.id==='cancelFile'){attachmentReadGeneration++;file=null;$('attachmentBar').hidden=true;$('send').disabled=!$('messageInput').value.trim();}
  if(b.id==='back'){$('layout').classList.remove('chat-open');heartbeat();}
  }catch(e){notice(e.message);}});
 window.addEventListener('online',()=>{sync();flush();});window.addEventListener('offline',()=>status(false));
