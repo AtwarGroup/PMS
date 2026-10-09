@@ -1,7 +1,15 @@
-import {workspaceModel,renderWorkspace,requestModel,renderRequests,actionInbox,renderActionInbox} from './workspace-core.mjs?v=2.5.55';
+import {workspaceModel,renderWorkspace,requestModel,renderRequests,actionInbox,renderActionInbox,filterActionInbox} from './workspace-core.mjs?v=2.5.58';
 async function allRows(makeQuery){let rows=[];for(let from=0;;from+=500){const {data,error}=await makeQuery().range(from,from+499);if(error)throw error;rows.push(...(data||[]));if((data||[]).length<500)return rows;}}
 export async function mountWorkspace(sb,profile){
- const status=document.getElementById('spaceSync');let pending=false,queued=false,suspended=false;
+ const status=document.getElementById('spaceSync');let pending=false,queued=false,suspended=false,lastInbox=[],inboxDay,inboxFailed=true;
+ function renderInbox(){
+  if(inboxFailed)return;
+  const rows=filterActionInbox(lastInbox,{kind:document.getElementById('spaceActionKind')?.value||'all',priority:document.getElementById('spaceActionPriority')?.value||'all'},inboxDay);
+  document.getElementById('spacedecisions').innerHTML=renderActionInbox(rows,inboxDay,lastInbox.length?'لا توجد إجراءات مطابقة للفلاتر المحددة.':'لا توجد إجراءات مطلوبة منك حاليًا.');
+  const result=document.getElementById('spaceActionResult');if(result)result.textContent=`عرض ${rows.length} من ${lastInbox.length}`;
+  window.lucide?.createIcons();
+ }
+ for(const id of ['spaceActionKind','spaceActionPriority'])document.getElementById(id)?.addEventListener?.('change',renderInbox);
  async function refresh(){
   if(suspended||document.hidden)return;if(pending){queued=true;return;}pending=true;queued=false;status.textContent='جاري تحديث مساحتك…';
   const sections=['tasks','decisions','projects','updates','requests'];
@@ -28,6 +36,7 @@ export async function mountWorkspace(sb,profile){
    const requestFailure=[reschedules,changes,policies,versions,proposals].some(r=>r.status==='rejected');
    const failed={requests:requestFailure||tasks.status==='rejected',tasks:tasks.status==='rejected',decisions:[tasks,projects,people,reschedules,changes,policies,versions,proposals].some(r=>r.status==='rejected'),projects:[tasks,projects,members].some(r=>r.status==='rejected'),updates:notifications.status==='rejected'};
    for(const key of sections){document.getElementById('space'+key).innerHTML=failed[key]?'<p class="space-empty" role="status">تعذر تحميل هذا القسم. سنعيد المحاولة عند عودة الاتصال.</p>':html[key];document.getElementById('spaceCount'+key).textContent=failed[key]?'—':String(key==='updates'?value(notifications).length:key==='tasks'?model.due.length:key==='requests'?requests.tracking.length:key==='decisions'?model.decisions.length+requests.actions.length:model[key].length);}
+   lastInbox=inbox;inboxDay=model.day;inboxFailed=failed.decisions;if(inboxFailed){const result=document.getElementById('spaceActionResult');if(result)result.textContent='البيانات غير متاحة حاليًا';}else renderInbox();
    document.getElementById('spaceFocus').textContent=failed.tasks?'متابعة أعمالك في مكان واحد':model.overdue?`لديك ${model.overdue} مهام متأخرة؛ ابدأ بالأقدم.`:model.due.length?`لديك ${model.due.length} مهام مستحقة اليوم.`:(model.decisions.length+requests.actions.length?`لديك ${model.decisions.length+requests.actions.length} إجراءات تنتظر منك مراجعة أو قرارًا.`:'يومك واضح؛ لا توجد مهام مستحقة أو إجراءات مطلوبة الآن.');
    document.querySelectorAll('[data-space-notification]').forEach(b=>b.onclick=async()=>{const row=value(notifications).find(n=>n.id===b.dataset.spaceNotification);await window.atwarOpenNotificationRecord?.(sb,row,'../',message=>{status.textContent=message;});});
    status.textContent=Object.values(failed).some(Boolean)?'بعض الأقسام غير متاحة؛ نعيد المحاولة تلقائيًا.':'محدّث الآن · تحديث تلقائي';window.lucide?.createIcons();
