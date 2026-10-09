@@ -15,6 +15,8 @@ assert.match(migration,/v_task := public\.update_task_safe\(/,'The combined RPC 
 assert.match(migration,/delete from public\.subtasks where task_id = p_task_id/,
   'Removed subtasks must be reconciled within the same transaction');
 assert.match(taskPage,/supabase-firebase-compat\.js\?v=2\.5\.53/);
-assert.match(html,/tasks-page\.js\?v=2\.5\.53/);
+const pageVersion=html.match(/tasks-page\.js\?v=(\d+)\.(\d+)\.(\d+)/);
+assert.ok(pageVersion,'Task page must have an explicit cache version');
+assert.ok(Number(pageVersion[1])>2 || (Number(pageVersion[1])===2 && (Number(pageVersion[2])>5 || (Number(pageVersion[2])===5 && Number(pageVersion[3])>=53))), 'Task page must not revert to a version before atomic task saves');
 console.log('Atomic task and subtask save contract passed.');
 
