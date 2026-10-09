@@ -22,22 +22,27 @@ export function requestModel({profile,tasks=[],reschedules=[],changes=[],policie
  add('change:'+r.id,'تعديل الوصف: '+r.job_title,`../job-library/employee-changes.html?id=${encodeURIComponent(r.id)}`,state,({MANAGER_REVIEW:'المدير المباشر',ADMIN_REVIEW:'مسؤول النظام',APPLIED:'مسؤول النظام لاستكمال النشر',STALE:'مقدم الطلب لمراجعة التعديل'})[r.status]||'انتهى الطلب',r.admin_note||r.manager_note||r.reason,action,r.created_at,[r.manager_task_id,r.admin_task_id]);}
  const stageOwners={PREPARATION:'preparer_id',REVIEW:'reviewer_id',APPROVAL:'approver_id',RATIFICATION:'ratifier_id'},stageNames={PREPARATION:'إعداد',REVIEW:'مراجعة',APPROVAL:'موافقة',RATIFICATION:'اعتماد',APPROVED:'معتمدة'};
  for(const v of versions){const p=policies.find(p=>p.id===v.policy_id);if(!p)continue;const owner=p[stageOwners[v.status]],action=!!owner&&owner===profile.id;const involved=[p.preparer_id,p.reviewer_id,p.approver_id,p.ratifier_id,v.created_by].includes(profile.id);if(!action&&!involved&&profile.role!=='admin')continue;
- const policyRow=add('policy:'+v.id,p.title+' · إصدار '+v.version_number,`../policies/index.html?id=${encodeURIComponent(p.id)}&version=${encodeURIComponent(v.id)}`,stageNames[v.status]||v.status,v.status==='APPROVED'?'اكتمل الاعتماد':owner?'صاحب صلاحية '+stageNames[v.status]:'مسؤول النظام لتحديد صاحب الصلاحية',v.effective_date?'تاريخ السريان: '+v.effective_date:'',action,v.updated_at,[v.current_task_id]);policyRow.ageLabel='منذ آخر تحديث';}
+ const policyRow=add('policy:'+v.id,p.title+' · إصدار '+v.version_number,`../policies/index.html?id=${encodeURIComponent(p.id)}&version=${encodeURIComponent(v.id)}`,stageNames[v.status]||v.status,v.status==='APPROVED'?'اكتمل الاعتماد':owner?'صاحب صلاحية '+stageNames[v.status]:'مسؤول النظام لتحديد صاحب الصلاحية',v.effective_date?'تاريخ السريان: '+v.effective_date:'',action,v.updated_at,[v.current_task_id]);policyRow.ageLabel='منذ آخر تحديث';policyRow.kind='review';}
  for(const p of proposals){const action=proposalNeedsAction(p,profile);if(!action&&p.requester_id!==profile.id&&profile.role!=='admin')continue;add('improvement:'+p.id,'مقترح: '+p.title,proposalLink(p.id),proposalStates[p.status]+(p.task_id||p.project_id?' · مرتبط بالتنفيذ':''),proposalNext(p),p.decision_note,action,p.created_at||p.updated_at,[],({HIGH:'urgent',MEDIUM:'important',LOW:'normal'})[p.priority]);}
  tracking.sort((a,b)=>(b.date||'').localeCompare(a.date||''));return {actions,tracking,replaced};
 }
 export function renderRequests(rows,emptyText){return rows.length?rows.map(r=>`<a class="space-row" href="${escape(r.href)}"><span class="space-row-icon"><i data-lucide="${r.action?'stamp':'git-pull-request'}"></i></span><span class="space-row-copy"><strong>${escape(r.title)}</strong><small>${escape(r.state)} · ${escape(r.next)}</small>${r.note?`<small>${escape(r.note)}</small>`:''}</span><span class="space-pill ${r.late?'late':''}">${r.late?'مراجعة متأخرة':r.action?'اتخاذ إجراء':'التفاصيل'}</span></a>`).join(''):`<p class="space-empty">${escape(emptyText)}</p>`;}
 export function actionInbox(requests,decisions,day=riyadhDay()){
- const rows=[...requests.actions,...decisions.filter(t=>!requests.replaced.has(t.id)).map(t=>({id:'task:'+t.id,title:t.title,href:taskLink(t),state:t.status,next:t.task_type==='job_workflow'?'مراجعة المستند المرتبط':'مراجعة إنجاز المهمة',action:true,date:t.task_type==='job_workflow'?t.created_at:t.submitted_at,ageLabel:t.task_type==='job_workflow'?'عمر المراجعة':'مدة انتظار الاعتماد',deadline:t.task_type==='job_workflow'?t.due_date:null,priority:t.priority}))];
+ const rows=[...requests.actions.map(row=>({...row,kind:row.kind||'request'})),...decisions.filter(t=>!requests.replaced.has(t.id)).map(t=>({id:'task:'+t.id,kind:t.task_type==='job_workflow'?'review':'approval',title:t.title,href:taskLink(t),state:t.status,next:t.task_type==='job_workflow'?'مراجعة المستند المرتبط':'مراجعة إنجاز المهمة',action:true,date:t.task_type==='job_workflow'?t.created_at:t.submitted_at,ageLabel:t.task_type==='job_workflow'?'عمر المراجعة':'مدة انتظار الاعتماد',deadline:t.task_type==='job_workflow'?t.due_date:null,priority:t.priority}))];
  const priority={urgent:0,important:1,normal:2};
  const overdue=r=>r.deadline&&r.deadline<day?0:1;
  const stamp=r=>Number.isFinite(Date.parse(r.date))?Date.parse(r.date):Infinity;
  return rows.sort((a,b)=>overdue(a)-overdue(b)||(priority[a.priority]??2)-(priority[b.priority]??2)||stamp(a)-stamp(b)||a.id.localeCompare(b.id));
 }
-export function renderActionInbox(rows,day=riyadhDay()){
+export function filterActionInbox(rows,{kind='all',priority='all'}={},day=riyadhDay()){
+ const kinds=['all','request','review','approval','late'],priorities=['all','urgent','important','normal'];
+ if(!kinds.includes(kind))kind='all';if(!priorities.includes(priority))priority='all';
+ return rows.filter(row=>(kind==='all'||(kind==='late'?!!row.deadline&&row.deadline<day:row.kind===kind))&&(priority==='all'||(row.priority||'normal')===priority));
+}
+export function renderActionInbox(rows,day=riyadhDay(),emptyText='لا توجد إجراءات مطلوبة منك حاليًا.'){
  const dateDay=value=>{if(!value)return null;const date=new Date(value);return Number.isFinite(date.getTime())?riyadhDay(date):null;};
  const enriched=rows.map(row=>{const date=dateDay(row.date),age=date?Math.max(0,Math.floor((Date.parse(day+'T00:00:00Z')-Date.parse(date+'T00:00:00Z'))/86400000)):null;const ageText=age===null?'':`${row.ageLabel||'عمر الطلب'}: ${age===0?'اليوم':age+' يوم'}`;return {...row,note:[row.note,ageText,row.deadline?'موعد المراجعة: '+row.deadline:''].filter(Boolean).join(' · '),late:!!row.deadline&&row.deadline<day};});
- return renderRequests(enriched,'لا توجد إجراءات مطلوبة منك حاليًا.');
+ return renderRequests(enriched,emptyText);
 }
 export function workspaceModel({profile,tasks=[],projects=[],members=[],directIds=[],day=riyadhDay()}){
  const active=tasks.filter(t=>!t.deleted_at&&!['مكتملة','ملغاة'].includes(t.status));
