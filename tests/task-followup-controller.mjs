@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {createTaskFollowupController} from '../assets/js/task-followup-page.mjs';
+const nodes=new Map();
+function element(id){if(!nodes.has(id))nodes.set(id,{value:'',checked:false,disabled:false,hidden:false,textContent:'',innerHTML:'',events:{},addEventListener(name,fn){this.events[name]=fn;},replaceChildren(){this.innerHTML='';}});return nodes.get(id);}
+globalThis.document={getElementById:element};
+let selected={id:'a',status:'قيد التنفيذ'},release,pending=false,conflict=false;
+const context={can_edit:true,task_revision:3,followup:{revision:2,next_step:'original'}};
+const calls=[];
+const client={async rpc(name,args){calls.push({name,args});if(pending&&name==='task_followup_context'){pending=false;await new Promise(resolve=>release=resolve);}return conflict&&name==='save_task_followup'?{error:{message:'ATWAR_CONFLICT'}}:{data:structuredClone(context),error:null};}};
+const controller=createTaskFollowupController({getClient:async()=>client,currentTask:()=>selected});
+await controller.show(selected);
+element('tfNext').value='my draft';element('tfForm').events.input();
+const count=calls.length;await controller.show(selected);assert.equal(calls.length,count);assert.equal(element('tfNext').value,'my draft');
+selected={id:'b',status:'قيد التنفيذ'};await controller.show(selected);
+selected={id:'a',status:'قيد التنفيذ'};await controller.show(selected);assert.equal(element('tfNext').value,'my draft');
+conflict=true;await element('tfForm').onsubmit({preventDefault(){}});assert.match(element('tfStatus').textContent,/تغيّرت/);assert.equal(element('tfNext').value,'my draft');
+assert.equal(calls.at(-1).args.p_expected_revision,2);assert.equal(calls.at(-1).args.p_expected_task_revision,3);
+selected={id:'a',status:'مكتملة'};await controller.show(selected);assert.equal(element('tfSave').disabled,true);
+selected={id:'c',status:'قيد التنفيذ'};pending=true;const slow=controller.show(selected);await new Promise(resolve=>setImmediate(resolve));
+selected={id:'d',status:'قيد التنفيذ'};await controller.show(selected);element('tfNext').value='new selection';release();await slow;assert.equal(element('tfNext').value,'new selection');
+selected=null;await controller.show(selected);assert.equal(element('taskFollowupDetails').hidden,true);
+console.log('Task followup: drafts, version conflicts, terminal permissions and stale selection replies passed');
