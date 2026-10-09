@@ -1,3 +1,4 @@
+import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
@@ -2663,6 +2664,7 @@ function toggleActivityLog(){
   if(task)renderActivityLog(task);
 }
 
+const taskMeasurementLinks=createTaskMeasurementLinks({getClient:()=>window.atwarGetSupabase(),currentTask:()=>selectedTask()});
 const taskFollowupController=createTaskFollowupController({getClient:()=>window.atwarGetSupabase(),currentTask:()=>selectedTask()});
 function renderDetails(){
   const task=selectedTask();
@@ -2676,6 +2678,7 @@ function renderDetails(){
   document.getElementById('noSelection').classList.add('hidden');
   document.getElementById('taskDetails').classList.toggle('hidden',!task);
   void taskFollowupController.show(task);
+  void taskMeasurementLinks.show(task);
   if(!task)return;
 
   const closeDetailsButton=document.querySelector('button[onclick="closeDetailsKeepPosition()"]');
