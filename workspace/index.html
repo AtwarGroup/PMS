@@ -84,7 +84,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script type="module" id="workspaceSupabaseNotes">
-import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.54';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.55';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
   const {data:{session},error:se}=await sb.auth.getSession();
