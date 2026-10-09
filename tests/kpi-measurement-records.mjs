@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {normalizeMeasurement,filterMeasurements,renderMeasurementRows} from '../assets/js/kpi-measurement-core.mjs';
+const value={period_start:'2026-10-01',period_end:'2026-10-31',result_text:'  95%  ',source_text:'تقرير معتمد',evidence_url:'https://example.com/report'};
+assert.equal(normalizeMeasurement(value).result_text,'95%');assert.equal(normalizeMeasurement(value).task_id,null);
+for(const change of [{period_start:'2026-02-30'},{period_end:'2026-09-30'},{result_text:''},{result_text:'x'.repeat(1001)},{source_text:'x'.repeat(2001)},{evidence_url:'javascript:alert(1)'},{evidence_url:'https://user:pass@example.com/'}])assert.throws(()=>normalizeMeasurement({...value,...change}));
+const r={id:'one',indicator_snapshot:{name:'<img>',target:'95%',weight:25},job_revision:3,period_start:'2026-10-01',period_end:'2026-10-31',result_text:'<script>',source_text:'تقرير معتمد',evidence_note:''};
+assert.ok(!renderMeasurementRows([r]).includes('<script>'));assert.ok(!renderMeasurementRows([r]).includes('<img>'));
+assert.match(renderMeasurementRows([r]),/لم يُوثّق بعد/);assert.match(renderMeasurementRows([{...r,evidence_note:'ملف قياس'}]),/مسجل/);
+assert.equal(filterMeasurements([r],{from:'2026-10-15',to:'2026-10-20'}).length,1);assert.equal(filterMeasurements([r],{from:'2026-11-01'}).length,0);assert.equal(filterMeasurements([r],{search:'معتمد'}).length,1);
+console.log('KPI measurement records: dates, lengths, evidence protocols, no inferred scores, escaping and period overlap filters passed');
