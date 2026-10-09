@@ -15,8 +15,8 @@ for(const match of html.matchAll(/<(input|select|button|div|h2|strong|p|fieldset
  nodes.set(id,new Node(value));
 }
 const days=Array.from({length:7},(_,i)=>{const n=new Node(String(i));return n;});
-const editButton=new Node();editButton.dataset.id='existing';
-const doc={getElementById:id=>{assert(nodes.has(id),'Missing '+id);return nodes.get(id);},querySelectorAll:q=>q==='[name="repeatDay"]'?days:q==='[name="repeatDay"]:checked'?days.filter(x=>x.checked):q==='.edit'?[editButton]:[]};
+const editButton=new Node();editButton.dataset.id='existing';const copyButton=new Node();copyButton.dataset.id='existing';
+const doc={getElementById:id=>{assert(nodes.has(id),'Missing '+id);return nodes.get(id);},querySelectorAll:q=>q==='[name="repeatDay"]'?days:q==='[name="repeatDay"]:checked'?days.filter(x=>x.checked):q==='.edit'?[editButton]:q==='.copy'?[copyButton]:[]};
 const me={id:'manager',role:'manager',full_name:'مدير'};
 const people=[me,{id:'employee',full_name:'موظف',manager_id:'manager'}];
 const rows=[{id:'ended',title:'انتهى',assignee_id:'employee',recurrence:'daily',interval_count:1,active:false,created_count:2,next_run_at:'2030-01-01T06:00:00Z',recurrence_rule:{mode:'calendar',pattern:'day',endMode:'count',endCount:2}}, {id:'existing',title:'دورية محفوظة',description:'',assignee_id:'employee',priority:'normal',recurrence:'monthly',interval_count:1,next_run_at:'2030-02-28T06:00:00Z',schedule_start_at:'2030-01-31T06:00:00Z',due_offset_days:3,active:true,created_count:0,waiting_for_completion:false,recurrence_rule:{mode:'calendar',pattern:'day',day:31,endMode:'never',days:[]}}];
@@ -47,4 +47,8 @@ el('repeatMode').value='completion';el('repeatMode').listeners.input();assert.eq
 el('confirmRepeat').onclick();
 await el('add').onclick();assert.equal(updated.recurrence_rule.mode,'completion');assert(!('owner_id' in updated));assert(!('next_run_at' in updated),'Do not overwrite scheduler state');
 assert.equal(el('assignee').value,'');
+const original=JSON.stringify(rows);inserted=null;updated=null;copyButton.onclick();
+assert.equal(el('assignee').value,'','A copied template must require a fresh assignee choice');assert.equal(el('title').value,'دورية محفوظة');assert.equal(el('add').textContent,'إنشاء المهمة الدورية');assert.notEqual(el('next').value,'2030-01-31T09:00','Copy starts from a fresh schedule');
+await el('add').onclick();assert.equal(inserted,null);assert.equal(updated,null,'Copying must not update the original');
+el('assignee').value='employee';el('next').value='2030-10-31T09:00';await el('add').onclick();assert.equal(inserted.owner_id,'manager');assert.equal(updated,null);assert.ok(!('id' in inserted));assert.ok(!('created_count' in inserted));assert.equal(JSON.stringify(rows),original);
 console.log('PASS recurring form: required assignee, conditional controls, save/reset and editing');
