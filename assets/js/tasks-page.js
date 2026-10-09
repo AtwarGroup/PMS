@@ -1,3 +1,4 @@
+import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
 import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.5.53";
@@ -2662,6 +2663,7 @@ function toggleActivityLog(){
   if(task)renderActivityLog(task);
 }
 
+const taskFollowupController=createTaskFollowupController({getClient:()=>window.atwarGetSupabase(),currentTask:()=>selectedTask()});
 function renderDetails(){
   const task=selectedTask();
   const panel=document.getElementById('detailsPanel');
@@ -2673,6 +2675,7 @@ function renderDetails(){
   document.body.classList.toggle('atwar-task-drawer-open',drawerOpen);
   document.getElementById('noSelection').classList.add('hidden');
   document.getElementById('taskDetails').classList.toggle('hidden',!task);
+  void taskFollowupController.show(task);
   if(!task)return;
 
   const closeDetailsButton=document.querySelector('button[onclick="closeDetailsKeepPosition()"]');
