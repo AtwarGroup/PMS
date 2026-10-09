@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {managementBriefing,renderManagementBriefing} from '../assets/js/management-briefing.mjs';
+const task=(id,fields={})=>({id,title:id,status:'قيد التنفيذ',assignee_id:'employee',assignee_name_snapshot:'موظف',due_date:'2026-10-12',...fields});
+const input={profile:{id:'manager',role:'manager'},directIds:['employee'],day:'2026-10-10',projects:[{id:'managed',manager_id:'manager',status:'ACTIVE'},{id:'other',manager_id:'other',status:'ACTIVE'},{id:'gone',manager_id:'manager',deleted_at:'x'}],tasks:[task('a'),task('b'),task('c'),task('outsider',{assignee_id:'outsider',project_id:'other'}),task('member',{assignee_id:'member',project_id:'managed'}),task('gone',{deleted_at:'x'}),task('cancelled',{status:'ملغاة'}),task('late',{due_date:'2026-10-08'}),task('approval',{status:'بانتظار الاعتماد',due_date:'2026-10-01'}),task('completed',{status:'مكتملة',completed_at:'2026-10-03T22:00:00Z'}),task('old',{status:'مكتملة',completed_at:'2026-10-03T20:59:00Z'}),task('future',{status:'مكتملة',completed_at:'2026-10-11T00:00:00Z'}),task('review',{task_type:'job_workflow',legacy_metadata:{job_workflow:{phase:'EMPLOYEE_ACK'}}})],followups:[{task_id:'a',blocked:true},{task_id:'completed',blocked:true},{task_id:'outsider',blocked:true}]};
+const m=managementBriefing(input);
+assert.equal(m.since,'2026-10-04');assert.deepEqual(m.completed.map(t=>t.id),['completed'],'Riyadh completion boundary must be respected');
+assert.deepEqual(m.overdue.map(t=>t.id),['late'],'Approval waiting is not execution overdue');assert.equal(m.pending.length,1);
+assert.equal(m.concentrations.length,1);assert.deepEqual(m.concentrations[0].tasks.map(t=>t.id),['a','b','c']);assert.equal(m.blockers.length,1);assert.equal(m.governance.length,1);assert.equal(m.projects.length,1);
+const html=renderManagementBriefing(m);assert.ok(!html.includes('outsider'));assert.match(html,/profile\/index.html\?view=job/);
+const disabled=managementBriefing({...input,profile:{id:'employee',role:'employee'}});assert.equal(disabled.enabled,false);assert.equal(renderManagementBriefing(disabled),'');
+const admin=managementBriefing({...input,profile:{id:'admin',role:'admin'}});assert.equal(admin.profileRole,'admin');assert.match(renderManagementBriefing(admin),/بحسب صلاحياتك/);
+assert.ok(!renderManagementBriefing(managementBriefing({...input,tasks:[task('x',{title:'<script>',assignee_name_snapshot:'<img>'})]})).includes('<script>'));
+console.log('Management briefing: team/project scope, Riyadh dates, approval exclusion, blockers, concentration and escaping passed');
