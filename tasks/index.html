@@ -532,6 +532,8 @@
               <div class="flex items-center gap-2 mb-2 text-xs font-black text-amber-700"><span>📝</span><span>ملاحظات المدير</span></div>
               <textarea id="detailManagerNotes" rows="2" onchange="updateSelectedField('managerNotes',this.value)" placeholder="ملاحظة خاصة بالمدير..." class="w-full border-0 p-0 resize-y text-sm"></textarea>
             </div>
+            <section id="taskFollowupDetails" class="border rounded-xl p-4 bg-white" hidden></section>
+
 
             <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-500 space-y-1">
               <p>أنشئت بواسطة: <span id="detailCreatedBy" class="font-bold text-slate-700"></span></p>
@@ -599,7 +601,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.5.53"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.5.59"></script>
 
 <script src="../assets/js/permissions.js"></script>
 <script>

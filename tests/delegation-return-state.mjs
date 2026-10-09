@@ -16,6 +16,8 @@ assert.match(sql,/v_event := case when v_return then 'reclaimed'/,
 assert.match(bridge,/isDelegated:!!t\.delegated_by_id&&t\.delegated_by_id!==t\.assignee_id/,
   'The badge should represent an active delegation only');
 assert.match(page,/supabase-firebase-compat\.js\?v=2\.5\.53/);
-assert.match(html,/tasks-page\.js\?v=2\.5\.53/);
+const pageVersion=html.match(/tasks-page\.js\?v=(\d+)\.(\d+)\.(\d+)/);
+assert.ok(pageVersion,'Task page must have an explicit cache version');
+assert.ok(Number(pageVersion[1])>2 || (Number(pageVersion[1])===2 && (Number(pageVersion[2])>5 || (Number(pageVersion[2])===5 && Number(pageVersion[3])>=53))), 'Task page must not revert to a version before the corrected script');
 console.log('Delegation return and badge state audit passed.');
 

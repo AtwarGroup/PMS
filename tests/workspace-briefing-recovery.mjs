@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs';
+const elements=new Map();let timer,fail=true;
+const element=id=>{if(!elements.has(id))elements.set(id,{textContent:'',innerHTML:'',addEventListener(){}});return elements.get(id);};
+globalThis.document={hidden:false,getElementById:element,querySelectorAll:()=>[],addEventListener(){}};
+globalThis.window={};globalThis.addEventListener=()=>{};globalThis.setInterval=fn=>(timer=fn,1);globalThis.clearInterval=()=>{};
+const sb={from(table){return {select(){return this},is(){return this},eq(){return this},order(){return this},limit(){return this},async range(){return fail&&table==='task_followup_details'?{data:null,error:new Error('offline')}:{data:[],error:null};},then(resolve){return Promise.resolve({data:[],error:null}).then(resolve);}};}};
+await mountWorkspace(sb,{id:'employee',role:'employee'});
+assert.match(element('spaceSummary').innerHTML,/تعذر تحميل/);assert.match(element('spaceblockers').innerHTML,/تعذر تحميل/);
+assert.equal(element('spaceCountblockers').textContent,'—');assert.equal(element('spaceCountupcoming').textContent,'0');
+fail=false;await timer();assert.equal(element('spaceCountblockers').textContent,'0');assert.match(element('spaceblockers').innerHTML,/لا توجد عوائق/);assert.match(element('spaceSummary').innerHTML,/spaceBlockerPanel/);
+console.log('Workspace briefing: failed followup reads show unavailable data and recover automatically');
