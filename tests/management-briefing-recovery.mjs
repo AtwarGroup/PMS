@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs';
+const elements=new Map();let timer,failed='tasks';
+const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',addEventListener(){}});return elements.get(id);};
+globalThis.document={hidden:false,getElementById:element,querySelectorAll:()=>[],addEventListener(){}};
+globalThis.window={};globalThis.addEventListener=()=>{};globalThis.setInterval=fn=>(timer=fn,1);globalThis.clearInterval=()=>{};
+const sb={from(table){return {select(){return this},is(){return this},eq(){return this},order(){return this},limit(){return this},async range(){return table===failed?{data:null,error:new Error('offline')}:{data:[],error:null};},then(resolve){return Promise.resolve({data:[],error:null}).then(resolve);}};}};
+await mountWorkspace(sb,{id:'manager',role:'manager'});
+assert.equal(element('spaceManagement').hidden,false);assert.match(element('spaceManagementBody').innerHTML,/تعذر تحميل/);assert.ok(!element('spaceManagementBody').innerHTML.includes('management-metrics'));
+failed=null;await timer();assert.match(element('spaceManagementBody').innerHTML,/management-metrics/);assert.match(element('spaceManagementBody').innerHTML,/فريقك المباشر/);
+failed='task_followup_details';await timer();assert.match(element('spaceManagementBody').innerHTML,/تعذر تحميل/);
+await mountWorkspace(sb,{id:'employee',role:'employee'});assert.equal(element('spaceManagement').hidden,true);
+console.log('Management panel: role visibility, incomplete reads and automatic recovery passed');

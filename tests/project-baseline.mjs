@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {baselineRevisions,dateVariance,baselineComparison,renderBaseline} from '../assets/js/project-baseline.mjs';
+const task=(id,fields={})=>({id,title:id,revision:2,status:'قيد التنفيذ',start_date:'2026-10-01',due_date:'2026-10-10',project_weight:1,project_milestone:false,...fields});
+const b={captured_at:'2026-10-10T00:00:00Z',captured_by_name:'<script>',project_snapshot:{start_date:'2026-10-01',due_date:'2026-10-10'},task_snapshot:[task('same'),task('shift'),task('removed'),task('owner',{assignee_id:'one'})]};
+const p={start_date:'2026-10-01',due_date:'2026-10-12'};
+const tasks=[task('same',{status:'مكتملة',progress:100,revision:8}),task('shift',{due_date:'2026-10-13'}),task('added',{title:'<img>'}),task('owner',{assignee_id:'two'}),task('removed',{deleted_at:'x'}),task('cancelled',{status:'ملغاة'}),task('workflow',{task_type:'job_workflow'})];
+const m=baselineComparison(b,p,tasks);assert.equal(m.changed,2);assert.equal(m.added,1);assert.equal(m.removed,1);assert.equal(m.dueVariance,2);assert.equal(m.rows.find(r=>r.id==='same').kind,'same','Execution progress must not change the planned baseline');assert.equal(m.rows.find(r=>r.id==='shift').variance,3);
+assert.deepEqual(baselineRevisions(tasks).map(t=>t.id),['added','owner','same','shift']);assert.equal(dateVariance('2026-12-31','2027-01-01'),1);assert.equal(dateVariance(null,'2026-10-10'),null);
+const html=renderBaseline(b,p,tasks);assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img>'));assert.ok(!html.includes('id="captureBaseline"'));
+assert.match(renderBaseline(null,p,[],{canCapture:true}),/captureBaseline/);assert.ok(!renderBaseline(null,p,[],{canCapture:false}).includes('captureBaseline'));assert.match(renderBaseline(null,p,[],{canCapture:true,failed:true}),/تعذر تحميل/);
+console.log('Project baseline: immutable original, plan changes vs progress, additions/removals, dates, permissions and escaping passed');

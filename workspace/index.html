@@ -41,7 +41,7 @@
 .space-action-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end;padding:0 18px 14px}.space-action-filters label{display:grid;gap:5px;flex:1;min-width:150px;font-size:12px}.space-action-filters select{width:100%;padding:9px;border:1px solid #dbe3ed;border-radius:8px;background:#fff;color:#23334b;font:inherit}.space-action-filters [role="status"]{width:100%;font-size:12px;color:#64748b}
 </style>
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
-<link rel="stylesheet" href="../assets/css/workspace.css?v=2.5.59">
+<link rel="stylesheet" href="../assets/css/workspace.css?v=2.5.60">
 </head>
 <body>
 <div class="atwar-shell">
@@ -52,6 +52,7 @@
 <header class="atwar-page-head space-welcome"><div><h1>مساحتي</h1><p>إجراءاتك المطلوبة وطلباتك ومشاريعك؛ متابعة واضحة في مكان واحد.</p></div><span id="spaceSync" class="space-sync" role="status">جاري تجهيز مساحتك…</span></header>
 <div style="margin-bottom:18px"><a class="atwar-btn" href="improvements.html">مقترحات التحسين والأتمتة</a></div><p id="spaceFocus" class="space-focus">ماذا تحتاج إلى إنجازه اليوم؟</p>
 <nav id="spaceSummary" class="space-summary" aria-label="ملخص أعمالي"><p class="space-empty">جاري تجهيز الملخص…</p></nav>
+<section id="spaceManagement" class="space-panel management-panel" hidden><header class="space-panel-head"><h2>الملخص الإداري الأسبوعي</h2><span class="space-sync">آخر ٧ أيام · متابعة مباشرة</span></header><div id="spaceManagementBody" class="management-body"><p class="space-empty">جاري تحميل الملخص الإداري…</p></div></section>
 <div class="space-grid">
 <section id="spaceTodayPanel" class="space-panel"><header class="space-panel-head"><h2><i data-lucide="calendar-check-2"></i> مهامي اليوم <span id="spaceCounttasks" class="space-count">—</span></h2><a href="../tasks/index.html?owner=me">جميع مهامي</a></header><div id="spacetasks" class="space-body"><p class="space-empty">جاري تحميل المهام…</p></div></section>
 <section id="spaceDecisionPanel" class="space-panel"><header class="space-panel-head"><h2><i data-lucide="stamp"></i> المطلوب مني <span id="spaceCountdecisions" class="space-count">—</span></h2><a href="../tasks/index.html">فتح المهام</a></header><div class="space-action-filters"><label>نوع الإجراء<select id="spaceActionKind"><option value="all">جميع الإجراءات</option><option value="review">مراجعات المستندات</option><option value="approval">اعتماد إنجاز المهام</option><option value="request">الطلبات والقرارات</option><option value="late">المراجعات المتأخرة</option></select></label><label>الأولوية<select id="spaceActionPriority"><option value="all">جميع الأولويات</option><option value="urgent">عاجلة</option><option value="important">مهمة</option><option value="normal">عادية</option></select></label><span id="spaceActionResult" role="status" aria-live="polite"></span></div><div id="spacedecisions" class="space-body"><p class="space-empty">جاري تحميل المراجعات…</p></div></section>
@@ -86,7 +87,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/supabase-runtime.js"></script>
 <script type="module" id="workspaceSupabaseNotes">
-import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.59';
+import {mountWorkspace} from '../assets/js/workspace-page.mjs?v=2.5.60';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
   const {data:{session},error:se}=await sb.auth.getSession();
