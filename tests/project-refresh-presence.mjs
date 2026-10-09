@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {readAllRows} from '../assets/js/paged-read.mjs';
 const source=readFileSync('assets/js/projects-page.js','utf8');
 let loads=0,queries=0;const events={};
-const builder=name=>({name,select(){return this},eq(){return this},is(){return this}});
-const ctx={addEventListener:(name,fn)=>events[name]=fn,project:{id:'p',revision:1},tasks:[{id:'t',revision:1}],files:[],busy:false,viewPending:false,draftDirty:false,detailOpen:false,tab:'gantt',document:{hidden:false,activeElement:null},sb:{from:builder},notice:{},query:async b=>{queries++;return b.name==='projects'?[{id:'p',revision:2}]:b.name==='tasks'?[{id:'t',revision:1}]:[]},loadProject:async()=>loads++};
+const builder=name=>({name,select(){return this},eq(){return this},is(){return this},order(){return this},async range(){return {data:await ctx.query(this)}}});
+const ctx={readAllRows,addEventListener:(name,fn)=>events[name]=fn,project:{id:'p',revision:1},tasks:[{id:'t',revision:1}],files:[],busy:false,viewPending:false,draftDirty:false,detailOpen:false,tab:'gantt',document:{hidden:false,activeElement:null},sb:{from:builder},notice:{},query:async b=>{queries++;return b.name==='projects'?[{id:'p',revision:2}]:b.name==='tasks'?[{id:'t',revision:1}]:[]},loadProject:async()=>loads++};
 vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('function viewSignature('),source.indexOf("addEventListener('pagehide'")),ctx);
 ctx.draftDirty=true;await ctx.refreshProjectView();assert.equal(queries,0,'Background refresh must preserve dirty input');
 ctx.draftDirty=false;ctx.detailOpen=true;await ctx.refreshProjectView();assert.equal(queries,0,'Task detail must retain its editor');
