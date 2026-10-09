@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {createTaskMeasurementLinks} from '../assets/js/task-measurement-links.mjs';
+const host={hidden:false,innerHTML:''};globalThis.document={getElementById:()=>host};
+let selected={id:'a'},release,hold=true,calls=0;
+const sb={from(){return {select(){return this},eq(){return this},order(){return this},async range(){calls++;if(hold){hold=false;await new Promise(r=>release=r);}return {data:[{id:'result',employee_id:'employee',indicator_snapshot:{name:'<script>'},period_start:'2026-10-01',period_end:'2026-10-31'}],error:null};}};}};
+const links=createTaskMeasurementLinks({getClient:async()=>sb,currentTask:()=>selected});
+const slow=links.show(selected);await new Promise(r=>setImmediate(r));await links.show(selected);assert.equal(calls,1,'Repeated rendering must not start overlapping reads');
+selected={id:'b'};await links.show(selected);const current=host.innerHTML;release();await slow;assert.equal(host.innerHTML,current,'Late reply must not replace another task links');assert.ok(!current.includes('<script>'));assert.match(current,/measurements.html\?employee=employee&amp;record=result|measurements.html\?employee=employee&record=result/);
+await links.show(selected);assert.equal(calls,2,'Same task does not refetch before the cache interval');selected=null;await links.show(selected);assert.equal(host.hidden,true);assert.equal(host.innerHTML,'');
+console.log('Task measurement links: concurrent read guard, stale selection rejection, escaped labels and cache passed');
