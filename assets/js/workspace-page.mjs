@@ -1,3 +1,4 @@
+import {managementBriefing,renderManagementBriefing} from './management-briefing.mjs?v=1.0.0';
 import {workspaceBriefing,renderBriefing} from './workspace-briefing.mjs?v=1.0.0';
 import {workspaceModel,renderWorkspace,requestModel,renderRequests,actionInbox,renderActionInbox,filterActionInbox} from './workspace-core.mjs?v=2.5.59';
 async function allRows(makeQuery){let rows=[];for(let from=0;;from+=500){const {data,error}=await makeQuery().range(from,from+499);if(error)throw error;rows.push(...(data||[]));if((data||[]).length<500)return rows;}}
@@ -16,10 +17,10 @@ export async function mountWorkspace(sb,profile){
   const sections=['tasks','decisions','projects','updates','requests'];
   try{
    const [tasks,projects,members,people,notifications,reschedules,changes,policies,versions,proposals,followups]=await Promise.allSettled([
-    allRows(()=>sb.from('tasks').select('id,title,status,assignee_id,creator_id,approval_commissioner_id,task_type,start_date,due_date,project_id,progress,project_weight,deleted_at,legacy_metadata,submitted_at,created_at,priority,creator_name_snapshot,assignee_name_snapshot').is('deleted_at',null).order('id')),
+    allRows(()=>sb.from('tasks').select('id,title,status,assignee_id,creator_id,approval_commissioner_id,task_type,start_date,due_date,project_id,progress,project_weight,deleted_at,legacy_metadata,submitted_at,created_at,completed_at,actual_end_date,priority,creator_name_snapshot,assignee_name_snapshot').is('deleted_at',null).order('id')),
     allRows(()=>sb.from('projects').select('id,title,status,manager_id,sponsor_id,created_by,due_date,deleted_at').is('deleted_at',null).order('id')),
     allRows(()=>sb.from('project_members').select('project_id,user_id').eq('user_id',profile.id).order('project_id')),
-    profile.role==='manager'?allRows(()=>sb.from('profiles').select('id').eq('manager_id',profile.id).order('id')):Promise.resolve([]),
+    profile.role==='manager'?allRows(()=>sb.from('profiles').select('id,full_name').eq('manager_id',profile.id).order('id')):Promise.resolve([]),
     (async()=>{const {data,error}=await sb.from('notifications').select('id,title,message,task_id,project_id,improvement_id,type,read_at').eq('recipient_id',profile.id).is('read_at',null).order('created_at',{ascending:false}).limit(5);if(error)throw error;return data||[];})(),
     allRows(()=>sb.from('task_reschedule_requests').select('*').order('id')),
     allRows(()=>sb.from('employee_job_change_requests').select('*').order('id')),
@@ -48,6 +49,8 @@ export async function mountWorkspace(sb,profile){
    setBrief('spacewaiting',briefFailures.waiting?missing:renderActionInbox(brief.waiting,model.day,'لا توجد طلبات أو مهام تنتظر إجراءً من الآخرين.'));
    setBrief('spaceblockers',briefFailures.blockers?missing:briefHtml.blockers);
    for(const key of ['upcoming','waiting','blockers']){const count=document.getElementById('spaceCount'+key);if(count)count.textContent=briefFailures[key]?'—':String(brief[key].length);}
+   const managementHost=document.getElementById('spaceManagement');
+   if(managementHost){managementHost.hidden=!['admin','manager'].includes(profile.role);if(!managementHost.hidden){const unavailable=failed.decisions||failed.projects||followups.status==='rejected';const body=document.getElementById('spaceManagementBody');if(body)body.innerHTML=unavailable?missing:renderManagementBriefing(managementBriefing({profile,tasks:value(tasks),projects:value(projects),directIds:value(people).map(p=>p.id),followups:value(followups),inbox,day:model.day}));}}
    document.getElementById('spaceFocus').textContent=failed.tasks?'متابعة أعمالك في مكان واحد':model.overdue?`لديك ${model.overdue} مهام متأخرة؛ ابدأ بالأقدم.`:model.due.length?`لديك ${model.due.length} مهام مستحقة اليوم.`:(model.decisions.length+requests.actions.length?`لديك ${model.decisions.length+requests.actions.length} إجراءات تنتظر منك مراجعة أو قرارًا.`:'يومك واضح؛ لا توجد مهام مستحقة أو إجراءات مطلوبة الآن.');
    document.querySelectorAll('[data-space-notification]').forEach(b=>b.onclick=async()=>{const row=value(notifications).find(n=>n.id===b.dataset.spaceNotification);await window.atwarOpenNotificationRecord?.(sb,row,'../',message=>{status.textContent=message;});});
    status.textContent=(Object.values(failed).some(Boolean)||Object.values(briefFailures).some(Boolean))?'بعض الأقسام غير متاحة؛ نعيد المحاولة تلقائيًا.':'محدّث الآن · تحديث تلقائي';window.lucide?.createIcons();
