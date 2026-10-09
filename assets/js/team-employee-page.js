@@ -24,6 +24,7 @@ try{
  if(target.manager_id===profile.id)manager=profile;
  else if(target.manager_id){const result=await sb.from('profiles').select('full_name').eq('id',target.manager_id).maybeSingle();manager=result.data;}
  render(data,target,manager);
+ const measurementLink=document.createElement('a');measurementLink.className='atwar-btn';measurementLink.href='../profile/measurements.html?employee='+encodeURIComponent(uid);measurementLink.textContent='سجل نتائج قياس مؤشرات الأداء';root.prepend(measurementLink);
  }
  }
  }
