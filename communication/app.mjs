@@ -1,4 +1,5 @@
 import {workReferences,workURL,resolveWorkReferences} from './work-links.mjs?v=20261008';
+import {withReadTimeout} from './read-timeout.mjs?v=20261010';
 document.body.classList.add('communication-page');
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const attachmentType=f=>{const map={docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pdf:'application/pdf',txt:'text/plain',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp'};const t=(f.type||'').toLowerCase();return ['', 'application/octet-stream','application/zip','application/x-zip-compressed'].includes(t)?map[f.name.split('.').pop().toLowerCase()]||t:t;};
@@ -26,7 +27,8 @@ const initialIdentity=(await sb.auth.getUser()).data?.user?.id;
 sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||(event==='SIGNED_IN'&&initialIdentity&&session?.user?.id!==initialIdentity)){epoch++;events?.close();state=null;active=null;olderMessages.clear();historyEnded.clear();document.querySelector('.lab-shell')?.replaceChildren();$('toastArea')?.replaceChildren();document.querySelectorAll('dialog').forEach(d=>{d.close();d.replaceChildren();});location.href='../login.html';}});
 async function api(path,data){
  if(path==='session')throw new Error('تغيير الحساب متاح من تسجيل الدخول إلى النظام فقط.');
- const {data:result,error}=await sb.functions.invoke('communication',{body:{path,data}});
+ const request=sb.functions.invoke('communication',{body:{path,data}});
+ const {data:result,error}=await (['accounts','state','file'].includes(path)?withReadTimeout(request):request);
  if(error){let body;try{body=await error.context?.json();}catch{}const e=new Error(body?.error||error.message);e.status=error.context?.status;throw e;}return result;
 }
 
@@ -80,11 +82,11 @@ function selectConversation(id,openChat=true){
 async function sync(){if(loading){loadAgain=true;return;}loading=true;const version=epoch;try{
  const next=await api('state',{target:new URLSearchParams(location.search).get('message')});if(version!==epoch)return;for(const [id,rows] of olderMessages){if(!next.conversations.some(c=>c.id===id)){olderMessages.delete(id);continue;}const known=new Set(next.messages.map(m=>m.id));next.messages.unshift(...rows.filter(m=>!known.has(m.id)));}next.messages.sort((a,b)=>a.seq-b.seq);
  const refs=next.messages.flatMap(m=>workReferences(m.body));
- const resolved=await resolveWorkReferences(sb,refs);if(version!==epoch)return;workCards=resolved;
+ const resolved=await withReadTimeout(resolveWorkReferences(sb,refs));if(version!==epoch)return;workCards=resolved;
  state=next;$('newChat').disabled=false;const requested=new URLSearchParams(location.search);if(requested.has('conversation')&&state.conversations.some(c=>c.id===requested.get('conversation'))){active=requested.get('conversation');notificationTarget=requested.get('message');history.replaceState(null,'',location.pathname);}try{store('state-'+state.me.id,state);store('current',state.me.id);}catch{notice('المساحة المحلية ممتلئة؛ عرض الرسائل متاح، لكن حفظ نسخة دون اتصال غير متاح.');}status(true);$('identity').textContent=state.me.name;
  if(!active||!state.conversations.some(c=>c.id===active))active=state.conversations.find(c=>c.type==='direct')?.id||state.conversations[0]?.id;
  renderList();renderHead();renderMessages();renderDetails();renderPeople();renderWorkPage();renderThread();renderNotifications();updateIdentity();processNotifications();
- }catch(e){status(false);if(e.status===401||e.status===403){epoch++;state=null;active=null;olderMessages.clear();historyEnded.clear();events?.close();for(const id of ['messages','conversationFiles','conversations','details','peopleList','notificationList','toastArea','threadMessages'])$(id).replaceChildren();$('composer').hidden=true;notice(e.message);}}finally{loading=false;if(loadAgain){loadAgain=false;sync();}}
+ }catch(e){status(false);notice(e.message||'تعذر تحديث الدردشة. ستتم إعادة المحاولة.');if(e.status===401||e.status===403){epoch++;state=null;active=null;olderMessages.clear();historyEnded.clear();events?.close();for(const id of ['messages','conversationFiles','conversations','details','peopleList','notificationList','toastArea','threadMessages'])$(id).replaceChildren();$('composer').hidden=true;notice(e.message);}}finally{loading=false;if(loadAgain){loadAgain=false;sync();}}
 }
 function connect(){events?.close();const ch=sb.channel('communication-'+state.me.id).on('postgres_changes',{event:'*',schema:'public',table:'communication_revisions',filter:'user_id=eq.'+state.me.id},()=>sync()).subscribe(s=>{if(s==='SUBSCRIBED'){status(true);sync();flush();}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(s))status(false);});events={close:()=>sb.removeChannel(ch)};}
 
@@ -159,9 +161,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
  if(b.id==='cancelFile'){attachmentReadGeneration++;file=null;$('attachmentBar').hidden=true;$('send').disabled=!$('messageInput').value.trim();}
  if(b.id==='back'){$('layout').classList.remove('chat-open');heartbeat();}
  }catch(e){notice(e.message);}});
-window.addEventListener('online',()=>{sync();flush();});window.addEventListener('offline',()=>status(false));
-document.addEventListener('visibilitychange',()=>{heartbeat();if(!document.hidden){sync();if($('messages').scrollHeight-$('messages').scrollTop-$('messages').clientHeight<60)markRead();}});
-setInterval(()=>{if(state&&navigator.onLine){heartbeat();sync();flush();}},20000);
+window.addEventListener('online',()=>{if(state){sync();flush();}else initializeCommunication();});window.addEventListener('offline',()=>status(false));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!state){initializeCommunication();return;}heartbeat();if(!document.hidden){sync();if($('messages').scrollHeight-$('messages').scrollTop-$('messages').clientHeight<60)markRead();}});
+setInterval(()=>{if(!navigator.onLine)return;if(!state){initializeCommunication();return;}heartbeat();sync();flush();},20000);
 function viewingConversation(){return state&&currentPage==='communication'&&conversationView==='chat'&&filter==='all'&&!$('search').value&&!document.hidden&&$('layout').classList.contains('chat-open')&&($('threadDialog').open||$('messages').scrollHeight-$('messages').scrollTop-$('messages').clientHeight<90)?active:null;}
 let presenceChain=Promise.resolve();
 function heartbeat(){if(!state||!navigator.onLine)return Promise.resolve();const who=state.me.id,version=epoch,payload={device:deviceId,active:lastActivity,viewing:viewingConversation(),thread:$('threadDialog').open?threadRoot:null};presenceChain=presenceChain.catch(()=>{}).then(async()=>{if(state?.me.id!==who||epoch!==version)return;try{await api('action',{action:'presence',data:payload});}catch{}});return presenceChain;}
@@ -217,7 +219,13 @@ document.querySelectorAll('a[data-page]').forEach(a=>a.addEventListener('click',
 const mobileNav=document.createElement('nav');mobileNav.className='mobile-system-nav';mobileNav.setAttribute('aria-label','تنقل النظام');mobileNav.innerHTML=Object.entries(pageTitles).map(([page,t])=>`<button data-page="${page}" class="${page==='communication'?'active':''}">${t[0]}${page==='communication'?'<span id="mobileCommunicationBadge"></span>':''}</button>`).join('');document.querySelector('.lab-main .atwar-topbar').after(mobileNav);
 
 if(sessionChannel)sessionChannel.onmessage=async()=>{epoch++;events?.close();if(threadRoot&&state){try{store(`thread-draft-${state.me.id}-${threadRoot}`,$('threadInput').value);}catch{}}state=null;active=null;threadRoot=null;threadFile=null;file=null;reply=null;mentions=[];sourceMessage=null;notificationTarget=null;detailTask=null;notificationBaseline=null;for(const id of ['messages','conversationFiles','conversations','details','peopleList','notificationList','toastArea','threadMessages','mentionChoices','linkChoices','memberChoices'])$(id).replaceChildren();for(const id of ['threadDialog','newDialog','taskDialog','mentionDialog','linkDialog','notificationsDialog','settingsDialog'])$(id).close();$('messageInput').value='';$('identity').textContent='جارٍ تحديث الحساب…';$('details').hidden=true;$('layout').classList.remove('chat-open','with-details');while(loading)await new Promise(r=>setTimeout(r,20));await sync();if(state){$('account').value=state.me.id;selectConversation(active,innerWidth>700);connect();}};
-try{const accounts=await api('accounts');$('account').innerHTML=accounts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');await sync();if(!state)throw new Error('يلزم تسجيل الدخول إلى النظام.');else{$('account').value=state.me.id;const target=notificationTarget;selectConversation(active,innerWidth>700);if(target){const message=state.messages.find(m=>m.id===target);if(message?.thread)openThread(message.thread);notificationTarget=target;renderMessages();document.querySelector('[data-message="'+CSS.escape(target)+'"]')?.scrollIntoView({block:'center'});}heartbeat();connect();}}catch(e){await sync();notice(e.message||'يلزم تسجيل الدخول إلى النظام.');}
+let startingCommunication=false;
+async function initializeCommunication(){
+ if(startingCommunication||state||!navigator.onLine)return;
+ startingCommunication=true;
+ try{const accounts=await api('accounts');$('account').innerHTML=accounts.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');await sync();if(!state)throw new Error('تعذر تحميل الدردشة. ستتم إعادة المحاولة تلقائيًا.');else{$('account').value=state.me.id;const target=notificationTarget;selectConversation(active,innerWidth>700);if(target){const message=state.messages.find(m=>m.id===target);if(message?.thread)openThread(message.thread);notificationTarget=target;renderMessages();document.querySelector('[data-message="'+CSS.escape(target)+'"]')?.scrollIntoView({block:'center'});}heartbeat();connect();}}catch(e){status(false);notice(e.message||'تعذر تحميل الدردشة. ستتم إعادة المحاولة تلقائيًا.');}finally{startingCommunication=false;}
+}
+initializeCommunication();
 
 
 function renderFiles(){if(!state||!active)return;const files=state.messages.filter(m=>m.conversation===active&&m.file).sort((a,b)=>b.seq-a.seq);$('conversationFiles').innerHTML=files.length?'<h3>ملفات المحادثة</h3>'+files.map(m=>`<a class="shared-file" href="#" data-trial-file="${m.file.id}" download="${esc(m.file.name)}"><span class="file-symbol">↧</span><span><strong>${esc(m.file.name)}</strong><small>${esc(person(m.sender)?.name)} · ${day(m.created)} · ${Math.ceil(m.file.size/1024)} كيلوبايت</small></span></a>`).join(''):'<div class="empty">لا توجد ملفات في هذه المحادثة بعد.</div>';}
