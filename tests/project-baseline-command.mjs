@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {baselineRevisions} from '../assets/js/project-baseline.mjs';
+const source=readFileSync(new URL('../assets/js/projects-page.js',import.meta.url),'utf8');
+const code=source.slice(source.indexOf('function renderBaselinePanel('),source.indexOf('function overview('));
+let handler,confirmed=false;const calls=[];const panel={innerHTML:'',querySelector:()=>({addEventListener(name,fn){handler=fn;}})};
+const context={baseline:null,baselineFailed:false,project:{id:'project',revision:4},tasks:[{id:'task',revision:7,status:'قيد التنفيذ'},{id:'removed',revision:2,status:'ملغاة'}],manage:()=>true,open:()=>true,renderBaseline:()=>'',baselineRevisions,action:fn=>fn(),window:{AtwarUI:{confirm:async()=>confirmed}},rpc:async(name,args)=>calls.push({name,args}),loadProject:async id=>calls.push({load:id})};
+vm.createContext(context);vm.runInContext(code,context);context.renderBaselinePanel(panel);
+await handler();assert.equal(calls.length,0,'Cancelled confirmation must not capture');
+confirmed=true;await handler();assert.equal(calls[0].name,'capture_project_baseline');assert.deepEqual(JSON.parse(JSON.stringify(calls[0].args)),{p_id:'project',p_revision:4,p_task_revisions:[{id:'task',revision:7}]});assert.deepEqual(calls[1],{load:'project'});
+console.log('Project baseline command: confirmation, task/project revision snapshot and view reload passed');
