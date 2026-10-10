@@ -2,11 +2,12 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
 import {escapeHTML} from '../assets/js/tasks-core.mjs';
+import {createMessageSearch} from '../assets/js/project-message-search.mjs';
 import * as core from '../assets/js/projects-core.mjs';
 export function renderProjectPreview(view){
  const nodes=new Map();const element=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',querySelector:element,querySelectorAll:()=>[],addEventListener(){},setAttribute(){},removeAttribute(){}});return nodes.get(id);};
  const source=readFileSync(new URL('../assets/js/projects-page.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').split('try{sb=await window.atwarGetSupabase();')[0];
- const context={...core,esc:escapeHTML,document:{getElementById:element},innerWidth:1363,addEventListener(){},clearInterval(){},setInterval(){return 0},requestAnimationFrame(){},console,Date,URLSearchParams,location:{search:''}};vm.createContext(context);
+ const context={createMessageSearch,...core,esc:escapeHTML,document:{getElementById:element},innerWidth:1363,addEventListener(){},clearInterval(){},setInterval(){return 0},requestAnimationFrame(){},console,Date,URLSearchParams,location:{search:''}};vm.createContext(context);
  const project={id:'demo',title:'مشروع تجريبي · تشغيل مستودع جديد',objective:'تجهيز مستودع وتشغيله وفق خطة واضحة ومسؤوليات محددة.',deliverables:'مستودع مجهز، فريق مدرب، ومحضر تشغيل معتمد.',created_by:'manager',manager_id:'manager',sponsor_id:'sponsor',start_date:'2026-10-01',due_date:'2026-11-30',status:'ACTIVE',health:'ON_TRACK'};
  const people=[{id:'manager',full_name:'مدير المشروع'},{id:'sponsor',full_name:'المسؤول عن اعتماد المشروع'},{id:'member',full_name:'عضو الفريق'}];
  const tasks=[{id:'t1',title:'اعتماد الموقع والمخطط',project_phase_id:'p1',assignee_id:'member',assignee_name_snapshot:'عضو الفريق',start_date:'2026-10-01',due_date:'2026-10-10',progress:100,status:'مكتملة',project_weight:2},{id:'t2',title:'توريد التجهيزات',project_phase_id:'p2',assignee_id:'member',assignee_name_snapshot:'عضو الفريق',start_date:'2026-10-11',due_date:'2026-10-30',progress:45,status:'قيد التنفيذ',project_weight:3},{id:'t3',title:'التشغيل التجريبي',project_phase_id:'p2',assignee_id:'manager',assignee_name_snapshot:'مدير المشروع',start_date:'2026-11-01',due_date:'2026-11-20',progress:0,status:'قيد الانتظار',project_weight:2},{id:'t4',title:'اعتماد التشغيل',project_phase_id:'p2',assignee_id:'manager',assignee_name_snapshot:'مدير المشروع',start_date:'2026-11-30',due_date:'2026-11-30',progress:0,status:'قيد الانتظار',project_weight:1,project_milestone:true}];
