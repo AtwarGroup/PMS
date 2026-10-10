@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {createMessageSearch,messageSearchQuery} from '../assets/js/project-message-search.mjs';
+let calls=[],pending=[],states=[];
+const sb={from(table){calls.push(['table',table]);return {select(){return this},eq(k,v){calls.push([k,v]);return this},order(){return this},limit(){return this},or(v){calls.push(['cursor',v]);return this},ilike(k,v){calls.push([k,v]);return this},then(resolve){return new Promise(r=>pending.push(r)).then(resolve);}};}};
+messageSearchQuery(sb,'project','50%_\\');assert.deepEqual(calls.at(-1),['body','%50\\%\\_\\\\%']);
+const controller=createMessageSearch({sb,projectId:'p1',render:s=>states.push(s)});
+const old=controller.search('old'),fresh=controller.search('new');await new Promise(r=>setImmediate(r));pending[1]({data:[{id:'b',created_at:'2026-10-10T00:00:00Z'}]});await fresh;await new Promise(r=>setImmediate(r));pending[0]({data:[{id:'a',created_at:'2026-10-09T00:00:00Z'}]});await old;assert.equal(states.at(-1).rows[0].id,'b');
+const cancelled=controller.search('cancel');controller.cancel();const n=states.length;await new Promise(r=>setImmediate(r));pending[2]({data:[]});await cancelled;assert.equal(states.length,n);
+const fail=controller.search('fail');await new Promise(r=>setImmediate(r));pending[3]({error:new Error('offline')});await fail;assert.match(states.at(-1).error,/تعذر/);
+const page=controller.search('archive');await new Promise(r=>setImmediate(r));pending[4]({data:Array.from({length:101},(_,i)=>({id:`00000000-0000-0000-0000-${String(999-i).padStart(12,'0')}`,created_at:'2026-10-09T00:00:00Z'}))});await page;assert.equal(states.at(-1).rows.length,100);assert.equal(states.at(-1).more,true);
+const older=controller.older();await new Promise(r=>setImmediate(r));pending[5]({data:[{id:'00000000-0000-0000-0000-000000000001',created_at:'2026-10-08T00:00:00Z'}]});await older;assert.equal(states.at(-1).rows.length,101);assert.equal(states.at(-1).more,false);assert.ok(calls.some(c=>c[0]==='cursor'));assert.ok(calls.some(c=>c[0]==='project_id'&&c[1]==='p1'));
+console.log('Project search: literal patterns, project scope, stale/cancelled responses, retry and older-page results passed');

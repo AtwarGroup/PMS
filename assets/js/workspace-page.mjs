@@ -1,3 +1,4 @@
+import {mountJobFollowup,mountApprovalSettings} from './job-followup-panel.mjs?v=1.0.0';
 import {managementBriefing,renderManagementBriefing} from './management-briefing.mjs?v=1.0.0';
 import {workspaceBriefing,renderBriefing} from './workspace-briefing.mjs?v=1.0.0';
 import {workspaceModel,renderWorkspace,requestModel,renderRequests,actionInbox,renderActionInbox,filterActionInbox} from './workspace-core.mjs?v=2.5.59';
@@ -51,6 +52,7 @@ export async function mountWorkspace(sb,profile){
    for(const key of ['upcoming','waiting','blockers']){const count=document.getElementById('spaceCount'+key);if(count)count.textContent=briefFailures[key]?'—':String(brief[key].length);}
    const managementHost=document.getElementById('spaceManagement');
    if(managementHost){managementHost.hidden=!['admin','manager'].includes(profile.role);if(!managementHost.hidden){const unavailable=failed.decisions||failed.projects||followups.status==='rejected';const body=document.getElementById('spaceManagementBody');if(body)body.innerHTML=unavailable?missing:renderManagementBriefing(managementBriefing({profile,tasks:value(tasks),projects:value(projects),directIds:value(people).map(p=>p.id),followups:value(followups),inbox,day:model.day}));}}
+   if(['admin','manager'].includes(profile.role)){await mountJobFollowup(document.getElementById('spaceJobFollowup'),sb);await mountApprovalSettings(document.getElementById('spaceApprovalSettings'),sb,profile);}
    document.getElementById('spaceFocus').textContent=failed.tasks?'متابعة أعمالك في مكان واحد':model.overdue?`لديك ${model.overdue} مهام متأخرة؛ ابدأ بالأقدم.`:model.due.length?`لديك ${model.due.length} مهام مستحقة اليوم.`:(model.decisions.length+requests.actions.length?`لديك ${model.decisions.length+requests.actions.length} إجراءات تنتظر منك مراجعة أو قرارًا.`:'يومك واضح؛ لا توجد مهام مستحقة أو إجراءات مطلوبة الآن.');
    document.querySelectorAll('[data-space-notification]').forEach(b=>b.onclick=async()=>{const row=value(notifications).find(n=>n.id===b.dataset.spaceNotification);await window.atwarOpenNotificationRecord?.(sb,row,'../',message=>{status.textContent=message;});});
    status.textContent=(Object.values(failed).some(Boolean)||Object.values(briefFailures).some(Boolean))?'بعض الأقسام غير متاحة؛ نعيد المحاولة تلقائيًا.':'محدّث الآن · تحديث تلقائي';window.lucide?.createIcons();

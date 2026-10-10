@@ -12,7 +12,19 @@ export function createTaskAttachmentsController({
   toast,
   onChanged=async()=>{}
 }){
-  let uploadBusy=false;
+  let uploadBusy=false,cleanupPending=0,cleanupTimer=null,cleanupBusy=false;
+  function scheduleCleanup(){clearTimeout(cleanupTimer);if(cleanupPending)cleanupTimer=setTimeout(()=>void retryCleanup(),60000);}
+  async function retryCleanup(){
+    if(cleanupBusy||!getCurrentUser()?.uid)return;cleanupBusy=true;
+    try{const sb=await getSupabase();if(!sb.functions?.invoke)return;const {data,error}=await sb.functions.invoke('cleanup-task-attachments',{body:{retry:true}});if(error||data?.error){cleanupPending=Math.max(1,cleanupPending);return;}cleanupPending=data.pending||0;}
+    catch{cleanupPending=Math.max(1,cleanupPending);}
+    finally{cleanupBusy=false;scheduleCleanup();}
+  }
+  globalThis.addEventListener?.('online',()=>void retryCleanup());
+  globalThis.addEventListener?.('pagehide',()=>clearTimeout(cleanupTimer));
+  globalThis.addEventListener?.('pageshow',()=>void retryCleanup());
+  // Persisted queue belongs to the authenticated requester, never a browser-supplied path.
+  void retryCleanup();
   const deleteLocks=new Set();
   const selectedAttachment=id=>(getSelectedTask()?.attachments||[]).find(file=>String(file.id)===String(id))||null;
 
@@ -41,12 +53,12 @@ export function createTaskAttachmentsController({
     deleteLocks.add(lockKey);
     try{
       const sb=await getSupabase();
-      const removedRow=await sb.from('task_attachments').delete().eq('id',id);
-      if(removedRow.error)throw removedRow.error;
+      const result=await sb.functions.invoke('cleanup-task-attachments',{body:{id}});
+      if(result.error||result.data?.error)throw new Error(result.data?.error||'تعذر إتمام طلب الحذف. أعد المحاولة.');
       await onChanged();
-      toast('تم حذف المرفق.','success');
-      const removedFile=await sb.storage.from('task-attachments').remove([file.storagePath]);
-      if(removedFile.error)console.warn('Attachment storage cleanup:',removedFile.error);
+      cleanupPending=result.data?.pending||0;
+      toast(cleanupPending?'تم حذف المرفق من المهمة؛ تنظيف الملف بانتظار إعادة المحاولة.':'تم حذف المرفق.','success');
+      scheduleCleanup();
     }catch(error){
       console.error('Delete attachment:',error);
       toast(error?.message||'تعذر حذف المرفق. لا تملك الصلاحية أو أن المهمة مقفلة.','error',6000);
@@ -90,5 +102,5 @@ export function createTaskAttachmentsController({
     }
   }
 
-  return {open,remove,upload};
+  return {open,remove,upload,retryCleanup};
 }
