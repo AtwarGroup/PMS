@@ -18,8 +18,8 @@
 .space-view[hidden],.space-tabs button[hidden]{display:none!important}
 .space-view{min-width:0;scroll-margin-top:calc(var(--atwar-header-height,72px) + 16px)}
 .space-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.space-daily-grid #spaceDecisionPanel{grid-column:2;grid-row:1/span 2}
-.space-daily-grid #spaceUpcomingPanel{grid-column:1}
+.space-daily-grid #spaceDecisionPanel{grid-column:1/-1;grid-row:1}
+.space-daily-grid #spaceTodayPanel{grid-column:1;grid-row:2}.space-daily-grid #spaceUpcomingPanel{grid-column:2;grid-row:2}
 .space-tracking-grid .space-requests{grid-column:auto}
 .space-tracking-grid #spaceRequestsPanel{grid-column:1/-1;grid-row:1}
 .space-tracking-grid #spaceBlockerPanel{grid-column:1/-1}
@@ -32,5 +32,17 @@
 #spaceApprovalSettings:empty{display:none}#spaceApprovalSettings{padding:0 20px 18px;border-bottom:0}
 #spaceApprovalSettings>details{border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px}#spaceApprovalSettings>details>summary{cursor:pointer;font-weight:700}
 .workspace-main-grid .ws-card{min-height:0!important}.workspace-note-card .note-input{min-height:220px!important}.workspace-follow-card .follow-list{max-height:420px}
-@media(max-width:850px){.space-grid{grid-template-columns:1fr}.space-daily-grid #spaceDecisionPanel{grid-column:auto;grid-row:1}.space-daily-grid #spaceUpcomingPanel,.space-tracking-grid #spaceRequestsPanel,.space-tracking-grid #spaceBlockerPanel{grid-column:auto}.space-welcome-actions{justify-content:flex-start}}
+@media(max-width:850px){.space-grid{grid-template-columns:1fr}.space-daily-grid #spaceDecisionPanel{grid-column:auto;grid-row:auto}.space-daily-grid #spaceTodayPanel,.space-daily-grid #spaceUpcomingPanel{grid-column:auto;grid-row:auto}.space-daily-grid #spaceUpcomingPanel,.space-tracking-grid #spaceRequestsPanel,.space-tracking-grid #spaceBlockerPanel{grid-column:auto}.space-welcome-actions{justify-content:flex-start}}
 @media(max-width:500px){.space-tabs{gap:3px;margin-bottom:14px}.space-tabs button{padding:8px 10px;font-size:12px!important}.space-summary-item{padding:10px 12px}.space-summary-item strong{font-size:20px}.space-panel-head{flex-wrap:wrap;padding:14px}.space-body{padding:0 14px;max-height:380px}.space-management-details{margin-inline:14px}#spaceApprovalSettings{padding-inline:14px}.space-welcome-actions{gap:8px}.space-welcome-actions .space-sync{width:100%}}
+
+/* Review: each view has its own context and a clear reading order. */
+.space-tabs{margin-bottom:14px}.space-summary{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px}
+.space-tabs:has(#spaceDailyTab[aria-selected=true])~.space-summary a:is([href="#spaceWaitingPanel"],[href="#spaceBlockerPanel"],[href="#spaceProjectsPanel"]),
+.space-tabs:has(#spaceTrackingTab[aria-selected=true])~.space-summary a:is([href="#spaceTodayPanel"],[href="#spaceDecisionPanel"],[href="#spaceUpcomingPanel"]){display:none!important}
+.space-summary[hidden],.space-focus[hidden]{display:none!important}
+.space-action-options{border-bottom:1px solid #eef2f6}.space-action-options>summary{padding:10px 18px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer}.space-action-options>summary:focus-visible{outline:2px solid #2563eb;outline-offset:-3px}
+.space-action-options .space-action-filters{padding-top:4px}.space-empty{padding:18px 0}
+.workspace-note-card p,.workspace-follow-card .follow-head>div>div{font-size:13px!important;line-height:1.8;color:#64748b!important}
+.workspace-note-card>div>span{font-size:12px!important}.follow-title{font-size:14px!important}.follow-meta{font-size:12px!important}.follow-note{font-size:13px!important}
+@media(max-width:850px){.space-body,.workspace-follow-card .follow-list{max-height:none;overflow:visible}.space-grid{gap:14px}}
+@media(max-width:500px){.space-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.space-summary-item{padding:9px 8px}.space-summary-item span{font-size:11px;line-height:1.65}.space-summary-item strong{font-size:20px}.space-panel-head .space-sync{flex-basis:100%}.space-row{flex-wrap:wrap}.space-row-copy{min-width:140px}}
