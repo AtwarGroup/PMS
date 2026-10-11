@@ -4,7 +4,7 @@ export function initWorkspaceNavigation({doc=document,win=window}={}){
  let active='Daily';
  function select(key,{writeHash=false,focus=false}={}){
   const tab=tabs.find(t=>t.dataset.workspaceTab===key);if(!tab||tab.hidden)return false;
-  active=key;
+  active=key;const summary=doc.getElementById('spaceSummary'),focusMessage=doc.getElementById('spaceFocus');if(summary){summary.hidden=!['Daily','Tracking'].includes(key);summary.setAttribute?.('aria-label',key==='Daily'?'ملخص يومي':'ملخص متابعة الأعمال');}if(focusMessage)focusMessage.hidden=key!=='Daily';
   for(const t of tabs){const selected=t===tab;t.setAttribute('aria-selected',String(selected));t.tabIndex=selected?0:-1;}
   for(const v of views)v.hidden=v.dataset.workspaceView!==key;
   if(writeHash)win.history.replaceState(null,'','#'+tab.getAttribute('aria-controls'));
@@ -31,6 +31,6 @@ export function initWorkspaceNavigation({doc=document,win=window}={}){
   const target=doc.getElementById(link.getAttribute('href').slice(1)),view=target?.closest('[data-workspace-view]');
   if(view&&select(view.dataset.workspaceView)){event.preventDefault();win.history.replaceState(null,'',link.getAttribute('href'));target.scrollIntoView?.({block:'start',behavior:'auto'});}
  });
- win.addEventListener('hashchange',followHash);followHash();
+ win.addEventListener('hashchange',followHash);select('Daily');followHash();
  return {setRole(role){const management=tabs.find(t=>t.dataset.workspaceTab==='Management');if(management)management.hidden=!['admin','manager'].includes(role);if(active==='Management'&&management?.hidden)select('Daily');followHash();}};
 }
