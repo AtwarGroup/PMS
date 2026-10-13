@@ -1,5 +1,5 @@
 export const stageLabels={DRAFT:'مسودة',IN_REVIEW:'قيد مراجعة المدير',CHANGES_REQUESTED:'معاد للتعديل',PUBLISHED:'معتمد ومنشور',ARCHIVED:'مؤرشف'};
-export function jobStage(job){if(job.scheduled_effective_date)return job.schedule_status==='BLOCKED'?'تعذر بدء السريان — يحتاج مراجعة':'معتمد بانتظار السريان';return job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?'بانتظار الاعتماد والنشر':'قيد المراجعة النهائية'):stageLabels[job.status]||job.status;}
+export function jobStage(job){if(job.scheduled_effective_date)return job.schedule_status==='BLOCKED'?'تعذر بدء السريان — يحتاج مراجعة':'معتمد بانتظار السريان';return job.status==='MANAGER_APPROVED'?(job.final_reviewed_at?'بانتظار نشر الإصدار':'بانتظار التحقق وتجهيز النشر'):stageLabels[job.status]||job.status;}
 export function pendingChanges(rows){return rows.filter(x=>x.status==='PENDING'&&x.action!=='COMMENT');}
 // Object key ordering is not a business change; array ordering remains meaningful.
 function canonical(value){return Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;}
