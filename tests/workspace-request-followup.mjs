@@ -18,3 +18,9 @@ assert.ok(!renderRequests(applied.actions,'').includes('<script>'));assert.ok(re
 assert.equal(taskLink({id:'w',legacy_metadata:{job_workflow:{policy_id:'p',policy_version_id:'v'}}}),'../policies/index.html?id=p&version=v');
 assert.equal(taskLink({id:'w',legacy_metadata:{job_workflow:{request_id:'c'}}}),'../job-library/employee-changes.html?id=c');
 console.log('Workspace request authority, tracking, deduplication, terminal states and safe links passed');
+
+const incompleteChange={...changes[0],status:'ADMIN_REVIEW',section:'PURPOSE',action:'MODIFY',original_value:'الغرض',proposed_value:'الغرض',manager_note:'صحيح أتفق'};
+const incompleteModel=requestModel({profile:{id:'a',role:'admin'},changes:[incompleteChange]});
+assert.equal(incompleteModel.actions[0].state,'يحتاج استكمال التعديل');
+assert.doesNotMatch(incompleteModel.actions[0].note,/أتفق/);
+assert.doesNotMatch(renderRequests(incompleteModel.actions,''),/تجهيز التغيير الموافق عليه/);

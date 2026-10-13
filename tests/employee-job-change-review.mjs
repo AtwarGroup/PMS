@@ -9,6 +9,7 @@ const scale=Array.from({length:5},(_,i)=>({score:i+1,label:String(i+1)}));
 const old={name:'معدل دوران المخزون',measure:'تكلفة البضاعة ÷ متوسط المخزون',unit:'مرة',target:'6',source:'Odoo',frequency:'ربع سنوي',weight:10,scale};
 const changed={...old,target:'8'};
 const requests=[{id:'manager-pending',manager_id:'manager',status:'MANAGER_REVIEW',section:'KPIS',action:'MODIFY',original_value:old,proposed_value:changed,reason:'مراجعة المؤشر',published_revision:1},{id:'ready',manager_id:'manager',manager_decided_at:'2026-10-13',status:'ADMIN_REVIEW',section:'KPIS',action:'MODIFY',original_value:old,proposed_value:changed,reason:'تغيير المستهدف',published_revision:1},{id:'unchanged',manager_id:'manager',status:'ADMIN_REVIEW',section:'PURPOSE',action:'MODIFY',original_value:'الغرض الحالي',proposed_value:' الغرض الحالي ',reason:'ملاحظات دون تعديل',published_revision:1}];
+requests[1].approval_snapshot={section:'KPIS',action:'MODIFY',index:null,original:old,proposed:changed,impact:''};
 const sb={from(){return {select(){return this},order(){return Promise.resolve({data:requests})},in(){return Promise.resolve({data:[{id:'manager',full_name:'الرئيس التنفيذي'}]})}}}};
 async function render(profile){const host={innerHTML:'',querySelectorAll:()=>[]};await context.mountChangeReview(host,{sb,profile,embedded:true});return host.innerHTML;}
 const article=(html,id)=>html.split(`data-request="${id}"`)[1].split('<p role="status"')[0];
@@ -20,7 +21,8 @@ assert.doesNotMatch(article(admin,'ready'),/data-action="APPROVE"|data-action="R
 assert.match(article(admin,'ready'),/المؤشر الحالي/);
 assert.match(article(admin,'ready'),/تكلفة البضاعة ÷ متوسط المخزون/);
 assert.match(article(admin,'ready'),/الحقول المتغيرة: المستهدف/);
-assert.match(article(admin,'unchanged'),/data-action="PREPARE" disabled/);
+assert.doesNotMatch(article(admin,'unchanged'),/data-action="PREPARE"|وافق المدير|المقترح/);
+assert.match(article(admin,'unchanged'),/يحتاج استكمال التعديل/);
 assert.match(article(admin,'unchanged'),/تصحيح تهيئة الطلب/);
 assert.match(article(admin,'unchanged'),/data-action="RETURN"/);
 const manager=await render({id:'manager',role:'manager'});
@@ -32,7 +34,29 @@ requests[2].reason='معدل دوران المخزون حسب الهيكل يخ�
 sb.rpc=async name=>{assert.equal(name,'get_employee_job_change_source');return {data:{published_snapshot:{revision:23,content:{kpis:[old]}}}};};
 const legacy=await render({id:'admin',role:'admin'});
 assert.match(article(legacy,'unchanged'),/المؤشر المشار إليه في المبررات/);
-assert.match(article(legacy,'unchanged'),/عرض الطلب الأصلي المسجل على الغرض الوظيفي/);
+assert.doesNotMatch(article(legacy,'unchanged'),/الغرض الحالي|الغرض الوظيفي|data-action="PREPARE"/);
 assert.match(article(legacy,'unchanged'),/لا يوجد تعديل محدد عليه/);
 assert.equal(requests[2].section,'PURPOSE');assert.equal(requests[2].original_value,'الغرض الحالي');
 console.log('PASS: legacy KPI reference is visible without changing the original request or inventing a proposal.');
+
+requests[1].approval_snapshot=null;
+const unapproved=await render({id:'admin',role:'admin'});
+assert.doesNotMatch(article(unapproved,'ready'),/data-action="PREPARE"|وافق المدير/);
+assert.match(article(unapproved,'ready'),/يحتاج قرارًا على الصيغة الحالية/);
+requests[0].proposed_value={...changed,source:''};
+const incomplete=await render({id:'manager',role:'manager'});
+assert.doesNotMatch(article(incomplete,'manager-pending'),/data-action="APPROVE"|data-action="REJECT"/);
+assert.match(article(incomplete,'manager-pending'),/يحتاج استكمال التعديل/);
+console.log('PASS: incomplete proposals and missing approval snapshots cannot expose decision or preparation controls.');
+
+requests[0].proposed_value=changed;
+requests[1].approval_snapshot={section:'KPIS',action:'MODIFY',index:null,original:old,proposed:changed,impact:''};
+requests[1].related_request_ids=['manager-pending'];
+const partialGroup=await render({id:'admin',role:'admin'});
+assert.doesNotMatch(article(partialGroup,'ready'),/data-action="PREPARE"/);
+assert.match(article(partialGroup,'ready'),/يلزم استكمال الطلبات المرتبطة/);
+requests[1].related_request_ids=[];
+requests[0].related_request_ids=['unchanged'];
+const incompleteGroup=await render({id:'manager',role:'manager'});
+assert.doesNotMatch(article(incompleteGroup,'manager-pending'),/data-action="APPROVE"/);
+console.log('PASS: linked requests cannot expose a partial decision or premature preparation.');
