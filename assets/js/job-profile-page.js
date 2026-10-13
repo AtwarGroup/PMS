@@ -1,4 +1,4 @@
-import {mountEmployeeChanges} from './employee-job-changes.js?v=2.5.41';
+import {mountEmployeeChanges} from './employee-job-changes.js?v=2.5.62';
 import {createJobAcknowledgementPdf} from './job-ack-pdf.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='../assets/css/job-profile.css?v=2.4.17';document.head.append(css);
 const sb=await window.atwarGetSupabase(),host=document.getElementById('jobProfile');
@@ -19,7 +19,7 @@ async function makePdf({profile,manager,job,acknowledgement}){
 }
 
 function ackHtml(ack){
-  if(!ack)return `<section class="job-acknowledgement pending"><h2>إقرار الاطلاع والمسؤولية</h2><p>بعد قراءة الوصف الوظيفي كاملًا، يلزم تأكيد الاطلاع والموافقة قبل تسجيل الإقرار وإرسال نسخته المعتمدة.</p><label class="ack-check"><input id="ackCheckbox" type="checkbox"><span>${esc(ACK_TEXT)}</span></label><div class="ack-actions"><button class="ack-button" id="ackButton" disabled>اعتماد الإقرار وإرسال النسخة</button><span class="ack-status" id="ackStatus"></span></div></section>`;
+  if(!ack)return `<section class="job-acknowledgement pending"><h2>إقرار الاطلاع والمسؤولية</h2><p>بعد قراءة الوصف الوظيفي كاملًا، يلزم تأكيد الاطلاع والموافقة قبل تسجيل الإقرار وإرسال نسخته المعتمدة.</p><label class="ack-check"><input id="ackCheckbox" type="checkbox"><span>${esc(ACK_TEXT)}</span></label><div class="ack-actions"><button class="ack-button" id="ackButton" disabled>تأكيد الاطلاع وإرسال الإقرار</button><span class="ack-status" id="ackStatus"></span></div></section>`;
   const accepted=new Intl.DateTimeFormat('ar-SA',{dateStyle:'long',timeStyle:'short',timeZone:'Asia/Riyadh'}).format(new Date(ack.accepted_at)),retry=ack.email_status!=='sent';
   return `<section class="job-acknowledgement accepted"><div class="ack-success"><span class="ack-success-mark">✓</span><div><h2>تم اعتماد إقرارك</h2><p>سُجلت الموافقة بتاريخ ${esc(accepted)} على الإصدار ${esc(ack.job_revision)}.</p></div></div>${retry?`<p class="ack-email-warning">تم حفظ الإقرار، لكن إرسال البريد لم يكتمل. يمكنك إعادة المحاولة دون تكرار الإقرار.</p><div class="ack-actions"><button class="ack-retry" id="ackRetry">إعادة إرسال ملف PDF</button><span class="ack-status" id="ackStatus"></span></div>`:'<p>تم إرسال ملف PDF إلى بريدك ومديرك المباشر والموارد البشرية.</p>'}</section>`;
 }
