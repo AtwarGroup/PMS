@@ -10,7 +10,8 @@ export function referencedKpi(snapshot,reason){
 }
 export function changedFields(a,b,section){if(section!=='KPIS')return sameValue(a,b)?[]:['النص'];return kpiFields.filter(([key])=>!sameValue(a?.[key],b?.[key])).map(([,label])=>label).concat(sameValue(a?.scale,b?.scale)?[]:['سلم التقييم']);}
 export function validProposal(section,action,value,original){
- if(action==='DELETE')return '';
+ if(!['PURPOSE',...Object.keys(sectionKeys)].includes(section)||!['ADD','MODIFY','DELETE'].includes(action))return 'حدد القسم والإجراء المطلوب.';
+ if(action==='DELETE')return original==null?'حدد البند المطلوب حذفه.':'';
  if(action==='MODIFY'&&sameValue(original,value))return 'لم يتغير البند؛ المبررات وحدها لا تمثل تعديلًا.';
  if(section==='KPIS'){
   for(const key of ['name','measure','unit','target','source','frequency'])if(!String(value?.[key]??'').trim())return 'أكمل اسم المؤشر والمعادلة والوحدة والمستهدف والمصدر والدورية.';
@@ -24,4 +25,14 @@ export function cleanKpiProposal(original,values){
  // A changed target, measure or scale invalidates the old explanatory basis.
  if(['target','measure','scale'].some(key=>!sameValue(original?.[key],result[key]))){result.scale_basis=result.target;result.scale_note='سلم مقترح؛ يعتمد مع قرار صاحب الصلاحية';result.measurement_review_note='';}
  return result;
+}
+
+// One readiness rule for the review page and the workspace inbox.
+export function changeReadiness(request){
+ const pending=['MANAGER_REVIEW','ADMIN_REVIEW','NEEDS_CHANGES','STALE'].includes(request.status);
+ const issue=pending&&request.section&&request.action?validProposal(request.section,request.action,request.proposed_value,request.original_value):'';
+ const expected={section:request.section,action:request.action,index:request.item_index??null,original:request.original_value,proposed:request.proposed_value,impact:request.impact_note||''};
+ const approved=!!request.manager_decided_at&&sameValue(request.approval_snapshot,expected);
+ const needsDecision=pending&&request.status==='ADMIN_REVIEW'&&!issue&&!approved;
+ return {issue,approved,needsDecision,incomplete:!!issue,state:issue?'يحتاج استكمال التعديل':needsDecision?'يحتاج قرارًا على الصيغة الحالية':null};
 }

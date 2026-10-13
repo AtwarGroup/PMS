@@ -1,4 +1,4 @@
-import {mountEmployeeChanges} from './employee-job-changes.js?v=2.5.62';
+import {mountEmployeeChanges} from './employee-job-changes.js?v=2.5.63';
 import {createJobAcknowledgementPdf} from './job-ack-pdf.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='../assets/css/job-profile.css?v=2.4.17';document.head.append(css);
 const sb=await window.atwarGetSupabase(),host=document.getElementById('jobProfile');
