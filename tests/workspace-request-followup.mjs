@@ -24,3 +24,5 @@ const incompleteModel=requestModel({profile:{id:'a',role:'admin'},changes:[incom
 assert.equal(incompleteModel.actions[0].state,'يحتاج استكمال التعديل');
 assert.doesNotMatch(incompleteModel.actions[0].note,/أتفق/);
 assert.doesNotMatch(renderRequests(incompleteModel.actions,''),/تجهيز التغيير الموافق عليه/);
+
+const archived=requestModel({profile:{id:'a',role:'admin'},changes:[{...incompleteChange,status:'ARCHIVED'}]});assert.equal(archived.actions.length+archived.tracking.length,0);
