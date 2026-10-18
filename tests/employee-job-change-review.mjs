@@ -23,7 +23,7 @@ assert.match(article(admin,'ready'),/تكلفة البضاعة ÷ متوسط ا�
 assert.match(article(admin,'ready'),/الحقول المتغيرة: المستهدف/);
 assert.doesNotMatch(article(admin,'unchanged'),/data-action="PREPARE"|وافق المدير|المقترح/);
 assert.match(article(admin,'unchanged'),/يحتاج استكمال التعديل/);
-assert.match(article(admin,'unchanged'),/تصحيح تهيئة الطلب/);
+assert.match(article(admin,'unchanged'),/استكمال الطلب/);
 assert.match(article(admin,'unchanged'),/data-action="RETURN"/);
 const manager=await render({id:'manager',role:'manager'});
 assert.match(article(manager,'manager-pending'),/data-action="APPROVE"/);
@@ -60,3 +60,12 @@ requests[0].related_request_ids=['unchanged'];
 const incompleteGroup=await render({id:'manager',role:'manager'});
 assert.doesNotMatch(article(incompleteGroup,'manager-pending'),/data-action="APPROVE"/);
 console.log('PASS: linked requests cannot expose a partial decision or premature preparation.');
+
+const simple=article(admin,'ready');
+const visible=simple.split('<details class="job-change-extra">')[0];
+assert.match(visible,/المستهدف/);
+assert.match(visible,/سبب الطلب/);
+assert.doesNotMatch(visible,/سلم التقييم|مصدر القياس|دورية القياس|الإصدار المرجعي|صاحب قرار المحتوى/);
+assert.match(simple,/<summary>عرض التفاصيل<\/summary>/);
+assert.match(simple,/<summary>سجل الطلب<\/summary>/);
+console.log('PASS: compact cards show the requested change, with full KPI fields and audit history behind details.');
