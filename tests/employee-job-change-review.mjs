@@ -69,3 +69,14 @@ assert.doesNotMatch(visible,/سلم التقييم|مصدر القياس|دور�
 assert.match(simple,/<summary>عرض التفاصيل<\/summary>/);
 assert.match(simple,/<summary>سجل الطلب<\/summary>/);
 console.log('PASS: compact cards show the requested change, with full KPI fields and audit history behind details.');
+
+requests.push({...requests[2],id:'archived',status:'ARCHIVED',archive_reason:'تغير الربط'});
+const activeOnly=await render({id:'admin',role:'admin'});
+assert.doesNotMatch(activeOnly,/data-request="archived"/);
+assert.match(activeOnly,/عرض الأرشيف/);
+context.location.search='?archived=1';
+const archive=await render({id:'admin',role:'admin'});
+assert.match(archive,/data-request="archived"/);
+assert.doesNotMatch(archive,/data-action=|data-correct|data-link-request/);
+assert.match(archive,/مؤرشف — انتهى الربط السابق/);
+console.log('PASS: archived requests leave the active list and remain read-only in the archive.');
