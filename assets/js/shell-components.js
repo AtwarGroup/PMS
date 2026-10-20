@@ -97,6 +97,7 @@
           ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحتي')}
           ${nav('team','team/index.html','users','الفريق','manager')}
+          ${nav('employees','admin/employees.html','contact-round','سجل الموظفين')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
           ${nav('policies','policies/index.html','book-open-check','مكتبة السياسات')}
           ${nav('profile','profile/index.html?view=job','badge-check','ملفي الوظيفي')}

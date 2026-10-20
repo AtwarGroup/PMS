@@ -1,4 +1,4 @@
-import {mountJobFollowup,mountApprovalSettings} from './job-followup-panel.mjs?v=1.0.0';
+import {mountJobFollowup,mountApprovalSettings} from './job-followup-panel.mjs?v=2.6.2';
 import {managementBriefing,renderManagementBriefing} from './management-briefing.mjs?v=1.0.0';
 import {workspaceBriefing,renderBriefing} from './workspace-briefing.mjs?v=1.0.0';
 import {workspaceModel,renderWorkspace,requestModel,renderRequests,actionInbox,renderActionInbox,filterActionInbox} from './workspace-core.mjs?v=2.5.65';
