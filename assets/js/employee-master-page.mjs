@@ -1,4 +1,4 @@
-import {domains,escapeHTML as esc,filterEmployees,normalizeGrant} from './employee-master-model.mjs?v=2.6.1';
+import {domains,escapeHTML as esc,filterEmployees} from './employee-master-model.mjs?v=2.6.1';
 const el=id=>document.getElementById(id);const sb=await window.atwarGetSupabase();let context,employees=[],detail,currentId;
 const status=(message,error=false)=>{el('hrStatus').textContent=message;el('hrStatus').dataset.error=String(error);};
 async function rpc(name,args){const r=await sb.rpc(name,args);if(r.error)throw Error(r.error.message);return r.data;}
@@ -14,7 +14,7 @@ function renderList(){
 }
 async function load(){context=await rpc('employee_master_context');employees=await rpc('employee_master_list');el('employeeCount').textContent=employees.length;el('activeCount').textContent=employees.filter(x=>x.login_active).length;el('waitingCount').textContent=employees.filter(x=>!x.profile_id).length;
  const department=el('hrDepartment').value;el('hrDepartment').innerHTML=option('','جميع الإدارات',department)+[...new Set(employees.map(x=>x.department))].map(n=>option(n,n,department)).join('');
- refreshSections();el('accessButton').hidden=!context.admin;renderList();
+ refreshSections();renderList();
 }
 function refreshSections(){const old=el('hrSection').value;el('hrSection').innerHTML=option('','جميع الأقسام',old)+[...new Set(employees.filter(x=>!el('hrDepartment').value||x.department===el('hrDepartment').value).map(x=>x.section))].map(n=>option(n,n,old)).join('');}
 function saveControls(){return`${field('effective_from','تاريخ السريان',today(),{type:'date',required:true})}${field('reason','سبب التعديل','',{required:true})}<button class="hr-btn" type="submit">حفظ التعديل</button><p class="hr-detail-status hr-wide" role="status"></p>`;}
@@ -41,9 +41,4 @@ el('employeeDetail').addEventListener('submit',async event=>{event.preventDefaul
  button.disabled=true;try{detail=await rpc('employee_master_save',{p_id:currentId,p_domain:form.dataset.domain,p_revision:detail.record.revision,p_payload:data,p_effective:effective,p_reason:reason});await load();renderDetail();status('تم حفظ التعديل وتوثيقه.');}catch(e){message.textContent=e.message;message.dataset.error='true';}finally{button.disabled=false;}});
 el('closeEmployee').onclick=()=>{el('employeeDialog').close();el('employeeDetail').replaceChildren();detail=null;};el('employeeDialog').addEventListener('close',()=>{el('employeeDetail').replaceChildren();detail=null;});
 for(const id of ['hrSearch','hrLogin','hrSection'])el(id).addEventListener(id==='hrSearch'?'input':'change',renderList);el('hrDepartment').addEventListener('change',()=>{refreshSections();renderList();});
-function renderGrant(){const g=context.grants.find(x=>x.profile_id===el('grantProfile').value&&x.domain===el('grantDomain').value);el('grantRead').checked=!!g?.can_read;el('grantWrite').checked=!!g?.can_write;el('grantScope').value=g?.scope||'team';}
-function listGrants(){el('grantList').innerHTML=`<ul class="hr-history">${context.grants.filter(g=>g.can_read).map(g=>`<li>${esc(context.users.find(x=>x.id===g.profile_id)?.name||'الحساب')} • ${esc(domains[g.domain])} • ${g.scope==='all'?'جميع الموظفين':'الموظف وفريقه'} • ${g.can_write?'عرض وتعديل':'عرض فقط'}</li>`).join('')||'<li>لم تُمنح صلاحيات إضافية بعد.</li>'}</ul>`;}
-el('accessButton').onclick=()=>{el('grantProfile').innerHTML=context.users.map(u=>option(u.id,u.name,'')).join('');renderGrant();listGrants();el('accessDialog').showModal();};el('closeAccess').onclick=()=>el('accessDialog').close();for(const id of ['grantProfile','grantDomain'])el(id).onchange=renderGrant;
-el('grantWrite').onchange=()=>{if(el('grantWrite').checked)el('grantRead').checked=true;};el('grantRead').onchange=()=>{if(!el('grantRead').checked)el('grantWrite').checked=false;};
-el('accessForm').onsubmit=async event=>{event.preventDefault();const button=event.target.querySelector('button'),g=normalizeGrant({read:el('grantRead').checked,write:el('grantWrite').checked,scope:el('grantScope').value});button.disabled=true;try{await rpc('employee_master_grant',{p_profile:el('grantProfile').value,p_domain:el('grantDomain').value,p_scope:g.scope,p_read:g.read,p_write:g.write});context=await rpc('employee_master_context');listGrants();status('تم تحديث الصلاحية.');}catch(e){window.AtwarUI?.toast(e.message,{type:'error'});}finally{button.disabled=false;}};
 try{const {data:{session}}=await sb.auth.getSession();if(!session?.user){location.replace('../login.html');}else{await load();document.body.style.visibility='visible';}}catch(e){document.body.style.visibility='visible';status(e.message,true);}
