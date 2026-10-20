@@ -2,6 +2,7 @@ import {escapeHTML as esc,systemRoles} from './access-model.mjs?v=2.7.0';
 const sb=await window.atwarGetSupabase(),host=document.getElementById('jobStageOwners'),state=document.getElementById('stageState');
 const jobStages=[['DRAFT','إعداد المقترح الأولي'],['ASSIGN','ربط الأوصاف بالموظفين'],['FINAL_REVIEW','المراجعة النهائية'],['PUBLISH','الاعتماد والنشر']];
 try{
+ const {data:{session}}=await sb.auth.getSession();if(!session?.user){location.replace('../login.html');throw Error('يرجى تسجيل الدخول.');}
  const {data:context,error}=await sb.rpc('access_admin_context');if(error)throw error;
  const result=await sb.from('job_stage_owners').select('stage,profile_id');if(result.error)throw result.error;
  const owners=new Map(result.data.map(x=>[x.stage,x.profile_id])),users=context.users.filter(u=>u.active&&u.status==='active');
