@@ -1,0 +1,73 @@
+-- Exercise real client roles. All records, grants, edits and profile changes roll back.
+begin;
+do $setup$
+declare d uuid;s uuid;t uuid;a uuid;m uuid;e uuid;ma uuid;ea uuid;outside_id uuid;
+begin
+ select id into strict a from public.profiles where email='e2e-admin@atwargroup.test';
+ select id into strict m from public.profiles where email='e2e-manager@atwargroup.test';
+ select id into strict e from public.profiles where email='e2e-employee@atwargroup.test';
+ perform set_config('qa.hr_admin',a::text,true);perform set_config('qa.hr_manager',m::text,true);perform set_config('qa.hr_employee',e::text,true);
+ insert into private.hr_departments(name)values('QA employee access '||gen_random_uuid())returning id into d;
+ insert into private.hr_sections(department_id,name)values(d,'QA')returning id into s;
+ insert into private.hr_titles(title)values('QA employee title '||gen_random_uuid())returning id into t;
+ insert into private.hr_employees(employee_code,full_name,email,department_id,section_id,title_id,profile_id,join_date,effective_from)values('990000001','QA manager','qa.hr.manager@atwargroup.test',d,s,t,m,current_date,current_date)returning id into ma;
+ insert into private.hr_employees(employee_code,full_name,email,department_id,section_id,title_id,profile_id,manager_id,join_date,effective_from)values('990000002','QA employee','qa.hr.employee@atwargroup.test',d,s,t,e,ma,current_date,current_date)returning id into ea;
+ insert into private.hr_employees(employee_code,full_name,email,department_id,section_id,title_id,join_date,effective_from)values('990000003','QA outside','qa.hr.outside@atwargroup.test',d,s,t,current_date,current_date)returning id into outside_id;
+ insert into private.hr_compensation(employee_id,basic,allowances,effective_from)values(ma,1000,100,current_date),(ea,2000,200,current_date),(outside_id,3000,300,current_date);
+ insert into private.hr_personal values(ma,'2999999901','QA',null),(ea,'2999999902','QA','0500000000'),(outside_id,'2999999903','QA',null);
+ insert into private.hr_vehicles(employee_id)values(ma),(ea),(outside_id);
+ perform set_config('qa.hr_manager_record',ma::text,true);perform set_config('qa.hr_record',ea::text,true);perform set_config('qa.hr_outside',outside_id::text,true);
+end $setup$;
+set local role authenticated;
+do $qa$
+declare j jsonb;rev integer;denied boolean:=false;target uuid:=current_setting('qa.hr_record')::uuid;outside_id uuid:=current_setting('qa.hr_outside')::uuid;manager_profile uuid:=current_setting('qa.hr_manager')::uuid;today date:=timezone('Asia/Riyadh',now())::date;
+begin
+ if current_user<>'authenticated' then raise exception 'Client role required';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_employee'),'role','authenticated')::text,true);
+ j:=public.employee_master_detail(target);
+ if j?'salary' or j?'personal' or j?'vehicles' then raise exception 'Employee received sensitive data without grant';end if;
+ begin perform public.employee_master_grant(manager_profile,'salary','all',true,true);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Employee granted access';end if;
+ denied:=false;begin perform 1 from private.hr_compensation;exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Private salary table exposed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
+ j:=public.employee_master_detail(target);if j?'salary' then raise exception 'Manager implicitly received salaries';end if;
+ denied:=false;begin perform public.employee_master_detail(outside_id);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Outside employee exposed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_admin'),'role','authenticated')::text,true);
+ perform public.employee_master_grant(manager_profile,'salary','team',true,false);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
+ j:=public.employee_master_detail(target);if (j#>>'{salary,total}')::numeric<>2200 then raise exception 'Granted salary read failed';end if;rev:=(j#>>'{record,revision}')::integer;
+ denied:=false;begin perform public.employee_master_save(target,'salary',rev,'{"basic":2100,"allowances":0}',today,'QA denied edit');exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Read-only grant allowed write';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_admin'),'role','authenticated')::text,true);
+ perform public.employee_master_grant(manager_profile,'salary','team',true,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
+ j:=public.employee_master_save(target,'salary',rev,'{"basic":2100,"allowances":0}',today,'QA salary edit');
+ if(j#>>'{salary,total}')::numeric<>2100 or jsonb_array_length(j->'history')<>1 then raise exception 'Salary total or audit incorrect';end if;
+ denied:=false;begin perform public.employee_master_save(target,'salary',rev,'{"basic":2200,"allowances":0}',today,'QA stale edit');exception when serialization_failure then denied:=true;end;
+ if not denied then raise exception 'Stale revision accepted';end if;
+ denied:=false;begin perform public.employee_master_save(target,'salary',rev+1,'{"basic":-1,"allowances":0}',today,'QA negative salary');exception when check_violation then denied:=true;end;
+ if not denied then raise exception 'Negative salary accepted';end if;
+ denied:=false;begin perform public.employee_master_detail(outside_id);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Team salary permission crossed scope';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_admin'),'role','authenticated')::text,true);
+ perform public.employee_master_grant(manager_profile,'salary','all',true,false);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
+ j:=public.employee_master_detail(outside_id);if(j#>>'{salary,total}')::numeric<>3300 then raise exception 'All-employee scope failed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_admin'),'role','authenticated')::text,true);
+ perform public.employee_master_grant(manager_profile,'salary','team',false,false);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
+ j:=public.employee_master_detail(target);if j?'salary' or jsonb_array_length(j->'history')<>0 then raise exception 'Revoked salary leaked through detail or history';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('qa.hr_admin'),'role','authenticated')::text,true);
+ j:=public.employee_master_detail(current_setting('qa.hr_manager_record')::uuid);
+ denied:=false;begin
+  perform public.employee_master_save(current_setting('qa.hr_manager_record')::uuid,'records',(j#>>'{record,revision}')::integer,(j->'record')||jsonb_build_object('manager_id',target),today,'QA cycle rejection');
+ exception when raise_exception then if sqlerrm like '%حلقة%'then denied:=true;else raise;end if;end;
+ if not denied then raise exception 'Hierarchy cycle accepted';end if;
+ j:=public.employee_master_detail(target);
+ j:=public.employee_master_save(target,'records',(j#>>'{record,revision}')::integer,(j->'record')||'{"full_name":"QA updated employee"}',today,'QA functional identity edit');
+ if j#>>'{record,full_name}'<>'QA updated employee' then raise exception 'Employee record edit failed';end if;
+ if has_function_privilege('authenticated','private.import_employee_master(jsonb,text,boolean)','execute')or has_function_privilege('anon','public.employee_master_list()','execute')then raise exception 'Privileged import or anonymous RPC exposed';end if;
+end $qa$;
+rollback;
