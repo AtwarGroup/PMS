@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {accessSources,assignedRoles,normalizeRules,filterUsers,escapeHTML} from '../assets/js/access-model.mjs';
+const user={id:'u',role:'manager',active:true,status:'active',full_name:'مدير',email:'manager@example.test',employee_code:'101'};
+const context={catalog:[{key:'tasks.read_all',scopes:['all']},{key:'tasks.assign_indirect',scopes:['team'],requires_manager:true},{key:'employees.salary.read',domain:'salary',operation:'read'},{key:'employees.salary.write',domain:'salary',operation:'write'}],direct_tasks:[{profile_id:'u',permissions:['tasks.read_all']}],direct_hr:[],assignments:[{profile_id:'u',role_id:'r'}],roles:[{id:'r',name:'الرواتب',active:true,rules:[{permission:'employees.salary.read',scope:'all'},{permission:'employees.salary.write',scope:'team'}]}]};
+assert.deepEqual(assignedRoles(context,'u'),['r']);
+let rows=accessSources(context,user);assert.equal(rows.length,3);assert.equal(rows.find(r=>r.operation==='write').scope,'team');assert.equal(rows.find(r=>r.operation==='read').scope,'all');assert.equal(rows[0].source,'منح مباشر');assert(rows.every(r=>r.enabled));
+context.roles[0].active=false;rows=accessSources(context,user);assert(rows[0].enabled);assert(rows.slice(1).every(r=>!r.enabled));
+assert(accessSources(context,{...user,active:false}).every(r=>!r.enabled));
+assert.deepEqual(normalizeRules([{permission:'employees.salary.write',scope:'team'},{permission:'employees.salary.read',scope:'all'}]),[{permission:'employees.salary.read',scope:'all'},{permission:'employees.salary.write',scope:'team'}]);
+assert.deepEqual(normalizeRules([{permission:'employees.salary.write',scope:'all'}]),[{permission:'employees.salary.read',scope:'all'},{permission:'employees.salary.write',scope:'all'}]);
+assert.equal(filterUsers([user],{query:'101',role:'manager',status:'active'}).length,1);assert.equal(filterUsers([user],{status:'inactive'}).length,0);assert.equal(escapeHTML('<img>'),'&lt;img&gt;');
+console.log('Role sources, inactive access, independent scopes and user filters passed.');

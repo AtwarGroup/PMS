@@ -10,7 +10,7 @@ const recurring=read('recurring/index.html');
 const completed=read('completed/index.html');
 const profile=read('profile/index.html');
 const workspace=read('workspace/index.html');
-const users=read('admin/users.html');
+const users=read('admin/users.html')+read('assets/js/admin-access-page.mjs');
 
 assert.match(shell,/workspace\/index\.html[^\n]+مساحتي/,'مساحتي must remain in navigation');
 assert.match(workspace,/ملاحظاتك خاصة بحسابك/,'workspace must be clearly personal');
@@ -29,9 +29,9 @@ assert.match(completed,/scope=COMPLETED/,'completed archive must use unified tas
 
 for(const mode of ['description','tasks','authority','performance'])assert.match(profile,new RegExp(`data-inline-job="${mode}"`),`inline profile mode ${mode} missing`);
 assert.match(profile,/profileJobViewer/,'inline job viewer missing');
-assert.match(users,/تم حفظ التغييرات بنجاح/,'admin save feedback missing');
+assert.match(users,/تم حفظ بيانات الحساب/,'admin save feedback missing');
 assert.match(users,/manager_id/,'direct manager field missing');
-assert.match(users,/join_date/,'additional employee data missing');
+assert.match(read('admin/employees.html')+read('assets/js/employee-master-page.mjs'),/join_date/,'Employee data must be maintained in the directory');
 
 for(const file of ['tasks/index.html','tasks/executive.html','recurring/index.html','profile/index.html','workspace/index.html','admin/users.html']){
   const source=read(file);

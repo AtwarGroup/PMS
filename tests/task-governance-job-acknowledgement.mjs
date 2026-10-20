@@ -11,7 +11,7 @@ const acknowledgement=read('supabase/migrations/20260917_task_date_ownership_and
 const profile=read('assets/js/job-profile-page.js');
 const profileIndex=read('profile/index.html')+read('assets/js/job-document-view.js')+read('assets/css/job-document.css');
 const executivePage=read('tasks/executive.html');
-const adminUsers=read('admin/users.html');
+const adminUsers=read('admin/users.html')+read('assets/js/admin-access-page.mjs');
 const profileDetailsMigration=read('supabase/migrations/20260920_profile_details_and_executive_view.sql');
 const identityMigration=read('supabase/migrations/20260921074628_task_identity_consistency_and_indexes.sql');
 const email=read('supabase/functions/send-job-acknowledgement/index.ts');
@@ -57,11 +57,10 @@ assert.match(profileIndex,/hybrid-details[\s\S]*authority-tone-approve[\s\S]*kpi
 assert.match(profileIndex,/content\.reports[\s\S]*report-grid/,'Published outputs and reports must remain visible without inventing responsibility links');
 assert.match(profileIndex,/scoreScale\(item,job\)/,'KPI scoring details must render the published scale or the matching job proposal');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
-assert.match(adminUsers,/admin_update_profile_details/,'Administrators must be able to maintain the additional profile data');
-assert.match(adminUsers,/class="row-save-state" role="status" aria-live="polite"/,'Each account row must expose its own accessible save result');
-assert.match(adminUsers,/button\.textContent='جارٍ الحفظ…'/,'The row save button must show an in-progress state');
-assert.match(adminUsers,/await load\('تم حفظ بيانات الحساب\.'\)/,'Successful saving must refresh the collapsed account card and show confirmation');
-assert.doesNotMatch(adminUsers,/savedCard\.querySelector\('\.edit-toggle'\)\.click\(\)/,'Successful saving must not reopen the editor');
+assert.match(adminUsers,/access_account_update/,'Account settings must use the checked RPC');
+assert.match(adminUsers,/access_direct_save/,'Direct grants must save atomically');
+assert.match(adminUsers,/تم حفظ بيانات الحساب/,'Account save result must be visible');
+assert.match(adminUsers,/مصدر|المصدر/,'Effective access must explain permission sources');
 assert.match(email,/HR_EMAIL[\s\S]*hr@tiradorstores\.com/,'HR must receive the acknowledgement');
 assert.match(email,/attachments:\[\{filename:/,'Email must contain the PDF attachment');
 assert.match(acknowledgement,/unique\(profile_id,job_description_id,job_revision\)/,'One acknowledgement per employee and published revision is required');

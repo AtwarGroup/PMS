@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 
 const read = path => readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const page=read('assets/js/tasks-page.js');
-const admin=read('admin/users.html');
+const admin=read('supabase/migrations/20261020122048_scalable_account_roles.sql');
 const sql=read('supabase/migrations/20260929162129_indirect_task_assignment_permission.sql');
 
 assert.match(page,/String\(u\.managerUid\|\|''\)===String\(currentUser\.uid\)/);
