@@ -10,3 +10,9 @@ assert.deepEqual(normalizeRules([{permission:'employees.salary.write',scope:'tea
 assert.deepEqual(normalizeRules([{permission:'employees.salary.write',scope:'all'}]),[{permission:'employees.salary.read',scope:'all'},{permission:'employees.salary.write',scope:'all'}]);
 assert.equal(filterUsers([user],{query:'101',role:'manager',status:'active'}).length,1);assert.equal(filterUsers([user],{status:'inactive'}).length,0);assert.equal(escapeHTML('<img>'),'&lt;img&gt;');
 console.log('Role sources, inactive access, independent scopes and user filters passed.');
+const {paginateUsers,effectiveEmployeeAccess}=await import('../assets/js/access-model.mjs');
+const people=Array.from({length:27},(_,id)=>({id}));
+assert.deepEqual(paginateUsers(people,3,10).rows.map(u=>u.id),[20,21,22,23,24,25,26]);assert.equal(paginateUsers(people,99,10).page,3);assert.equal(paginateUsers([],4,25).from,0);
+context.roles[0].active=true;
+let effective=effectiveEmployeeAccess(context,user);assert.equal(effective.find(r=>r.domain==='salary').read,'all');assert.equal(effective.find(r=>r.domain==='salary').write,'team');assert.equal(effective.find(r=>r.domain==='records').read,'team');assert.equal(effective.find(r=>r.domain==='personal').read,'');
+assert(effectiveEmployeeAccess(context,{...user,role:'admin'}).every(r=>r.read==='all'&&r.write==='all'));assert(effectiveEmployeeAccess(context,{...user,active:false}).every(r=>!r.read&&!r.write));
