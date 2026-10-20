@@ -22,7 +22,7 @@ const library=read('assets/js/job-library-page.js');
 const review=read('assets/js/job-review-page.js');
 const profile=read('profile/index.html')+read('assets/js/job-document-view.js')+read('assets/css/job-document.css');
 const executive=read('tasks/executive.html');
-const users=read('admin/users.html');
+const users=read('admin/users.html')+read('assets/js/admin-access-page.mjs');
 const shell=read('assets/js/shell-components.js');
 const notificationMigration=read('supabase/migrations/20260921_notification_read_state.sql');
 
@@ -36,7 +36,7 @@ assert.match(profile,/data-inline-job="description"[\s\S]*data-inline-job="tasks
 assert.match(profile,/hashMode=\{[^}]*'\#job-profile':'description'[^}]*'\#job-performance':'performance'[^}]*\}\[location\.hash\][\s\S]*renderInlineJob\(hashMode/,'Job profile deep links must open every published section inline');
 assert.match(profile,/BALANCED SCORECARD FRAMEWORK[\s\S]*سلم التقييم[\s\S]*kpi-table/,'Published job KPI view must show the five-level framework');
 assert.match(executive,/id="listView"[\s\S]*id="kanbanView"/,'Executive view must offer list and Kanban');
-assert.match(users,/admin_set_executive_task_access[\s\S]*admin_update_profile_details/,'Account save must persist executive and profile fields');
+assert.match(users,/access_direct_save/,'Account permissions must persist through the atomic checked RPC');
 assert.match(notificationMigration,/add column if not exists read_at[\s\S]*notifications_update_read_policy/,'Notifications must retain a protected read state');
 assert.match(shell,/update\(\{read_at:new Date\(\)\.toISOString\(\)\}\)/,'Opening a notification must mark it read instead of deleting it');
 assert.match(shell,/profile\/index\.html\?view=job#job-profile/,'Job assignment notifications must open the approved job view');
