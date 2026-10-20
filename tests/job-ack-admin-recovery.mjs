@@ -40,12 +40,14 @@ const failed=await scenario({storage:false});assert.equal(failed.response.status
 
 const page=read('assets/js/job-library-page.js');
 const render=page.slice(page.indexOf('function renderAssignments()'),page.indexOf('async function makeAdminAckPdf'));
-function renderRow({status='pending',role='admin',revision=2,ackRevision=2,ackJob='job'}={}){
+function renderRow({status='pending',role='admin',revision=2,ackRevision=2,ackJob='job',waived=false}={}){
  const nodes={employeeSearch:{value:''},assignmentFilter:{value:''},assignmentList:{innerHTML:''}};
- vm.runInNewContext(render+';renderAssignments();',{normalizeArabic:x=>x,esc:x=>x??'',el:id=>nodes[id],me:{role},users:[{id:'employee',role:'employee',full_name:'QA'}],jobs:[{id:'job',title:'QA',revision,published_snapshot:{revision}}],assignments:[{profile_id:'employee',job_description_id:'job'}],acknowledgements:[{id,profile_id:'employee',job_description_id:ackJob,job_revision:ackRevision,email_status:status}],document:{querySelectorAll:()=>[]},saveAssignment:()=>{},resendAcknowledgement:()=>{}});
+ vm.runInNewContext(render+';renderAssignments();',{normalizeArabic:x=>x,esc:x=>x??'',el:id=>nodes[id],me:{role},users:[{id:'employee',role:'employee',full_name:'QA'}],jobs:[{id:'job',title:'QA',revision,published_snapshot:{revision}}],assignments:[{profile_id:'employee',job_description_id:'job'}],administrativeExemptions:waived?[{profile_id:'employee',job_description_id:'job',job_revision:revision}]:[],acknowledgements:[{id,profile_id:'employee',job_description_id:ackJob,job_revision:ackRevision,email_status:status}],document:{querySelectorAll:()=>[]},saveAssignment:()=>{},resendAcknowledgement:()=>{}});
  return nodes.assignmentList.innerHTML;
 }
 assert.match(renderRow(),/استكمال إرسال الإقرار/);
+assert.match(renderRow({waived:true}),/تحديث إداري — لا يتطلب إعادة إقرار/);
+assert.doesNotMatch(renderRow({waived:true}),/بانتظار إقرار الموظف/);
 assert.match(renderRow({status:'failed'}),/استكمال إرسال الإقرار/);
 assert.match(renderRow({status:'sent'}),/إعادة إرسال الإقرار/);
 for(const options of [{status:'processing'},{role:'manager'},{ackRevision:1},{ackJob:'old-job'}])assert.doesNotMatch(renderRow(options),/data-resend-ack/);
