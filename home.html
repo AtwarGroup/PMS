@@ -49,7 +49,7 @@
       <div class="dash-ico purple"><i data-lucide="clock-arrow-up"></i></div>
     </a>
     <a class="home-card" data-role-min="manager" href="admin/employees.html" style="padding:18px;text-decoration:none;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:14px">
-      <div class="quick-card-copy"><div id="homeTeamCount" class="dash-num">—</div><b>الموظفون</b><small>دليل الموظفين والهيكل التنظيمي</small></div>
+      <div class="quick-card-copy"><div id="homeTeamCount" class="dash-num">—</div><b>الموظفون</b><small id="homeEmployeeScope">سجلات الموظفين ضمن نطاق اطلاعك</small></div>
       <div class="dash-ico green"><i data-lucide="users"></i></div>
     </a>
   </section>
@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script type="module" id="homeSupabaseDashboard">
+import {loadHomeEmployeeCount} from './assets/js/employee-population.mjs?v=2.7.4';
 import {canApproveRelationalTask} from './assets/js/tasks-core.mjs?v=1.9.8';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
@@ -117,7 +118,7 @@ const a=await authProfile('login.html');if(a){document.body.style.visibility='vi
  setText('homeStatCompleted',p.role==='admin'?indicator.filter(t=>t.status==='مكتملة').length:indicator.filter(t=>{if(t.status!=='مكتملة')return false;const d=new Date(t.completed_at||t.actual_end_date||t.updated_at);const n=new Date();return !Number.isNaN(d.getTime())&&d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length);
  setText('homeStatOpen',indicator.filter(t=>!['مكتملة','ملغاة'].includes(t.status)).length);setText('homeStatOverdue',indicator.filter(late).length);const approvals=rows.filter(t=>canApproveRelationalTask(t,p,{directIds:[...directIds],projects:projectsResult.data||[]}));setText('homeStatApproval',approvals.length);
  setText('homeStatCompletedScope',p.role==='admin'?'جميع المكتملة':'هذا الشهر');
- const d=today(),todayTasks=mine.filter(t=>!['مكتملة','ملغاة'].includes(t.status)&&(t.start_date===d||t.due_date===d)),dueFollowups=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date||x.due_date)||(x.follow_date||x.date||x.due_date)<=d));setText('homeTodayCount',todayTasks.length);setText('homeFollowupCount',dueFollowups.length);setText('homeTeamCount',p.role==='admin'?Math.max(0,(pr.data||[]).length-1):(pr.data||[]).length);const announcements=(ar.data||[]).filter(x=>!x.ends_at||x.ends_at>now);if(announcements.length)document.getElementById('announcementFeed').innerHTML=announcements.map(x=>`<article class="announcement ${x.importance==='IMPORTANT'?'important':''}"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p></article>`).join('');if(ar.error)document.getElementById('announcementFeed').innerHTML='<div class="announcement"><p>تعذر تحميل الإعلانات. تأكد من تنفيذ تحديث قاعدة البيانات.</p></div>';if(p.role==='admin')document.getElementById('manageAnnouncements').style.display='inline';try{lucide.createIcons()}catch{}
+ const d=today(),todayTasks=mine.filter(t=>!['مكتملة','ملغاة'].includes(t.status)&&(t.start_date===d||t.due_date===d)),dueFollowups=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date||x.due_date)||(x.follow_date||x.date||x.due_date)<=d));setText('homeTodayCount',todayTasks.length);setText('homeFollowupCount',dueFollowups.length);await loadHomeEmployeeCount(sb,window.AtwarModules.allowed('employees'),document.getElementById('homeTeamCount'),document.getElementById('homeEmployeeScope'));const announcements=(ar.data||[]).filter(x=>!x.ends_at||x.ends_at>now);if(announcements.length)document.getElementById('announcementFeed').innerHTML=announcements.map(x=>`<article class="announcement ${x.importance==='IMPORTANT'?'important':''}"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p></article>`).join('');if(ar.error)document.getElementById('announcementFeed').innerHTML='<div class="announcement"><p>تعذر تحميل الإعلانات. تأكد من تنفيذ تحديث قاعدة البيانات.</p></div>';if(p.role==='admin')document.getElementById('manageAnnouncements').style.display='inline';try{lucide.createIcons()}catch{}
 }
 </script>
 
