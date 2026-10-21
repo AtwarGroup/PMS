@@ -1,17 +1,17 @@
 (function(){
   let clientPromise=null;
   window.atwarGetSupabase=window.atwarGetSupabase||async function(){
-    if(window.ATWAR_SUPABASE) return window.ATWAR_SUPABASE;
-    if(clientPromise) return clientPromise;
-    clientPromise=(async()=>{
-      const cfg=window.ATWAR_SUPABASE_CONFIG;
-      if(!cfg?.url||!cfg?.publishableKey) throw new Error('Supabase config unavailable');
-      const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm');
-      const sb=createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      window.ATWAR_SUPABASE=sb;
-      return sb;
-    })();
-    return clientPromise;
+    if(!window.ATWAR_SUPABASE){
+      clientPromise ||= (async()=>{
+        const cfg=window.ATWAR_SUPABASE_CONFIG;
+        if(!cfg?.url||!cfg?.publishableKey)throw Error('Supabase config unavailable');
+        const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm');
+        return createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      })();
+      window.ATWAR_SUPABASE=await clientPromise;
+    }
+    if(window.AtwarModules)await window.AtwarModules.guard(window.ATWAR_SUPABASE);
+    return window.ATWAR_SUPABASE;
   };
   window.atwarGetCurrentProfile=window.atwarGetCurrentProfile||async function(){
     const sb=await window.atwarGetSupabase();

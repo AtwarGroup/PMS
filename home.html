@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ATWAR ONE – الرئيسية</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="assets/js/shell-components.js?v=2.7.2"></script><script src="assets/js/ui-feedback.js?v=2.5.27"></script><script src="assets/js/session-service.js?v=2.5.2"></script><link rel="stylesheet" href="assets/css/shared.css?v=2.5.26">
+<script src="assets/js/shell-components.js?v=2.7.3"></script><script src="assets/js/ui-feedback.js?v=2.5.27"></script><script src="assets/js/session-service.js?v=2.5.2"></script><link rel="stylesheet" href="assets/css/shared.css?v=2.5.26">
 <style>
 .dash-card,.home-card{background:#fff;border:1px solid #e6edf5;border-radius:18px;box-shadow:0 5px 14px rgba(20,45,80,.045)}
 .dash-card{padding:18px;display:flex;align-items:center;justify-content:space-between}
@@ -33,10 +33,10 @@
   </div>
 
   <section class="home-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
-    <div class="dash-card" data-task-scope="COMPLETED" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small id="homeStatCompletedScope">هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
-    <div class="dash-card" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>المهام المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
-    <div class="dash-card" data-task-scope="OVERDUE" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
-    <div class="dash-card" data-role-min="manager" data-task-scope="APPROVAL" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
+    <div class="dash-card" data-module="tasks" data-task-scope="COMPLETED" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatCompleted" class="dash-num">—</div><b>مهام مكتملة</b><small id="homeStatCompletedScope">هذا الشهر</small></div><div class="dash-ico green"><i data-lucide="circle-check-big"></i></div></div>
+    <div class="dash-card" data-module="tasks" data-task-scope="OPEN" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOpen" class="dash-num">—</div><b>المهام المفتوحة</b><small>جميع الحالات النشطة</small></div><div class="dash-ico blue"><i data-lucide="clipboard-check"></i></div></div>
+    <div class="dash-card" data-module="tasks" data-task-scope="OVERDUE" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatOverdue" class="dash-num">—</div><b>مهمة متأخرة</b><small>تحتاج متابعة</small></div><div class="dash-ico red"><i data-lucide="clock-3"></i></div></div>
+    <div class="dash-card" data-role-min="manager" data-module="tasks" data-task-scope="APPROVAL" role="button" tabindex="0" style="cursor:pointer"><div><div id="homeStatApproval" class="dash-num">—</div><b>بانتظار اعتمادي</b><small>إجراء مطلوب منك</small></div><div class="dash-ico purple"><i data-lucide="user-round-check"></i></div></div>
   </section>
 
   <section class="home-quicklinks" aria-label="اختصارات العمل" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:16px">
@@ -76,9 +76,9 @@
 
 
 <script src="assets/js/roles-config.js"></script>
-<script src="assets/js/start-page-config.js"></script>
+<script src="assets/js/start-page-config.js?v=2.7.3"></script>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/supabase-runtime.js"></script>
+<script src="assets/js/module-access.js?v=2.7.3"></script><script src="assets/js/supabase-runtime.js?v=2.7.3"></script>
 <script src="assets/js/permissions.js?v=1.9.17"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -111,7 +111,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const late=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&t.due_date<today();const setText=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
 document.querySelectorAll('[data-task-scope]').forEach(card=>{const open=()=>{const scope=card.dataset.taskScope||'OPEN';location.href=`tasks/index.html?scope=${encodeURIComponent(scope)}`};card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}})});
-const a=await authProfile('login.html');if(a){document.body.style.visibility='visible';
+const a=await authProfile('login.html');if(a){document.body.style.visibility='visible';if(new URLSearchParams(location.search).get('access')==='denied'){const note=document.createElement('p');note.className='module-denied-note';note.textContent='هذه الوحدة غير متاحة لحسابك. يمكنك استخدام الوحدات الظاهرة في القائمة.';note.setAttribute('role','status');document.querySelector('main').prepend(note);}
+ window.AtwarModules.apply();
  const p=a.profile;const now=new Date().toISOString();const [tr,fr,pr,ar,projectsResult]=await Promise.all([sb.from('tasks').select('*').is('deleted_at',null).order('updated_at',{ascending:false}),sb.from('follow_ups').select('*').eq('owner_id',p.id),p.role==='manager'?sb.from('profiles').select('id,manager_id').eq('manager_id',p.id):p.role==='admin'?sb.from('profiles').select('id,manager_id').eq('active',true).eq('status','active'):Promise.resolve({data:[],error:null}),sb.from('announcements').select('*').eq('status','PUBLISHED').lte('starts_at',now).order('importance',{ascending:false}).order('starts_at',{ascending:false}).limit(3),sb.from('projects').select('id,manager_id,sponsor_id,deleted_at').is('deleted_at',null)]);if(tr.error)console.error(tr.error);if(fr.error)console.error(fr.error);if(pr.error)console.error(pr.error);const rows=tr.data||[],mine=rows.filter(t=>t.assignee_id===p.id),directIds=new Set((pr.data||[]).map(x=>x.id)),indicator=p.role==='employee'?mine:p.role==='manager'?rows.filter(t=>t.assignee_id===p.id||directIds.has(t.assignee_id)||t.creator_id===p.id||t.delegated_by_id===p.id):rows;
  setText('homeStatCompleted',p.role==='admin'?indicator.filter(t=>t.status==='مكتملة').length:indicator.filter(t=>{if(t.status!=='مكتملة')return false;const d=new Date(t.completed_at||t.actual_end_date||t.updated_at);const n=new Date();return !Number.isNaN(d.getTime())&&d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length);
  setText('homeStatOpen',indicator.filter(t=>!['مكتملة','ملغاة'].includes(t.status)).length);setText('homeStatOverdue',indicator.filter(late).length);const approvals=rows.filter(t=>canApproveRelationalTask(t,p,{directIds:[...directIds],projects:projectsResult.data||[]}));setText('homeStatApproval',approvals.length);

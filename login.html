@@ -57,9 +57,9 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
 </section>
 </div>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/supabase-runtime.js"></script>
+<script src="assets/js/module-access.js?v=2.7.3"></script><script src="assets/js/supabase-runtime.js?v=2.7.3"></script>
 <script src="assets/js/roles-config.js"></script>
-<script src="assets/js/start-page-config.js"></script>
+<script src="assets/js/start-page-config.js?v=2.7.3"></script>
 
 <script type="module">
 const sb=await window.atwarGetSupabase();
@@ -74,18 +74,18 @@ async function establishSession(user){
   if(p.active===false||p.status==='inactive')throw new Error('account-inactive');
   if(!['employee','manager','admin'].includes(p.role))throw new Error('invalid-role');
   const session={uid:p.id,email:user.email||p.email||'',name:p.full_name||user.email||'المستخدم',title:p.job_title||roleLabel(p.role),role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)&&p.permissions.length?p.permissions:defaults(p.role),source:'supabase'};
-  localStorage.setItem('atwarSession',JSON.stringify(session));localStorage.removeItem('atwarDemoSession');return session;
+  localStorage.setItem('atwarSession',JSON.stringify(session));localStorage.removeItem('atwarDemoSession');await window.AtwarModules.load(sb,{force:true});return session;
 }
 async function login(){
   const email=emailEl.value.trim(),password=passwordEl.value;if(!email||!password){showError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');return}
   manualLoginInProgress=true;clearError();buttonEl.disabled=true;buttonEl.textContent='جاري الدخول...';
-  try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const sess=await establishSession(data.user);location.replace((window.ATWAR_START_PAGE||{})[sess.role]||'home.html');}
+  try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;const sess=await establishSession(data.user);location.replace(window.atwarModuleStart?.(sess.role)||(window.ATWAR_START_PAGE||{})[sess.role]||'home.html');}
   catch(error){console.error(error);localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});const m=error?.message||'';showError(m==='profile-not-found'?'الحساب موجود في تسجيل الدخول ولكنه غير معرف داخل قاعدة بيانات نظام المهام.':m==='account-inactive'?'هذا الحساب غير مفعل. يرجى مراجعة مدير النظام.':m==='invalid-role'?'دور هذا الحساب غير صالح. يرجى مراجعة مدير النظام.':m.toLowerCase().includes('invalid login')?'تعذر تسجيل الدخول. تحقق من البريد الإلكتروني وكلمة المرور.':'تعذر تسجيل الدخول. تحقق من بيانات الدخول والاتصال ثم حاول مرة أخرى.');}
   finally{buttonEl.disabled=false;buttonEl.textContent='دخول';manualLoginInProgress=false}
 }
 buttonEl.addEventListener('click',login);passwordEl.addEventListener('keydown',e=>{if(e.key==='Enter')login()});emailEl.addEventListener('keydown',e=>{if(e.key==='Enter')passwordEl.focus()});
 const {data:{session}}=await sb.auth.getSession();
-if(session?.user&&!manualLoginInProgress){try{const x=await establishSession(session.user);location.replace((window.ATWAR_START_PAGE||{})[x.role]||'home.html')}catch{localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});document.body.classList.remove('auth-pending')}}else document.body.classList.remove('auth-pending');
+if(session?.user&&!manualLoginInProgress){try{const x=await establishSession(session.user);location.replace(window.atwarModuleStart?.(x.role)||(window.ATWAR_START_PAGE||{})[x.role]||'home.html')}catch{localStorage.removeItem('atwarSession');await sb.auth.signOut().catch(()=>{});document.body.classList.remove('auth-pending')}}else document.body.classList.remove('auth-pending');
 try{lucide.createIcons()}catch{}
 </script>
 

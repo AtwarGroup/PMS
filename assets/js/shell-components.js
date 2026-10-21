@@ -85,6 +85,8 @@
       const active=inTaskModule?'tasks':requestedActive;
       const nav=(key,path,icon,label,min='employee')=>{
         if(s && (rank[s.role]||0)<(rank[min]||0))return '';
+        const unit={notes:'workspace',jobLibrary:'job_library'}[key]||key;
+        if(window.AtwarModules?.context&&!window.AtwarModules.allowed(unit)&&!['home','profile'].includes(key))return '';
         return `<a class="${active===key?'active':''}" href="${d}${path}">
           <i data-lucide="${icon}"></i><span>${label}</span></a>`;
       };
@@ -373,6 +375,7 @@
       permissions:Array.isArray(profile?.permissions)?profile.permissions:(Array.isArray(previous.permissions)?previous.permissions:[])
     };
     try{localStorage.setItem('atwarSession',JSON.stringify(current))}catch{}
+    window.AtwarModules?.apply();
     document.querySelectorAll('[data-user-name]').forEach(x=>x.textContent=current.name);
     document.querySelectorAll('[data-user-title]').forEach(x=>x.textContent=current.title);
     document.querySelectorAll('.atwar-avatar').forEach(x=>x.textContent=(current.name||'م').trim().charAt(0));
