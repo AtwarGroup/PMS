@@ -1,5 +1,7 @@
-import { initFleetDocuments } from "./fleet-documents-page.mjs?v=1";
+import { initFleetDocuments } from "./fleet-documents-page.mjs?v=2";
 import {
+  englishDigits,
+  dashboardRequests,
   states,
   types,
   actions,
@@ -9,8 +11,9 @@ import {
   filterRequests,
   summary,
   settlement,
-  escapeHTML as esc,
-} from "./fleet-model.mjs?v=1";
+  escapeHTML,
+} from "./fleet-model.mjs?v=2";
+const esc = value => escapeHTML(englishDigits(value));
 const $ = (id) => document.getElementById(id),
   sb = await window.atwarGetSupabase();
 let context,
@@ -30,7 +33,7 @@ async function rpc(name, args = {}) {
 const opt = (id, label, selected) =>
   `<option value="${esc(id)}" ${String(id) === String(selected) ? "selected" : ""}>${esc(label)}</option>`;
 const field = (name, label, value = "", type = "text", extra = "") =>
-  `<label>${esc(label)}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
+  `<label>${esc(label)}<input lang="${type === "number" ? "en" : "ar"}" name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
 const amountField = (name, label, value = "") =>
   field(
     name,
@@ -66,17 +69,23 @@ async function load() {
   status("");
 }
 function render() {
-  const m = summary(context.requests);
+  const scope = $('dashboardScope');
+  const scopes = [...(context.vehicles.some(v=>v.driver_id===context.employee_id)?[['personal','متابعتي الشخصية']]:[]),...((context.team_employee_ids||[]).length?[['team','متابعة فريقي']]:[]),...(context.can_oversee?[['all','المتابعة العامة']]:[])];
+  const selected = scopes.some(([key])=>key===scope.value)?scope.value:scopes[0]?.[0]||'all';
+  scope.innerHTML=scopes.map(([key,label])=>opt(key,label,selected)).join('');
+  scope.closest('label').hidden=scopes.length<2;
+  const dashboardRows=dashboardRequests(context,selected);
+  const m = summary(dashboardRows);
   $("openCount").textContent = m.open;
   $("outstanding").textContent = money(m.outstanding);
   $("totalCost").textContent = money(m.cost);
   $("closedCount").textContent = m.closed;
   $("newRequest").disabled = !context.vehicles.some(
-    (v) => v.active && v.driver_id === context.employee_id,
+    (v) => v.active && v.can_request,
   );
   $("newVehicle").hidden = !context.can_manage;
   $("importVehicles").hidden = !context.can_manage;
-  const queue = context.requests.filter((r) =>
+  const queue = dashboardRows.filter((r) =>
     requestActions(r, context).some(
       (a) => !["edit", "request_increase"].includes(a),
     ),
@@ -91,16 +100,16 @@ function render() {
       .join("") || '<p class="fleet-muted">لا توجد طلبات بانتظار إجرائك.</p>';
   $("stageSummary").innerHTML =
     Object.entries(states)
-      .filter(([key]) => context.requests.some((r) => r.state === key))
+      .filter(([key]) => dashboardRows.some((r) => r.state === key))
       .map(([key, label]) => {
-        const n = context.requests.filter((r) => r.state === key).length;
-        return `<div class="fleet-stage"><span>${esc(label)}</span><b>${n}</b><progress max="${Math.max(1, context.requests.length)}" value="${n}" aria-label="${esc(label)}"></progress></div>`;
+        const n = dashboardRows.filter((r) => r.state === key).length;
+        return `<div class="fleet-stage"><span>${esc(label)}</span><b>${n}</b><progress max="${Math.max(1, dashboardRows.length)}" value="${n}" aria-label="${esc(label)}"></progress></div>`;
       })
       .join("") || '<p class="fleet-muted">ستظهر مراحل العمل مع أول طلب.</p>';
   $("vehicleRows").innerHTML = context.vehicles
     .map(
       (v) =>
-        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}</td><td>${button("سجل الصيانة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
+        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA-u-nu-latn")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}</td><td>${button("سجل الصيانة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
     )
     .join("");
   $("vehicleEmpty").hidden = context.vehicles.length > 0;
@@ -115,7 +124,7 @@ function renderRequests() {
   $("requestRows").innerHTML = rows
     .map(
       (r) =>
-        `<tr><td><b>#${esc(r.number)}</b><small>${new Date(r.created_at).toLocaleDateString("ar-SA")}</small></td><td>${esc(r.driver_name)}<small>${esc(r.plate)}</small></td><td>${esc(r.description)}</td><td>${badge(r.state)}</td><td>${money(r.approved)} ر.س</td><td>${button("عرض الطلب", `data-request="${esc(r.id)}"`, true)}</td></tr>`,
+        `<tr><td><b>#${esc(r.number)}</b><small>${new Date(r.created_at).toLocaleDateString("ar-SA-u-nu-latn")}</small></td><td>${esc(r.driver_name)}<small>${esc(r.plate)}</small></td><td>${esc(r.description)}</td><td>${badge(r.state)}</td><td>${money(r.approved)} ر.س</td><td>${button("عرض الطلب", `data-request="${esc(r.id)}"`, true)}</td></tr>`,
     )
     .join("");
   $("requestEmpty").hidden = rows.length > 0;
@@ -151,13 +160,13 @@ async function requestEditor(id) {
   if (id) r = (await rpc("fleet_detail", { p_id: id })).request;
   currentEdit = r;
   const vehicles = context.vehicles.filter(
-      (v) => v.driver_id === context.employee_id && v.active,
+      (v) => v.can_request && v.active,
     ),
     v = vehicles.find((v) => v.id === r.vehicle_id) || vehicles[0];
   show(
     id ? `تعديل الطلب #${r.number}` : "طلب صيانة جديد",
-    "تُعرض السيارات المسجلة باسمك؛ المحاسب المختار مسؤول الصرف والتسوية.",
-    `<form id="requestForm" class="fleet-form"><label>السيارة<select name="vehicle_id" ${vehicles.length === 1 ? 'aria-label="سيارتك المسجلة"' : ""}>${vehicles.map((v) => opt(v.id, `${v.plate} — ${v.vehicle_type} ${v.model}`, r.vehicle_id || vehicles[0]?.id)).join("")}</select></label><label>المحاسب المسؤول<select name="accountant_id" required><option value="">اختر المحاسب</option>${context.accountants
+    "اختر سيارتك أو سيارة أحد موظفيك المباشرين؛ يبقى الطلب باسم صاحب السيارة.",
+    `<form id="requestForm" class="fleet-form"><label>السيارة<select name="vehicle_id" ${vehicles.length === 1 ? 'aria-label="سيارتك المسجلة"' : ""}>${vehicles.map((v) => opt(v.id, `${v.driver_name || "غير مسندة"} — ${v.plate} — ${v.vehicle_type} ${v.model}`, r.vehicle_id || vehicles[0]?.id)).join("")}</select></label><label>المحاسب المسؤول<select name="accountant_id" required><option value="">اختر المحاسب</option>${context.accountants
       .filter((a) => a.id !== context.user_id)
       .map((a) => opt(a.id, a.name, r.accountant_id))
       .join(
@@ -246,8 +255,8 @@ async function requestEditor(id) {
         p_data: { ...data, quotes },
       });
       await load();
-      await openRequest(saved);
-      status("تم حفظ المسودة. راجعها ثم أرسلها للاعتماد.", false, true);
+      $("fleetDialog").close();
+      status("تم حفظ المسودة. افتحها من طلبات الصيانة لإرسالها للاعتماد.");
     });
 }
 async function upload(id, kind, file) {
@@ -279,7 +288,7 @@ async function openRequest(id) {
   show(
     `طلب صيانة #${r.number}`,
     `${meta.driver_name || ""} · ${meta.plate || ""}`,
-    `<section>${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>المورد</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td>${money(q.parts)}</td><td>${money(q.labor)}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc({ quote: "عرض سعر", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
+    `<section>${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>المورد</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td>${money(q.parts)}</td><td>${money(q.labor)}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc({ quote: "عرض سعر", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
   );
 }
 function actionEditor(action) {
@@ -378,8 +387,8 @@ function actionEditor(action) {
         p_data: data,
       });
       await load();
-      await openRequest(r.id);
-      status("تم تنفيذ الإجراء وتوثيقه.", false, true);
+      $("fleetDialog").close();
+      status("تم تنفيذ الإجراء وتوثيقه.");
     });
 }
 async function run(event, work) {
@@ -439,6 +448,7 @@ document.querySelector("main").addEventListener("click", async (e) => {
     status(error.message, true);
   }
 });
+$("dashboardScope").onchange = () => render();
 $("newVehicle").onclick = () => vehicleEditor();
 $("newRequest").onclick = () =>
   requestEditor().catch((e) => status(e.message, true));

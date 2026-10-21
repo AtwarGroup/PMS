@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { startPreview } from "./fleet-preview.mjs";
 import assert from "node:assert/strict";
 process.on("uncaughtException", (e) => {
-  console.error(e.message);
+  console.error(e.stack);
   process.exit(1);
 });
 const app = await startPreview();
@@ -48,8 +48,8 @@ try {
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.4\nQA"),
   };
-  async function create(amount) {
-    const p = await pageFor("driver");
+  async function create(amount, actor = "driver") {
+    const p = await pageFor(actor);
     await p.locator("#newRequest").click();
     await p
       .locator("[name=accountant_id]")
@@ -62,17 +62,22 @@ try {
       await q.locator("[type=file]").setInputFiles(pdf);
     }
     await p.getByRole("button", { name: "حفظ المسودة والمرفقات" }).click();
-    await expect(p.locator("#dialogStatus")).toContainText("تم حفظ المسودة");
+    await expect(p.locator("#fleetDialog")).not.toBeVisible();
+    await expect(p.locator("#fleetStatus")).toContainText("تم حفظ المسودة");
+    await open(actor,"صيانة تجريبية " + amount);
     await act(p, "submit");
     return p;
   }
   async function act(p, action, fill) {
+    const description=await p.locator("#dialogBody h3").first().innerText();
     await p.locator(`[data-action=${action}]`).click();
     if (fill) await fill(p.locator("#actionForm"));
     await p.locator("#actionForm button[type=submit]").click();
-    await expect(p.locator("#dialogStatus")).toHaveText(
-      "تم تنفيذ الإجراء وتوثيقه.",
-    );
+    await expect(p.locator("#fleetDialog")).not.toBeVisible();
+    await expect(p.locator("#fleetStatus")).toHaveText("تم تنفيذ الإجراء وتوثيقه.");
+    await p.locator("[data-tab=requests]").click();
+    await p.locator("#requestRows tr").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
+    await expect(p.locator("#fleetDialog")).toBeVisible();
   }
   async function open(actor, description) {
     const p = await pageFor(actor);
@@ -82,6 +87,8 @@ try {
       .filter({ hasText: description })
       .getByRole("button", { name: "عرض الطلب" })
       .click();
+    await expect(p.locator("#dialogBody h3").first()).toHaveText(description);
+    await expect(p.locator("#fleetDialog")).toBeVisible();
     return p;
   }
   await create(300);
@@ -237,16 +244,16 @@ try {
   await docForm.locator("[name=expires]").fill(expiration);
   await docForm.locator("[name=reason]").fill("تجديد التأمين للاختبار");
   await docForm.locator("button[type=submit]").click();
-  await expect(p.locator("#dialogStatus")).toContainText("تم تحديث الوثيقة");
-  await p.locator("#closeDialog").click();
+  await expect(p.locator("#fleetDialog")).not.toBeVisible();
+  await expect(p.locator("#fleetStatus")).toContainText("تم تحديث الوثيقة");
   p = await pageFor("admin");
   await p.locator("[data-tab=documents]").click();
   await p.locator("#documentSettings").click();
   const insuranceSettings = p.locator("[data-setting-kind=insurance]");
   await insuranceSettings.locator("[name=days]").fill("45");
   await insuranceSettings.locator("button[type=submit]").click();
-  await expect(p.locator("#dialogStatus")).toContainText("تم حفظ مدة التنبيه");
-  await p.locator("#closeDialog").click();
+  await expect(p.locator("#fleetDialog")).not.toBeVisible();
+  await expect(p.locator("#fleetStatus")).toContainText("تم حفظ مدة التنبيه");
   assert.equal(
     (
       await app.db.query(
@@ -263,6 +270,24 @@ try {
   console.log(
     "PASS UI: document dates, admin changes 30 to 45 days, three reminders created, manager read-only documents, fleet cannot change system settings.",
   );
+  await create(150,'manager');
+  p=await open('manager','صيانة تجريبية 150');
+  await act(p,'approve');
+  await app.db.exec("update private.hr_employees set manager_id='00000000-0000-4000-8000-000000000001'where profile_id='00000000-0000-4000-8000-000000000002'");
+  await app.rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 888',vin:'QA-MANAGER-888',vehicle_type:'سيارة المدير',driver_id:'00000000-0000-4000-8000-000000000002',odometer:0,active:true},p_reason:'اختبار سيارة المدير'});
+  p=await pageFor('manager');
+  await expect(p.locator('#dashboardScope option')).toHaveCount(2);
+  await p.locator('#dashboardScope').selectOption('team');
+  await expect(p.locator('#openCount')).toHaveText('1');
+  await p.locator('#dashboardScope').selectOption('personal');
+  await expect(p.locator('#openCount')).toHaveText('0');
+  await p.locator('#newRequest').click();
+  await expect(p.locator('[name=request_type] option')).toHaveCount(2);
+  await expect(p.locator('[name=vehicle_id] option')).toHaveCount(3);
+  await p.locator('#closeDialog').click();
+  p=await pageFor('driver');
+  assert.equal(/[٠-٩۰-۹]/.test(await p.locator('.fleet-page').innerText()),false,'Non-English digits in fleet screen');
+  console.log('PASS UI: manager creates and submits for direct report; own/team dashboards are separate; only two request types; dialogs auto-close and digits are English.');
   p = await pageFor("fleet");
   await mkdir("test-results", { recursive: true });
   await p.screenshot({

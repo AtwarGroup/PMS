@@ -366,3 +366,5 @@ button:focus-visible {
 
 .fleet-expired{color:var(--atwar-danger-600,#d92d45)!important}.fleet-tabs{flex-wrap:wrap}
 @media(max-width:600px){.fleet-card-heading{flex-wrap:wrap}.fleet-card-heading>div{min-width:0}}
+
+.fleet-dashboard-scope{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.fleet-dashboard-scope select{padding:10px;border:1px solid var(--atwar-border,#dce5ee);border-radius:10px;background:var(--atwar-surface,#fff);font:inherit}.fleet-page input[type=number]{direction:ltr;font-variant-numeric:tabular-nums}

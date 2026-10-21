@@ -10,7 +10,7 @@
     />
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.5.36" />
-    <link rel="stylesheet" href="../assets/css/fleet.css?v=1" />
+    <link rel="stylesheet" href="../assets/css/fleet.css?v=2" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.7.3"></script>
@@ -86,6 +86,7 @@
             role="tabpanel"
             aria-labelledby="tab-dashboard"
           >
+            <label class="fleet-dashboard-scope">نطاق لوحة المتابعة<select id="dashboardScope" aria-label="نطاق لوحة المتابعة"></select></label>
             <div class="fleet-metrics">
               <article>
                 <span>طلبات مفتوحة</span><strong id="openCount">—</strong>
@@ -258,6 +259,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/fleet-page.mjs?v=1"></script>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=2"></script>
   </body>
 </html>

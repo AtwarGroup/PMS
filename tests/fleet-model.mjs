@@ -60,3 +60,13 @@ assert.equal(escapeHTML("<img>"), "&lt;img&gt;");
 console.log(
   "Fleet currency, settlement, action boundaries, terminal states and scoped summaries passed.",
 );
+
+const {money,englishDigits,dashboardRequests,types}=await import('../assets/js/fleet-model.mjs');
+assert.deepEqual(Object.keys(types),['repair','emergency']);
+assert.equal(money(1234.5),'1,234.50');
+assert.equal(englishDigits('١٢٣ ۴۵۶'),'123 456');
+const ctx={employee_id:'manager',team_employee_ids:['driver'],requests:[{driver_id:'manager'},{driver_id:'driver'},{driver_id:'other'}]};
+assert.equal(dashboardRequests(ctx,'personal').length,1);
+assert.equal(dashboardRequests(ctx,'team').length,1);
+assert.deepEqual(requestActions({driver_id:'driver',state:'draft'},{...ctx,user_id:'manager'}),['edit','submit']);
+assert.deepEqual(requestActions({driver_id:'driver',state:'repair'},{...ctx,user_id:'manager'}),[]);

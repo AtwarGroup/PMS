@@ -1,4 +1,6 @@
-import { escapeHTML as esc } from "./access-model.mjs";
+import { escapeHTML } from "./access-model.mjs";
+import { englishDigits } from "./fleet-model.mjs?v=2";
+const esc = value => escapeHTML(englishDigits(value));
 export const documentKinds = {
   authorization: "تفويض السائق",
   registration: "رخصة السير",
@@ -67,8 +69,8 @@ export async function initFleetDocuments({ rpc, show, run }) {
             p_reason: form.elements.reason.value,
           });
           await load();
-          editor(vehicleId);
-          $("dialogStatus").textContent =
+          $("fleetDialog").close();
+          $("fleetStatus").textContent =
             "تم تحديث الوثيقة والتحقق من التنبيهات المستحقة.";
         });
   }
@@ -84,7 +86,7 @@ export async function initFleetDocuments({ rpc, show, run }) {
     show(
       "إعدادات تنبيهات الوثائق",
       "حدد عدد الأيام قبل الانتهاء لكل نوع. هذه الإعدادات لمسؤول النظام فقط.",
-      `<div class="fleet-form">${data.settings.map((s) => `<form class="fleet-card" data-setting-kind="${s.kind}"><label>${documentKinds[s.kind]} — أيام قبل الانتهاء<input name="days" type="number" min="0" max="3650" step="1" value="${s.days_before}" required></label><button class="fleet-btn" type="submit">حفظ مدة التنبيه</button></form>`).join("")}</div>`,
+      `<div class="fleet-form">${data.settings.map((s) => `<form class="fleet-card" data-setting-kind="${s.kind}"><label>${documentKinds[s.kind]} — أيام قبل الانتهاء<input lang="en" name="days" type="number" min="0" max="3650" step="1" value="${s.days_before}" required></label><button class="fleet-btn" type="submit">حفظ مدة التنبيه</button></form>`).join("")}</div>`,
     );
     for (const form of $("dialogBody").querySelectorAll("[data-setting-kind]"))
       form.onsubmit = (e) =>
@@ -98,7 +100,8 @@ export async function initFleetDocuments({ rpc, show, run }) {
             p_revision: s.revision,
           });
           await load();
-          $("dialogStatus").textContent =
+          $("fleetDialog").close();
+          $("fleetStatus").textContent =
             "تم حفظ مدة التنبيه وتطبيقها على الوثائق.";
         });
   };

@@ -333,6 +333,9 @@ await rpc("admin", "access_role_save", {
   p_active: false,
   p_rules: [{ permission: "fleet.requests.read", scope: "team" }],
 });
+// The current direct manager retains access independently of an optional role.
+assert((await snapshot("outsider")).requests.length > 0);
+await db.query("update private.hr_employees set manager_id=$1 where id=$2", [ids.manager,ids.driver]);
 assert.equal((await snapshot("outsider")).requests.length, 0);
 await rpc("admin", "access_direct_save", {
   p_profile: ids.outsider,
@@ -446,6 +449,43 @@ assert(tableGrants.rows.every((r) => !r.granted));
 console.log(
   "PASS: no anonymous function grants, public invoker wrappers, fixed search paths and no raw client table privileges.",
 );
+// Manager submission is scoped to the current direct reporting line and the car's employee.
+const managerCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 777',vin:'QA-MANAGER-777',vehicle_type:'سيارة المدير',driver_id:ids.manager,odometer:0,active:true},p_reason:'اختبار طلب المدير الشخصي'});
+await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.admin,ids.manager]);
+async function managerDraft(targetVehicle=vehicle,type='repair'){
+ const data={vehicle_id:targetVehicle,driver_id:ids.outsider,accountant_id:ids.accountant,description:'طلب المدير للفريق',fault_notes:'تشخيص',request_type:type,odometer:1000,quotes:[],selected_quote:0};
+ const request=await rpc('manager','fleet_request_save',{p_id:null,p_revision:null,p_data:data});
+ for(let i=0;i<3;i++)data.quotes.push({supplier:'ورشة المدير '+i,parts:200,labor:0,tax:0,file_id:await upload('manager',request)});
+ await rpc('manager','fleet_request_save',{p_id:request,p_revision:(await detail('manager',request)).request.revision,p_data:data});
+ return request;
+}
+const teamRequest=await managerDraft();
+assert.equal((await detail('manager',teamRequest)).request.driver_id,ids.driver);
+await cmd('manager',teamRequest,'submit');
+assert.equal((await detail('manager',teamRequest)).request.manager_id,ids.manager);
+await cmd('manager',teamRequest,'approve');
+await deny(()=>cmd('manager',teamRequest,'confirm_repair',{}),/غير مسموح/);
+const ownManagerRequest=await managerDraft(managerCar);
+await cmd('manager',ownManagerRequest,'submit');
+assert.equal((await detail('manager',ownManagerRequest)).request.manager_id,ids.admin);
+await deny(()=>cmd('manager',ownManagerRequest,'approve'),/غير مسموح/);
+await cmd('admin',ownManagerRequest,'approve');
+await deny(()=>managerDraft(vehicle,'fuel'),/نوع الطلب/);
+await deny(()=>managerDraft(vehicle,'inspection'),/نوع الطلب/);
+const outsiderCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'OUTSIDER 777',vehicle_type:'خارج الفريق',driver_id:ids.outsider,odometer:0,active:true},p_reason:'اختبار العزل'});
+await deny(()=>managerDraft(outsiderCar),/السيارة ليست/);
+const pendingTeam=await managerDraft();
+const pendingFile=await upload('manager',pendingTeam);
+await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.outsider,ids.driver]);
+await deny(()=>rpc('manager','fleet_download',{p_id:pendingFile}),/Access denied/);
+await deny(()=>cmd('manager',pendingTeam,'submit'),/Access denied/);
+await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.manager,ids.driver]);
+assert.ok((await snapshot('manager')).team_employee_ids.includes(ids.driver));
+assert.equal((await snapshot('manager')).vehicles.find(v=>v.id===managerCar).can_request,true);
+await db.query("update public.profiles set allowed_modules=array['policies'] where id=$1",[ids.manager]);
+await deny(()=>snapshot('manager'),/ATWAR_MODULE_DENIED/);
+await db.query("update public.profiles set allowed_modules=array['fleet','policies'] where id=$1",[ids.manager]);
+console.log('PASS: manager own/team requests, correct employee assignment, quote uploads, separate supervisor approval, receipt restricted to driver, unrelated-team denial, fuel/inspection denied and reporting-line/unit revocation.');
 await db.query("update public.profiles set allowed_modules=array['policies'] where id=$1",[ids.driver]);
 await deny(()=>snapshot('driver'),/ATWAR_MODULE_DENIED/);
 await deny(()=>rpc('driver','fleet_documents_context'),/ATWAR_MODULE_DENIED/);

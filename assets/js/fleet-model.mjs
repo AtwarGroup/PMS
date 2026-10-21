@@ -16,8 +16,6 @@ export const states = {
 export const types = {
   repair: "صيانة",
   emergency: "عطل طارئ",
-  inspection: "فحص دوري",
-  fuel: "تزويد وقود",
 };
 export const actions = {
   submit: "إرسال الطلب",
@@ -33,7 +31,7 @@ export const actions = {
   reject: "رفض نهائي",
 };
 export const money = (value) =>
-  Number(value || 0).toLocaleString("ar-SA", {
+  Number(value || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -46,7 +44,7 @@ export function requestActions(r, c) {
     finance = r.accountant_id === c.user_id && c.can_finance && !own;
   if (["closed", "rejected"].includes(r.state)) return [];
   let list = [];
-  if (own && ["draft", "returned"].includes(r.state)) list = ["edit", "submit"];
+  if ((own || (c.team_employee_ids || []).includes(r.driver_id)) && ["draft", "returned"].includes(r.state)) list = ["edit", "submit"];
   if (own && r.state === "repair")
     list = ["request_increase", "confirm_repair"];
   if (!own && r.state === "manager_review" && r.manager_id === c.user_id)
@@ -121,4 +119,11 @@ export function settlement(r) {
             : "صرف الفرق للسائق"
           : "تسوية دون فرق مالي",
   };
+}
+
+export const englishDigits = value => String(value ?? '').replace(/[٠-٩۰-۹]/g, c => String('٠١٢٣٤٥٦٧٨٩'.includes(c) ? '٠١٢٣٤٥٦٧٨٩'.indexOf(c) : '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
+export function dashboardRequests(context, scope) {
+ if(scope==='personal')return context.requests.filter(r=>r.driver_id===context.employee_id);
+ if(scope==='team')return context.requests.filter(r=>(context.team_employee_ids||[]).includes(r.driver_id));
+ return context.requests;
 }
