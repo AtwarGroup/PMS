@@ -11,7 +11,7 @@ const completed=read('completed/index.html');
 const tasks=read('assets/js/tasks-page.js');
 const routes=read('assets/js/routes-config.js');
 const workspace=read('workspace/index.html');
-const team=read('team/index.html');
+const team=read('admin/employees.html');
 
 const contracts=[
   [start,"employee: 'home.html'",'Employee start page must be the summary home'],
@@ -27,7 +27,7 @@ const contracts=[
   [tasks,"homeFilterValue==='TODAY'",'Canonical task page must enforce the TODAY scope'],
   [workspace,'id="personalNote"','Personal notes must remain in My Workspace'],
   [workspace,'id="workspaceFollowList"','Follow-ups must remain in My Workspace'],
-  [team,'id="teamHierarchy"','People hierarchy must remain in the Team page']
+  [team,'id="employeeHierarchy"','People hierarchy must remain in the unified employee page']
 ];
 
 for(const [source,needle,message] of contracts)assert.ok(source.includes(needle),message);

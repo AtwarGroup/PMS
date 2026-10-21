@@ -8,18 +8,18 @@ const team=read('team/index.html');
 const employee=read('team/employee.html');
 const tasks=read('assets/js/tasks-page.js');
 
+const directory=read('admin/employees.html');
+const page=read('assets/js/employee-master-page.mjs');
 const teamContracts=[
-  ['id="teamHierarchy"','Team page must retain the reporting hierarchy'],
-  ['id="teamDirectorySummary"','Team page must provide an organizational summary'],
-  ['manager_id','Team directory must be driven by direct-manager relationships'],
-  ["select('id,email,full_name,job_title,department,role,manager_id,active,status')",'Team page must request only directory profile fields'],
-  ['../tasks/index.html','Team page must link task follow-up to the canonical task workspace']
+ ['id="employeeHierarchy"','Employee workspace retains reporting hierarchy'],
+ ['id="hierarchySummary"','Employee workspace provides organizational summary'],
+ ['../team/employee.html','Employee workspace links published descriptions']
 ];
-
-for(const [needle,message] of teamContracts)assert.ok(team.includes(needle),message);
-for(const forbidden of ["sb.from('tasks')",'id="teamMetrics"','teamAttentionCount','teamCompletionRate']){
-  assert.ok(!team.includes(forbidden),`Team page must not duplicate task metrics through ${forbidden}`);
-}
+for(const [needle,message] of teamContracts)assert.ok((directory+page).includes(needle),message);
+assert.ok(team.includes("location.replace('../admin/employees.html'"),'Old bookmarks redirect to the canonical employee workspace');
+assert.ok(page.includes("rpc('employee_master_list')"),'One authorized employee source serves both views');
+assert.ok(!page.includes("sb.from('profiles')"),'Employee directory must not reconstruct employees from login accounts');
+assert.ok(!page.includes("sb.from('tasks')"),'Employee workspace must not duplicate task metrics');
 
 assert.ok(tasks.includes('function renderManagerDashboard()'),'Task workspace must retain team task metrics');
 assert.ok(tasks.includes("String(u.managerUid||'')===String(currentUser.uid)"),'Manager full-task view must remain limited to direct reports');
