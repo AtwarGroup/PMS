@@ -16,6 +16,14 @@
       "navigation": "primary"
     },
     {
+      "id": "fleet",
+      "path": "fleet/index.html",
+      "minRole": "employee",
+      "status": "stable",
+      "navigation": "primary",
+      "label": "إدارة الأسطول"
+    },
+    {
       "id": "employees",
       "path": "admin/employees.html",
       "minRole": "employee",
