@@ -1,0 +1,14 @@
+{
+  "name": "atwar-one",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:fleet:db": "node scripts/test-fleet-db.mjs",
+    "test:fleet:ui": "node scripts/test-fleet-ui.mjs",
+    "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "@playwright/test": "1.56.1"
+  }
+}

@@ -1,1 +1,9 @@
+node_modules/
+.fleet-test-data/
+test-results/
+playwright-report/
+
 supabase/.temp/
+
+__pycache__/
+*.pyc

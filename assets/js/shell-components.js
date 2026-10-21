@@ -26,7 +26,7 @@
     document.head.append(icon);
   }
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication','fleet'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -97,6 +97,7 @@
           ${nav('tasks','tasks/index.html','square-check-big','المهام')}
           ${nav('communication','communication/index.html','messages-square','التواصل')}
           ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
+          ${nav('fleet','fleet/index.html','truck','إدارة الأسطول')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحتي')}
           ${nav('employees','admin/employees.html','contact-round','الموظفون')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
@@ -267,6 +268,7 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
+    if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
     if(row.type==='communication'||row.type==='communication_trial'){
       const {data,error}=await sb.rpc(row.type==='communication'?'communication_notification_open':'communication_trial_notification_open',{p_id:row.id});
       if(error||!data){onError('المحادثة غير متاحة لك حاليًا.');return false;}

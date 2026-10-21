@@ -4,7 +4,7 @@ export const scopeName=s=>s==='all'?'جميع الموظفين / السجلات'
 export function assignedRoles(context,id){return context.assignments.filter(a=>a.profile_id===id).map(a=>a.role_id).sort();}
 export function accessSources(context,user){
  const rows=[];
- for(const key of context.direct_tasks.find(d=>d.profile_id===user.id)?.permissions||[]){const c=context.catalog.find(c=>c.key===key);if(c)rows.push({...c,scope:c.scopes[0],source:'منح مباشر',enabled:!c.requires_manager||user.role==='manager'});}
+ for(const key of context.direct_tasks.find(d=>d.profile_id===user.id)?.permissions||[]){const c=context.catalog.find(c=>c.key===key);if(c)rows.push({...c,scope:key.startsWith('fleet.')?'all':c.scopes[0],source:'منح مباشر',enabled:!c.requires_manager||user.role==='manager'});}
  for(const g of context.direct_hr.filter(g=>g.profile_id===user.id))for(const op of ['read','write'])if(g['can_'+op]){const c=context.catalog.find(c=>c.domain===g.domain&&c.operation===op);if(c)rows.push({...c,scope:g.scope,source:'منح مباشر',enabled:true});}
  for(const id of assignedRoles(context,user.id)){const role=context.roles.find(r=>r.id===id);if(!role)continue;for(const g of role.rules){const c=context.catalog.find(c=>c.key===g.permission);if(c)rows.push({...c,scope:g.scope,source:role.name,enabled:role.active&&(!c.requires_manager||user.role==='manager')});}}
  return rows.map(r=>({...r,enabled:r.enabled&&user.active&&user.status==='active'&&(user.role==='admin'||!Array.isArray(user.allowed_modules)||user.allowed_modules.includes(r.domain?'employees':'tasks'))}));
