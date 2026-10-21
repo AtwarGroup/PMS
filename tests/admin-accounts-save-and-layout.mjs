@@ -5,7 +5,7 @@ const page=read('admin/users.html'),module=read('assets/js/admin-access-page.mjs
 for(const id of ['usersPanel','rolesPanel','auditPanel','accountDialog','roleDialog','activationDialog'])assert(page.includes(`id="${id}"`));
 assert(!page.includes('nEmploymentType'));assert(!page.includes('class="profile-extra"'));assert(!page.includes('jobStageOwners'));
 assert(page.includes('role="tabpanel"'));assert(page.includes('aria-selected="true"'));assert(css.includes('@media(max-width:650px)'));
-for(const rpc of ['access_admin_context','access_account_update','access_role_save','access_assign_roles','access_direct_save','access_audit_list'])assert(module.includes(rpc));
+for(const rpc of ['access_admin_context','account_access_save','access_role_save','access_assign_roles','access_direct_save','access_audit_list'])assert(module.includes(rpc));
 assert(module.includes('p_revision:roleRevision'));assert(module.includes('p_expected:expected'));assert(module.includes("fields.forEach(x=>x.disabled=true)"));assert(module.includes("el('passwordForm').reset()"));
 assert(!module.includes("action:'delete'"));assert(module.includes("action:'create'"));assert(module.includes('context.pending_employees.find'));
 console.log('Organized account dialogs, server-backed role controls, concurrency and staged activation passed.');

@@ -57,7 +57,7 @@ assert.match(profileIndex,/hybrid-details[\s\S]*authority-tone-approve[\s\S]*kpi
 assert.match(profileIndex,/content\.reports[\s\S]*report-grid/,'Published outputs and reports must remain visible without inventing responsibility links');
 assert.match(profileIndex,/scoreScale\(item,job\)/,'KPI scoring details must render the published scale or the matching job proposal');
 for(const field of ['employee_code','join_date','work_location','employment_type'])assert.match(profileDetailsMigration,new RegExp(field),`${field} must be stored in profiles`);
-assert.match(adminUsers,/access_account_update/,'Account settings must use the checked RPC');
+assert.match(adminUsers,/account_access_save/,'Account settings must use the checked RPC');
 assert.match(adminUsers,/access_direct_save/,'Direct grants must save atomically');
 assert.match(adminUsers,/تم حفظ بيانات الحساب/,'Account save result must be visible');
 assert.match(adminUsers,/مصدر|المصدر/,'Effective access must explain permission sources');
