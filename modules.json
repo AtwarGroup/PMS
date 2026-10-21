@@ -16,11 +16,12 @@
       "navigation": "primary"
     },
     {
-      "id": "team",
-      "path": "team/index.html",
-      "minRole": "manager",
+      "id": "employees",
+      "path": "admin/employees.html",
+      "minRole": "employee",
       "status": "stable",
-      "navigation": "primary"
+      "navigation": "primary",
+      "label": "الموظفون"
     },
     {
       "id": "profile",

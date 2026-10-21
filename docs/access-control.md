@@ -29,3 +29,13 @@ Job stage owners are maintained under `job-library/settings.html`; changing an o
 ## Validation
 
 Run `node tests/access-model.mjs` and the complete `tests/*.mjs` quality gate. Execute `supabase/tests/scalable_account_roles.sql` and `supabase/tests/employee_master_access.sql` against a database with the named QA accounts. SQL fixtures and grants roll back. Do not assign test roles to production employees, create Auth accounts, send email or request employee approval during regression testing.
+
+## Employee workspace (21 October 2026)
+
+`admin/employees.html` is the single employee workspace. The directory and reporting hierarchy share the same server-authorized `employee_master_list` response, search and filters. Relationships use the existing employee and manager codes, including employees without login accounts. Missing managers are shown as outside the displayed results; no extra profile lookup expands the scope. Legacy `team/index.html` bookmarks redirect here. Published job descriptions and measurement history remain on their existing scoped employee-profile route.
+
+Login activation, account suspension, system roles, reusable scoped roles, direct exceptions and access auditing remain exclusively in `admin/users.html`. The employee page contains only an administrator navigation link to that page. Account summary counts are derived from `access_admin_context` and do not change grants.
+
+This release changes presentation and navigation only. It contains no migration, employee import, account activation, notification, email or job acknowledgement operation. Existing database authorization and record revisions remain authoritative.
+
+Validation: all 116 JavaScript suites pass. `tests/browser/employee-access.cjs` exercises both views, paging, separate inactive/unactivated filters, scoped manager results, read-only detail and sensitive-field omission, legacy redirect, account totals, effective access, draft cancellation and responsive layouts at 1440px and 390px. Run a static server on port 8765 and execute the script with Playwright available; `ATWAR_PLAYWRIGHT_MODULE` and `ATWAR_CHROMIUM_PATH` can select installed test tools. Browser tests mock all Supabase calls and block external requests. They do not certify a new production-authenticated session. Database policies and RPC contracts are unchanged.

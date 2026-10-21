@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {employeeForest,employeePage,filterEmployees} from '../assets/js/employee-master-model.mjs';
+const rows=[{id:'a',employee_code:'100',full_name:'مدير',profile_id:'p',login_active:true},{id:'b',employee_code:'200',manager_code:'100',full_name:'موظف',profile_id:null,login_active:false},{id:'c',employee_code:'300',manager_code:'200',full_name:'فني',profile_id:'q',login_active:false}];
+assert.equal(employeeForest(rows)[0].children[0].children[0].record.id,'c');
+assert.equal(employeeForest(rows.slice(1))[0].record.id,'b','A manager outside the authorized result must not be fetched');
+const flattened=forest=>forest.flatMap(n=>[n.record.id,...flattened(n.children)]);
+assert.deepEqual(flattened(employeeForest([{...rows[0],manager_code:'300'},...rows.slice(1)])),['a','b','c'],'Cycles must terminate and keep all visible employees');
+assert.deepEqual(flattened(employeeForest([{...rows[0],manager_code:'100'}])),['a']);
+assert.deepEqual(filterEmployees(rows,{login:'waiting'}).map(x=>x.id),['b']);
+assert.deepEqual(filterEmployees(rows,{login:'inactive'}).map(x=>x.id),['c']);
+const many=Array.from({length:135},(_,id)=>({id}));assert.equal(employeePage(many,6,25).rows.length,10);assert.equal(employeePage(many,99,25).page,6);assert.equal(employeePage([],9).from,0);
+console.log('Authorized hierarchy, missing parents, cycle recovery, separate login states and employee pagination passed.');
