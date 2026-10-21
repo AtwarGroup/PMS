@@ -1,3 +1,4 @@
+import {employeePopulation} from './employee-population.mjs?v=2.7.4';
 import {domains,escapeHTML as esc,filterEmployees,employeeForest,employeePage} from './employee-master-model.mjs?v=2.7.2';
 const el=id=>document.getElementById(id);const sb=await window.atwarGetSupabase();let context,employees=[],detail,currentId,pageNumber=1;
 const status=(message,error=false)=>{el('hrStatus').textContent=message;el('hrStatus').dataset.error=String(error);};
@@ -10,10 +11,10 @@ const amount=v=>Number(v).toLocaleString('ar-SA',{minimumFractionDigits:2,maximu
 function renderList(){
  const visible=filterEmployees(employees,{query:el('hrSearch').value,department:el('hrDepartment').value,section:el('hrSection').value,login:el('hrLogin').value});
  const page=employeePage(visible,pageNumber,el('employeePageSize').value);pageNumber=page.page;
- el('employeeRows').innerHTML=page.rows.map(r=>`<tr><td>${esc(r.employee_code)}</td><td><b>${esc(r.full_name)}</b></td><td>${esc(r.department)}<small>${esc(r.section)}</small></td><td>${esc(r.title)}</td><td>${esc(r.manager||'—')} ${r.manager_code?`<small>${esc(r.manager_code)}</small>`:''}</td><td><span class="hr-tag ${r.login_active?'active':''}">${r.login_active?'نشط':r.profile_id?'غير نشط':'لم يُفعّل'}</span></td><td><button class="hr-btn secondary" type="button" data-employee="${esc(r.id)}">عرض الملف</button></td></tr>`).join('');
+ el('employeeRows').innerHTML=page.rows.map(r=>`<tr><td data-label="الرقم الوظيفي">${esc(r.employee_code)}</td><td><b>${esc(r.full_name)}</b></td><td data-label="الإدارة والقسم">${esc(r.department)}<small>${esc(r.section)}</small></td><td data-label="المسمى الوظيفي">${esc(r.title)}</td><td data-label="المدير المباشر">${esc(r.manager||'—')} ${r.manager_code?`<small>${esc(r.manager_code)}</small>`:''}</td><td><span class="hr-tag ${r.login_active?'active':''}">${r.login_active?'نشط':r.profile_id?'غير نشط':'لم يُفعّل'}</span></td><td><button class="hr-btn secondary" type="button" data-employee="${esc(r.id)}">عرض الملف</button></td></tr>`).join('');
  el('hrEmpty').hidden=visible.length>0;el('visibleCount').textContent=`عرض ${page.from}–${page.to} من ${visible.length} موظفًا`;el('employeePageNumber').textContent=`${page.page} / ${page.pages}`;el('employeePrevious').disabled=page.page===1;el('employeeNext').disabled=page.page===page.pages;renderHierarchy(visible);
 }
-async function load(){context=await rpc('employee_master_context');el('employeeAccessLink').hidden=!context.admin;employees=await rpc('employee_master_list');el('employeeCount').textContent=employees.length;el('activeCount').textContent=employees.filter(x=>x.login_active).length;el('waitingCount').textContent=employees.filter(x=>!x.profile_id).length;
+async function load(){context=await rpc('employee_master_context');el('employeeAccessLink').hidden=!context.admin;employees=await rpc('employee_master_list');const population=employeePopulation(employees);el('employeeCount').textContent=population.total;el('activeCount').textContent=population.active;el('waitingCount').textContent=population.waiting;el('employeeScope').textContent=context.admin?'جميع سجلات الموظفين في الشركة. أعداد الدخول أدناه تخص هذه السجلات فقط.':'السجلات المسموح لحسابك بالاطلاع عليها فقط، وليست إجمالي موظفي الشركة.';
  const department=el('hrDepartment').value;el('hrDepartment').innerHTML=option('','جميع الإدارات',department)+[...new Set(employees.map(x=>x.department))].map(n=>option(n,n,department)).join('');
  refreshSections();renderList();
 }

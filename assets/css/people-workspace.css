@@ -1,0 +1,67 @@
+/* People and access use the same typography, surfaces and rhythm as the dashboard. */
+:is(.hr-page,.access-page,.hr-dialog,.access-dialog){--atwar-type-body:15px;--atwar-type-control:14px;--atwar-type-meta:13px;--atwar-type-page-title:28px}
+.atwar-content:is(.hr-page,.access-page){font-size:15px;color:var(--atwar-text);line-height:1.7}
+.atwar-main :is(.hr-heading,.access-heading){padding:8px 0 20px;margin:0 0 20px;border-bottom:1px solid var(--atwar-border);align-items:center}
+.atwar-main :is(.hr-heading,.access-heading) h1{font-size:28px;line-height:1.4;margin:3px 0 6px;color:var(--atwar-navy-800,#142c4b);font-weight:800}
+.atwar-main :is(.hr-heading,.access-heading) p{font-size:15px;margin:0;color:#526277}
+.atwar-main :is(.hr-heading,.access-heading) small{font-size:13px!important;color:#526277}
+.atwar-main :is(.hr-metrics,.access-overview){gap:12px;margin:0 0 18px}
+.atwar-main :is(.hr-metrics,.access-overview)>div{display:grid;grid-template-columns:1fr 44px;align-content:center;gap:2px 12px;min-height:100px;padding:16px 20px;border-radius:14px;border:1px solid #dce5ee;background:#fff;box-shadow:none}
+.atwar-main :is(.hr-metrics,.access-overview) b{grid-column:1;grid-row:1;margin:0;font-size:28px;line-height:1.3;color:#1d4ed8;font-weight:800;font-variant-numeric:tabular-nums}
+.atwar-main :is(.hr-metrics,.access-overview)>div>span{grid-column:1;grid-row:2;font-size:14px;color:#334155;line-height:1.7}
+.people-metric-icon{grid-column:2;grid-row:1/3;align-self:center;display:grid;place-items:center;width:44px;height:44px;background:#edf4ff;color:#2563eb;border-radius:12px}
+.people-metric-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hr-metrics>div:nth-child(2),.access-overview>div:first-child{background:#f2fbf6;border-color:#d7ebdf}
+.hr-metrics>div:nth-child(2) :is(b,.people-metric-icon),.access-overview>div:first-child :is(b,.people-metric-icon){color:#15803d}
+.hr-metrics>div:nth-child(2) .people-metric-icon,.access-overview>div:first-child .people-metric-icon{background:#e3f5e9}
+.hr-metrics>div:last-child,.access-overview>div:last-child{background:#faf5ff;border-color:#e6dbf4}
+.hr-metrics>div:last-child :is(b,.people-metric-icon),.access-overview>div:last-child :is(b,.people-metric-icon){color:#7c3aed}
+.hr-metrics>div:last-child .people-metric-icon,.access-overview>div:last-child .people-metric-icon{background:#f0e7ff}
+.atwar-main :is(.hr-page,.access-page) .population-note{font-size:14px;color:#43566e;background:#edf3fa;border-inline-start:3px solid #8baed7;border-radius:8px;padding:11px 14px;margin:0 0 18px;line-height:1.8}
+.population-note:empty{display:none}
+.atwar-main :is(.hr-tabs,.access-page>.access-tabs){display:flex;gap:6px;margin:0 0 18px;border-bottom:1px solid var(--atwar-border)}
+.atwar-main :is(.hr-tabs,.access-tabs) button{font-size:15px!important;padding:12px 16px;line-height:1.6;font-weight:700}
+.atwar-shell .atwar-main .atwar-content:is(.hr-page,.access-page) :is(input,select,button,.hr-btn,.access-btn){font-size:14px!important;min-height:42px!important;font-family:var(--atwar-font)}
+.atwar-main :is(.hr-page,.access-page) label{font-size:14px;color:#334155}
+.atwar-main :is(.hr-page,.access-page) :is(.hr-hint,.access-hint){font-size:14px;color:#526277}
+.atwar-main :is(.hr-table,.access-table){font-size:15px;line-height:1.7}
+.atwar-main :is(.hr-table,.access-table) th{font-size:13px;color:#43566e;font-weight:700;padding:12px 16px;background:#f4f7fb}
+.atwar-main :is(.hr-table,.access-table) td{font-size:15px;padding:14px 16px;color:#243652;vertical-align:middle}
+.atwar-main :is(.hr-table,.access-table) small{font-size:13px!important;color:#526277!important;line-height:1.6!important}
+.atwar-main :is(.hr-table,.access-table) tbody tr:hover{background:#f8fafc}
+.atwar-main .hr-card{padding:20px;border-radius:14px;box-shadow:none}
+.atwar-main .hr-filters{gap:12px;margin-bottom:18px}
+.atwar-main .access-heading .access-link{font-size:14px;font-weight:700;text-decoration:none;padding:9px 14px;background:#fff;border:1px solid var(--atwar-border);border-radius:10px}
+.module-summary{font-size:14px;max-width:330px}
+.module-summary summary{cursor:pointer;color:#255c8d;font-weight:700;min-height:36px;align-content:center;width:fit-content}
+.module-summary>div{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.module-summary .access-tag{margin:0;font-size:13px;padding:3px 8px;background:#edf3fa;color:#365b7e}
+.module-summary summary:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;border-radius:4px}
+.atwar-main :is(.hr-tag,.base-role,.access-tag){font-size:13px}
+.hr-dialog,.access-dialog{font-family:var(--atwar-font);font-size:15px;line-height:1.7}
+.hr-dialog :is(input,select,button){font-size:14px!important}
+.hr-dialog small{font-size:13px!important}
+#hrStatus:empty{display:none}
+@media(max-width:900px){.atwar-main .access-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){
+  :is(.hr-page,.access-page,.hr-dialog,.access-dialog){--atwar-type-page-title:24px}
+  .atwar-main :is(.hr-heading,.access-heading){align-items:start;gap:14px;padding-bottom:16px;margin-bottom:16px}
+  .atwar-main :is(.hr-heading,.access-heading) h1{font-size:24px}
+  .atwar-main :is(.hr-heading,.access-heading) p{font-size:14px}
+  .atwar-main .hr-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .atwar-main :is(.hr-metrics,.access-overview)>div{min-height:90px;padding:14px;grid-template-columns:1fr 36px;gap:2px 8px}
+  .atwar-main :is(.hr-metrics,.access-overview) b{font-size:26px}
+  .atwar-main :is(.hr-metrics,.access-overview)>div>span{font-size:13px}
+  .people-metric-icon{width:36px;height:36px}.people-metric-icon svg{width:20px;height:20px}
+  .atwar-main .hr-metrics>div{grid-template-columns:1fr;padding:12px 8px;min-height:106px}
+  .hr-metrics .people-metric-icon{display:none}
+  .atwar-main .hr-card{padding:14px}
+  .atwar-main :is(.hr-table,.access-table) td{padding:7px 0}
+  .atwar-main .hr-table td:nth-child(2){font-size:17px}
+  .atwar-main .hr-table td:nth-child(3),.atwar-main .hr-table td:nth-child(4){grid-column:1/-1}
+  .atwar-main .hr-table td[data-label]::before{content:attr(data-label);display:block;color:#526277;font-size:12px;margin-bottom:2px}
+  .module-summary{max-width:none}
+  .atwar-main .account-directory-table td{font-size:15px;padding:0}
+}
+
+.atwar-main :is(.hr-btn,.access-btn):not(.secondary),.access-dialog .access-btn:not(.secondary){background:var(--atwar-blue-600,#2563eb);border-color:var(--atwar-blue-600,#2563eb);color:#fff}
