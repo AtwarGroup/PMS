@@ -2,7 +2,7 @@ process.on("uncaughtException", (e) => {
   console.error(e.message, e.detail || "", e.where || "");
   process.exit(1);
 });
-import { createTestDB, ids } from "./fleet-test-db.mjs";
+import { createTestDB, ids, seedAssignedVehicle } from "./fleet-test-db.mjs";
 import assert from "node:assert/strict";
 const { db, rpc } = await createTestDB();
 console.log("HR/access migrations + fleet migration applied to PostgreSQL 17.");
@@ -17,7 +17,7 @@ const cmd = async (u, id, action, data = {}) => {
     p_data: data,
   });
 };
-const vehicle = await rpc("fleet", "fleet_vehicle_save", {
+const vehicle = await seedAssignedVehicle(db,rpc,"fleet", {
   p_id: null,
   p_revision: null,
   p_data: {

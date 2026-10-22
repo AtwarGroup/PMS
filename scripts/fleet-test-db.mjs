@@ -48,6 +48,7 @@ export async function createTestDB() {
   await db.exec(await readFile(new URL('../supabase/migrations/20261022132635_fleet_workflow_integrity.sql', import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022133620_fleet_designated_approver.sql', import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022161526_fleet_operations_handovers.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../supabase/migrations/20261022200000_fleet_review_hardening.sql',import.meta.url),'utf8'));
   for (const [key, id] of Object.entries(ids))
     await db.query(
       "insert into public.profiles(id,full_name,email,role)values($1,$2,$3,$4)",
@@ -107,4 +108,10 @@ export async function createTestDB() {
     }
   };
   return { db, rpc };
+}
+
+// Explicit fixture-only historical assignment; production RPC always creates unassigned cars.
+export async function seedAssignedVehicle(db,rpc,user,args){
+ const driver=args.p_data.driver_id;const id=await rpc(user,'fleet_vehicle_save',{...args,p_data:{...args.p_data,driver_id:null}});
+ if(driver)await db.query('update private.fleet_vehicles set driver_id=$1 where id=$2',[driver,id]);return id;
 }

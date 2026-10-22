@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:fleet:db": "node scripts/test-fleet-db.mjs && node scripts/test-fleet-integrity.mjs && node scripts/test-fleet-operations.mjs",
-    "test:fleet:ui": "node scripts/test-fleet-ui.mjs && node scripts/test-fleet-operations-ui.mjs",
+    "test:fleet:db": "node scripts/test-fleet-db.mjs && node scripts/test-fleet-integrity.mjs && node scripts/test-fleet-operations.mjs && node scripts/test-fleet-review.mjs",
+    "test:fleet:ui": "node scripts/test-fleet-ui.mjs && node scripts/test-fleet-operations-ui.mjs && node scripts/test-fleet-review-ui.mjs",
     "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs"
   },
   "devDependencies": {

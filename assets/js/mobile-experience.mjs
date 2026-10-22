@@ -30,18 +30,21 @@ export function enhanceAttachments(root = document) {
       const chosen = Array.from(input.files || []);
       clear.hidden = !chosen.length || input.dataset.attachmentPreview === 'native';
       photoButton.disabled = uploadButton.disabled = clear.disabled = input.disabled;
-      for (const file of input.dataset.attachmentPreview === 'native' ? [] : chosen) {
+      for (const [index, file] of (input.dataset.attachmentPreview === 'native' ? [] : chosen).entries()) {
         const item = document.createElement('div');
         if (/^image\/(jpeg|png|webp)$/.test(file.type)) {
           const image = document.createElement('img'); const url = URL.createObjectURL(file); urls.push(url);
           image.src = url; image.alt = 'معاينة المرفق'; item.append(image);
         }
-        const name = document.createElement('span'); name.textContent = file.name; item.append(name); files.append(item);
+        const name = document.createElement('span'); name.textContent = file.name; item.append(name);
+        if(input.multiple){const remove=document.createElement('button');remove.type='button';remove.textContent='حذف الصورة';remove.setAttribute('aria-label','حذف '+file.name);remove.disabled=input.disabled;remove.onclick=e=>{e.preventDefault();e.stopPropagation();const transfer=new DataTransfer();Array.from(input.files).forEach((f,i)=>{if(i!==index)transfer.items.add(f);});input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));};item.append(remove);}
+        files.append(item);
       }
     };
     camera.addEventListener('change', () => {
       if (!camera.files.length) return;
       const transfer = new DataTransfer();
+      if(input.multiple)for(const file of input.files)transfer.items.add(file);
       for (const file of camera.files) transfer.items.add(file);
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));

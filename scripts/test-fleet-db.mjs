@@ -2,7 +2,7 @@ process.on("uncaughtException", (e) => {
   console.error(e.message, e.detail || "", e.where || "");
   process.exit(1);
 });
-import { createTestDB, ids } from "./fleet-test-db.mjs";
+import { createTestDB, ids, seedAssignedVehicle } from "./fleet-test-db.mjs";
 import assert from "node:assert/strict";
 const { db, rpc } = await createTestDB();
 console.log("HR/access migrations + fleet migration applied to PostgreSQL 17.");
@@ -17,7 +17,7 @@ const cmd = async (u, id, action, data = {}) => {
     p_data: data,
   });
 };
-const vehicle = await rpc("fleet", "fleet_vehicle_save", {
+const vehicle = await seedAssignedVehicle(db,rpc,"fleet", {
   p_id: null,
   p_revision: null,
   p_data: {
@@ -378,7 +378,7 @@ const rows = [
       vehicle_type: "QA imported",
       model: "2025",
       city: "جدة",
-      driver_id: ids.driver,
+      driver_id: null,
       active: true,
       odometer: 0,
     },
@@ -389,7 +389,8 @@ let imported = await rpc("fleet", "fleet_import", args);
 assert.equal(imported.added, 1);
 assert.equal((await snapshot("driver")).vehicles.length, 1);
 imported = await rpc("fleet", "fleet_import", { ...args, p_dry_run: false });
-assert.equal((await snapshot("driver")).vehicles.length, 2);
+assert.equal((await snapshot("driver")).vehicles.length, 1);
+assert.equal((await snapshot("fleet")).vehicles.some(v=>v.plate==='IMPORT 1'),true);
 await deny(
   () => rpc("fleet", "fleet_import", { ...args, p_dry_run: false }),
   /سابقًا/,
@@ -450,7 +451,7 @@ console.log(
   "PASS: no anonymous function grants, public invoker wrappers, fixed search paths and no raw client table privileges.",
 );
 // Manager submission is scoped to the current direct reporting line and the car's employee.
-const managerCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 777',vin:'QA-MANAGER-777',vehicle_type:'سيارة المدير',driver_id:ids.manager,odometer:0,active:true},p_reason:'اختبار طلب المدير الشخصي'});
+const managerCar=await seedAssignedVehicle(db,rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 777',vin:'QA-MANAGER-777',vehicle_type:'سيارة المدير',driver_id:ids.manager,odometer:0,active:true},p_reason:'اختبار طلب المدير الشخصي'});
 await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.admin,ids.manager]);
 async function managerDraft(targetVehicle=vehicle,type='repair'){
  const data={vehicle_id:targetVehicle,driver_id:ids.outsider,accountant_id:ids.accountant,description:'طلب المدير للفريق',fault_notes:'تشخيص',request_type:type,odometer:1000,quotes:[],selected_quote:0};
@@ -472,7 +473,7 @@ await deny(()=>cmd('manager',ownManagerRequest,'approve'),/غير مسموح/);
 await cmd('admin',ownManagerRequest,'approve');
 await deny(()=>managerDraft(vehicle,'fuel'),/نوع الطلب/);
 await deny(()=>managerDraft(vehicle,'inspection'),/نوع الطلب/);
-const outsiderCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'OUTSIDER 777',vehicle_type:'خارج الفريق',driver_id:ids.outsider,odometer:0,active:true},p_reason:'اختبار العزل'});
+const outsiderCar=await seedAssignedVehicle(db,rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'OUTSIDER 777',vehicle_type:'خارج الفريق',driver_id:ids.outsider,odometer:0,active:true},p_reason:'اختبار العزل'});
 await deny(()=>managerDraft(outsiderCar),/السيارة ليست/);
 const pendingTeam=await managerDraft();
 const pendingFile=await upload('manager',pendingTeam);
@@ -518,7 +519,7 @@ assert.equal((await rpc('accountant2','fleet_documents_context')).vehicles.lengt
 // A financial-only employee's incidental reporting line cannot widen their request access.
 await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.accountant2,ids.outsider]);
 assert.equal((await snapshot('accountant2')).requests.length,0);
-const financeCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'FINANCE 222',vehicle_type:'سيارة المحاسب',driver_id:ids.accountant2,active:true,odometer:0},p_reason:'اختبار محاسب يملك سيارة'});
+const financeCar=await seedAssignedVehicle(db,rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'FINANCE 222',vehicle_type:'سيارة المحاسب',driver_id:ids.accountant2,active:true,odometer:0},p_reason:'اختبار محاسب يملك سيارة'});
 c=await snapshot('accountant2');assert.equal(c.can_create,true);assert.equal(c.can_view_documents,true);assert.equal(c.vehicles.length,1);
 // A real system administrator need not have an employee/car record to operate the module.
 const noEmployeeAdmin=(await db.query("insert into public.profiles(id,email,full_name,role)values(gen_random_uuid(),'no-employee-admin@fleet.atwargroup.test','مسؤول بلا سجل موظف','admin')returning id")).rows[0].id;

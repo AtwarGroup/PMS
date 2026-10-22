@@ -1,3 +1,4 @@
+import {seedAssignedVehicle} from './fleet-test-db.mjs';
 import { chromium, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { startPreview } from "./fleet-preview.mjs";
@@ -152,12 +153,15 @@ try {
   await p.locator("#newVehicle").click();
   await p.locator("[name=plate]").fill("QA 9876");
   await p.locator("[name=vehicle_type]").fill("سيارة ثانية");
-  await p
-    .locator("[name=driver_id]")
-    .selectOption({ label: "السائق التجريبي — 99002" });
+  await expect(p.locator("[name=driver_id]")).toBeDisabled();
   await p.locator("[name=reason]").fill("تجربة تعدد سيارات السائق");
   await p.locator("#vehicleForm button[type=submit]").click();
   await expect(p.locator("#fleetDialog")).not.toBeVisible();
+  const addedCar=(await app.rpc('fleet','fleet_snapshot')).vehicles.find(v=>v.plate==='QA 9876');
+  assert.equal(addedCar.driver_id,null);
+  const handover=await app.rpc('fleet','fleet_handover_save',{p_id:null,p_revision:null,p_data:{vehicle_id:addedCar.id,kind:'issue',employee_id:'00000000-0000-4000-8000-000000000003',odometer:0,fuel_level:50,keys_count:1,spare_tire:true,tools:true,marks:[],no_marks:true,notes:''}});
+  await app.rpc('fleet','fleet_handover_command',{p_id:handover,p_revision:1,p_action:'submit',p_reason:''});
+  await app.rpc('driver','fleet_handover_command',{p_id:handover,p_revision:2,p_action:'accept',p_reason:''});
   p = await pageFor("driver");
   await p.locator("#newRequest").click();
   await expect(p.locator("[name=vehicle_id] option")).toHaveCount(2);
@@ -320,7 +324,7 @@ try {
   p=await open('manager','صيانة تجريبية 150');
   await act(p,'approve');
   await app.db.exec("update private.hr_employees set manager_id='00000000-0000-4000-8000-000000000001'where profile_id='00000000-0000-4000-8000-000000000002'");
-  await app.rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 888',vin:'QA-MANAGER-888',vehicle_type:'سيارة المدير',driver_id:'00000000-0000-4000-8000-000000000002',odometer:0,active:true},p_reason:'اختبار سيارة المدير'});
+  await seedAssignedVehicle(app.db,app.rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 888',vin:'QA-MANAGER-888',vehicle_type:'سيارة المدير',driver_id:'00000000-0000-4000-8000-000000000002',odometer:0,active:true},p_reason:'اختبار سيارة المدير'});
   p=await pageFor('manager');
   await expect(p.locator('#dashboardScope option')).toHaveCount(2);
   await p.locator('#dashboardScope').selectOption('team');
@@ -355,7 +359,7 @@ try {
   p=await open('admin','صيانة تجريبية 175');
   await act(p,'settle',async f=>{await f.locator('[name=reference]').fill('ADMIN-REIMBURSE');await f.locator('[name=evidence]').setInputFiles(pdf);});
   await expect(p.locator('#dialogBody .fleet-tag').first()).toHaveText('مغلق');
-  await app.rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'FINANCE 999',vehicle_type:'سيارة المحاسب',driver_id:'00000000-0000-4000-8000-000000000007',active:true,odometer:0},p_reason:'اختبار ظهور خدمات السيارة لمالكها'});
+  await seedAssignedVehicle(app.db,app.rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'FINANCE 999',vehicle_type:'سيارة المحاسب',driver_id:'00000000-0000-4000-8000-000000000007',active:true,odometer:0},p_reason:'اختبار ظهور خدمات السيارة لمالكها'});
   p=await pageFor('accountant2');
   await expect(p.locator('#newRequest')).toBeVisible();
   await expect(p.locator('[data-tab=vehicles]')).toBeVisible();

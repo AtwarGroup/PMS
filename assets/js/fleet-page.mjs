@@ -1,4 +1,4 @@
-import {initFleetOperations} from "./fleet-operations.mjs?v=1";
+import {initFleetOperations} from "./fleet-operations.mjs?v=2";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,
@@ -150,7 +150,7 @@ function vehicleEditor(id) {
   show(
     id ? "تعديل بيانات السيارة" : "إضافة سيارة",
     "الربط من سجل الموظفين الحالي",
-    `<form id="vehicleForm" class="fleet-form">${field("plate", "رقم اللوحة", v.plate, "text", 'required maxlength="30"')}${field("vin", "رقم الهيكل", v.vin, "text", 'maxlength="40"')}${field("vehicle_type", "نوع السيارة", v.vehicle_type, "text", 'required maxlength="100"')}${field("model", "الموديل", v.model, "text", 'maxlength="100"')}${field("city", "المدينة", v.city, "text", 'maxlength="100"')}${field("odometer", "قراءة العداد (كم)", v.odometer || 0, "number", 'required min="0" step="1"')}${v.id?`<input type="hidden" name="driver_id" value="${esc(v.driver_id||'')}">`:""}<label>السائق<select name="driver_id" ${v.id?"disabled":""}>${opt("", "غير مسندة", v.driver_id)}${context.employees.map((e) => opt(e.id, `${e.name} — ${e.code}`, v.driver_id)).join("")}</select><small class="fleet-muted">تغيير العهدة الحالية يتم من محضر التسليم والاستلام.</small></label><label>التشغيل<select name="active">${opt("true", "نشطة", String(v.active ?? true))}${opt("false", "موقوفة", String(v.active ?? true))}</select></label>${field("reason", "سبب الإضافة أو التعديل", "", "text", 'required minlength="3" maxlength="500"')}<div class="fleet-wide"><button class="fleet-btn" type="submit">حفظ السيارة</button></div></form>`,
+    `<form id="vehicleForm" class="fleet-form">${field("plate", "رقم اللوحة", v.plate, "text", 'required maxlength="30"')}${field("vin", "رقم الهيكل", v.vin, "text", 'maxlength="40"')}${field("vehicle_type", "نوع السيارة", v.vehicle_type, "text", 'required maxlength="100"')}${field("model", "الموديل", v.model, "text", 'maxlength="100"')}${field("city", "المدينة", v.city, "text", 'maxlength="100"')}${field("odometer", "قراءة العداد (كم)", v.odometer || 0, "number", 'required min="0" step="1"')}${v.id?`<input type="hidden" name="driver_id" value="${esc(v.driver_id||'')}">`:""}<label>السائق<select name="driver_id" disabled>${opt("", "غير مسندة", v.driver_id)}${context.employees.map((e) => opt(e.id, `${e.name} — ${e.code}`, v.driver_id)).join("")}</select><small class="fleet-muted">تُضاف السيارة دون سائق؛ الإسناد وتغيير العهدة يتمان بمحضر التسليم والاستلام.</small></label><label>التشغيل<select name="active">${opt("true", "نشطة", String(v.active ?? true))}${opt("false", "موقوفة", String(v.active ?? true))}</select></label>${field("reason", "سبب الإضافة أو التعديل", "", "text", 'required minlength="3" maxlength="500"')}<div class="fleet-wide"><button class="fleet-btn" type="submit">حفظ السيارة</button></div></form>`,
   );
   $("vehicleForm").onsubmit = (e) =>
     run(e, async () => {
