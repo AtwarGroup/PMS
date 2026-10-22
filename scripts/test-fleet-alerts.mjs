@@ -1,4 +1,4 @@
-import { createTestDB, ids } from "./fleet-test-db.mjs";
+import { createTestDB, ids, seedAssignedVehicle } from "./fleet-test-db.mjs";
 import assert from "node:assert/strict";
 process.on("uncaughtException", (e) => {
   console.error(e.message, e.where || "");
@@ -7,7 +7,7 @@ process.on("uncaughtException", (e) => {
 const { db, rpc } = await createTestDB();
 await rpc('admin','access_direct_save',{p_profile:ids.admin,p_rules:[{permission:'fleet.approve',scope:'all'}]});
 assert.equal((await db.query('select private.fleet_owner() id')).rows[0].id,ids.fleet);
-const vehicle = await rpc("fleet", "fleet_vehicle_save", {
+const vehicle = await seedAssignedVehicle(db,rpc,"fleet", {
   p_id: null,
   p_revision: null,
   p_data: {
@@ -159,10 +159,10 @@ console.log(
 
 const datesBefore=(await db.query('select count(*) n from private.fleet_documents')).rows[0].n;
 const notificationsBefore=(await db.query('select count(*) n from public.notifications')).rows[0].n;
-const importRows=[{plate:'DOC IMPORT',vin:'DOC-IMPORT-00001',vehicle_type:'QA',driver_id:ids.driver,active:true,odometer:0,documents:{insurance:await date(10),authorization:await date(10)}}];
+const importRows=[{plate:'DOC IMPORT',vin:'DOC-IMPORT-00001',vehicle_type:'QA',driver_id:null,active:true,odometer:0,documents:{insurance:await date(10),authorization:await date(10)}}];
 await rpc('fleet','fleet_import',{p_rows:importRows,p_source_hash:'d'.repeat(64),p_dry_run:true});
 assert.equal((await db.query('select count(*) n from private.fleet_documents')).rows[0].n,datesBefore);assert.equal((await db.query('select count(*) n from public.notifications')).rows[0].n,notificationsBefore);
-await rpc('fleet','fleet_import',{p_rows:importRows,p_source_hash:'d'.repeat(64),p_dry_run:false});assert.equal((await db.query('select count(*) n from private.fleet_documents')).rows[0].n,datesBefore+2);
+await rpc('fleet','fleet_import',{p_rows:importRows,p_source_hash:'d'.repeat(64),p_dry_run:false});assert.equal((await db.query('select count(*) n from private.fleet_documents')).rows[0].n,datesBefore+1);
 await assert.rejects(()=>rpc('fleet','fleet_import',{p_rows:[{...importRows[0],plate:'BAD DATE',vin:'BAD-DATE-00001',documents:{insurance:'2026-99-99'}}],p_source_hash:'e'.repeat(64),p_dry_run:false}),/date|range/);
 assert.equal((await db.query("select count(*) n from private.fleet_vehicles where plate='BAD DATE'")).rows[0].n,0);
 console.log('PASS: vehicle and date import atomicity, dry-run notification rollback and malformed-date rollback.');

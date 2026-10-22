@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { createTestDB, ids } from "./fleet-test-db.mjs";
+import { createTestDB, ids, seedAssignedVehicle } from "./fleet-test-db.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 export async function startPreview() {
   const { db, rpc } = await createTestDB();
@@ -14,7 +14,7 @@ export async function startPreview() {
     queue = job.catch(() => {});
     return job;
   };
-  await call("fleet", "fleet_vehicle_save", {
+  await seedAssignedVehicle(db,call,"fleet", {
     p_id: null,
     p_revision: null,
     p_data: {
