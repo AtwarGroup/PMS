@@ -50,7 +50,7 @@ export function enhanceAttachments(root = document) {
     input.addEventListener('change', refresh);
     input.form?.addEventListener('reset', () => queueMicrotask(refresh));
     input.classList.add('atwar-file-native');
-    if(getComputedStyle(input.parentElement).display.includes('flex')) input.parentElement.classList.add('atwar-attachment-host');
+    if(getComputedStyle(input.parentElement).display.includes('flex') && getComputedStyle(input.parentElement).flexDirection === 'row') input.parentElement.classList.add('atwar-attachment-host');
     input.after(controls, files, camera); refresh();
     // Release previews as soon as a dynamic form closes.
     const cleanup = new MutationObserver(() => {

@@ -419,6 +419,18 @@ try {
   await expect(mobile.locator('#fleetDialog')).not.toBeVisible();
   await expect(mobile.locator('#fleetStatus')).toContainText('تم حفظ المسودة');
   console.log('PASS UI: 320/360/390/412/740px, mobile drawer, keyboard close, camera capture, preview, removal and real draft upload.');
+  await mobile.getByRole('link',{name:'دليل الاستخدام'}).click();
+  await expect(mobile.locator('.guide-page h1')).toHaveText('إدارة أسطول السيارات');
+  await expect(mobile.locator('#finance')).toContainText('يُغلق الطلب تلقائيًا');
+  await expect(mobile.locator('#driver')).toContainText('حفظ المسودة وحده لا يرسل الطلب');
+  for(const width of [320,390,1280]){
+    await mobile.setViewportSize({width,height:900});
+    assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'Guide overflow');
+  }
+  await mobile.emulateMedia({media:'print'});
+  await expect(mobile.locator('.guide-nav')).not.toBeVisible();
+  await mobile.emulateMedia({media:'screen'});
+  console.log('PASS UI: linked role-based guide, mobile layout and printable view.');
   assert.deepEqual(errors, []);
   assert(
     !external.some((u) => u.includes("supabase.co")),
