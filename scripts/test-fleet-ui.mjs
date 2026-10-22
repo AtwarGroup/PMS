@@ -231,6 +231,12 @@ try {
   console.log(
     "PASS UI: existing account administration grants and revokes fleet access, with persisted direct-grant scope.",
   );
+  await admin.locator('#accountDetailsTab').click();
+  await admin.locator('#accountForm button[type=submit]').click();
+  await expect(admin.locator('#accountDialog')).not.toBeVisible();
+  await expect(admin.locator('#accessStatus')).toHaveText('تم حفظ بيانات الحساب.');
+  assert((await app.rpc('admin','access_admin_context')).users.some(u=>u.id===ids.outsider&&u.active));
+  console.log('PASS UI: account details save closes the dialog, refreshes the account list and displays success on the page.');
   // Activation failures keep the form; successful activation closes it before list refresh.
   const activationEmails=['activation-ui@fleet.atwargroup.test','activation-refresh@fleet.atwargroup.test'];
   for(let i=0;i<2;i++)await app.db.query("insert into private.hr_employees(id,employee_code,full_name,email,department_id,section_id,title_id,manager_id,join_date,effective_from)select gen_random_uuid(),$1,$2,$3,department_id,section_id,title_id,manager_id,current_date,current_date from private.hr_employees where id=$4",[String(99980+i),'تفعيل الواجهة '+i,activationEmails[i],ids.driver]);
