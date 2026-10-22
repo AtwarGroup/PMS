@@ -271,6 +271,7 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
+    if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
     if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
     if(row.type==='communication'||row.type==='communication_trial'){
       const {data,error}=await sb.rpc(row.type==='communication'?'communication_notification_open':'communication_trial_notification_open',{p_id:row.id});
