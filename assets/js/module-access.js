@@ -18,7 +18,7 @@
  function apply(){
   if(!current)return;
   const nav=document.querySelector('.atwar-nav');
-  if(nav)for(const m of current.catalog){if(!m.ready||!allowed(m.key)||['tasks','workspace','projects','policies','communication','employees','job_library'].includes(m.key)||nav.querySelector(`[data-module="${m.key}"]`))continue;const link=document.createElement('a');link.href=new URL(m.path,location.origin+'/').href;link.dataset.module=m.key;const icon=document.createElement('i');icon.setAttribute('data-lucide',m.icon||'layout-grid');const label=document.createElement('span');label.textContent=m.label;link.append(icon,label);nav.append(link);window.lucide?.createIcons();}
+  if(nav)for(const m of current.catalog){if(!m.ready||!allowed(m.key)||['tasks','workspace','projects','policies','communication','employees','job_library'].includes(m.key)||nav.querySelector(`[data-module="${m.key}"]`)||[...nav.querySelectorAll('a[href]')].some(a=>new URL(a.getAttribute('href'),location.href).pathname===new URL(m.path,location.origin+'/').pathname))continue;const link=document.createElement('a');link.href=new URL(m.path,location.origin+'/').href;link.dataset.module=m.key;const icon=document.createElement('i');icon.setAttribute('data-lucide',m.icon||'layout-grid');const label=document.createElement('span');label.textContent=m.label;link.append(icon,label);nav.append(link);window.lucide?.createIcons();}
   for(const anchor of document.querySelectorAll('a[href]')){
    const url=new URL(anchor.getAttribute('href'),location.href);if(url.origin!==location.origin)continue;
    const key=routeModule(url.pathname);if(key){anchor.hidden=!allowed(key);anchor.dataset.module=key;}

@@ -12,3 +12,12 @@ const context={catalog:[{key:'employees.salary.read',domain:'salary',operation:'
 const page=fs.readFileSync(new URL('../admin/users.html',import.meta.url),'utf8');for(const id of ['accountModules','activationModules'])assert(page.includes(`id="${id}"`));
 const edge=fs.readFileSync(new URL('../supabase/functions/admin-create-user/index.ts',import.meta.url),'utf8');assert(edge.includes('allowed_modules: modules'));assert(edge.indexOf("caller.rpc('account_module_context')")<edge.indexOf('admin.auth.admin.createUser'));assert(edge.includes('email_confirm: true'));assert(!edge.includes('inviteUserByEmail'));
 console.log('Module routes, fail-closed direct entry, context deduplication, disabled effective grants and activation module contract passed.');
+
+// A shell link may exist before module context is loaded; don't append a duplicate.
+let appended=0;
+const existing={dataset:{},getAttribute:()=>'/fleet/index.html'};
+const nav={querySelector:()=>null,querySelectorAll:()=>[existing],append:()=>{appended++;}};
+const root2={...root,document:{...root.document,querySelector:s=>s==='.atwar-nav'?nav:null,querySelectorAll:s=>s==='a[href]'?[existing]:[],documentElement:{dataset:{}},body:{style:{}}},location:{pathname:'/fleet/index.html',origin:'https://example.test',href:'https://example.test/fleet/index.html',replace(){}}};root2.window=root2;
+vm.runInNewContext(source,root2);
+await root2.AtwarModules.guard({auth:sb.auth,rpc:async()=>({data:{...c,allowed:['fleet'],catalog:[{key:'fleet',ready:true,path:'fleet/index.html'}]}})});
+assert.equal(appended,0);assert.equal(existing.dataset.module,'fleet');

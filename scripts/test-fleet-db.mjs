@@ -485,7 +485,7 @@ assert.equal((await snapshot('manager')).vehicles.find(v=>v.id===managerCar).can
 await db.query("update public.profiles set allowed_modules=array['policies'] where id=$1",[ids.manager]);
 await deny(()=>snapshot('manager'),/ATWAR_MODULE_DENIED/);
 await db.query("update public.profiles set allowed_modules=array['fleet','policies'] where id=$1",[ids.manager]);
-console.log('PASS: manager own/team requests, correct employee assignment, quote uploads, separate supervisor approval, receipt restricted to driver, unrelated-team denial, fuel/inspection denied and reporting-line/unit revocation.');
+console.log('PASS: manager own/team requests, correct employee assignment, quote uploads, separate supervisor approval, ordinary manager receipt denied, unrelated-team denial, fuel/inspection denied and reporting-line/unit revocation.');
 await db.query("update public.profiles set allowed_modules=array['policies'] where id=$1",[ids.driver]);
 await deny(()=>snapshot('driver'),/ATWAR_MODULE_DENIED/);
 await deny(()=>rpc('driver','fleet_documents_context'),/ATWAR_MODULE_DENIED/);
@@ -493,4 +493,37 @@ await deny(()=>rpc('driver','fleet_download',{p_id:invoice}),/ATWAR_MODULE_DENIE
 await db.query("update public.profiles set allowed_modules=array['fleet','policies'] where id=$1",[ids.driver]);
 assert.ok((await snapshot('driver')).vehicles.length);
 console.log('PASS: account unit revocation blocks fleet RPCs and protected files immediately; regrant restores access.');
+// Fleet operations are global; finance is assigned-only; administrator covers both.
+let c=await snapshot('fleet');
+assert.equal(c.can_create,true);assert.equal(c.can_operate,true);assert.equal(c.can_finance,false);
+assert.equal(c.vehicles.find(v=>v.id===outsiderCar).can_request,true);
+const fullDraft=async(actor,car=outsiderCar)=>{
+ const data={vehicle_id:car,accountant_id:ids.accountant,description:'اختبار مسؤوليات الأسطول',request_type:'repair',odometer:2000,quotes:[],selected_quote:0};
+ const request=await rpc(actor,'fleet_request_save',{p_id:null,p_revision:null,p_data:data});
+ for(let i=0;i<3;i++)data.quotes.push({supplier:'ورشة الصلاحيات '+i,parts:400,labor:0,tax:0,file_id:await upload(actor,request)});
+ await rpc(actor,'fleet_request_save',{p_id:request,p_revision:(await detail(actor,request)).request.revision,p_data:data});return request;
+};
+const fleetForOther=await fullDraft('fleet');
+await cmd('fleet',fleetForOther,'submit');
+await cmd('fleet',fleetForOther,'approve');
+await deny(()=>cmd('fleet',fleetForOther,'confirm_advance',{amount:400,reference:'DENIED'}),/غير مسموح/);
+await deny(()=>upload('fleet',fleetForOther,'payment'),/Upload denied/);
+await cmd('admin',fleetForOther,'confirm_advance',{amount:400,reference:'ADMIN-ADVANCE',evidence_id:await upload('admin',fleetForOther,'payment')});
+await cmd('fleet',fleetForOther,'confirm_repair',{total:400,received:true,invoice_id:await upload('fleet',fleetForOther,'invoice')});
+await cmd('admin',fleetForOther,'settle',{amount:0,reference:'ADMIN-SETTLEMENT'});
+assert.equal((await detail('admin',fleetForOther)).request.state,'closed');
+c=await snapshot('accountant2');assert.equal(c.finance_only,true);assert.equal(c.can_create,false);assert.equal(c.can_view_vehicles,false);assert.equal(c.can_view_documents,false);assert.equal(c.requests.length,0);
+await deny(()=>detail('accountant2',fleetForOther),/Access denied/);
+assert.equal((await rpc('accountant2','fleet_documents_context')).vehicles.length,0);
+// A financial-only employee's incidental reporting line cannot widen their request access.
+await db.query('update private.hr_employees set manager_id=$1 where id=$2',[ids.accountant2,ids.outsider]);
+assert.equal((await snapshot('accountant2')).requests.length,0);
+const financeCar=await rpc('fleet','fleet_vehicle_save',{p_id:null,p_revision:null,p_data:{plate:'FINANCE 222',vehicle_type:'سيارة المحاسب',driver_id:ids.accountant2,active:true,odometer:0},p_reason:'اختبار محاسب يملك سيارة'});
+c=await snapshot('accountant2');assert.equal(c.can_create,true);assert.equal(c.can_view_documents,true);assert.equal(c.vehicles.length,1);
+// A real system administrator need not have an employee/car record to operate the module.
+const noEmployeeAdmin=(await db.query("insert into public.profiles(id,email,full_name,role)values(gen_random_uuid(),'no-employee-admin@fleet.atwargroup.test','مسؤول بلا سجل موظف','admin')returning id")).rows[0].id;
+const adminForOther=await fullDraft(noEmployeeAdmin);
+assert.equal((await detail(noEmployeeAdmin,adminForOther)).request.driver_id,ids.outsider);
+c=await snapshot(noEmployeeAdmin);assert.equal(c.can_manage,true);assert.equal(c.can_approve,true);assert.equal(c.can_finance,true);
+console.log('PASS: owner requests/operates for any employee without finance; admin finance overrides work without employee record; accountant without car sees assigned requests only and own-car sections appear when assigned a car.');
 await db.close();
