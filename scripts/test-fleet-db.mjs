@@ -526,4 +526,17 @@ const adminForOther=await fullDraft(noEmployeeAdmin);
 assert.equal((await detail(noEmployeeAdmin,adminForOther)).request.driver_id,ids.outsider);
 c=await snapshot(noEmployeeAdmin);assert.equal(c.can_manage,true);assert.equal(c.can_approve,true);assert.equal(c.can_finance,true);
 console.log('PASS: owner requests/operates for any employee without finance; admin finance overrides work without employee record; accountant without car sees assigned requests only and own-car sections appear when assigned a car.');
+// System administrators can also hold explicit grants without becoming a second operational owner.
+await rpc('admin','access_direct_save',{p_profile:ids.admin,p_rules:[{permission:'fleet.approve',scope:'all'}]});
+assert.equal((await db.query('select private.fleet_owner() id')).rows[0].id,ids.fleet);
+const withExplicitAdmin=await draft(301);
+await cmd('driver',withExplicitAdmin,'submit');
+await cmd('admin',withExplicitAdmin,'approve');
+assert.equal((await detail('driver',withExplicitAdmin)).request.state,'awaiting_advance');
+await db.query("update private.access_direct_tasks set permissions=array[]::text[] where profile_id=$1",[ids.fleet]);
+assert.equal((await db.query('select private.fleet_owner() id')).rows[0].id,ids.admin);
+await db.query("update private.access_direct_tasks set permissions=array[]::text[] where profile_id=$1",[ids.admin]);
+await assert.rejects(()=>db.query('select private.fleet_owner()'),/مسؤول أسطول واحد/);
+console.log('PASS: explicit administrator approval grants do not conflict with the operational fleet owner; sole explicit admin fallback and missing-owner guard remain valid.');
+
 await db.close();

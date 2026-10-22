@@ -5,6 +5,8 @@ process.on("uncaughtException", (e) => {
   process.exit(1);
 });
 const { db, rpc } = await createTestDB();
+await rpc('admin','access_direct_save',{p_profile:ids.admin,p_rules:[{permission:'fleet.approve',scope:'all'}]});
+assert.equal((await db.query('select private.fleet_owner() id')).rows[0].id,ids.fleet);
 const vehicle = await rpc("fleet", "fleet_vehicle_save", {
   p_id: null,
   p_revision: null,
