@@ -427,6 +427,10 @@ try {
     await mobile.setViewportSize({width,height:900});
     assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'Guide overflow');
   }
+  await expect(mobile.locator('.guide-actions .atwar-btn.primary')).toBeVisible();
+  assert.equal(await mobile.locator('.guide-page h1').evaluate(e=>getComputedStyle(e).fontSize),await mobile.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--atwar-type-page-title').trim()));
+  await mobile.locator('#questions summary').first().click();
+  await expect(mobile.locator('#questions details').first()).toHaveAttribute('open','');
   await mobile.emulateMedia({media:'print'});
   await expect(mobile.locator('.guide-nav')).not.toBeVisible();
   await mobile.emulateMedia({media:'screen'});
