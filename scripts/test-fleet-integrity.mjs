@@ -96,6 +96,20 @@ await cmd("accountant",id,"confirm_advance",{amount:50,reference:"QA-50",evidenc
 await cmd("driver",id,"confirm_repair",{total:450,received:true,invoice_id:await upload("driver",id,"invoice")});
 await cmd("accountant",id,"settle",{amount:0,reference:"QA-zero"});
 assert.equal((await detail("driver",id)).request.state,"closed");
+// A designated approver is used only when there is no HR manager.
+await db.query("update private.hr_employees set manager_id=null where id=$1",[ids.driver]);
+id=await draft(300);
+await deny(()=>cmd("driver",id,"submit"),/المدير المباشر/);
+await db.query("insert into private.fleet_designated_approvers values($1,$2)",[ids.driver,ids.fleet]);
+await cmd("driver",id,"submit");
+assert.equal((await detail("fleet",id)).request.manager_id,ids.fleet);
+await deny(()=>cmd("driver",id,"approve"),/غير مسموح/);
+await cmd("fleet",id,"approve");
+assert.equal((await detail("driver",id)).request.state,"repair");
+assert.equal((await db.query("select manager_id from private.hr_employees where id=$1",[ids.driver])).rows[0].manager_id,null);
+await db.query("update private.hr_employees set manager_id=$1 where id=$2",[ids.manager,ids.driver]);
+id=await draft(300);await cmd("driver",id,"submit");
+assert.equal((await detail("driver",id)).request.manager_id,ids.manager);
 // Direct RPC must enforce the same self-review restriction as the screen.
 await db.query("update private.fleet_vehicles set driver_id=$1 where id=$2",[ids.fleet,vehicle]);
 id=await draftForFleet();
