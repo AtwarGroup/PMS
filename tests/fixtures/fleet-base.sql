@@ -16,3 +16,7 @@ create function private.current_user_role()returns text language sql stable secu
 
 create table public.notifications(id uuid primary key default gen_random_uuid(),recipient_id uuid not null references public.profiles(id),type text not null,title text not null,message text,created_at timestamptz not null default now(),read_at timestamptz);
 alter table public.notifications enable row level security;
+
+-- Match production: the service role does not execute the authenticated-only admin helper.
+revoke all on function private.is_admin()from public;
+grant execute on function private.is_admin()to authenticated;

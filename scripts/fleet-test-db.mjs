@@ -44,6 +44,7 @@ export async function createTestDB() {
   await db.exec(await readFile(new URL('../supabase/migrations/20261022074348_fleet_responsibility_access.sql', import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022081939_fleet_owner_admin_resolution.sql', import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022091804_account_activation_service_validation.sql', import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../supabase/migrations/20261022092257_account_activation_service_guard.sql', import.meta.url),'utf8'));
   for (const [key, id] of Object.entries(ids))
     await db.query(
       "insert into public.profiles(id,full_name,email,role)values($1,$2,$3,$4)",
