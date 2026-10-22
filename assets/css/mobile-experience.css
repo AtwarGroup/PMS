@@ -1,0 +1,39 @@
+.atwar-mobile-menu,.atwar-mobile-close,.atwar-mobile-backdrop{display:none}
+.atwar-attachment-controls{display:flex;flex-wrap:wrap;gap:8px;margin-block:8px}
+.atwar-attachment-controls button{font:inherit;border:1px solid var(--atwar-border,#dce5ee);border-radius:10px;background:var(--atwar-surface,#fff);color:var(--atwar-blue,#1769e0);padding:10px 14px;min-height:44px;cursor:pointer}
+.atwar-attachment-controls button[hidden]{display:none!important}
+.atwar-attachment-preview{display:flex;flex-wrap:wrap;gap:10px;max-width:100%}
+.atwar-attachment-preview>div{display:flex;align-items:center;gap:10px;max-width:100%;overflow-wrap:anywhere}
+.atwar-attachment-preview img{width:72px;height:72px;object-fit:contain;border:1px solid #dce5ee;border-radius:8px}
+.atwar-file-native:not(:focus){position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;clip-path:inset(50%);overflow:hidden}
+@media(max-width:700px){
+ .atwar-shell{grid-template-columns:minmax(0,1fr)!important}
+ .atwar-main{min-width:0!important;width:100%!important}
+ .atwar-sidebar{position:fixed!important;inset:0 0 0 auto!important;width:min(300px,86vw)!important;height:100dvh!important;min-height:0!important;z-index:1501!important;transform:translateX(105%);visibility:hidden;padding:16px!important;background:var(--atwar-surface,#fff)!important;box-shadow:0 0 30px #0f172a22}
+ .atwar-navigation-open .atwar-sidebar{transform:none;visibility:visible}
+ .atwar-sidebar .atwar-brand h1,.atwar-sidebar .atwar-brand p,.atwar-sidebar .atwar-nav span{display:initial!important}
+ .atwar-sidebar .atwar-nav a{justify-content:flex-start!important;min-height:48px}
+ .atwar-mobile-menu,.atwar-mobile-close{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;flex-shrink:0;border:1px solid #dce5ee;border-radius:10px;background:#fff;color:#1769e0;font:inherit}
+ .atwar-mobile-menu{font-size:24px}.atwar-mobile-close{margin-bottom:12px}
+ .atwar-navigation-open{overflow:hidden}
+ .atwar-navigation-open .atwar-mobile-backdrop{display:block;position:fixed;inset:0;width:100%;height:100dvh;border:0;background:#0f172a80;z-index:1500}
+ .atwar-topbar{padding:8px 12px!important;gap:8px!important;min-height:60px!important}
+ .atwar-top-brand{min-width:0!important;flex:1}.atwar-org-title{min-width:0}.atwar-org-title h2{font-size:14px!important;white-space:normal!important}.atwar-top-actions{gap:6px!important;min-width:0}
+ .atwar-topbar .atwar-search,.atwar-topbar .atwar-pm-label{display:none!important}
+ .atwar-content{padding:12px!important;box-sizing:border-box;min-width:0}
+ .atwar-main :is(input:not([type=checkbox]):not([type=radio]),select,textarea),dialog :is(input,select,textarea){font-size:16px!important;max-width:100%;box-sizing:border-box}
+ .atwar-main :is(button,.btn),dialog button{min-height:44px!important}
+ .atwar-main :is(.toolbar,.team-toolbar,.directory-tools,.task-suite-filters,.project-toolbar,.accounts-toolbar){flex-wrap:wrap!important;min-width:0}
+ .atwar-main :is(.form-grid,.account-form-grid,.project-form-grid){grid-template-columns:minmax(0,1fr)!important}
+ .atwar-main :is(.table-wrap,.table-container){max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+ dialog{box-sizing:border-box;max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 24px)!important;overscroll-behavior:contain}
+ .fleet-dialog{width:calc(100vw - 16px)!important;padding:16px!important}
+ .fleet-table-wrap{max-width:100%!important;overscroll-behavior-inline:contain}
+ .fleet-form{grid-template-columns:minmax(0,1fr)!important}.fleet-form>*{min-width:0}.fleet-wide{grid-column:auto!important}
+ .fleet-heading,.fleet-card-heading{flex-wrap:wrap}.fleet-heading>.fleet-btn{width:100%}
+ .fleet-tabs{gap:8px;flex-wrap:wrap}.fleet-tabs button{padding:10px!important;font-size:14px}
+ .atwar-attachment-controls button{flex:1 1 135px}.atwar-attachment-preview span{overflow-wrap:anywhere;min-width:0}
+}
+@media(prefers-reduced-motion:no-preference){.atwar-sidebar{transition:transform .18s ease}}
+
+.atwar-attachment-controls{max-width:100%;min-width:0}.atwar-attachment-host{flex-wrap:wrap!important}.atwar-attachment-host>.atwar-attachment-controls,.atwar-attachment-host>.atwar-attachment-preview{flex-basis:100%}

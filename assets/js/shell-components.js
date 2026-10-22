@@ -5,6 +5,9 @@
   if(!document.querySelector('link[data-atwar-design-system]')){
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarDesignSystem='1';style.href=new URL('css/design-system.css?v=2.5.8',assetRoot).href;document.head.append(style);
   }
+  const mobileStyle=document.createElement('link');mobileStyle.rel='stylesheet';mobileStyle.href=new URL('css/mobile-experience.css?v=1',assetRoot).href;document.head.append(mobileStyle);
+  const startMobile=()=>import(new URL('js/mobile-experience.mjs?v=1',assetRoot).href).then(m=>m.startMobileExperience()).catch(e=>console.error('Mobile experience could not load',e));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
   const loadCanonicalTheme=()=>{
     if(document.querySelector('link[data-atwar-app-theme]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarAppTheme='1';

@@ -60,7 +60,7 @@ try {
       const q = p.locator("[data-quote]").nth(i);
       await q.locator("[name=supplier]").fill("ورشة تجريبية " + i);
       await q.locator("[name=parts]").fill(String(amount + i));
-      await q.locator("[type=file]").setInputFiles(pdf);
+      await q.locator("[type=file][name=file]").setInputFiles(pdf);
     }
     await p.getByRole("button", { name: "حفظ المسودة والمرفقات" }).click();
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
@@ -376,6 +376,49 @@ try {
   await p.locator('[data-tab=documents]').click();
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'Document screen overflows on mobile');
   await p.screenshot({path:'test-results/fleet-documents-mobile.png',fullPage:true});
+  // Android-size touch flow: off-canvas navigation and camera transfer through real upload handlers.
+  const mobile = await pageFor("driver");
+  for(const width of [320,360,390,412,740]) {
+    await mobile.setViewportSize({width,height:844});
+    assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,`Overflow at ${width}px`);
+  }
+  await mobile.setViewportSize({width:360,height:800});
+  await expect(mobile.locator('.atwar-mobile-menu')).toBeVisible();
+  await mobile.locator('.atwar-mobile-menu').click();
+  await expect(mobile.locator('.atwar-mobile-menu')).toHaveAttribute('aria-expanded','true');
+  await expect(mobile.locator('.atwar-sidebar')).toBeVisible();
+  await mobile.keyboard.press('Escape');
+  await expect(mobile.locator('.atwar-mobile-menu')).toHaveAttribute('aria-expanded','false');
+  assert.equal(await mobile.locator('.atwar-sidebar').evaluate(e=>e.inert),true);
+  await mobile.locator('#newRequest').click();
+  await mobile.locator('[name=accountant_id]').selectOption({label:'المحاسب التجريبي'});
+  await mobile.locator('[name=description]').fill('طلب من كاميرا الجوال');
+  const png={name:'camera.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64')};
+  const first=mobile.locator('[data-quote]').first();
+  await expect(first.getByRole('button',{name:'التصوير بالكاميرا'})).toBeVisible();
+  const chooserEvent=mobile.waitForEvent('filechooser');
+  await first.getByRole('button',{name:'التصوير بالكاميرا'}).click();
+  const chooser=await chooserEvent;
+  assert.equal(await chooser.element().getAttribute('capture'),'environment');
+  await chooser.setFiles(png);
+  await expect(first.locator('.atwar-attachment-preview img')).toBeVisible();
+  assert.equal(await first.locator('[name=file]').evaluate(e=>e.files[0].name),'camera.png');
+  await first.getByRole('button',{name:'حذف المرفق'}).click();
+  assert.equal(await first.locator('[name=file]').evaluate(e=>e.files.length),0);
+  await first.locator('[data-attachment-source=camera]').setInputFiles(png);
+  for(let i=0;i<3;i++){
+    const q=mobile.locator('[data-quote]').nth(i);
+    await q.locator('[name=supplier]').fill('ورشة جوال '+i);
+    await q.locator('[name=parts]').fill('100');
+    if(i)await q.locator('[name=file]').setInputFiles(pdf);
+  }
+  assert.equal(await mobile.locator('[name=description]').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=16),true);
+  assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'Mobile form overflow');
+  await mobile.screenshot({path:'test-results/fleet-mobile-camera.png',fullPage:true});
+  await mobile.getByRole('button',{name:'حفظ المسودة والمرفقات'}).click();
+  await expect(mobile.locator('#fleetDialog')).not.toBeVisible();
+  await expect(mobile.locator('#fleetStatus')).toContainText('تم حفظ المسودة');
+  console.log('PASS UI: 320/360/390/412/740px, mobile drawer, keyboard close, camera capture, preview, removal and real draft upload.');
   assert.deepEqual(errors, []);
   assert(
     !external.some((u) => u.includes("supabase.co")),

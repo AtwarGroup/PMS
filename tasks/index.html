@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/tasks-tailwind.min.css?v=2.5.6">
   <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.7.4"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.7.7"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -504,7 +504,7 @@
               <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2 text-xs font-black text-blue-700"><span class="text-base">📎</span><span>مرفقات المهمة</span><span id="detailAttachmentsCount" class="min-w-6 h-6 px-2 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center">0</span></div>
                 <label id="attachmentUploadLabel" for="taskAttachmentInput" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black cursor-pointer">+ إضافة مرفق</label>
-                <input id="taskAttachmentInput" type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.doc,.docx,.txt" onchange="uploadTaskAttachment(event)">
+                <input id="taskAttachmentInput" type="file" data-attachment-preview="native" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.doc,.docx,.txt" onchange="uploadTaskAttachment(event)">
               </div>
               <div id="taskAttachmentsList" class="mt-2 space-y-2"></div>
             </div>
