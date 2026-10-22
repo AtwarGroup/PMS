@@ -1,6 +1,6 @@
 -- Isolated PostgreSQL fixture. No Auth API, production credentials, emails or real employee data.
 -- The HR/access migrations themselves are loaded unchanged by fleet-test-db.mjs.
-create role anon;create role authenticated;create role service_role;
+create role anon;create role authenticated;create role service_role bypassrls;
 create schema auth;create schema private;
 grant usage on schema private,auth to authenticated;
 create function auth.uid()returns uuid language sql stable as $$select (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid$$;

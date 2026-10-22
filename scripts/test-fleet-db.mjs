@@ -539,4 +539,19 @@ await db.query("update private.access_direct_tasks set permissions=array[]::text
 await assert.rejects(()=>db.query('select private.fleet_owner()'),/مسؤول أسطول واحد/);
 console.log('PASS: explicit administrator approval grants do not conflict with the operational fleet owner; sole explicit admin fallback and missing-owner guard remain valid.');
 
+// Reproduce the real account API's service role and canonical employee activation hooks.
+const pendingActivation=(await db.query("insert into private.hr_employees(id,employee_code,full_name,email,department_id,section_id,title_id,manager_id,join_date,effective_from)select gen_random_uuid(),'99991','موظف تفعيل تجريبي','activation@fleet.atwargroup.test',department_id,section_id,title_id,manager_id,current_date,current_date from private.hr_employees where id=$1 returning id",[ids.driver])).rows[0].id;
+const activationId=(await db.query("insert into auth.users(id,email)values(gen_random_uuid(),'activation@fleet.atwargroup.test')returning id")).rows[0].id;
+await db.exec('grant insert on public.profiles to service_role');
+await db.exec('begin');
+await db.query("select set_config('request.jwt.claims',$1,true)",[JSON.stringify({role:'service_role'})]);
+await db.exec('set local role service_role');
+await db.query("insert into public.profiles(id,email,full_name,role,allowed_modules)values($1,'activation@fleet.atwargroup.test','اسم مؤقت','employee',array['fleet','policies'])",[activationId]);
+await db.exec('commit');
+assert.equal((await db.query('select profile_id from private.hr_employees where id=$1',[pendingActivation])).rows[0].profile_id,activationId);
+assert.equal((await db.query('select full_name from public.profiles where id=$1',[activationId])).rows[0].full_name,'موظف تفعيل تجريبي');
+assert.equal((await db.query("select has_function_privilege('service_role','private.validate_module_keys(text[])','execute') allowed")).rows[0].allowed,true);
+assert.equal((await db.query("select has_table_privilege('service_role','private.fleet_requests','select') allowed")).rows[0].allowed,false);
+console.log('PASS: service-role account insertion validates modules and links the canonical employee without raw fleet table access.');
+
 await db.close();

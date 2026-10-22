@@ -2,6 +2,7 @@ import { chromium, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { startPreview } from "./fleet-preview.mjs";
 import assert from "node:assert/strict";
+import { ids } from "./fleet-test-db.mjs";
 process.on("uncaughtException", (e) => {
   console.error(e.stack);
   process.exit(1);
@@ -230,6 +231,45 @@ try {
   console.log(
     "PASS UI: existing account administration grants and revokes fleet access, with persisted direct-grant scope.",
   );
+  // Activation failures keep the form; successful activation closes it before list refresh.
+  const activationEmails=['activation-ui@fleet.atwargroup.test','activation-refresh@fleet.atwargroup.test'];
+  for(let i=0;i<2;i++)await app.db.query("insert into private.hr_employees(id,employee_code,full_name,email,department_id,section_id,title_id,manager_id,join_date,effective_from)select gen_random_uuid(),$1,$2,$3,department_id,section_id,title_id,manager_id,current_date,current_date from private.hr_employees where id=$4",[String(99980+i),'تفعيل الواجهة '+i,activationEmails[i],ids.driver]);
+  let activationFails=true,refreshFails=false;
+  await admin.route('**/functions/v1/admin-create-user',async route=>{
+    const body=route.request().postDataJSON();
+    if(activationFails)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'تعذر التفعيل التجريبي'})});
+    assert.deepEqual(body.allowed_modules.sort(),['fleet','policies']);
+    const id=(await app.db.query('insert into auth.users(id,email)values(gen_random_uuid(),$1)returning id',[body.email])).rows[0].id;
+    await app.db.exec("begin;select set_config('request.jwt.claims','{\"role\":\"service_role\"}',true)");
+    await app.db.query("insert into public.profiles(id,email,full_name,role,allowed_modules)values($1,$2,$3,'employee',array['fleet','policies'])",[id,body.email,body.full_name]);
+    await app.db.exec('commit');
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id,email:body.email})});
+  });
+  await admin.route('**/__qa/rpc',route=>refreshFails&&route.request().postDataJSON().name==='access_admin_context'?route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:null,error:{message:'refresh failed'}})}):route.continue());
+  await admin.goto(app.url+'/admin/users.html?qa=admin');
+  await expect(admin.locator('#accessStatus')).toHaveAttribute('data-ready','true');
+  async function activationFormFor(email){
+    await admin.locator('#openActivation').click();
+    const e=(await app.db.query('select id from private.hr_employees where email=$1',[email])).rows[0];
+    await admin.locator('#activationEmployee').selectOption(e.id);
+    for(const checkbox of await admin.locator('#activationModules input').all())await checkbox.uncheck();
+    await admin.locator('#activationModules input[value=fleet]').check();await admin.locator('#activationModules input[value=policies]').check();
+    await admin.locator('#activationPassword').fill('Synthetic-test-only-123!');
+  }
+  await activationFormFor(activationEmails[0]);
+  await admin.locator('#activationForm button[type=submit]').click();
+  await expect(admin.locator('#activationState')).toHaveText('تعذر التفعيل التجريبي');
+  await expect(admin.locator('#activationDialog')).toBeVisible();
+  activationFails=false;
+  await admin.locator('#activationForm button[type=submit]').click();
+  await expect(admin.locator('#activationDialog')).not.toBeVisible();
+  await expect(admin.locator('#accessStatus')).toHaveText('تم تفعيل حساب الموظف وربطه بسجله المعتمد.');
+  await activationFormFor(activationEmails[1]);refreshFails=true;
+  await admin.locator('#activationForm button[type=submit]').click();
+  await expect(admin.locator('#activationDialog')).not.toBeVisible();
+  await expect(admin.locator('#accessStatus')).toContainText('تم تفعيل الحساب بنجاح، لكن تعذر تحديث القائمة');
+  refreshFails=false;
+  console.log('PASS UI: successful activation closes and refreshes; activation errors keep the form; refresh failures cannot reopen or misreport a successfully created account.');
   p = await pageFor("fleet");
   await p.locator("[data-tab=documents]").click();
   await expect(p.locator("#documentRows tr")).toHaveCount(3);
