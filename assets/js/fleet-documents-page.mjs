@@ -1,5 +1,5 @@
 import { escapeHTML } from "./access-model.mjs";
-import { englishDigits } from "./fleet-model.mjs?v=2";
+import { englishDigits } from "./fleet-model.mjs?v=3";
 const esc = value => escapeHTML(englishDigits(value));
 export const documentKinds = {
   authorization: "تفويض السائق",

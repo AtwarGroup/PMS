@@ -87,7 +87,7 @@
         if(s && (rank[s.role]||0)<(rank[min]||0))return '';
         const unit={notes:'workspace',jobLibrary:'job_library'}[key]||key;
         if(window.AtwarModules?.context&&!window.AtwarModules.allowed(unit)&&!['home','profile'].includes(key))return '';
-        return `<a class="${active===key?'active':''}" href="${d}${path}">
+        return `<a ${key==='fleet'?'data-module="fleet"':''} class="${active===key?'active':''}" href="${d}${path}">
           <i data-lucide="${icon}"></i><span>${label}</span></a>`;
       };
       this.innerHTML=`<aside class="atwar-sidebar">

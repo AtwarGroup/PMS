@@ -1,4 +1,4 @@
-import { initFleetDocuments } from "./fleet-documents-page.mjs?v=2";
+import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,
   dashboardRequests,
@@ -12,14 +12,15 @@ import {
   summary,
   settlement,
   escapeHTML,
-} from "./fleet-model.mjs?v=2";
+} from "./fleet-model.mjs?v=3";
 const esc = value => escapeHTML(englishDigits(value));
 const $ = (id) => document.getElementById(id),
   sb = await window.atwarGetSupabase();
 let context,
   currentDetail,
   currentEdit,
-  busy = false;
+  busy = false,
+  initialView = true;
 const status = (text, error = false, dialog = false) => {
   const e = $(dialog ? "dialogStatus" : "fleetStatus");
   e.textContent = text;
@@ -56,6 +57,7 @@ function show(title, subtitle, body) {
   if (!$("fleetDialog").open) $("fleetDialog").showModal();
 }
 function switchTab(id) {
+  if(document.querySelector(`[data-tab="${id}"]`)?.hidden)return;
   for (const b of document.querySelectorAll("[data-tab]")) {
     const active = b.dataset.tab === id;
     b.setAttribute("aria-selected", active);
@@ -66,9 +68,19 @@ function switchTab(id) {
 async function load() {
   context = await rpc("fleet_snapshot");
   render();
+  if(initialView && context.finance_only && !context.can_view_vehicles)switchTab("requests");
+  initialView=false;
   status("");
 }
 function render() {
+  $('newRequest').hidden=!context.can_create;
+  for(const [tab,allowed] of [['vehicles',context.can_view_vehicles],['documents',context.can_view_documents]]){
+    const button=document.querySelector(`[data-tab="${tab}"]`);
+    button.hidden=!allowed;
+    if(!allowed)$(tab).hidden=true;
+  }
+  if(document.querySelector('[data-tab][aria-selected="true"]')?.hidden)switchTab('requests');
+
   const scope = $('dashboardScope');
   const scopes = [...(context.vehicles.some(v=>v.driver_id===context.employee_id)?[['personal','متابعتي الشخصية']]:[]),...((context.team_employee_ids||[]).length?[['team','متابعة فريقي']]:[]),...(context.can_oversee?[['all','المتابعة العامة']]:[])];
   const selected = scopes.some(([key])=>key===scope.value)?scope.value:scopes[0]?.[0]||'all';
@@ -165,7 +177,7 @@ async function requestEditor(id) {
     v = vehicles.find((v) => v.id === r.vehicle_id) || vehicles[0];
   show(
     id ? `تعديل الطلب #${r.number}` : "طلب صيانة جديد",
-    "اختر سيارتك أو سيارة أحد موظفيك المباشرين؛ يبقى الطلب باسم صاحب السيارة.",
+    `${context.can_operate ? "اختر سيارة الموظف المعني؛ يمكنك تقديم الطلب لأي موظف." : "اختر سيارتك أو سيارة أحد موظفيك المباشرين؛ يبقى الطلب باسم صاحب السيارة."}`,
     `<form id="requestForm" class="fleet-form"><label>السيارة<select name="vehicle_id" ${vehicles.length === 1 ? 'aria-label="سيارتك المسجلة"' : ""}>${vehicles.map((v) => opt(v.id, `${v.driver_name || "غير مسندة"} — ${v.plate} — ${v.vehicle_type} ${v.model}`, r.vehicle_id || vehicles[0]?.id)).join("")}</select></label><label>المحاسب المسؤول<select name="accountant_id" required><option value="">اختر المحاسب</option>${context.accountants
       .filter((a) => a.id !== context.user_id)
       .map((a) => opt(a.id, a.name, r.accountant_id))
@@ -463,7 +475,7 @@ for (const b of document.querySelectorAll("[data-tab]")) {
   b.onkeydown = (e) => {
     if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
       e.preventDefault();
-      const tabs = [...document.querySelectorAll("[data-tab]")];
+      const tabs = [...document.querySelectorAll("[data-tab]")].filter(tab=>!tab.hidden);
       const i =
         e.key === "Home"
           ? 0
@@ -494,7 +506,7 @@ try {
   if (!session?.user) location.replace("../login.html");
   else {
     await load();
-    await initFleetDocuments({ rpc, show, run });
+    if(context.can_view_documents)await initFleetDocuments({ rpc, show, run });
   }
 } catch (e) {
   status(e.message, true);

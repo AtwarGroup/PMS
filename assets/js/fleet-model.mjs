@@ -41,13 +41,13 @@ export const quoteTotal = (q) =>
   ) / 100;
 export function requestActions(r, c) {
   const own = r.driver_id === c.employee_id,
-    finance = r.accountant_id === c.user_id && c.can_finance && !own;
+    finance = (r.accountant_id === c.user_id || c.is_admin) && c.can_finance && !own;
   if (["closed", "rejected"].includes(r.state)) return [];
   let list = [];
-  if ((own || (c.team_employee_ids || []).includes(r.driver_id)) && ["draft", "returned"].includes(r.state)) list = ["edit", "submit"];
-  if (own && r.state === "repair")
+  if ((own || c.can_operate || (c.team_employee_ids || []).includes(r.driver_id)) && ["draft", "returned"].includes(r.state)) list = ["edit", "submit"];
+  if ((own || c.can_operate) && r.state === "repair")
     list = ["request_increase", "confirm_repair"];
-  if (!own && r.state === "manager_review" && r.manager_id === c.user_id)
+  if (!own && r.state === "manager_review" && (r.manager_id === c.user_id || c.can_operate))
     list = ["approve", "return", "reject"];
   if (
     !own &&

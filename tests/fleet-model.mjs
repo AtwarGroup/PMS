@@ -70,3 +70,8 @@ assert.equal(dashboardRequests(ctx,'personal').length,1);
 assert.equal(dashboardRequests(ctx,'team').length,1);
 assert.deepEqual(requestActions({driver_id:'driver',state:'draft'},{...ctx,user_id:'manager'}),['edit','submit']);
 assert.deepEqual(requestActions({driver_id:'driver',state:'repair'},{...ctx,user_id:'manager'}),[]);
+
+assert.deepEqual(requestActions({...r,state:'draft'},{employee_id:'other',can_operate:true}),['edit','submit']);
+assert.deepEqual(requestActions({...r,state:'repair'},{employee_id:'other',can_operate:true}),['request_increase','confirm_repair']);
+assert.deepEqual(requestActions({...r,state:'awaiting_advance'},{user_id:'fleet',can_operate:true,can_approve:true,can_finance:false}),[]);
+assert.deepEqual(requestActions({...r,state:'settlement'},{user_id:'admin',is_admin:true,can_operate:true,can_approve:true,can_finance:true}),['settle','return']);
