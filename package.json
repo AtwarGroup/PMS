@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:fleet:db": "node scripts/test-fleet-db.mjs",
+    "test:fleet:db": "node scripts/test-fleet-db.mjs && node scripts/test-fleet-integrity.mjs",
     "test:fleet:ui": "node scripts/test-fleet-ui.mjs",
     "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs"
   },
