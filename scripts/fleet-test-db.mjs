@@ -77,7 +77,7 @@ export async function createTestDB() {
     `update private.access_direct_tasks set permissions=array['fleet.approve','fleet.vehicles.read','fleet.vehicles.write']where profile_id='${ids.fleet}';update private.access_direct_tasks set permissions=array['fleet.finance']where profile_id in('${ids.accountant}','${ids.accountant2}');`,
   );
   const rpc = async (user, name, args = {}) => {
-    if (!/^fleet_[a-z_]+$|^access_[a-z_]+$/.test(name))
+    if (!/^fleet_[a-z_]+$|^access_[a-z_]+$|^account_(module_context|access_save)$/.test(name))
       throw Error("Unsupported test RPC");
     let result;
     await db.exec("begin");
