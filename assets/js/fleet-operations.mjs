@@ -1,3 +1,4 @@
+import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {escapeHTML,englishDigits,states,money,summary} from './fleet-model.mjs?v=3';
 import {carDiagram,carParts,damageTypes} from './fleet-car-diagram.mjs?v=1';
 const esc=v=>escapeHTML(englishDigits(v??''));
@@ -76,7 +77,7 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
    const statuses=photos.map(photo=>{const row=document.createElement('p');row.textContent=photo.name+' — بانتظار الرفع';progress.append(row);return row;});
    for(const [index,photo] of photos.entries()){
     statuses[index].textContent=photo.name+' — جارٍ الرفع';
-    try{const base64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(photo);});await rpc('fleet_handover_upload',{p_id:savedId,p_name:photo.name,p_mime:photo.type,p_base64:base64});statuses[index].textContent=photo.name+' — محفوظة';}
+    try{const base64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(photo);});const uploadedId=await rpc('fleet_handover_upload',{p_id:savedId,p_name:photo.name,p_mime:photo.type,p_base64:base64});await archiveFleetFile(uploadedId,'handover');statuses[index].textContent=photo.name+' — محفوظة';}
     catch(error){statuses[index].textContent=photo.name+' — تعذر التأكد من الحفظ';throw Error('المسودة محفوظة. أعد الضغط على الحفظ لاستكمال الصور دون تكرار. '+error.message);}
    }
    await finish('تم حفظ مسودة المحضر. افتحه لمراجعته وإرساله لإقرار الموظف.');switchTab('handovers');
@@ -94,7 +95,7 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
   $('cancelHandover')?.addEventListener('click',()=>reasonForm('cancel'));
   $('disputeHandover')?.addEventListener('click',()=>reasonForm('dispute'));
   if($('ackHandover'))$('ackHandover').onsubmit=e=>run(e,async()=>{if(!e.target.elements.reviewed.checked)throw Error('يلزم تأكيد مراجعة المحضر قبل الإقرار.');await command('accept');await finish('تم إقرار المحضر وتحديث العهدة وتوثيق الطرفين.');});
-  $('printHandover').onclick=e=>run(e,async()=>{let images='';for(const f of d.photos){const photo=await rpc('fleet_handover_photo',{p_id:f.id});images+=`<figure><img src="data:${esc(photo.mime)};base64,${photo.base64.replace(/\s/g,'')}" alt="${esc(photo.name)}"><figcaption>${esc(photo.name)}</figcaption></figure>`;}
+  $('printHandover').onclick=e=>run(e,async()=>{let images='';for(const f of d.photos){const photo=await fleetFile(rpc,f.id,'handover');images+=`<figure><img src="${esc(photo.url||`data:${photo.mime};base64,${photo.base64?.replace(/\s/g,'')}`)}" alt="${esc(photo.name)}"><figcaption>${esc(photo.name)}</figcaption></figure>`;}
     const html=`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>محضر سيارة ${h.number}</title><link rel="stylesheet" href="${new URL('../css/design-system.css?v=2.5.8',import.meta.url).href}"><link rel="stylesheet" href="${new URL('../css/fleet-operations.css?v=2',import.meta.url).href}"><style>body{font:14px var(--atwar-font,Arial),sans-serif;background:white;color:var(--atwar-text,#15233b);padding:24px;max-width:1000px;margin:auto;line-height:1.8}h1{font-size:24px}.fleet-car-diagram{max-height:420px}.fleet-handover-print-photos{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0;break-inside:avoid}figure img{max-width:100%;max-height:360px;object-fit:contain}@media print{button{display:none}h2,h3{break-after:avoid}.fleet-handover-signatures{break-inside:avoid}}</style></head><body><h1>ATWAR ONE — محضر ${h.kind==='issue'?'تسليم':'استلام'} سيارة #${h.number}</h1><p>الحالة: ${esc(handoverNames[h.state])}</p>${inspection}<h2>صور المعاينة</h2><div class="fleet-handover-print-photos">${images||'<p>لا توجد صور مرفقة.</p>'}</div><p>هذا إقرار موثق من الحسابات داخل النظام، مع بيانات المحضر وقت الإرسال.</p></body></html>`;
     show(`طباعة محضر #${h.number}`,'معاينة المحضر وصور المعاينة قبل الطباعة.',`<div class="fleet-action-buttons">${button('طباعة / حفظ PDF','id="confirmPrintHandover"',true)}${button('العودة للمحضر','id="backToHandover"')}</div><iframe id="handoverPrintFrame" title="معاينة محضر التسليم والاستلام" sandbox="allow-same-origin allow-modals"></iframe>`);
     const frame=$('handoverPrintFrame');frame.srcdoc=html;
@@ -102,7 +103,7 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
     $('backToHandover').onclick=()=>openHandover(id).catch(error);
   });
  }
- async function showPhoto(id){const f=await rpc('fleet_handover_photo',{p_id:id});const bytes=Uint8Array.from(atob(f.base64.replace(/\s/g,'')),c=>c.charCodeAt(0)),url=URL.createObjectURL(new Blob([bytes],{type:f.mime}));const viewer=document.createElement('dialog');viewer.className='fleet-photo-viewer';const close=document.createElement('button');close.type='button';close.className='atwar-btn';close.textContent='إغلاق الصورة';const image=document.createElement('img');image.src=url;image.alt=f.name;viewer.append(close,image);document.body.append(viewer);close.onclick=()=>viewer.close();viewer.addEventListener('close',()=>{URL.revokeObjectURL(url);viewer.remove();},{once:true});viewer.showModal();}
+ async function showPhoto(id){const f=await fleetFile(rpc,id,'handover');const url=f.url||URL.createObjectURL(new Blob([Uint8Array.from(atob(f.base64.replace(/\s/g,'')),c=>c.charCodeAt(0))],{type:f.mime}));const viewer=document.createElement('dialog');viewer.className='fleet-photo-viewer';const close=document.createElement('button');close.type='button';close.className='atwar-btn';close.textContent='إغلاق الصورة';const image=document.createElement('img');image.src=url;image.alt=f.name;viewer.append(close,image);document.body.append(viewer);close.onclick=()=>viewer.close();viewer.addEventListener('close',()=>{URL.revokeObjectURL(url);viewer.remove();},{once:true});viewer.showModal();}
  document.querySelector('main').addEventListener('click',e=>{
   const profile=e.target.closest('[data-profile]'),handover=e.target.closest('[data-handover]'),photo=e.target.closest('[data-handover-photo]'),removePhoto=e.target.closest('[data-delete-photo]');
   if(profile)vehicleProfile(profile.dataset.profile).catch(error);

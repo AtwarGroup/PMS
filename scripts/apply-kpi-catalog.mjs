@@ -5,6 +5,7 @@ import {pathToFileURL} from 'node:url';
 // Operator-only, one-time data update requested by the system owner.
 // Keeps published snapshots and historical acknowledgements immutable.
 const window={};
+vm.runInNewContext(readFileSync(new URL('../assets/js/job-kpi-proposal-catalog.js',import.meta.url),'utf8'),{window});
 vm.runInNewContext(readFileSync(new URL('../assets/js/job-kpi-proposals.js',import.meta.url),'utf8'),{window});
 export const catalog=window.AtwarKpiProposals.catalog;
 const signature=k=>JSON.stringify([k.name||k.text||'',k.target||'',k.measure||'']);

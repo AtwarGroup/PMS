@@ -5,7 +5,7 @@
       clientPromise ||= (async()=>{
         const cfg=window.ATWAR_SUPABASE_CONFIG;
         if(!cfg?.url||!cfg?.publishableKey)throw Error('Supabase config unavailable');
-        const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm');
+        const {createClient}=await import(new URL('../vendor/supabase-client.mjs?v=2.8.0',new URL('assets/js/supabase-runtime.js',location.origin+'/')));
         return createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       })();
       window.ATWAR_SUPABASE=await clientPromise;

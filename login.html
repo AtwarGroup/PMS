@@ -57,7 +57,7 @@ button{width:100%;margin-top:20px;border:0;background:#0b1d3a;color:#fff;border-
 </section>
 </div>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/module-access.js?v=2.7.4"></script><script src="assets/js/supabase-runtime.js?v=2.7.3"></script>
+<script src="assets/js/module-access.js?v=2.7.4"></script><script src="assets/js/supabase-runtime.js?v=2.8.0"></script>
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js?v=2.7.3"></script>
 
@@ -66,14 +66,13 @@ const sb=await window.atwarGetSupabase();
 const emailEl=document.getElementById('email'),passwordEl=document.getElementById('password'),buttonEl=document.getElementById('loginButton'),errorEl=document.getElementById('error');
 let manualLoginInProgress=false;
 const roleLabel=r=>r==='admin'?'مدير النظام':r==='manager'?'مدير':'موظف';
-const defaults=r=>(window.ATWAR_ROLE_DEFAULT_PERMISSIONS?.[r]||['home','tasks','profile']).slice();
 function showError(m){errorEl.textContent=m;errorEl.style.display='block'} function clearError(){errorEl.style.display='none'}
 async function establishSession(user){
   const {data:p,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
   if(error||!p)throw new Error('profile-not-found');
   if(p.active===false||p.status==='inactive')throw new Error('account-inactive');
   if(!['employee','manager','admin'].includes(p.role))throw new Error('invalid-role');
-  const session={uid:p.id,email:user.email||p.email||'',name:p.full_name||user.email||'المستخدم',title:p.job_title||roleLabel(p.role),role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)&&p.permissions.length?p.permissions:defaults(p.role),source:'supabase'};
+  const session={uid:p.id,email:user.email||p.email||'',name:p.full_name||user.email||'المستخدم',title:p.job_title||roleLabel(p.role),role:p.role,managerId:p.manager_id||null,managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)?p.permissions:[],source:'supabase'};
   localStorage.setItem('atwarSession',JSON.stringify(session));localStorage.removeItem('atwarDemoSession');await window.AtwarModules.load(sb,{force:true});return session;
 }
 async function login(){

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const ctx={window:{}};const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-vm.runInNewContext(read('assets/js/job-kpi-proposals.js'),ctx);vm.runInNewContext(read('assets/js/job-document-view.js'),ctx);
+vm.runInNewContext(read('assets/js/job-kpi-proposal-catalog.js'),ctx);vm.runInNewContext(read('assets/js/job-kpi-proposals.js'),ctx);vm.runInNewContext(read('assets/js/job-document-view.js'),ctx);
 const {catalog,details}=ctx.window.AtwarKpiProposals;
 for(const entry of catalog){
  const rows=entry.indicators.map(i=>{const [name,target,measure]=JSON.parse(i.signature);return {name,target,measure};});

@@ -1,6 +1,8 @@
 // ATWAR ONE compatibility bridge: preserves the full legacy UI contract while routing data/auth to Supabase.
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
 import {createRefreshCoordinator,createSharedInFlightReads} from './supabase-sync.mjs?v=1.9.7';
+import {readAllRows} from './paged-read.mjs?v=2.8.0';
+import {readRelatedRows} from './paged-related-read.mjs?v=2.8.0';
 
 const sb = await window.atwarGetSupabase();
 
@@ -53,11 +55,12 @@ function profileLegacy(p){
 async function loadChildren(taskIds,taskRows=[]){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
   if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map()};
-  const [ar,sr,fr]=await Promise.all([
-    sb.from('task_activity').select('*').in('task_id',ids).order('sequence_no',{ascending:true}),
-    sb.from('subtasks').select('*').in('task_id',ids).order('position',{ascending:true}),
-    sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',ids).order('created_at',{ascending:false})
+  const [activitiesRows,subtaskRows,attachmentRows]=await Promise.all([
+    readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids),
+    readRelatedRows(chunk=>sb.from('subtasks').select('*').in('task_id',chunk).order('position',{ascending:true}),ids),
+    readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids)
   ]);
+  const [ar,sr,fr]=[activitiesRows,subtaskRows,attachmentRows].map(data=>({data}));
   // A failed child read must never become an empty editable collection.
   for(const response of [ar,sr,fr])if(response.error)throw response.error;
   const activities=new Map(),subtasks=new Map(),attachments=new Map();
@@ -66,7 +69,7 @@ async function loadChildren(taskIds,taskRows=[]){
   for(const f of fr.data||[]){const x={id:f.id,uploaderId:f.uploader_id||'',fileName:f.file_name||'',storagePath:f.storage_path||'',sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at)};(attachments.get(f.task_id)||attachments.set(f.task_id,[]).get(f.task_id)).push(x)}
   const batchIds=[...new Set(taskRows.map(t=>t.batch_id).filter(Boolean))];
   if(batchIds.length){
-    const shared=await sb.from('task_batch_attachments').select('*').in('batch_id',batchIds);
+    const shared={data:await readRelatedRows(chunk=>sb.from('task_batch_attachments').select('*').in('batch_id',chunk),batchIds)};
     if(shared.error)throw shared.error;
     for(const t of taskRows)for(const f of shared.data||[])if(t.batch_id===f.batch_id){
       const x={id:f.id,uploaderId:f.uploader_id,fileName:f.file_name,storagePath:f.storage_path,sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at),storageBucket:'task-batch-attachments',sharedBatch:true};
@@ -109,19 +112,19 @@ class Snap{
 }
 
 async function visibleTasks(extra=null){
-  let q=sb.from('tasks').select('*').is('deleted_at',null);
   // The canonical Tasks workspace serves one scope at a time so active work
   // stays fast while the completed archive uses the same details experience.
   const isMainTasksWorkspace=/\/tasks\/(?:index\.html)?$/.test(location.pathname);
   const requestedScope=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase();
-  if(isMainTasksWorkspace && !extra?.id){
-    q=requestedScope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة');
-  }
-  if(extra?.participant)q=q.or(`assignee_id.eq.${extra.participant},delegated_by_id.eq.${extra.participant}`);
-  else if(extra?.assignee)q=q.eq('assignee_id',extra.assignee);
-  if(extra?.creator)q=q.eq('creator_id',extra.creator);
-  if(extra?.id)q=q.eq('id',_aliases.get(extra.id)||extra.id);
-  const {data,error}=await q.order('updated_at',{ascending:false});if(error)throw error;
+  const data=await readAllRows(()=>{
+    let query=sb.from('tasks').select('*').is('deleted_at',null);
+    if(isMainTasksWorkspace&&!extra?.id)query=requestedScope==='COMPLETED'?query.eq('status','مكتملة'):query.neq('status','مكتملة');
+    if(extra?.participant)query=query.or(`assignee_id.eq.${extra.participant},delegated_by_id.eq.${extra.participant}`);
+    else if(extra?.assignee)query=query.eq('assignee_id',extra.assignee);
+    if(extra?.creator)query=query.eq('creator_id',extra.creator);
+    if(extra?.id)query=query.eq('id',_aliases.get(extra.id)||extra.id);
+    return query.order('updated_at',{ascending:false});
+  });
   const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id,t.delegated_by_id]).filter(Boolean))];
   let profileNames=new Map();
   if(profileIds.length){

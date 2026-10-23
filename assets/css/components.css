@@ -1,0 +1,9 @@
+/* Shared component contract. Module styles may change layout, not status semantics. */
+.atwar-data-status{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-bottom:18px;border:1px solid var(--atwar-border,#dce5ee);border-inline-start:3px solid #d97706;border-radius:12px;background:#fffbeb;color:#78350f;font-size:15px;line-height:1.8}
+.atwar-data-status[hidden]{display:none}
+.atwar-data-status button{min-height:44px;font:inherit}
+.atwar-empty-state{padding:24px 18px;border:1px dashed var(--atwar-border,#dce5ee);border-radius:12px;background:var(--atwar-surface,#fff);color:var(--atwar-muted,#526277);line-height:1.8}
+.atwar-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.atwar-section-heading h1{color:var(--atwar-navy-800,#142c4b);font-size:28px;line-height:1.4;font-weight:800}
+.atwar-section-heading p{font-size:15px;line-height:1.8;color:var(--atwar-muted,#526277)}
+@media(max-width:700px){.atwar-section-heading h1{font-size:24px}.atwar-data-status{align-items:stretch}.atwar-data-status button{width:100%}}

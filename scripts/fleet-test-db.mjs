@@ -49,6 +49,8 @@ export async function createTestDB() {
   await db.exec(await readFile(new URL('../supabase/migrations/20261022133620_fleet_designated_approver.sql', import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022161526_fleet_operations_handovers.sql',import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/20261022200000_fleet_review_hardening.sql',import.meta.url),'utf8'));
+  await db.exec("create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(bucket_id text,name text,metadata jsonb);");
+  await db.exec(await readFile(new URL('../supabase/migrations/20261023130755_fleet_private_file_storage.sql',import.meta.url),'utf8'));
   for (const [key, id] of Object.entries(ids))
     await db.query(
       "insert into public.profiles(id,full_name,email,role)values($1,$2,$3,$4)",

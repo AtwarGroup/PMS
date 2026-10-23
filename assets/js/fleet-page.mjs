@@ -1,4 +1,5 @@
-import {initFleetOperations} from "./fleet-operations.mjs?v=2";
+import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
+import {initFleetOperations} from "./fleet-operations.mjs?v=2.8.0";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,
@@ -287,13 +288,15 @@ async function upload(id, kind, file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-  return rpc("fleet_upload", {
+  const fileId=await rpc("fleet_upload", {
     p_request: id,
     p_kind: kind,
     p_name: file.name,
     p_mime: file.type,
     p_base64: base64,
   });
+  await archiveFleetFile(fileId);
+  return fileId;
 }
 async function openRequest(id) {
   currentDetail = await rpc("fleet_detail", { p_id: id });
@@ -430,7 +433,8 @@ $("dialogBody").onclick = async (e) => {
   if (a) actionEditor(a.dataset.action);
   if (d)
     try {
-      const f = await rpc("fleet_download", { p_id: d.dataset.download });
+      const f = await fleetFile(rpc,d.dataset.download);
+      if(f.url){const link=document.createElement("a");link.href=f.url;link.download=f.name;link.target="_blank";link.rel="noopener";link.click();return;}
       const bytes = Uint8Array.from(atob(f.base64.replace(/\s/g, "")), (c) =>
           c.charCodeAt(0),
         ),

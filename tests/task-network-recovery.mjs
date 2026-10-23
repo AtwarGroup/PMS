@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {readAllRows} from '../assets/js/paged-read.mjs';
+import {readRelatedRows} from '../assets/js/paged-related-read.mjs';
 import {createRefreshCoordinator,createSharedInFlightReads} from '../assets/js/supabase-sync.mjs';
-const source=readFileSync(new URL('../assets/js/supabase-firebase-compat.js',import.meta.url),'utf8').replace(/^import .*;\n/m,'').replace(/export /g,'');
+const source=readFileSync(new URL('../assets/js/supabase-firebase-compat.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
 let offlineRead=false,offlineChild=false,offlineWrite=false,conflict=false,writeCalls=0;
 let row={id:'test-task',title:'Test',description:'original',notes:'retained',revision:1,status:'قيد الانتظار',creator_id:'user',assignee_id:'user'};
 const child=[{id:'child',task_id:'test-task',title:'Existing child',done:false}];
 const networkError=()=>new TypeError('Failed to fetch');
 const sb={
- from(table){const q={};for(const name of ['select','is','eq','neq','in','order','or'])q[name]=()=>q;
+ from(table){const q={};for(const name of ['select','is','eq','neq','in','order','or','range'])q[name]=()=>q;
  q.then=(yes,no)=>Promise.resolve().then(()=>{
   if(offlineRead)throw networkError();
   if(table==='subtasks'&&offlineChild)return {data:null,error:networkError()};
@@ -25,7 +27,7 @@ const document={visibilityState:'visible',addEventListener:(_,fn)=>visibilityHan
 let channelStatus,timerCallback,clock=0;
 class TestDate extends Date {static now(){return clock;}}
 sb.channel=()=>({on(){return this},subscribe(fn){channelStatus=fn;fn('SUBSCRIBED');return this}});
-const ctx={Date:TestDate,document,setInterval:(fn,ms)=>{assert.equal(ms,15000);timerCallback=fn;return 1},clearInterval:()=>{timerCallback=null},window:{atwarGetSupabase:async()=>sb,addEventListener:(_,fn)=>onlineHandlers.add(fn),removeEventListener:(_,fn)=>onlineHandlers.delete(fn)},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,console,crypto:globalThis.crypto};
+const ctx={Date:TestDate,document,setInterval:(fn,ms)=>{assert.equal(ms,15000);timerCallback=fn;return 1},clearInterval:()=>{timerCallback=null},window:{atwarGetSupabase:async()=>sb,addEventListener:(_,fn)=>onlineHandlers.add(fn),removeEventListener:(_,fn)=>onlineHandlers.delete(fn)},location:{pathname:'/tasks/index.html',search:''},URLSearchParams,structuredClone,createRefreshCoordinator,createSharedInFlightReads,readAllRows,readRelatedRows,console,crypto:globalThis.crypto};
 const bridge=await vm.runInNewContext(`(async()=>{${source}\nreturn {runTransaction,onValue};})()`,ctx);
 const ref={path:'tasksByUser/user/test-task'};
 const edit=task=>({...task,desc:'saved after reconnect'});

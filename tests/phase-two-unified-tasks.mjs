@@ -12,7 +12,7 @@ const approvals=read('approvals/index.html');
 const shell=read('assets/js/shell-components.js');
 
 const contracts=[
-  [compat,"requestedScope==='COMPLETED'?q.eq('status','مكتملة'):q.neq('status','مكتملة')",'Supabase task query must separate active and completed scopes'],
+  [compat,"requestedScope==='COMPLETED'?query.eq('status','مكتملة'):query.neq('status','مكتملة')",'Supabase task query must separate active and completed scopes'],
   [tasksJs,"function isCompletedArchiveView()",'Task module must recognise completed archive scope'],
   [tasksJs,"id)?.addEventListener('change'",'Completed date filters must refresh the canonical task list'],
   [tasksJs,"location.href='index.html?scope=COMPLETED'",'Completed quick filter must open the completed scope'],
