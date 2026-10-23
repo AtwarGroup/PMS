@@ -1,41 +1,52 @@
-# Recruitment — initial operational release
+# Recruitment — approved workflow
 
-## Workflow
+The module uses the existing Atwar One theme, account permissions and employee register. The uploaded offer image and requisition workbook are reference material, not approved templates. No personal details or salary amounts from either are embedded in the source.
 
-Requisition → HR review → budget review → final approval → open vacancy → screening → interview → assessment → recommendation → offer finance review → offer approval → recorded dispatch → recorded acceptance → document verification → actual joining.
+## Requisitions and exceptions
 
-Each requisition explicitly names its HR reviewer, budget reviewer, final approver and interview participants. This is configuration by the operator; the release does not invent a company-wide approval matrix. The existing account page controls access to the `recruitment` unit and its three additional permissions: manage, finance and approve. Managers with unit access may request vacancies and refer candidates. Designated participants see the vacancies they work on. Salaries/offers are redacted for ordinary requesters and interviewers.
+The supervisor saves a draft, then submits to department manager → personnel specialist → financial director → CEO → designated recruiter. Submission requires a published job description, linked grade/range and current target date. Personnel approval requires explicit checks of new/replacement status, Saudization plan and profession eligibility. These are human checks; no inferred legal exemption is made by the application.
 
-Both advertised recruiting and department referrals use the same approvals. Referrals do not require an advertisement or candidate-count threshold. Previous interviews can be documented with the real date, interviewer, criterion scores, evidence and recommendation. The user must advance the application after completing the assessment; no score automatically hires or rejects anyone.
+Personnel rejection requires an explicit, justified exception request from the supervisor; the development supervisor may approve it, then the request continues to finance. A finance exception goes to the CEO, whose approval is the final approval and releases the request directly to the recruiter. Rejected requests may be edited, preserving the old snapshot and decision events; resubmission restarts department approval. Recruiters may amend offers, not requisitions. A cancelled request remains closed; the creation form can copy it into a new linked request. A departed hire is handled through a new linked replacement request.
 
-## Existing references
+Department managers may cancel with a reason. If any candidate has accepted or joined, cancellation requires CEO approval. No automatic replacement is created for an internal transfer.
 
-Published job descriptions are copied into requisition snapshots. Compensation is imported into a private table from approved compensation Site source `ec77eba804232fcaca16c38f63e9894a98623e65`. Actual compensation amounts are deliberately excluded from this public repository. The import contains 61 reference rows, including separate executive and general manager entries. An exact salary-title match is linked automatically; HR records the match for other titles before approval. Nonidentical titles are never guessed. Both references remain frozen on the approved request and its offer versions. Updating the standalone compensation reference does not silently change existing requisitions.
+## Sourcing and selection
 
-All salary checks use total monthly basic + housing + transport, according to the approved source. An unavailable category range blocks an offer. Out-of-range offers require a recorded exception reason and still pass the named financial and final approvers. Current employee compensation is never altered by this release; only a newly created employee receives the accepted offer's amounts. Linking an existing employee requires explicit confirmation of that employee's ID and preserves their record.
+Search requisitions present batches of exactly 10, then 5 new candidates, then 5 new candidates. Incoming applications do not count until presented. Every rejection is recorded by the department manager with its reason. A further batch starts only after the prior batch has no selected candidate and all rejection reasons are recorded. After three exhausted batches, sourcing stops while the requisition stays open. The development supervisor can authorize another batch with an explicit count and justification addressing requirements, pay and evaluation. Existing suitable candidates can be reconsidered without resetting or consuming new candidate counts.
 
-## Public intake and files
+Department referrals bypass advertisement and batches. Previously held interviews can be documented. The direct supervisor records the first technical assessment. The department manager approves selection and records a second assessment only when they request a second interview with a reason. Recruiters schedule and coordinate, but cannot submit completed assessments on behalf of either manager. Scores never choose a candidate automatically.
 
-`recruitment/careers.html` lists only explicitly published open advertised vacancies. Draft, closed and referral vacancies are excluded. Only the public job projection is returned; neither salaries nor candidate records are exposed. An applicant submits their data with consent and may attach one PDF up to 5 MiB. The private storage bucket allows anonymous INSERT only using an unpredictable, one-hour application upload ticket. Anonymous read, replacement and deletion are not granted. Duplicate submissions receive a generic acknowledgement and an unrelated receipt rather than exposing an existing application or file token. Internal readers need access to the related vacancy. Staff can add a PDF to a referred application through its file page. Signed reading links last two minutes.
+Each candidate has a single file, with unique email, identity/residence number and passport number plus issuing country. Conflicting identity/email matches are blocked. A recruiter may link a candidate to another visible open requisition after documenting consent and fit; previous assessments remain available. There is no permanent blacklist. Interview participants have access to pay and documents only on their assigned requests. Recruiters with the management permission retain the recruitment-wide working view.
 
-Public intake is capped at 300 new applications per vacancy per day. This is a basic quota, not identity verification or an advanced anti-abuse service.
+Internal candidates are linked to an existing employee. The current department approves release, the receiving department approves selection, and the CEO authorizes the actual transfer. The existing compensation is not changed automatically. No external offer or automatic replacement requisition is generated.
 
-## Hiring integrity
+## Offers and joining
 
-The backend locks the application and requisition when accepting an offer or recording joining. Accepted and hired applications reserve the headcount; joining closes the requisition only after the requested number has actually started. A no-show frees the reservation. Stale requisition/application revisions are rejected. Terminal records cannot be advanced. Offers retain versions; an already sent offer must receive a documented response before another is prepared. An offer cannot be marked accepted after its validity date.
+Recruiter prepares → personnel specialist reviews → CEO approves → recruiter records dispatch. Finance has no offer approval. Salary or benefit deviations require a justified development-supervisor recommendation before CEO approval. Every edited offer is a new version with an amendment reason and a fresh review cycle. CEO rejection returns it for amendment. The approved private compensation reference supplies the frozen salary range and grade benefits; current employee pay is not changed. Reference source: `ec77eba804232fcaca16c38f63e9894a98623e65`.
 
-The release creates no Auth accounts, sends no external email and makes no real hiring decisions automatically. Dispatch and candidate acceptance are recorded by HR with their evidence reference. In-app notifications and pending-action queues support follow-up.
+Offers are valid for seven calendar days from recorded sending. The recruiter may extend by seven days with a reason, preserving terms. Live sent offers and accepted/hired candidates cannot exceed approved headcount. The recruiter is reminded to reconsider suitable reserve candidates when an offer is declined or expires. Production does not send external messages or sign contracts automatically.
+
+Required documents: identity/residence, passport, education, experience, national address and IBAN certificate; driving licence for driver/representative titles; dependants' identities when applicable. PDFs up to 5 MiB are versioned and privately stored. The recruiter reviews each document. Missing documents require recruiter approval, a reason and a completion deadline, remaining in the follow-up queue until complete.
+
+The supervisor confirms actual attendance and joining date. The recruiter then verifies the documents or valid exception and completes employee registration. A postponed start requires recorded coordination with the supervisor. Full actual headcount closes the requisition, stops the advert and notifies the recruiter to resolve remaining applications.
+
+## Candidate update link
+
+A recruiter generates a private, unguessable link valid for seven days. It returns only vacancy title and link expiry, accepts candidate changes into a pending review queue, and creates insert-only one-hour PDF upload tickets. Existing candidate data and files are never readable anonymously. Updates do not alter the candidate record before recruiter approval. Staff retain previous document versions and a history of approved changes. Expired links cannot submit; a new link can be issued. No link is sent externally by the system in this release.
+
+## Deadlines and notifications
+
+- Each requisition stage and each offer preparation/review/approval: two business days.
+- First batch: ten business days, or fifteen with a documented specialist/leadership justification and notification to the requester.
+- Additional batches: five business days, starting after documented non-selection.
+- Department evaluation of a batch and review/interview/decision on a referral: three business days.
+- Friday, Saturday, National Day, Foundation Day and the approved additional holiday calendar are excluded. The development supervisor maintains other officially declared dates, including Eid and substitute days, through the reference screen.
+- Every thirty minutes a private scheduled job checks overdue tasks, notifies the owner once and escalates once to the recruiter after another business day. No email or WhatsApp is sent.
+
+## Permissions and setup
+
+The existing Accounts page exposes recruiter management, personnel review, finance budget review, development exceptions and CEO approval. Each requisition names active authorized owners for the stages and its direct supervisor/department manager. No real account grants, hiring choices, notifications to external recipients or compensation changes are performed by the migration itself.
 
 ## Validation
 
-- All 124 top-level JavaScript regression suites.
-- `npm run test:recruitment:db`: isolated real PostgreSQL execution via PGlite, covering unit/account boundaries, direct grants, referrals, previous interview evaluations, salary exceptions, offer approvals, duplicate/terminal joins, headcount, public projection, upload tickets and anonymous storage isolation.
-- Browser QA on synthetic data using the existing theme: job/application detail, documented previous interview, calculated score, stage transitions and offer creation; responsive layout checked in a 390px iframe.
-
-## Scope still requiring business input or subsequent integration
-
-- The 10–5–5 policy is not enforced until its intended operational meaning is confirmed.
-- Company-wide default approval owners and target durations require the approved matrix; this release uses explicit owners per requisition and a target joining date.
-- External email delivery, e-signatures, calendar invitations and automatic synchronization from the standalone salary Site are not enabled.
-- Document completion is an HR verification confirmation and evidence note, not a configurable document-management workflow.
-- Reports currently cover pipeline counts and overdue target joining dates; source conversion, historical time-to-fill analytics and a dedicated comparison report are subsequent enhancements.
+`npm run test:recruitment:db` runs the original baseline database checks and the approved-workflow integration suite against isolated PostgreSQL. It covers per-request disclosure, explicit exceptions, 10/5/5 limits, personal interview assessments, selection ownership, offer finance denial, joining and document prerequisites, candidate changes, cancellation, request snapshots, calendar arithmetic and deduplicated reminders. Existing JavaScript and fleet regressions are run separately. Browser QA uses synthetic records and the production theme; no real employee or applicant is created for verification.
