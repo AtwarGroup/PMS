@@ -24,6 +24,12 @@ await db.exec(
   ),
 );
 await db.exec(
+  await fs.readFile(
+    "supabase/migrations/20261023150534_recruitment_public_upload_session.sql",
+    "utf8",
+  ),
+);
+await db.exec(
   "update public.profiles set allowed_modules=array_append(allowed_modules,'recruitment');",
 );
 async function rpc(user, name, args = {}) {
@@ -255,6 +261,27 @@ assert.notEqual(ticket, repeatTicket);
 await db.exec(
   "alter table storage.objects enable row level security;grant usage on schema storage to anon,authenticated;grant select,insert on storage.objects to anon,authenticated;",
 );
+await db.exec("begin;set local role authenticated");
+await db.query("select set_config('request.jwt.claims',$1,true)", [
+  JSON.stringify({ sub: ids.outsider, role: "authenticated" }),
+]);
+assert.equal(
+  (
+    await db.query("select public.recruitment_resume_allowed($1,true) yes", [
+      ticket + "/resume.pdf",
+    ])
+  ).rows[0].yes,
+  true,
+);
+assert.equal(
+  (
+    await db.query("select public.recruitment_resume_allowed($1,false) yes", [
+      ticket + "/resume.pdf",
+    ])
+  ).rows[0].yes,
+  false,
+);
+await db.exec("rollback");
 await db.exec("begin;set local role anon");
 assert.equal(
   (
