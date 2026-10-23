@@ -29,7 +29,7 @@
     document.head.append(icon);
   }
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication','fleet'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication','fleet','recruitment'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -101,6 +101,7 @@
           ${nav('communication','communication/index.html','messages-square','التواصل')}
           ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
           ${nav('fleet','fleet/index.html','truck','إدارة الأسطول')}
+          ${nav('recruitment','recruitment/index.html','user-round-plus','التوظيف')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحتي')}
           ${nav('employees','admin/employees.html','contact-round','الموظفون')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
@@ -271,6 +272,7 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
+    if(row.type==='RECRUITMENT'){location.href=depthPrefix+'recruitment/index.html';return true;}
     if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
     if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
     if(row.type==='communication'||row.type==='communication_trial'){

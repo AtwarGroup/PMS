@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>الفرص الوظيفية — أطوار</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
+    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.0" />
+    <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/supabase-runtime.js"></script>
+  </head>
+  <body>
+    <main class="rec-public recruitment-page">
+      <header class="rec-public-header">
+        <p class="recruitment-eyebrow">ATWAR ONE · الفرص الوظيفية</p>
+        <h1>انضم إلى فريق أطوار</h1>
+        <p class="rec-muted">تعرّف على الفرص المتاحة وشاركنا خبراتك.</p>
+      </header>
+      <p id="publicStatus" role="status" aria-live="polite">
+        جارٍ تحميل الفرص…
+      </p>
+      <section id="publicJobs"></section>
+    </main>
+    <script
+      type="module"
+      src="../assets/js/recruitment-careers.mjs?v=1"
+    ></script>
+  </body>
+</html>

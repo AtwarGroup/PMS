@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>التوظيف — ATWAR ONE</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
+    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.0" />
+    <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
+    <script src="https://unpkg.com/lucide@1.47.0"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/module-access.js?v=2.8.1"></script>
+    <script src="../assets/js/supabase-runtime.js"></script>
+    <script src="../assets/js/session-service.js?v=2.5.2"></script>
+    <script src="../assets/js/shell-components.js?v=2.8.1"></script>
+    <script src="../assets/js/ui-feedback.js?v=2.5.27"></script>
+  </head>
+  <body>
+    <div class="atwar-shell">
+      <atwar-sidebar active="recruitment"></atwar-sidebar>
+      <section class="atwar-main">
+        <atwar-header></atwar-header>
+        <main class="atwar-content recruitment-page">
+          <header class="atwar-page-head">
+            <div>
+              <p class="recruitment-eyebrow">
+                الموارد البشرية · الاستقطاب والتعيين
+              </p>
+              <h1>التوظيف</h1>
+              <p>من الاحتياج الوظيفي إلى أول يوم عمل.</p>
+            </div>
+            <button id="createRequest" class="rec-btn" hidden>
+              طلب احتياج وظيفي
+            </button>
+          </header>
+          <p id="pageStatus" role="status" aria-live="polite">
+            جارٍ التحقق من الصلاحيات…
+          </p>
+          <nav class="rec-tabs" aria-label="أقسام التوظيف">
+            <button data-view="dashboard" aria-current="page">
+              لوحة المتابعة</button
+            ><button data-view="requests">الاحتياجات والشواغر</button
+            ><button data-view="candidates">المرشحون</button
+            ><button data-view="interviews">المقابلات</button
+            ><button data-view="reports">التقارير</button
+            ><button data-view="reference" hidden>مرجع الرواتب والدرجات</button>
+          </nav>
+          <section id="viewContent" aria-live="polite"></section>
+          <dialog id="recDialog" aria-labelledby="dialogTitle">
+            <header>
+              <div>
+                <p class="recruitment-eyebrow">ATWAR ONE · التوظيف</p>
+                <h2 id="dialogTitle"></h2>
+              </div>
+              <button id="closeDialog" class="rec-btn secondary" type="button">
+                إغلاق
+              </button>
+            </header>
+            <div id="dialogBody"></div>
+            <p id="dialogStatus" role="status" aria-live="polite"></p>
+          </dialog>
+        </main>
+      </section>
+    </div>
+    <script type="module" src="../assets/js/recruitment-page.mjs?v=1"></script>
+  </body>
+</html>

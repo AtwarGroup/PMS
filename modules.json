@@ -135,6 +135,14 @@
       "status": "stable",
       "navigation": "primary",
       "label": "إدارة المشاريع"
+    },
+    {
+      "id": "recruitment",
+      "path": "recruitment/index.html",
+      "minRole": "employee",
+      "status": "stable",
+      "navigation": "primary",
+      "label": "التوظيف"
     }
   ],
   "purpose": "Route inventory only. Runtime availability and authorization come from account_module_context."

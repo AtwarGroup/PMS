@@ -56,6 +56,7 @@ jobs:
       - name: Test PostgreSQL permissions and financial workflows
         run: |
           npm run test:fleet:db
+          npm run test:recruitment:db
           node scripts/test-fleet-alerts.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
