@@ -40,7 +40,7 @@ jobs:
   fleet:
     name: Fleet database and browser workflow
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -70,3 +70,4 @@ jobs:
           node tests/browser/employee-access.cjs
           node tests/browser/account-modules.cjs
           node tests/browser/home-resilience.cjs
+          node tests/browser/theme-contract.cjs

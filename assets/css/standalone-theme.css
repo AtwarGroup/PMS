@@ -1,11 +1,14 @@
+@import url('./design-system.css?v=2.5.8');
+@import url('./app-theme.css?v=2.8.2');
+@import url('./typography.css?v=2.5.4.1');
 /* Shared identity for entry, help and printable forms. */
-:root{--atwar-public-bg:#f3f6fa;--atwar-public-ink:#17233a;--atwar-public-muted:#526277;--atwar-public-line:#e2e8f0;--atwar-public-blue:#2563eb}
+:root{--atwar-public-bg:var(--atwar-bg);--atwar-public-ink:var(--atwar-text);--atwar-public-muted:var(--atwar-muted);--atwar-public-line:var(--atwar-border);--atwar-public-blue:var(--atwar-blue-600)}
 body.atwar-standalone{font-family:Tajawal,Arial,sans-serif;font-size:14px;line-height:1.75}
 .atwar-standalone :is(button,input,select,textarea){font:inherit;border-radius:10px}
 .atwar-standalone :is(.card,.section,.mini,.role,.app-card){border-radius:14px;border-color:var(--atwar-public-line);box-shadow:0 4px 16px #0f172a06}
-.atwar-standalone :is(.hero,.section-head,.topbar) h1{font-size:26px;line-height:1.4}
+.atwar-standalone :is(.hero,.section-head,.topbar,.rec-public-header) h1{font-size:var(--atwar-type-page-title);line-height:var(--atwar-type-line-title)}
 .atwar-standalone :is(.back,.nav a){border-radius:10px}
-.atwar-standalone :is(a,button,input,select,textarea):focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.atwar-standalone :is(a,button,input,select,textarea):focus-visible{outline:3px solid var(--atwar-public-blue);outline-offset:3px}
 .atwar-standalone .login-wrap .card{border:1px solid var(--atwar-public-line);box-shadow:0 12px 36px #0f172a0b;border-radius:18px}
 .atwar-standalone .login-note{color:var(--atwar-public-muted)}
 body.atwar-help,body.atwar-form,body.atwar-privacy{background:var(--atwar-public-bg);color:var(--atwar-public-ink)}
