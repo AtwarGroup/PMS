@@ -11,7 +11,12 @@ export const stages = {
   no_show: "لم يباشر",
 };
 export const requestStates = {
-  hr_review: "مراجعة الموارد البشرية",
+  draft: "مسودة",
+  department_review: "موافقة مدير الإدارة",
+  hr_exception: "استثناء مشرف تطوير الأعمال",
+  finance_exception: "استثناء الرئيس التنفيذي",
+  cancellation_approval: "اعتماد إلغاء الطلب",
+  hr_review: "مراجعة شؤون الموظفين والتوطين",
   finance_review: "مراجعة الميزانية",
   approval: "بانتظار الاعتماد",
   open: "مفتوح",
@@ -70,7 +75,7 @@ export function dashboard(requests, applications) {
   return {
     open: requests.filter((r) => r.status === "open").length,
     pending: requests.filter((r) =>
-      ["hr_review", "finance_review", "approval"].includes(r.status),
+      ["department_review", "hr_review", "finance_review", "approval", "hr_exception", "finance_exception", "cancellation_approval"].includes(r.status),
     ).length,
     interviews: applications.filter((a) => a.stage === "interview").length,
     hired: applications.filter((a) => a.stage === "hired").length,

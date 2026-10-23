@@ -13,6 +13,7 @@ for (const file of [
   "20261023142952_recruitment_salary_reference_metadata.sql",
   "20261023143441_recruitment_resume_storage.sql",
   "20261023150534_recruitment_public_upload_session.sql",
+  "20261023191845_recruitment_approved_workflow.sql",
 ])
   await db.exec(
     await fs.readFile(path.join(root, "supabase/migrations", file), "utf8"),
@@ -48,6 +49,7 @@ async function call(actor, name, args = {}) {
   queue = task.catch(() => {});
   return task;
 }
+await db.exec(`update private.recruitment_salary_reference set benefits='{"text":"مزايا تجريبية معتمدة"}';`);
 const seed = {
   job_id: "20000000-0000-4000-8000-000000000001",
   salary_id: "20000000-0000-4000-8000-000000000002",
@@ -59,6 +61,7 @@ const seed = {
   reason: "احتياج تجريبي للتحقق من دورة العمل",
   route: "referral",
   target_date: "2027-01-01",
+  request_type:"new", department_approver_id:ids.admin,supervisor_id:ids.admin,recruiter_id:ids.admin,development_id:ids.admin,
   hr_id: ids.admin,
   finance_id: ids.admin,
   approver_id: ids.admin,
@@ -66,12 +69,13 @@ const seed = {
   criteria: [{ key: "technical", label: "الكفاءة الفنية", weight: 100 }],
 };
 const rid = await call("admin", "recruitment_request_create", { p_data: seed });
-for (let revision = 1; revision <= 3; revision++)
+await call("admin","recruitment_request_action",{p_id:rid,p_revision:1,p_action:"submit",p_data:{note:"إرسال الطلب التجريبي"}});
+for (let revision = 2; revision <= 5; revision++)
   await call("admin", "recruitment_request_action", {
     p_id: rid,
     p_revision: revision,
     p_action: "approve",
-    p_data: {},
+    p_data: {note:"اعتماد المرحلة التجريبية",request_type_checked:true,saudization_checked:true,profession_checked:true},
   });
 await call("admin", "recruitment_candidate_add", {
   p_request: rid,
@@ -88,6 +92,7 @@ const runtime = `const actor=new URLSearchParams(location.search).get('qa')||'ad
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
+    if(url.pathname === "/__qa/mobile"){res.writeHead(200,{"Content-Type":"text/html"});res.end('<html><body style="margin:0;background:#ddd"><iframe title="معاينة الجوال" src="/recruitment/index.html" style="width:390px;height:844px;border:0"></iframe></body></html>');return;}
     if (url.pathname === "/__qa/rpc" && req.method === "POST") {
       let body = "";
       for await (const chunk of req) body += chunk;
