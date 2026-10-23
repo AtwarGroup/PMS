@@ -1,0 +1,2 @@
+# Third-party generated bundle contains intentional whitespace inside template strings.
+assets/vendor/supabase-client.mjs -whitespace

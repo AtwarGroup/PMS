@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const ctx={window:{}};vm.runInNewContext(read('assets/js/job-kpi-proposals.js'),ctx);vm.runInNewContext(read('assets/js/job-document-view.js'),ctx);
+const ctx={window:{}};vm.runInNewContext(read('assets/js/job-kpi-proposal-catalog.js'),ctx);vm.runInNewContext(read('assets/js/job-kpi-proposals.js'),ctx);vm.runInNewContext(read('assets/js/job-document-view.js'),ctx);
 const {find,catalog}=ctx.window.AtwarKpiProposals;
 assert.equal(catalog.length,57);assert.equal(catalog.reduce((n,j)=>n+j.indicators.length,0),253);
 for(const job of catalog)for(const row of job.indicators){

@@ -19,6 +19,10 @@ jobs:
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       RESTORE_DRILL_DB_URL: ${{ secrets.RESTORE_DRILL_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      RESTORE_DRILL_SUPABASE_URL: ${{ secrets.RESTORE_DRILL_SUPABASE_URL }}
+      RESTORE_DRILL_SERVICE_ROLE_KEY: ${{ secrets.RESTORE_DRILL_SERVICE_ROLE_KEY }}
+      RESTORE_DRILL_PROJECT_REF: ${{ vars.RESTORE_DRILL_PROJECT_REF }}
       RCLONE_CONFIG_BASE64: ${{ secrets.RCLONE_CONFIG_BASE64 }}
       BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
       GDRIVE_BACKUP_FOLDER: ${{ vars.GDRIVE_BACKUP_FOLDER }}
@@ -31,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          for name in SUPABASE_DB_URL RESTORE_DRILL_DB_URL RCLONE_CONFIG_BASE64 BACKUP_ENCRYPTION_PASSWORD; do
+          for name in SUPABASE_DB_URL RESTORE_DRILL_DB_URL SUPABASE_URL RESTORE_DRILL_SUPABASE_URL RESTORE_DRILL_SERVICE_ROLE_KEY RESTORE_DRILL_PROJECT_REF RCLONE_CONFIG_BASE64 BACKUP_ENCRYPTION_PASSWORD; do
             test -n "${!name:-}" || { echo "Missing GitHub secret: $name" >&2; exit 1; }
           done
 
@@ -41,6 +45,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rclone gnupg
           docker pull postgres:17.6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
       - name: Download and decrypt latest backup
         shell: bash

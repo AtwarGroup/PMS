@@ -17,7 +17,7 @@ jobs:
   audit:
     name: System and workflow audit
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -25,6 +25,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 24
+      - name: Install pinned audit dependencies
+        run: npm ci --ignore-scripts
       - name: Run every JavaScript regression test
         shell: bash
         run: |
@@ -59,3 +61,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test driver, manager, fleet and accountant interfaces
         run: npm run test:fleet:ui
+      - name: Test employee directory and per-account units
+        run: |
+          python3 -m http.server 8765 >/tmp/atwar-browser-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          node tests/browser/employee-access.cjs
+          node tests/browser/account-modules.cjs
+          node tests/browser/home-resilience.cjs

@@ -13,12 +13,16 @@ export function employeePopulation(records, accounts = []) {
 
 export async function loadHomeEmployeeCount(sb, allowed, count, scope) {
   if (!allowed) return;
-  const {data, error} = await sb.rpc('employee_master_list').catch(error => ({data:null,error}));
-  if (error || !Array.isArray(data)) {
+  try {
+    // PostgREST builders are thenables; they do not expose Promise.catch().
+    const {data, error} = await sb.rpc('employee_master_list');
+    if (error || !Array.isArray(data)) throw error || new Error('Directory unavailable');
+    count.textContent = employeePopulation(data).total;
+    scope.textContent = 'سجلات الموظفين ضمن نطاق اطلاعك';
+    return true;
+  } catch {
     count.textContent = '—';
     scope.textContent = 'تعذر تحميل عدد الموظفين';
-    return;
+    return false;
   }
-  count.textContent = employeePopulation(data).total;
-  scope.textContent = 'سجلات الموظفين ضمن نطاق اطلاعك';
 }

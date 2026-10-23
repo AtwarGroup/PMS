@@ -11,7 +11,7 @@ function getAtwarSession(){
 const getAtwarDemoSession=getAtwarSession;
 
 function atwarDepth(){
-  const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring'];
+  const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','fleet','projects','policies','communication','communication-trial'];
   return nestedModules.some(name=>location.pathname.includes('/'+name+'/')) ? '../' : '';
 }
 
@@ -71,7 +71,7 @@ async function atwarLogout(){
   try{
     if(window.ATWAR_SUPABASE?.auth?.signOut) await window.ATWAR_SUPABASE.auth.signOut();
     else if(window.ATWAR_SUPABASE_CONFIG){
-      const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm');
+      const {createClient}=await import(new URL(atwarDepth()+'assets/vendor/supabase-client.mjs?v=2.8.0',location.href).href);
       const c=window.ATWAR_SUPABASE_CONFIG;
       await createClient(c.url,c.publishableKey).auth.signOut();
     }

@@ -1,35 +1,22 @@
-name: Build tasks production CSS
-
+name: Verify production assets
 on:
   push:
-    branches: [ATWAR_ONE_V2.5.6_CONSOLE_CLEANUP]
-    paths:
-      - tasks/index.html
-      - assets/js/tasks-page.js
-      - assets/js/shell-components.js
-      - assets/css/tasks-tailwind-input.css
-      - tailwind.tasks.config.js
-      - .github/workflows/build-tasks-css.yml
-
+    branches: [main]
+  pull_request:
+    branches: [main]
 permissions:
-  contents: write
-
+  contents: read
 jobs:
-  build:
+  assets:
+    name: Production assets are current
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          ref: ATWAR_ONE_V2.5.6_CONSOLE_CLEANUP
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Compile and minify Tailwind
-        run: npx --yes tailwindcss@3.4.17 -c tailwind.tasks.config.js -i assets/css/tasks-tailwind-input.css -o assets/css/tasks-tailwind.min.css --minify
-      - name: Commit generated stylesheet
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/css/tasks-tailwind.min.css
-          git diff --cached --quiet || git commit -m "Build production Tailwind CSS for tasks"
-          git push origin HEAD:ATWAR_ONE_V2.5.6_CONSOLE_CLEANUP
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build:assets
+      - name: Require generated assets to match reviewed source
+        run: git diff --exit-code -- assets/css/tasks-tailwind.min.css assets/vendor/supabase-client.mjs

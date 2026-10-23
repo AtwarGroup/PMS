@@ -15,7 +15,7 @@
 @media(max-width:1100px){.team-mini-grid{grid-template-columns:repeat(2,1fr)}.home-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:650px){.home-metrics{gap:9px!important}.home-events{grid-template-columns:1fr!important}.dash-card{padding:13px;gap:6px}.dash-ico{width:40px;height:40px;flex-shrink:0}}
 </style>
-<link rel="stylesheet" href="assets/css/app-theme.css?v=2.5.36" data-atwar-app-theme="1">
+<link rel="stylesheet" href="assets/css/app-theme.css?v=2.8.0" data-atwar-app-theme="1">
 </head><body style="visibility:hidden">
 <div class="atwar-shell">
   <atwar-sidebar active="home"></atwar-sidebar>
@@ -78,8 +78,8 @@
 <script src="assets/js/roles-config.js"></script>
 <script src="assets/js/start-page-config.js?v=2.7.3"></script>
 <script src="assets/js/supabase-config.js"></script>
-<script src="assets/js/module-access.js?v=2.7.4"></script><script src="assets/js/supabase-runtime.js?v=2.7.3"></script>
-<script src="assets/js/permissions.js?v=1.9.17"></script>
+<script src="assets/js/module-access.js?v=2.7.4"></script><script src="assets/js/supabase-runtime.js?v=2.8.0"></script>
+<script src="assets/js/permissions.js?v=2.8.0"></script>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const now=new Date();
@@ -94,7 +94,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script type="module" id="homeSupabaseDashboard">
-import {loadHomeEmployeeCount} from './assets/js/employee-population.mjs?v=2.7.4';
+import {loadHomeEmployeeCount} from './assets/js/employee-population.mjs?v=2.8.0';
+import {readDashboardData} from './assets/js/dashboard-data.mjs?v=2.8.0';
 import {canApproveRelationalTask} from './assets/js/tasks-core.mjs?v=1.9.8';
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
@@ -114,11 +115,32 @@ const late=t=>!!t.due_date&&['قيد الانتظار','قيد التنفيذ'].
 document.querySelectorAll('[data-task-scope]').forEach(card=>{const open=()=>{const scope=card.dataset.taskScope||'OPEN';location.href=`tasks/index.html?scope=${encodeURIComponent(scope)}`};card.addEventListener('click',open);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}})});
 const a=await authProfile('login.html');if(a){document.body.style.visibility='visible';if(new URLSearchParams(location.search).get('access')==='denied'){const note=document.createElement('p');note.className='module-denied-note';note.textContent='هذه الوحدة غير متاحة لحسابك. يمكنك استخدام الوحدات الظاهرة في القائمة.';note.setAttribute('role','status');document.querySelector('main').prepend(note);}
  window.AtwarModules.apply();
- const p=a.profile;const now=new Date().toISOString();const [tr,fr,pr,ar,projectsResult]=await Promise.all([sb.from('tasks').select('*').is('deleted_at',null).order('updated_at',{ascending:false}),sb.from('follow_ups').select('*').eq('owner_id',p.id),p.role==='manager'?sb.from('profiles').select('id,manager_id').eq('manager_id',p.id):p.role==='admin'?sb.from('profiles').select('id,manager_id').eq('active',true).eq('status','active'):Promise.resolve({data:[],error:null}),sb.from('announcements').select('*').eq('status','PUBLISHED').lte('starts_at',now).order('importance',{ascending:false}).order('starts_at',{ascending:false}).limit(3),sb.from('projects').select('id,manager_id,sponsor_id,deleted_at').is('deleted_at',null)]);if(tr.error)console.error(tr.error);if(fr.error)console.error(fr.error);if(pr.error)console.error(pr.error);const rows=tr.data||[],mine=rows.filter(t=>t.assignee_id===p.id),directIds=new Set((pr.data||[]).map(x=>x.id)),indicator=p.role==='employee'?mine:p.role==='manager'?rows.filter(t=>t.assignee_id===p.id||directIds.has(t.assignee_id)||t.creator_id===p.id||t.delegated_by_id===p.id):rows;
+ const p=a.profile;
+ const feedback=document.createElement('section');feedback.className='atwar-data-status';feedback.setAttribute('aria-live','polite');
+ const feedbackText=document.createElement('span'),retry=document.createElement('button');retry.type='button';retry.className='atwar-btn secondary';retry.textContent='إعادة المحاولة';feedback.append(feedbackText,retry);document.querySelector('main').prepend(feedback);
+ let refreshing=false;
+ async function refreshDashboard(){
+ if(refreshing)return;refreshing=true;retry.disabled=true;feedbackText.textContent='جارٍ تحديث الملخص…';
+ try{
+ const {tasks:tr,followups:fr,people:pr,announcements:ar,projects:projectsResult}=await readDashboardData(sb,p,key=>window.AtwarModules.allowed(key));
+ const rows=tr.data||[],mine=rows.filter(t=>t.assignee_id===p.id),directIds=new Set((pr.data||[]).map(x=>x.id)),indicator=p.role==='employee'?mine:p.role==='manager'?rows.filter(t=>t.assignee_id===p.id||directIds.has(t.assignee_id)||t.creator_id===p.id||t.delegated_by_id===p.id):rows;
  setText('homeStatCompleted',p.role==='admin'?indicator.filter(t=>t.status==='مكتملة').length:indicator.filter(t=>{if(t.status!=='مكتملة')return false;const d=new Date(t.completed_at||t.actual_end_date||t.updated_at);const n=new Date();return !Number.isNaN(d.getTime())&&d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length);
  setText('homeStatOpen',indicator.filter(t=>!['مكتملة','ملغاة'].includes(t.status)).length);setText('homeStatOverdue',indicator.filter(late).length);const approvals=rows.filter(t=>canApproveRelationalTask(t,p,{directIds:[...directIds],projects:projectsResult.data||[]}));setText('homeStatApproval',approvals.length);
  setText('homeStatCompletedScope',p.role==='admin'?'جميع المكتملة':'هذا الشهر');
- const d=today(),todayTasks=mine.filter(t=>!['مكتملة','ملغاة'].includes(t.status)&&(t.start_date===d||t.due_date===d)),dueFollowups=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date||x.due_date)||(x.follow_date||x.date||x.due_date)<=d));setText('homeTodayCount',todayTasks.length);setText('homeFollowupCount',dueFollowups.length);await loadHomeEmployeeCount(sb,window.AtwarModules.allowed('employees'),document.getElementById('homeTeamCount'),document.getElementById('homeEmployeeScope'));const announcements=(ar.data||[]).filter(x=>!x.ends_at||x.ends_at>now);if(announcements.length)document.getElementById('announcementFeed').innerHTML=announcements.map(x=>`<article class="announcement ${x.importance==='IMPORTANT'?'important':''}"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p></article>`).join('');if(ar.error)document.getElementById('announcementFeed').innerHTML='<div class="announcement"><p>تعذر تحميل الإعلانات. تأكد من تنفيذ تحديث قاعدة البيانات.</p></div>';if(p.role==='admin')document.getElementById('manageAnnouncements').style.display='inline';try{lucide.createIcons()}catch{}
+ const d=today(),todayTasks=mine.filter(t=>!['مكتملة','ملغاة'].includes(t.status)&&(t.start_date===d||t.due_date===d)),dueFollowups=(fr.data||[]).filter(x=>x.status!=='done'&&(!(x.follow_date||x.date||x.due_date)||(x.follow_date||x.date||x.due_date)<=d));setText('homeTodayCount',todayTasks.length);setText('homeFollowupCount',dueFollowups.length);
+ if(tr.error||(p.role==='manager'&&pr.error))for(const id of ['homeStatCompleted','homeStatOpen','homeStatOverdue','homeStatApproval','homeTodayCount'])setText(id,'—');
+ if(projectsResult.error)setText('homeStatApproval','—');
+ if(fr.error)setText('homeFollowupCount','—');
+ const directoryLoaded=await loadHomeEmployeeCount(sb,window.AtwarModules.allowed('employees'),document.getElementById('homeTeamCount'),document.getElementById('homeEmployeeScope'));
+ const now=new Date().toISOString(),announcements=(ar.data||[]).filter(x=>!x.ends_at||x.ends_at>now);
+ document.getElementById('announcementFeed').innerHTML=ar.error?'<div class="announcement"><p>تعذر تحميل الإعلانات. أعد المحاولة.</p></div>':announcements.length?announcements.map(x=>`<article class="announcement ${x.importance==='IMPORTANT'?'important':''}"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p></article>`).join(''):'<div class="announcement"><p>لا توجد إعلانات سارية.</p></div>';
+ const unavailable=[tr,fr,pr,projectsResult,ar].some(x=>x.error)||directoryLoaded===false;
+ feedback.hidden=!unavailable;feedbackText.textContent=unavailable?'تعذر تحميل بعض بيانات الملخص. الأعداد غير المتاحة تظهر بشرطة؛ أعد المحاولة.':'';
+ if(p.role==='admin')document.getElementById('manageAnnouncements').style.display='inline';try{lucide.createIcons()}catch{}
+ }catch(error){for(const id of ['homeStatCompleted','homeStatOpen','homeStatOverdue','homeStatApproval','homeTodayCount','homeFollowupCount'])setText(id,'—');feedback.hidden=false;feedbackText.textContent='تعذر تحديث الملخص. أعد المحاولة.';}
+ finally{refreshing=false;retry.disabled=false;}
+ }
+ retry.onclick=refreshDashboard;window.addEventListener('online',()=>void refreshDashboard());await refreshDashboard();
 }
 </script>
 

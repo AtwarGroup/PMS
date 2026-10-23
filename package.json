@@ -3,12 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:fleet:db": "node scripts/test-fleet-db.mjs && node scripts/test-fleet-integrity.mjs && node scripts/test-fleet-operations.mjs && node scripts/test-fleet-review.mjs",
+    "test:fleet:db": "node scripts/test-fleet-db.mjs && node scripts/test-fleet-integrity.mjs && node scripts/test-fleet-operations.mjs && node scripts/test-fleet-review.mjs && node scripts/test-fleet-file-storage.mjs",
     "test:fleet:ui": "node scripts/test-fleet-ui.mjs && node scripts/test-fleet-operations-ui.mjs && node scripts/test-fleet-review-ui.mjs",
-    "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs"
+    "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs",
+    "build:assets": "esbuild assets/vendor/supabase-client.entry.mjs --bundle --platform=browser --format=esm --target=es2020 --minify --legal-comments=inline --outfile=assets/vendor/supabase-client.mjs && tailwindcss -c tailwind.tasks.config.js -i assets/css/tasks-tailwind-input.css -o assets/css/tasks-tailwind.min.css --minify"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "esbuild": "0.25.10",
+    "tailwindcss": "3.4.17"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.0"
   }
 }

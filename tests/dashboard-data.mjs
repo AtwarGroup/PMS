@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {readDashboardData} from '../assets/js/dashboard-data.mjs';
+import {readRelatedRows} from '../assets/js/paged-related-read.mjs';
+const rows=Array.from({length:1371},(_,i)=>({id:String(i)}));let requests=[];
+const sb={from(table){let range=[0,499];const q={select(){return q},is(){return q},eq(){return q},lte(){return q},order(){return q},limit(){return q},range(a,b){range=[a,b];return q},then(resolve){requests.push(table);return Promise.resolve(resolve(table==='follow_ups'?{data:null,error:Error('offline')}:{data:rows.slice(range[0],range[1]+1),error:null}))}};return q}};
+const result=await readDashboardData(sb,{id:'manager',role:'manager'});
+assert.equal(result.tasks.data.length,1371);assert.equal(result.followups.data,null);assert(result.followups.error);assert.equal(result.projects.data.length,1371);
+requests=[];await readDashboardData(sb,{id:'driver',role:'employee'},()=>false);assert.deepEqual([...new Set(requests)],['announcements'],'Unavailable units must not read protected tables');
+let chunks=[];
+const related=await readRelatedRows(ids=>{chunks.push(ids);let range=[0,499];const q={order(){return q},range(a,b){range=[a,b];return q},then(resolve){return Promise.resolve(resolve({data:rows.filter(r=>ids.includes(String(Number(r.id)%201))).slice(range[0],range[1]+1),error:null}))}};return q;},Array.from({length:201},(_,i)=>String(i)));
+assert.equal(related.length,1371);assert(chunks.every(c=>c.length<=100));
+await assert.rejects(readRelatedRows(()=>({order(){return this},range(){return this},then(resolve){return Promise.resolve(resolve({data:null,error:Error('denied')}))}}),['x']),/denied/);
+console.log('PASS: complete paged dashboard/related reads, source failure isolation, module boundaries and child-read failure propagation');

@@ -55,7 +55,7 @@ async function downloadObject(bucket,objectName){
   const response=await request(`${base}/storage/v1/object/authenticated/${encodeURIComponent(bucket)}/${encodeObjectPath(objectName)}`);
   if(!response.body)throw new Error(`Empty response body for ${bucket}/${objectName}`);
   await pipeline(Readable.fromWeb(response.body),createWriteStream(output,{mode:0o600}));
-  return {bucket,object:objectName,size:Number(response.headers.get('content-length')||0)};
+  return {bucket,object:objectName,size:Number(response.headers.get('content-length')||0),mime:response.headers.get('content-type')?.split(';')[0]||null};
 }
 
 async function backupBucket(bucket){
@@ -79,7 +79,7 @@ const buckets=await bucketResponse.json();
 const manifest={createdAt:new Date().toISOString(),bucketCount:buckets.length,buckets:[]};
 for(const bucket of buckets){
   const objects=await backupBucket(bucket.id);
-  manifest.buckets.push({id:bucket.id,name:bucket.name,public:Boolean(bucket.public),objectCount:objects.length,objects});
+  manifest.buckets.push({id:bucket.id,name:bucket.name,public:Boolean(bucket.public),file_size_limit:bucket.file_size_limit??null,allowed_mime_types:bucket.allowed_mime_types??null,objectCount:objects.length,objects});
 }
 await writeFile(path.join(destination,'storage-manifest.json'),JSON.stringify(manifest,null,2),{mode:0o600});
 console.log(`Storage backup completed: ${manifest.bucketCount} buckets, ${manifest.buckets.reduce((sum,b)=>sum+b.objectCount,0)} objects.`);

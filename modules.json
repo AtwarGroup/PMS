@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0-production",
+  "version": "2.8.0",
   "modules": [
     {
       "id": "home",
@@ -73,7 +73,7 @@
       "minRole": "employee",
       "status": "stable",
       "navigation": "primary",
-      "label": "ملاحظاتي"
+      "label": "مساحتي"
     },
     {
       "id": "notifications",
@@ -136,5 +136,6 @@
       "navigation": "primary",
       "label": "إدارة المشاريع"
     }
-  ]
+  ],
+  "purpose": "Route inventory only. Runtime availability and authorization come from account_module_context."
 }

@@ -1,3 +1,4 @@
+@import url('./components.css?v=2.8.0');
 /* ATWAR ONE: one visual contract, loaded after module styles. */
 :root{
   --atwar-muted:#526277;--atwar-accent:var(--atwar-blue-600);--atwar-hero-bg:var(--atwar-surface);
