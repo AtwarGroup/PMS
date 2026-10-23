@@ -12,6 +12,7 @@ for (const file of [
   "20261023142622_recruitment_foundation.sql",
   "20261023142952_recruitment_salary_reference_metadata.sql",
   "20261023143441_recruitment_resume_storage.sql",
+  "20261023150534_recruitment_public_upload_session.sql",
 ])
   await db.exec(
     await fs.readFile(path.join(root, "supabase/migrations", file), "utf8"),
