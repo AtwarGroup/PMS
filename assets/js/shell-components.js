@@ -10,7 +10,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
   // Reuse and move the existing stylesheet after module CSS; never load two versions.
   const loadCanonicalTheme=()=>{
-    const href=new URL('css/app-theme.css?v=2.8.2',assetRoot).href;
+    const href=new URL('css/app-theme.css?v=2.8.3',assetRoot).href;
     const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
     const style=matches.shift()||document.createElement('link');
     for(const duplicate of matches)duplicate.remove();
