@@ -70,3 +70,4 @@ jobs:
           node tests/browser/employee-access.cjs
           node tests/browser/account-modules.cjs
           node tests/browser/home-resilience.cjs
+          node tests/browser/theme-contract.cjs

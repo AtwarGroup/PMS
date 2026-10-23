@@ -8,10 +8,13 @@
   const mobileStyle=document.createElement('link');mobileStyle.rel='stylesheet';mobileStyle.href=new URL('css/mobile-experience.css?v=1',assetRoot).href;document.head.append(mobileStyle);
   const startMobile=()=>import(new URL('js/mobile-experience.mjs?v=3',assetRoot).href).then(m=>m.startMobileExperience()).catch(e=>console.error('Mobile experience could not load',e));
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
+  // Reuse and move the existing stylesheet after module CSS; never load two versions.
   const loadCanonicalTheme=()=>{
-    if(document.querySelector('link[data-atwar-app-theme]'))return;
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarAppTheme='1';
-    style.href=new URL('css/app-theme.css?v=2.5.36',assetRoot).href;document.head.append(style);
+    const href=new URL('css/app-theme.css?v=2.8.2',assetRoot).href;
+    const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
+    const style=matches.shift()||document.createElement('link');
+    for(const duplicate of matches)duplicate.remove();
+    style.rel='stylesheet';style.dataset.atwarAppTheme='1';style.href=href;document.head.append(style);
   };
   if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261004-open',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
