@@ -5,7 +5,7 @@
 <title>ATWAR ONE – الإشعارات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.8.2"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/js/shell-components.js?v=2.8.3"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
 <style>
 .n-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}
@@ -20,7 +20,7 @@
 .n-notice{display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#fff1f2;color:#b42318;font-size:11px;font-weight:800}
 @media(max-width:760px){.n-head{flex-direction:column;align-items:start;gap:12px}.n-card{grid-template-columns:auto 1fr}.n-time{grid-column:2}}
 </style>
-<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.2" data-atwar-app-theme="1">
+<link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.3" data-atwar-app-theme="1">
 </head>
 <body>
 <div class="atwar-shell">
@@ -52,6 +52,7 @@
 <script src="../assets/js/module-access.js?v=2.8.1"></script><script src="../assets/js/supabase-runtime.js?v=2.8.0"></script>
 <script src="../assets/js/permissions.js?v=2.8.0"></script>
 <script type="module" id="notificationsSupabaseBinding">
+import {renderDataState} from "../assets/js/data-state.mjs?v=1";
 const sb=await window.atwarGetSupabase();
 async function authProfile(loginPath){
   const {data:{session},error:se}=await sb.auth.getSession();
@@ -64,9 +65,9 @@ async function authProfile(loginPath){
   return {session,user:session.user,profile};
 }
 
-let notifications=[];const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function iconFor(t){return t==='approval'?'badge-check':(t==='overdue'||t==='overdue_summary')?'triangle-alert':t==='approved'?'circle-check-big':t==='manager_note'?'notebook-pen':'info'}function timeLabel(ts){if(!ts)return'';const d=Math.max(0,Date.now()-new Date(ts).getTime()),m=Math.floor(d/60000);return m<1?'الآن':m<60?`منذ ${m} دقيقة`:m<1440?`منذ ${Math.floor(m/60)} ساعة`:`منذ ${Math.floor(m/1440)} يوم`}function showError(message){const el=document.getElementById('notifNotice');el.textContent=message;el.style.display='block';setTimeout(()=>el.style.display='none',3500)}
-function render(){const list=document.getElementById('notifList');list.innerHTML=notifications.map(n=>`<article class="n-card ${n.read_at?'':'unread'}" data-id="${esc(n.id)}" style="cursor:pointer"><div class="n-icon ${(n.type==='overdue'||n.type==='overdue_summary')?'alert':n.type==='approval'?'approval':n.type==='approved'?'system':'task'}"><i data-lucide="${iconFor(n.type)}"></i></div><div><div class="n-title">${esc(n.title||n.type||'إشعار')}</div><div class="n-text">${esc(n.message||n.detail||'')}</div></div><div class="n-time">${esc(timeLabel(n.created_at))}</div></article>`).join('');document.getElementById('notifEmpty').style.display=notifications.length?'none':'block';list.querySelectorAll('[data-id]').forEach(c=>c.onclick=()=>openNotif(c.dataset.id));try{lucide.createIcons()}catch{}}
-async function load(){const r=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(100);if(r.error)throw r.error;notifications=r.data||[];render()}
+let notificationReadFailed=false;let notifications=[];const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));function iconFor(t){return t==='approval'?'badge-check':(t==='overdue'||t==='overdue_summary')?'triangle-alert':t==='approved'?'circle-check-big':t==='manager_note'?'notebook-pen':'info'}function timeLabel(ts){if(!ts)return'';const d=Math.max(0,Date.now()-new Date(ts).getTime()),m=Math.floor(d/60000);return m<1?'الآن':m<60?`منذ ${m} دقيقة`:m<1440?`منذ ${Math.floor(m/60)} ساعة`:`منذ ${Math.floor(m/1440)} يوم`}function showError(message){const el=document.getElementById('notifNotice');el.textContent=message;el.style.display='block';setTimeout(()=>el.style.display='none',3500)}
+function render(){const list=document.getElementById('notifList');if(notificationReadFailed){document.getElementById('notifEmpty').style.display='none';renderDataState(list,{state:'error',message:'تعذر تحميل الإشعارات. تحقق من الاتصال وأعد المحاولة.',onRetry:load});return}list.innerHTML=notifications.map(n=>`<article class="n-card ${n.read_at?'':'unread'}" data-id="${esc(n.id)}" style="cursor:pointer"><div class="n-icon ${(n.type==='overdue'||n.type==='overdue_summary')?'alert':n.type==='approval'?'approval':n.type==='approved'?'system':'task'}"><i data-lucide="${iconFor(n.type)}"></i></div><div><div class="n-title">${esc(n.title||n.type||'إشعار')}</div><div class="n-text">${esc(n.message||n.detail||'')}</div></div><div class="n-time">${esc(timeLabel(n.created_at))}</div></article>`).join('');document.getElementById('notifEmpty').style.display=notifications.length?'none':'block';list.querySelectorAll('[data-id]').forEach(c=>c.onclick=()=>openNotif(c.dataset.id));try{lucide.createIcons()}catch{}}
+async function load(){try{const r=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(100);if(r.error)throw r.error;notificationReadFailed=false;notifications=r.data||[];render()}catch{notificationReadFailed=true;render()}}
 window.markAllRead=async function(){const unread=notifications.filter(x=>!x.read_at);if(!unread.length)return;const approved=await window.AtwarUI.confirm({title:'تحديد الكل كمقروء',message:`سيتم الاحتفاظ بالإشعارات وتحديث حالة ${unread.length} إشعارًا.`,confirmText:'تحديد كمقروء'});if(!approved)return;const ids=unread.map(x=>x.id);const{error}=await sb.from('notifications').update({read_at:new Date().toISOString()}).in('id',ids);if(error)showError('تعذر تحديث الإشعارات الآن.');else{notifications=notifications.map(x=>ids.includes(x.id)?{...x,read_at:new Date().toISOString()}:x);render()}};
 async function openNotif(id){const n=notifications.find(x=>String(x.id)===String(id));if(!n)return;await window.atwarOpenNotificationRecord(sb,n,'../',showError)}
 const a=await authProfile('../login.html');if(a){await load().catch(e=>{console.error(e);document.getElementById('notifEmpty').style.display='block';document.getElementById('notifEmpty').textContent='الإشعارات غير متاحة حالياً.'})}

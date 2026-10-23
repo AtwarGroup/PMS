@@ -62,6 +62,13 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test driver, manager, fleet and accountant interfaces
         run: npm run test:fleet:ui
+      - name: Generate current visual fixtures
+        run: |
+          node scripts/daily-work-preview.mjs
+          node scripts/library-preview.mjs
+          node scripts/employee-change-preview.mjs
+          node scripts/project-preview.mjs
+          node scripts/job-document-preview.mjs
       - name: Test employee directory and per-account units
         run: |
           python3 -m http.server 8765 >/tmp/atwar-browser-server.log 2>&1 &
@@ -71,3 +78,9 @@ jobs:
           node tests/browser/account-modules.cjs
           node tests/browser/home-resilience.cjs
           node tests/browser/theme-contract.cjs
+          node tests/browser/theme-dynamic.cjs
+          node tests/browser/theme-runtime.cjs
+          PORT=4174 node scripts/recruitment-preview.mjs >/tmp/atwar-recruitment-theme.log 2>&1 &
+          recruitment_pid=$!
+          trap 'kill "$server_pid" "$recruitment_pid"' EXIT
+          node tests/browser/theme-recruitment.cjs

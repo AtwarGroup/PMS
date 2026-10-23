@@ -7,3 +7,10 @@
 .atwar-section-heading h1{color:var(--atwar-navy-800,#142c4b);font-size:28px;line-height:1.4;font-weight:800}
 .atwar-section-heading p{font-size:15px;line-height:1.8;color:var(--atwar-muted,#526277)}
 @media(max-width:700px){.atwar-section-heading h1{font-size:24px}.atwar-data-status{align-items:stretch}.atwar-data-status button{width:100%}}
+
+.atwar-data-status[data-state="loading"]{border-inline-start-color:var(--atwar-blue-600);background:var(--atwar-blue-100);color:var(--atwar-navy-800)}
+
+.atwar-data-status[data-state="error"]{border-inline-start-color:var(--atwar-danger-600);background:var(--atwar-danger-100);color:var(--atwar-danger-600)}
+
+/* Text-entry controls share a surface even when a legacy form omits a component class. */
+.atwar-main :where(select,textarea,input:not([type]),input[type="text"],input[type="email"],input[type="date"],input[type="datetime-local"],input[type="number"],input[type="search"],input[type="url"],input[type="password"],input[type="tel"]){background-color:var(--atwar-surface);border-color:var(--atwar-border-strong);border-radius:var(--atwar-radius-control);color:var(--atwar-text)}

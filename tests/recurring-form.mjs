@@ -28,7 +28,7 @@ function query(table){let op='select';const q={
 };return q;}
 const sb={from:query,auth:{getSession:async()=>({data:{session:{user:{id:'manager'}}}})}};
 const context=vm.createContext({...core,document:doc,window:{atwarGetSupabase:async()=>sb,AtwarUI:{toast(){}}},localStorage:{getItem(){return null;},setItem(){}},location:{},lucide:{createIcons(){}},console,Date,Intl,setTimeout});
-let script=html.split('<script type="module">')[1].split('</script>')[0].replace(/import .*?;\n/,'');
+let script=html.split('<script type="module">')[1].split('</script>')[0].replace(/^import .*?;\n/gm,'');
 await vm.runInContext('(async()=>{'+script+'})()',context);
 const el=id=>nodes.get(id);
 assert.doesNotMatch(html,/id="run"|sb\.rpc\('run_recurring_tasks_safe'\)/,'No manual execution in the page');
