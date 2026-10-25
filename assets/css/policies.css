@@ -138,3 +138,5 @@
 @media print{#policyApp .policy-admin-tools{display:none!important}}
 #policyApp .policy-number{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap}
 @media print{.atwar-shell{display:block!important;grid-template-columns:none!important;min-height:0!important}.atwar-main{overflow:visible!important;margin:0!important}.atwar-content{max-width:none!important}body{background:white!important}}
+/* Short policy clauses flow together; only the browser's page boundaries paginate them. */
+@media print{#policyApp .policy-section,#policyApp .policy-section[hidden]{break-before:auto!important;padding-top:12px;margin-bottom:16px}#policyApp .policy-section h2{break-after:avoid}#policyApp .policy-section-kicker{break-after:avoid}}
