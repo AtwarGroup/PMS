@@ -226,3 +226,23 @@
 #policyApp .policy-salary-pagination select{width:auto;max-width:190px}
 #policyApp .policy-salary-pagination button:disabled{opacity:.45;cursor:default}
 @media print{#policyApp .policy-salary-pagination{display:none!important}}
+
+/* Policy catalog: bounded cards, clear title and one footer action. Documents keep their own layout. */
+.atwar-main .policy-catalog .policy-grid{grid-template-columns:repeat(auto-fill,minmax(min(350px,100%),1fr));gap:20px;align-items:stretch}
+.atwar-main .policy-catalog .policy-card{display:flex;flex-direction:column;gap:0;padding:22px!important;margin:0;min-height:238px;border:1px solid var(--atwar-border)!important;border-radius:16px!important;background:var(--atwar-surface)!important;box-shadow:0 3px 12px #152f4d04!important;transition:border-color .18s,box-shadow .18s,transform .18s}
+.atwar-main .policy-catalog .policy-card:hover{border-color:#b6ccea!important;box-shadow:0 10px 24px #152f4d0c!important;transform:translateY(-2px)}
+.atwar-main .policy-catalog .policy-card-top{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.atwar-main .policy-catalog .policy-card-symbol{width:42px;height:42px;border-radius:12px;background:var(--atwar-blue-100);color:var(--atwar-blue-600)}
+.policy-catalog .policy-card-code{font-size:12px;color:var(--atwar-muted);overflow-wrap:anywhere;min-width:0;flex:1;letter-spacing:.3px}
+.policy-catalog .policy-card-state{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;padding:5px 10px;border-radius:999px;background:#fff7e5;color:#8a5a0b;font-size:12px;font-weight:700}
+.policy-catalog .policy-card-state::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.atwar-main .policy-catalog .policy-card h2{font-size:18px!important;line-height:1.65!important;color:var(--atwar-text);margin:0 0 10px;overflow-wrap:anywhere}
+.atwar-main .policy-catalog .policy-card-publication{margin:0 0 22px!important;color:var(--atwar-muted);font-size:13px!important;line-height:1.7!important}
+.policy-catalog .policy-card-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:16px;border-top:1px solid var(--atwar-border)}
+.policy-catalog .policy-card-version{display:flex;align-items:center;gap:7px;color:var(--atwar-muted);font-size:13px}.policy-catalog .policy-card-version b{color:var(--atwar-text);font-weight:700}
+.atwar-main .policy-catalog .policy-card .policy-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;align-self:auto;margin:0;padding:10px 14px!important;min-height:42px;background:var(--atwar-blue-600)!important;color:#fff!important;border:1px solid var(--atwar-blue-600)!important;border-radius:10px;font-weight:700;text-decoration:none;font-size:14px!important}
+.atwar-main .policy-catalog .policy-card .policy-link:hover{background:#115cc9!important}
+.policy-catalog .policy-card[data-state="APPROVED"] .policy-card-state{background:#e2f6ed;color:#15803d}.policy-catalog .policy-card:is([data-state="APPROVAL"],[data-state="RATIFICATION"]) .policy-card-state{background:#f0e8ff;color:#7c3aed}.policy-catalog .policy-card[data-state="DRAFT"] .policy-card-state{background:#edf2f7;color:#526277}
+.policy-catalog .policy-card[hidden]{display:none!important}
+@media(max-width:560px){.atwar-main .policy-catalog .policy-grid{grid-template-columns:minmax(0,1fr);gap:14px}.atwar-main .policy-catalog .policy-card{padding:18px!important;min-height:224px}.policy-catalog .policy-card-code{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.atwar-main .policy-catalog .policy-card{transition:none;transform:none}}
