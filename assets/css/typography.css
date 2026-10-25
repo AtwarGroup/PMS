@@ -8,10 +8,10 @@
   --atwar-type-page-title:26px;
   --atwar-type-section-title:20px;
   --atwar-type-card-title:16px;
-  --atwar-type-body:14px;
-  --atwar-type-control:13px;
-  --atwar-type-meta:12px;
-  --atwar-type-caption:11px;
+  --atwar-type-body:16px;
+  --atwar-type-control:14px;
+  --atwar-type-meta:14px;
+  --atwar-type-caption:12px;
   --atwar-type-line-body:1.75;
   --atwar-type-line-title:1.4;
 }
@@ -96,5 +96,16 @@ body:not(:has(.atwar-shell)) :where(h2){line-height:var(--atwar-type-line-title)
   :root{--atwar-type-display:27px;--atwar-type-page-title:23px;--atwar-type-section-title:18px}
 }
 @media(max-width:560px){
-  :root{--atwar-type-page-title:22px;--atwar-type-body:13px;--atwar-type-control:13px;--atwar-type-meta:12px}
+  :root{--atwar-type-page-title:22px;--atwar-type-body:15px;--atwar-type-control:14px;--atwar-type-meta:14px}
 }
+
+/* Readable navigation and populated work cards share the content scale. */
+.atwar-nav a,.atwar-side-link{font-size:14px!important}
+.atwar-main :is(.space-row-copy strong,.follow-title,.kanban-card-title,.task-title-line){font-size:var(--atwar-type-body)!important;line-height:1.7!important}
+.atwar-main :is(.space-row-copy small,.space-summary-item span,.space-sync,.space-panel-head a,.space-action-options>summary,.space-empty,.task-secondary,.task-operational,.kanban-card-meta,.kanban-card>div:first-child,.follow-meta,.follow-note){font-size:var(--atwar-type-meta)!important;line-height:1.75!important}
+.atwar-main :is(.space-pill,.space-count,.kanban-column-head){font-size:var(--atwar-type-caption)!important}
+.atwar-topbar .atwar-org-title h2{font-size:18px!important}
+@media(max-width:700px){.atwar-topbar .atwar-org-title h2{font-size:16px!important}}
+
+.atwar-main .kanban-card>div:first-child>span:not(.priority-dot){font-size:var(--atwar-type-caption)!important;line-height:1.6!important}
+.atwar-main .kanban-card :is(.text-slate-400,.text-slate-500){color:var(--atwar-muted)!important}
