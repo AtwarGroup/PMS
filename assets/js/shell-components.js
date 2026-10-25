@@ -10,7 +10,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
   // Reuse and move the existing stylesheet after module CSS; never load two versions.
   const loadCanonicalTheme=()=>{
-    const href=new URL('css/app-theme.css?v=2.8.3',assetRoot).href;
+    const href=new URL('css/app-theme.css?v=2.8.4',assetRoot).href;
     const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
     const style=matches.shift()||document.createElement('link');
     for(const duplicate of matches)duplicate.remove();
@@ -20,7 +20,7 @@
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
-    style.href=new URL('css/typography.css?v=2.5.4.1',assetRoot).href;
+    style.href=new URL('css/typography.css?v=2.8.4',assetRoot).href;
     document.head.append(style);
   };
   const loadVisualContract=()=>{loadCanonicalTheme();loadCanonicalTypography()};
@@ -131,7 +131,7 @@
   class AtwarHeader extends HTMLElement{
     connectedCallback(){
       const currentPath=location.pathname;
-      const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession(),taskSuiteMode=mode==='tasks'||mode==='task-suite'||currentPath.endsWith('/tasks/executive.html');
+      const d=depth(),mode=this.getAttribute('mode')||'default',s=getSession();
       const taskNavActive=key=>{
         const completedScope=/\/tasks\//.test(currentPath)&&String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
         if(key==='tasks')return /\/tasks\//.test(currentPath)&&!currentPath.endsWith('/executive.html')&&!completedScope;
@@ -199,14 +199,14 @@
         @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
       </style>
       <header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
-        ${taskSuiteMode?'':`<div class="atwar-top-brand">
+        <div class="atwar-top-brand">
           <div class="atwar-brand-mark"></div>
           <div class="atwar-org-title">
               <h2>نظام إدارة الأداء المؤسسي</h2>
               <p>مؤسسة أطوار للتجارة</p>
             </div>
           <div class="atwar-pm-label">Performance Management<br>System</div>
-        </div>`}
+        </div>
         ${mode==='tasks'?`<span id="pageSubtitle" class="hidden"></span>`:''}
         ${taskNav}
         <div class="atwar-top-actions ${mode==='tasks'?'atwar-task-tools':''}">
