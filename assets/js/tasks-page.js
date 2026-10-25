@@ -2634,6 +2634,9 @@ function buildActivityEntry(type,detail=''){
   };
 }
 function renderActivityLog(task){
+  const allowed=currentProfile?.role==='admin',section=document.getElementById('activityLogSection');
+  if(section){section.hidden=!allowed;section.classList.toggle('hidden',!allowed);}
+  if(!allowed){const history=document.getElementById('activityLogList');if(history)history.replaceChildren();return;}
   const list=document.getElementById('activityLogList');
   const summary=document.getElementById('activityLogSummary');
   const toggle=document.getElementById('activityLogToggle');
@@ -2660,6 +2663,7 @@ function renderActivityLog(task){
     </div>`).join('');
 }
 function toggleActivityLog(){
+  if(currentProfile?.role!=='admin')return;
   activityLogExpanded=!activityLogExpanded;
   const task=selectedTask();
   if(task)renderActivityLog(task);

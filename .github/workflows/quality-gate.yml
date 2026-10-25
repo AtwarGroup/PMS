@@ -58,6 +58,7 @@ jobs:
           npm run test:fleet:db
           npm run test:recruitment:db
           node scripts/test-fleet-alerts.mjs
+          node scripts/test-action-history.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: Test driver, manager, fleet and accountant interfaces
