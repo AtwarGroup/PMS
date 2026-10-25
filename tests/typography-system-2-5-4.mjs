@@ -11,10 +11,10 @@ for(const token of [
   '--atwar-type-page-title:26px',
   '--atwar-type-section-title:20px',
   '--atwar-type-card-title:16px',
-  '--atwar-type-body:14px',
-  '--atwar-type-control:13px',
-  '--atwar-type-meta:12px',
-  '--atwar-type-caption:11px'
+  '--atwar-type-body:16px',
+  '--atwar-type-control:14px',
+  '--atwar-type-meta:14px',
+  '--atwar-type-caption:12px'
 ])assert.ok(typography.includes(token),`Missing typography token: ${token}`);
 
 for(const selector of ['.atwar-nav a','.atwar-side-link','.atwar-main :where(h1)','.atwar-main :where(h2)','.atwar-main :where(p,li,dd,dt,label,td)','.atwar-main :where(button,.btn,input,select,textarea)']){
@@ -23,12 +23,12 @@ for(const selector of ['.atwar-nav a','.atwar-side-link','.atwar-main :where(h1)
 for(const selector of ['.profile-overview span','.profile-overview strong','.professional-link b','.professional-link small','.job-fact span','.hybrid-meta b','.dash-card b','.dash-card small']){
   assert.ok(typography.includes(selector),`Profile/Home scale mismatch: ${selector}`);
 }
-assert.match(shell,/typography\.css\?v=2\.5\.4\.1/,'The canonical typography layer must be loaded by the shared shell');
+assert.match(shell,/typography\.css\?v=2\.8\.4/,'The canonical typography layer must be loaded by the shared shell');
 assert.match(shell,/DOMContentLoaded/,'Typography must load after page-local styles');
 assert.doesNotMatch(typography,/--atwar-type-(?:body|control|meta|caption):(?:[0-9]|10)px/,'Canonical readable text must not be smaller than 11px');
 
 for(const page of ['landing.html','login.html','privacy.html']){
-  assert.match(read(page),/typography\.css\?v=2\.5\.4/,`${page} must load the canonical typography layer`);
+  assert.match(read(page),/typography\.css\?v=2\.8\.4/,`${page} must load the canonical typography layer`);
 }
 
 console.log('ATWAR ONE V2.5.4 typography-system audit passed.');

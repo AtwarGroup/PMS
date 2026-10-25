@@ -191,3 +191,23 @@
 /* Account dialogs sit outside the page shell. */
 .password-dialog{font-family:var(--atwar-font);color:#17233a}.password-box{border:1px solid #e2e8f0!important;border-radius:16px!important;box-shadow:0 16px 48px #0f172a24!important;padding:24px!important}.password-box h2{font-size:20px!important}.password-box :is(p,label){font-size:14px!important;line-height:1.75}.password-box :is(input,button){font:500 13px var(--atwar-font);min-height:42px;border-radius:10px}.password-box button{font-weight:700}.password-box input:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
 @media(max-width:560px){.atwar-main :is(.profile-job-viewer-head,.profile-job-viewer-body,.kpi-framework-v2){padding:16px!important}.atwar-main .professional-link{padding:14px!important}.password-box{padding:18px!important;margin:12px;max-width:calc(100vw - 24px)}}
+
+/* Shared desktop gutters and a stable branded header, including task modules. */
+:root{--atwar-content-max:1600px}
+.atwar-main :is(.atwar-content,.task-suite-page){max-width:var(--atwar-content-max)!important}
+.atwar-topbar:has(.atwar-header-task-nav){height:auto!important;flex-wrap:wrap!important;min-height:var(--atwar-header-height)!important;padding-block:14px!important}
+.atwar-topbar .atwar-top-brand{min-width:0}
+.atwar-topbar .atwar-header-task-nav{order:2;flex:1 0 100%;max-width:100%;min-width:0;overflow-x:auto}
+.atwar-topbar .atwar-org-title{min-width:0}
+.atwar-topbar .atwar-org-title h2{overflow-wrap:anywhere;white-space:normal!important}
+.atwar-main :is(.space-welcome p,.space-sync,.space-row-copy small,.space-summary-item span,.space-empty,.space-panel-head a,.space-action-options>summary,.kanban-card-meta,.task-secondary,.task-operational){color:var(--atwar-muted)!important}
+@media(min-width:1101px){:root{--atwar-sidebar-width:200px}.atwar-nav a{white-space:normal}}
+@media(max-width:1200px){.atwar-topbar:has(.atwar-header-task-nav) .atwar-pm-label{display:none!important}}
+@media(max-width:700px){
+ .atwar-shell{grid-template-columns:minmax(0,1fr)!important}
+ .atwar-shell .atwar-sidebar{position:fixed!important;inset:0 0 0 auto!important;height:100dvh!important;min-height:0!important}
+ .atwar-topbar:has(.atwar-header-task-nav){height:auto!important}
+ .atwar-topbar:has(.atwar-header-task-nav) .atwar-top-brand{flex:1 1 calc(100% - 64px)!important}
+ .atwar-topbar .atwar-task-tools{flex:1 1 100%!important;flex-wrap:wrap!important;justify-content:flex-start}
+ .atwar-header-task-nav a{min-height:44px}
+}
