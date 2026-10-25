@@ -23,7 +23,7 @@ assert.match(login, /autocomplete="current-password"/);
 assert.match(login, /aria-describedby="loginHelp"/);
 
 const landing = read('landing.html');
-assert.match(landing, /Production 2\.8\.4/);
+assert.match(landing, /Production 2\.8\.5/);
 assert.doesNotMatch(landing, /Production 1\.7E/);
 
 console.log('System rating hardening checks passed.');

@@ -106,14 +106,14 @@ function render() {
         })[r.status] === context.user_id,
     );
     root.innerHTML = `${taskPanel(snapshot.tasks || [])}<div class="rec-metrics">${[
-      ["شواغر مفتوحة", d.open],
-      ["احتياجات تحت الاعتماد", d.pending],
-      ["مرشحون في المقابلات", d.interviews],
-      ["باشروا العمل", d.hired],
+      ["شواغر مفتوحة", d.open, "blue"],
+      ["احتياجات تحت الاعتماد", d.pending, "purple"],
+      ["مرشحون في المقابلات", d.interviews, "warning"],
+      ["باشروا العمل", d.hired, "success"],
     ]
       .map(
-        ([l, v]) =>
-          `<article class="rec-metric"><span>${l}</span><strong>${v}</strong></article>`,
+        ([l, v, tone]) =>
+          `<article class="rec-metric atwar-metric" data-tone="${tone}"><span>${l}</span><strong>${v}</strong></article>`,
       )
       .join(
         "",
@@ -175,7 +175,7 @@ function render() {
         r.target_date < new Date().toISOString().slice(0, 10) &&
         !["closed", "rejected", "cancelled"].includes(r.status),
     );
-    root.innerHTML = `<section class="rec-card"><h2>مؤشرات حركة التوظيف</h2><p class="rec-muted">تعكس المؤشرات السجلات المتاحة لك.</p>${rows.map(([l, v]) => `<div class="rec-row"><span>${esc(l)}</span><strong>${v}</strong></div>`).join("")}<div class="rec-actions">${button("طباعة التقرير", "data-print")}</div></section><section class="rec-card"><h2>تجاوزت تاريخ المباشرة المستهدف</h2>${requestRows(overdue)}</section>`;
+    root.innerHTML = `<section class="rec-card"><h2>مؤشرات حركة التوظيف</h2><p class="rec-muted">تعكس المؤشرات السجلات المتاحة لك.</p>${rows.map(([l, v, tone]) => `<div class="rec-row"><span>${esc(l)}</span><strong>${v}</strong></div>`).join("")}<div class="rec-actions">${button("طباعة التقرير", "data-print")}</div></section><section class="rec-card"><h2>تجاوزت تاريخ المباشرة المستهدف</h2>${requestRows(overdue)}</section>`;
   }
   if (view === "reference") {
     root.innerHTML = `${calendarPanel()}<section class="rec-card"><h2>مرجع الرواتب والدرجات</h2><p class="rec-muted">نسخة مستوردة من منظومة السلم المعتمدة. الإجمالي يشمل الأساسي والسكن والمواصلات. ربط مسمى مختلف يتطلب توثيق المطابقة من الموارد البشرية.</p><div class="rec-table"><table><thead><tr><th>الوظيفة</th><th>الدرجة</th><th>السعودي</th><th>غير السعودي</th></tr></thead><tbody>${context.salaries.map((s) => `<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(s.saudi_min)} – ${money(s.saudi_max)}</td><td>${s.expat_min == null ? "—" : money(s.expat_min) + " – " + money(s.expat_max)}</td></tr>`).join("")}</tbody></table></div></section>`;
@@ -334,7 +334,7 @@ function renderRequest() {
       ["الدرجة", r.salary_snapshot?.grade || "تظهر للمخولين"],
       ["مرجع السلم", r.salary_snapshot?.title || "تظهر للمخولين"],
     ]
-      .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
+      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
       )}</dl><p class="rec-note">${esc(r.reason)}</p><details><summary>الوصف الوظيفي ومعايير الاختيار</summary><p class="rec-note">${esc(r.job_snapshot.purpose || "")}\n${esc(Object.values(r.job_snapshot.content?.qualifications || {}).join("\n"))}</p>${r.criteria.map((c) => `<p>${esc(c.label)} · ${c.weight}%</p>`).join("")}</details><div class="rec-actions">${ownStage ? button("اعتماد المرحلة", 'data-rec-action="approve"', false) + button("رفض الطلب", 'data-rec-action="reject"') : ""}${["draft", "rejected"].includes(r.status) && [r.created_by,r.recruiter_id,r.hr_id].includes(context.user_id) ? button("ربط سلم الرواتب", "data-link-salary") : ""}${context.manage && r.status === "open" && r.route === "advertised" ? button(r.published ? "إيقاف الإعلان" : "تجهيز ونشر الإعلان", `data-rec-action="${r.published ? "unpublish" : "publish"}"`) : ""}${!["closed", "cancelled", "rejected"].includes(r.status) && (context.manage || context.user_id === r.created_by) ? button("إضافة مرشح", "data-add-candidate", false) : ""}${context.user_id === r.department_approver_id && !["closed", "cancelled", "cancellation_approval"].includes(r.status) ? button("إلغاء الاحتياج", 'data-rec-action="cancel"') : ""}</div>${r.published ? `<p><a href="careers.html?job=${r.public_token}" target="_blank" rel="noopener">فتح صفحة التقديم للشاغر</a></p>` : ""}${requestExtras(r)}<section class="rec-card"><h3>المرشحون لهذا الشاغر</h3>${detail.applications.length ? detail.applications.map((a) => `<div class="rec-row"><div><strong>${esc(a.candidate.full_name)}</strong><p>${badge(a.stage, stages)} · ${esc(a.source)}</p></div>${button("ملف المرشح", `data-detail-app="${a.id}"`)}</div>`).join("") : empty("أضف مرشح الإدارة أو انشر الإعلان لاستقبال الطلبات.")}</section><details><summary>سجل الإجراءات والقرارات</summary><div class="rec-history">${detail.events.map((e) => `<p><strong>${esc(eventLabel(e.action))}</strong><br>${esc(e.note)}<br><small>${esc(name(e.actor_id))} · ${esc(date(e.created_at))}</small></p>`).join("")}</div></details>`,
@@ -544,7 +544,7 @@ function renderApplication(id) {
       ["الفئة", c.saudi ? "سعودي" : "غير سعودي"],
       ["مصدر الترشيح", a.source],
     ]
-      .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
+      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
       )}</dl><h3>السيرة والخبرة</h3><div class="rec-actions">${button("فتح السيرة الذاتية", `data-resume-open="${a.id}"`)}${context.manage || r.created_by === context.user_id ? button("إرفاق سيرة PDF", `data-resume-add="${a.id}"`) : ""}</div><p class="rec-note">${esc(c.experience)}\n${esc(c.resume_text)}</p><p class="rec-muted">${esc(a.referral_note)}</p><div class="rec-actions">${active && (a.stage === "assessment" ? context.user_id === r.department_approver_id : context.user_id === r.recruiter_id) && { screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage] ? button("نقل إلى " + stages[{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]], `data-stage-app="${a.id}" data-stage="${{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]}"`, false) : ""}${active && ["screening", "interview", "assessment"].includes(a.stage) && ([r.recruiter_id,r.supervisor_id,r.department_approver_id].includes(context.user_id)) ? button("جدولة / توثيق مقابلة", `data-interview-app="${a.id}"`) : ""}${active && context.user_id === r.recruiter_id && !a.internal_employee_id && ["recommended", "offer"].includes(a.stage) ? button("إعداد عرض وظيفي", `data-offer-app="${a.id}"`, false) : ""}${active && context.user_id === r.recruiter_id && a.stage === "accepted" && !a.internal_employee_id ? button("مراجعة وتسجيل الموظف", `data-join-app="${a.id}"`, false) + button("لم يباشر", `data-stage-app="${a.id}" data-stage="no_show"`) : ""}${active && !["hired", "rejected", "withdrawn", "no_show"].includes(a.stage) ? (context.user_id === r.department_approver_id ? button("استبعاد مع السبب", `data-stage-app="${a.id}" data-stage="rejected"`) : "") + (context.user_id === r.recruiter_id ? button("انسحاب", `data-stage-app="${a.id}" data-stage="withdrawn"`) : "") : ""}</div>${applicationExtras(a,r)}<section class="rec-card"><h3>المقابلات والتقييم</h3>${interviews.length ? interviews.map((i) => `<div class="rec-row"><div><strong>${esc(name(i.interviewer_id))}</strong> · ${esc(date(i.scheduled_at))}<p>${esc({ scheduled: "مجدولة", completed: "مكتملة", absent: "لم يحضر" }[i.state])}${i.score != null ? " · " + i.score + " / 100" : ""}</p><p class="rec-muted">${esc(i.notes)}</p>${i.state === "completed" ? `<p>${esc({ suitable: "مناسب", conditional: "مناسب بشروط", unsuitable: "غير مناسب" }[i.recommendation])}</p>` : ""}</div>${i.state === "scheduled" && i.interviewer_id === context.user_id ? button("تسجيل النتيجة", `data-complete-interview="${i.id}"`) : ""}</div>`).join("") : empty("لا توجد مقابلات مسجلة.")}</section>${detail.can_pay ? `<section class="rec-card"><h3>العروض الوظيفية</h3>${offers.length ? offers.map((o) => `<div class="rec-card"><strong>العرض · النسخة ${o.version}</strong><p>${money(o.total)} شهريًا · ${esc(offerState(o.state))}</p><dl class="rec-detail"><div><dt>الأساسي</dt><dd>${money(o.basic)}</dd></div><div><dt>السكن</dt><dd>${money(o.housing)}</dd></div><div><dt>المواصلات</dt><dd>${money(o.transport)}</dd></div><div><dt>الدرجة</dt><dd>${esc(o.salary_snapshot.grade)}</dd></div></dl><p class="rec-note">${esc(o.benefits)}</p><p>المباشرة المتوقعة: ${esc(o.start_date)} · صالح حتى ${esc(o.expires_on)}</p>${o.exception_reason ? `<p class="rec-note">استثناء عن النطاق: ${esc(o.exception_reason)}</p>` : ""}<div class="rec-actions">${offerButtons(o)}${["approved", "sent", "accepted"].includes(o.state) ? button("عرض / طباعة الخطاب", `data-print-offer="${o.id}"`) : ""}</div></div>`).join("") : empty("لا توجد عروض.")}</section>` : ""}`,
@@ -852,7 +852,7 @@ function printOffer(id) {
       ["تاريخ المباشرة المتوقع", o.start_date],
       ["صلاحية العرض", o.expires_on],
     ]
-      .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
+      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
       )}</dl><p class="rec-note">${esc(o.benefits)}</p><p>قبول المرشح: ____________________ التاريخ: ____________________</p><p class="rec-muted">نسخة ${o.version} · ${esc(offerState(o.state))}</p></article><div class="rec-actions">${button("طباعة", "data-print")}${button("العودة للمرشح", `data-detail-app="${a.id}"`)}</div>`,
