@@ -208,3 +208,21 @@
 }
 #policyApp .policy-point-cards.policy-salary-print{display:none}
 @media print{#policyApp .policy-point-cards.policy-salary-print{display:block!important}}
+/* Simplified salary view is the default: wrapping points, no nested scroll panes. */
+#policyApp .policy-salary-mode{display:flex;gap:0;flex-wrap:wrap;border:1px solid #ffffff40;border-radius:5px;overflow:hidden}
+#policyApp .policy-salary-mode .atwar-btn{border:0;border-radius:0!important}
+#policyApp .policy-salary-mode .atwar-btn[aria-pressed="true"]{background:#e0c68f;color:#142b49;font-weight:800}
+#policyApp .policy-salary-scroll{max-height:none;overflow-y:visible}
+#policyApp.policy-salary-simplified .policy-salary-screen>.policy-salary-scroll{display:none}
+#policyApp.policy-salary-simplified .policy-salary-screen>.policy-point-cards,#policyApp.policy-salary-simplified .policy-salary-screen>.policy-registry-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#policyApp.policy-salary-simplified .policy-point-card{margin:0;min-width:0}
+#policyApp.policy-salary-simplified .policy-points-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:7px;min-width:0}
+#policyApp.policy-salary-simplified .policy-points-grid>div{min-width:0;padding:8px 6px}
+#policyApp.policy-salary-simplified .policy-registry-cards dd{min-width:0;overflow-wrap:anywhere}
+@media(max-width:1000px){#policyApp.policy-salary-simplified .policy-salary-screen>.policy-point-cards,#policyApp.policy-salary-simplified .policy-salary-screen>.policy-registry-cards{grid-template-columns:1fr}}
+@media print{#policyApp .policy-salary-mode{display:none!important}}
+#policyApp .policy-salary-pagination{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:16px 0 24px;font-size:12px;color:#526377}
+#policyApp .policy-salary-pagination button{font:inherit;background:white;border:1px solid #ccd6e2;padding:8px 16px;cursor:pointer;color:#203551}
+#policyApp .policy-salary-pagination select{width:auto;max-width:190px}
+#policyApp .policy-salary-pagination button:disabled{opacity:.45;cursor:default}
+@media print{#policyApp .policy-salary-pagination{display:none!important}}
