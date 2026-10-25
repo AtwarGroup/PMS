@@ -9,7 +9,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
-    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.4" />
+    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/fleet.css?v=3" />
     <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=2" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
@@ -17,7 +17,7 @@
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
     <script src="../assets/js/supabase-runtime.js"></script>
     <script src="../assets/js/session-service.js?v=2.5.2"></script>
-    <script src="../assets/js/shell-components.js?v=2.8.4"></script>
+    <script src="../assets/js/shell-components.js?v=2.8.5"></script>
     <script src="../assets/js/ui-feedback.js?v=2.5.27"></script>
   </head>
   <body>
@@ -92,18 +92,18 @@
           >
             <label class="fleet-dashboard-scope">نطاق لوحة المتابعة<select id="dashboardScope" aria-label="نطاق لوحة المتابعة"></select></label>
             <div class="fleet-metrics">
-              <article>
+              <article data-tone="blue" class="atwar-metric">
                 <span>طلبات مفتوحة</span><strong id="openCount">—</strong>
               </article>
-              <article>
+              <article data-tone="warning" class="atwar-metric">
                 <span>عهد مصروفة لم تُسوّ</span
                 ><strong id="outstanding">—</strong><small>ر.س</small>
               </article>
-              <article>
+              <article data-tone="blue" class="atwar-metric">
                 <span>تكلفة الصيانة المغلقة</span
                 ><strong id="totalCost">—</strong><small>ر.س</small>
               </article>
-              <article>
+              <article data-tone="success" class="atwar-metric">
                 <span>طلبات أُغلقت</span><strong id="closedCount">—</strong>
               </article>
             </div>

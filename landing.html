@@ -29,10 +29,15 @@ main{flex:1;display:grid;place-items:center;padding:30px}
 footer{padding:20px 42px;color:var(--atwar-public-muted);font-size:11px;display:flex;justify-content:space-between}
 @media(max-width:1180px){.apps{grid-template-columns:repeat(2,minmax(240px,320px))}}@media(max-width:650px){.apps{grid-template-columns:1fr;max-width:360px;margin:auto}}
 @media(max-width:650px){header{padding:20px;gap:16px;flex-wrap:wrap}.hero h2{font-size:32px}main{padding:20px}.apps{width:100%}.app-card{padding:24px}footer{padding:20px;gap:12px;flex-wrap:wrap}}
+body.atwar-portal{--atwar-public-ink:#fff;--atwar-public-muted:#cbd7e8;--atwar-public-line:rgba(255,255,255,.16);background:linear-gradient(135deg,#07182f,#0c274a 55%,#0d3562);color:#fff}
+body.atwar-portal .app-card{background:rgba(255,255,255,.08);border-color:var(--atwar-public-line);color:#fff;box-shadow:0 18px 40px rgba(0,0,0,.18)}
+body.atwar-portal .app-card:hover{background:rgba(255,255,255,.12)}
+body.atwar-portal .brand p,body.atwar-portal footer{color:#b9c7da}
+body.atwar-portal header>div:last-child{color:#9ecfff!important}
 </style>
 <link rel="stylesheet" href="assets/css/typography.css?v=2.8.4" data-atwar-typography>
-<link rel="stylesheet" href="assets/css/standalone-theme.css?v=2.8.4"></head>
-<body class=" atwar-standalone ">
+<link rel="stylesheet" href="assets/css/standalone-theme.css?v=2.8.5"></head>
+<body class=" atwar-standalone atwar-portal ">
 <div class="wrap">
 <header>
   <div class="brand"><div class="mark"></div><div><h1>ATWAR ONE</h1><p>منصة الأعمال والأداء المؤسسي</p></div></div>
@@ -45,7 +50,7 @@ footer{padding:20px 42px;color:var(--atwar-public-muted);font-size:11px;display:
     <div id="systemsGrid" class="apps"></div>
   </section>
 </main>
-<footer><span>ATWAR ONE © 2026</span><span>Production 2.8.4</span></footer>
+<footer><span>ATWAR ONE © 2026</span><span>Production 2.8.5</span></footer>
 </div>
 <script src="assets/js/systems-config.js"></script>
 <script>

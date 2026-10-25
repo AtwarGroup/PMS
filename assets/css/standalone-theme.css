@@ -1,5 +1,5 @@
 @import url('./design-system.css?v=2.5.8');
-@import url('./app-theme.css?v=2.8.4');
+@import url('./app-theme.css?v=2.8.5');
 @import url('./typography.css?v=2.8.4');
 /* Shared identity for entry, help and printable forms. */
 :root{--atwar-public-bg:var(--atwar-bg);--atwar-public-ink:var(--atwar-text);--atwar-public-muted:var(--atwar-muted);--atwar-public-line:var(--atwar-border);--atwar-public-blue:var(--atwar-blue-600)}

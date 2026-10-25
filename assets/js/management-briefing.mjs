@@ -29,7 +29,7 @@ export function renderManagementBriefing(m){
  if(!m.enabled)return '';
  const empty=text=>`<p class="space-empty">${escape(text)}</p>`;
  const link=(t,note)=>`<a class="space-row" href="${escape(taskLink(t))}"><span class="space-row-copy"><strong>${escape(t.title)}</strong><small>${escape(t.assignee_name_snapshot||'المسند إليه')} · ${escape(note)}</small></span></a>`;
- const count=(label,n,target)=>`<a class="space-summary-item" href="#${target}"><strong>${n}</strong><span>${label}</span></a>`;
+ const count=(label,n,target)=>`<a class="space-summary-item atwar-metric" data-tone="${({managementCompleted:'success',managementOverdue:'danger',managementPending:'purple',managementBlockers:'warning'})[target]||'blue'}" href="#${target}"><strong>${n}</strong><span>${label}</span></a>`;
  const section=(id,title,body)=>`<section class="management-section" id="${id}"><h3>${title}</h3>${body}</section>`;
  const metrics=count('مكتملة خلال آخر ٧ أيام',m.completed.length,'managementCompleted')+count('متأخرة حاليًا',m.overdue.length,'managementOverdue')+count('بانتظار الاعتماد',m.pending.length,'managementPending')+count('عوائق مسجلة',m.blockers.length,'managementBlockers');
  const concentration=m.concentrations.map(g=>`<details class="management-concentration"><summary>${escape(g.owner)} · ${escape(g.date)} · ${g.tasks.length} مهام مستحقة</summary>${g.tasks.map(t=>link(t,'موعد الاستحقاق: '+t.due_date)).join('')}</details>`).join('');

@@ -10,7 +10,8 @@ const root=path.resolve(__dirname,'../..');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,`${file} overflow ${width}`);
   if(file==='landing.html'){
    await page.waitForFunction(()=>document.querySelectorAll('.app-card').length===4);
-   const contrast=await page.locator('.app-card').evaluateAll(cards=>{const lum=s=>{const c=s.match(/[\d.]+/g).slice(0,3).map(v=>{v=+v/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return c[0]*.2126+c[1]*.7152+c[2]*.0722};return cards.flatMap(card=>[...card.querySelectorAll('h3,p')].map(e=>{const a=lum(getComputedStyle(e).color),b=lum(getComputedStyle(card).backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}))});assert(contrast.every(c=>c>=4.5),`Entry text contrast ${contrast}`);
+   const contrast=await page.locator('.app-card').evaluateAll(cards=>{const rgb=s=>s.match(/[\d.]+/g).map(Number);const lum=c=>{c=c.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return c[0]*.2126+c[1]*.7152+c[2]*.0722};return cards.flatMap(card=>[...card.querySelectorAll('h3,p')].map(e=>{const rgba=rgb(getComputedStyle(card).backgroundColor),alpha=rgba[3]??1;const base=[13,53,98];const background=rgba.slice(0,3).map((v,i)=>v*alpha+base[i]*(1-alpha));const a=lum(rgb(getComputedStyle(e).color)),b=lum(background);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}))});assert(contrast.every(c=>c>=4.5),`Entry text contrast ${contrast}`);
+   assert.match(await page.locator('body').evaluate(e=>getComputedStyle(e).backgroundImage),/rgb\(7, 24, 47\).*rgb\(12, 39, 74\).*rgb\(13, 53, 98\)/,'Keep the original navy portal palette');
   }else{
    assert(await page.locator('.atwar-top-brand').isVisible(),`${file} missing shared identity`);
    if(width>1100)assert(await page.locator('.atwar-sidebar').isVisible(),`${file} sidebar missing`);
