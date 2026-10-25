@@ -1,4 +1,4 @@
-import {renderJobLifecycle} from './job-lifecycle-view.mjs?v=2.5.60';
+import {renderJobLifecycle} from './job-lifecycle-view.mjs?v=2.8.10';
 import {jobStage,publicationChanges,riyadhToday,periodicDue} from './job-workflow-model.mjs?v=2.5.62';
 const sb = await window.atwarGetSupabase();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -167,6 +167,7 @@ function headerActions() {
 }
 
 function render() {
+  const historyTab=document.querySelector('[data-tab="history"]');if(historyTab){if(me?.role==='admin'){historyTab.hidden=false;historyTab.style.removeProperty('display');}else historyTab.remove();}if(activeTab==='history'&&me?.role!=='admin')activeTab='overview';
   const reviewer = users.find(user => user.id === job.reviewer_id);
   const result = quality();
   byId('jobCode').textContent = job.job_code;
@@ -396,11 +397,11 @@ async function loadRelated() {
     sb.from('job_description_forms').select('usage_note,display_order,form_library(*)').eq('job_description_id',job.id).order('display_order'),
     sb.from('job_description_comments').select('*').eq('job_description_id',job.id).order('created_at'),
     canStage('ASSIGN') ? sb.from('employee_job_assignments').select('*') : Promise.resolve({data:[]}),
-    sb.from('job_description_versions').select('revision,action,snapshot,actor_id,change_note,created_at').eq('job_description_id',job.id).order('revision',{ascending:false}).limit(30),
+    me.role==='admin'?sb.from('job_description_versions').select('revision,action,snapshot,actor_id,change_note,created_at').eq('job_description_id',job.id).order('revision',{ascending:false}).limit(30):Promise.resolve({data:[]}),
     sb.from('job_scorecard_weight_references').select('source_revision,kpi_position,indicator_name,weight_percent').eq('job_description_id',job.id).order('source_revision',{ascending:false}).order('kpi_position'),
     sb.from('job_publication_schedules').select('*').eq('job_description_id',job.id).order('approved_at',{ascending:false}),
     sb.from('job_periodic_reviews').select('*').eq('job_description_id',job.id).maybeSingle(),
-    sb.from('job_periodic_review_events').select('*').eq('job_description_id',job.id).order('reviewed_at',{ascending:false}).limit(20)
+    me.role==='admin'?sb.from('job_periodic_review_events').select('*').eq('job_description_id',job.id).order('reviewed_at',{ascending:false}).limit(20):Promise.resolve({data:[]})
   ]);
   for(const response of responses.slice(6))if(response.error)throw response.error;
   schedules=responses[6].data||[];periodicReview=responses[7].data||null;periodicEvents=responses[8].data||[];
@@ -481,4 +482,4 @@ async function requestPeriodicChange(){
  const r=await sb.rpc('request_job_periodic_change',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
 }
 
-function historyView(){const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}
+function historyView(){if(me.role!=='admin')return ''; const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}
