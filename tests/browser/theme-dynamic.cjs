@@ -22,6 +22,13 @@ const root=path.resolve(__dirname,'../..');
    for(const [fixture,attribute] of [['daily-work','data-preview'],['libraries','data-preview'],['job-document','data-preview']]){
     await page.goto('http://127.0.0.1:8765/tests/fixtures/'+fixture+'.html');const values=await page.locator('['+attribute+']').evaluateAll(es=>[...new Set(es.map(e=>e.getAttribute('data-preview')))]);
     for(const value of values){await page.locator(`[${attribute}="${value}"]`).click();await check(`${fixture}-${value}-${width}`);}
+    if(fixture==='libraries'){
+     await page.locator('[data-preview="policies"]').click();
+     await page.locator('.policy-card').evaluateAll(cards=>cards.slice(1).forEach(card=>card.hidden=true));
+     await check(`policy-single-card-${width}`);
+     const card=await page.locator('.policy-card').first().boundingBox();assert(card.width<=(width===1440?550:width),`Single policy must remain a compact card at ${width}`);
+     await page.locator('.policy-card').evaluateAll(cards=>cards.forEach(card=>card.hidden=false));
+    }
    }
    await page.goto('http://127.0.0.1:8765/tests/fixtures/employee-changes.html');
    for(const view of ['library','reviews','assignments','requests']){await page.locator(`[data-view="${view}"]`).click();await check(`library-tab-${view}-${width}`);}
