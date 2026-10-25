@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createTestDB, ids, seedAssignedVehicle } from "./fleet-test-db.mjs";
 const root = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
-export async function startPreview() {
+export async function startPreview({currentWorkflow=true}={}) {
   const { db, rpc } = await createTestDB();
   let queue = Promise.resolve();
   const call = (u, n, a) => {
@@ -29,6 +29,7 @@ export async function startPreview() {
     },
     p_reason: "بيانات تجريبية معزولة",
   });
+  if(currentWorkflow){const{applyFleetV2}=await import('./fleet-v2-fixture.mjs');await applyFleetV2(db);}
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, "http://localhost");

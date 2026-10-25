@@ -1,10 +1,12 @@
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
-import {initFleetOperations} from "./fleet-operations.mjs?v=2.8.0";
+import {initFleetOperations} from "./fleet-operations.mjs?v=20261025";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,
   dashboardRequests,
   states,
+  maintenanceKinds,
+  minimumQuotes,
   types,
   actions,
   money,
@@ -14,7 +16,7 @@ import {
   summary,
   settlement,
   escapeHTML,
-} from "./fleet-model.mjs?v=3";
+} from "./fleet-model.mjs?v=4";
 const esc = value => escapeHTML(englishDigits(value));
 const $ = (id) => document.getElementById(id),
   sb = await window.atwarGetSupabase();
@@ -169,112 +171,33 @@ function vehicleEditor(id) {
       status("تم حفظ السيارة وتوثيق التغيير.");
     });
 }
-function quoteEditor(q = {}, i) {
-  return `<section class="fleet-quote fleet-wide" data-quote><header><b>عرض ${i + 1}</b>${button("إزالة", "data-remove-quote", true)}</header><div class="fleet-form">${field("supplier", "المورد / الورشة", q.supplier, "text", 'required minlength="2" maxlength="200"')}<label>المرفق ${q.file_id ? '<small class="fleet-muted">يوجد مرفق محفوظ؛ ارفع ملفًا لاستبداله.</small>' : ""}<input name="file" type="file" accept="application/pdf,image/jpeg,image/png" ${q.file_id ? "" : "required"}></label><div class="fleet-quote-grid fleet-wide">${amountField("parts", "قطع الغيار", q.parts || 0)}${amountField("labor", "أجرة اليد", q.labor || 0)}${amountField("tax", "الضريبة", q.tax || 0)}</div></div><p>الإجمالي: <b data-quote-total>${money(quoteTotal(q))}</b> ر.س</p><input type="hidden" name="file_id" value="${esc(q.file_id || "")}"></section>`;
+function quoteEditor(q={},i){
+ return `<section class="fleet-quote fleet-wide" data-quote><header><b>عرض ${i+1}</b>${button('إزالة','data-remove-quote',true)}</header><div class="fleet-form">${field('supplier','الورشة',q.supplier,'text','required minlength="10" maxlength="200"')}${field('phone','رقم جوال الورشة',q.phone,'tel','required pattern="(05[0-9]{8}|\\+9665[0-9]{8})" dir="ltr" placeholder="05XXXXXXXX"')}${amountField('parts','قيمة قطع الغيار',q.parts??0)}${amountField('labor','قيمة أجرة اليد',q.labor??0)}${amountField('tax','الضريبة',q.tax??0)}${['parts','labor'].map(k=>`<label>${k==='parts'?'مرفق عرض قطع الغيار':'مرفق عرض أجرة اليد'}${q[k+'_file_id']?'<small>يوجد مرفق محفوظ؛ ارفع ملفًا لاستبداله.</small>':''}<input type="file" name="${k}_file" accept="application/pdf,image/jpeg,image/png" ${q[k+'_file_id']?'':'required'}><small class="fleet-muted">PDF أو صورة واضحة، حتى 5 ميجابايت.</small></label><input type="hidden" name="${k}_file_id" value="${esc(q[k+'_file_id']||'')}">`).join('')}</div><p>الإجمالي: <b data-quote-total>${money(quoteTotal(q))}</b> ر.س</p></section>`;
 }
-async function requestEditor(id) {
-  let r = {};
-  if (id) r = (await rpc("fleet_detail", { p_id: id })).request;
-  currentEdit = r;
-  const vehicles = context.vehicles.filter(
-      (v) => v.can_request && v.active,
-    ),
-    v = vehicles.find((v) => v.id === r.vehicle_id) || vehicles[0];
-  show(
-    id ? `تعديل الطلب #${r.number}` : "طلب صيانة جديد",
-    `${context.can_operate ? "اختر سيارة الموظف المعني؛ يمكنك تقديم الطلب لأي موظف." : "اختر سيارتك أو سيارة أحد موظفيك المباشرين؛ يبقى الطلب باسم صاحب السيارة."}`,
-    `<form id="requestForm" class="fleet-form"><label>السيارة<select name="vehicle_id" ${vehicles.length === 1 ? 'aria-label="سيارتك المسجلة"' : ""}>${vehicles.map((v) => opt(v.id, `${v.driver_name || "غير مسندة"} — ${v.plate} — ${v.vehicle_type} ${v.model}`, r.vehicle_id || vehicles[0]?.id)).join("")}</select></label><label>المحاسب المسؤول<select name="accountant_id" required><option value="">اختر المحاسب</option>${context.accountants
-      .filter((a) => a.id !== context.user_id)
-      .map((a) => opt(a.id, a.name, r.accountant_id))
-      .join(
-        "",
-      )}</select></label><label>نوع الطلب<select name="request_type">${Object.entries(
-      types,
-    )
-      .map(([key, label]) => opt(key, label, r.request_type || "repair"))
-      .join(
-        "",
-      )}</select></label>${field("odometer", "قراءة العداد الحالية (كم)", r.odometer ?? v?.odometer ?? 0, "number", `required min="${v?.odometer || 0}" step="1"`)}<label class="fleet-wide">تفاصيل الصيانة المطلوبة<textarea name="description" required minlength="3" maxlength="4000">${esc(r.description)}</textarea></label><label class="fleet-wide">سبب العطل والملاحظات<textarea name="fault_notes" maxlength="4000">${esc(r.fault_notes)}</textarea></label><div class="fleet-wide"><h3>عروض الأسعار</h3><p class="fleet-muted">ثلاثة عروض من موردين مختلفين. عند إرفاق أقل من ثلاثة، يتطلب الطلب استثناءً مسببًا من مسؤول الأسطول.</p></div><div id="quotesHost" class="fleet-form fleet-wide">${(r.quotes?.length ? r.quotes : [{}, {}, {}]).map(quoteEditor).join("")}</div><div class="fleet-wide">${button("إضافة عرض", 'id="addQuote"', true)}</div><label>العرض المختار<select name="selected_quote" id="selectedQuote"></select></label><div class="fleet-wide fleet-finance">حتى 300 ر.س: اعتماد المدير ثم الإصلاح من عهدة السائق والاستعاضة بعد مراجعة الأسطول.<br>أكثر من 300 ر.س: اعتماد الأسطول ثم الصرف والإصلاح والتسوية.</div><div class="fleet-wide fleet-form-actions"><button type="submit" class="fleet-btn">حفظ المسودة والمرفقات</button></div></form>`,
-  );
-  const refresh = () => {
-    const select = $("selectedQuote"),
-      old = select.value;
-    select.innerHTML = [...document.querySelectorAll("[data-quote]")]
-      .map((q, i) => opt(i, `عرض ${i + 1}`, old || r.selected_quote || 0))
-      .join("");
-  };
-  refresh();
-  $("addQuote").onclick = () => {
-    const n = $("quotesHost").children.length;
-    if (n >= 10) return;
-    $("quotesHost").insertAdjacentHTML("beforeend", quoteEditor({}, n));
-    refresh();
-  };
-  $("quotesHost").onclick = (e) => {
-    if (e.target.closest("[data-remove-quote]")) {
-      e.target.closest("[data-quote]").remove();
-      refresh();
-    }
-  };
-  $("quotesHost").oninput = (e) => {
-    const q = e.target.closest("[data-quote]");
-    if (q) {
-      const values = Object.fromEntries(
-        [...q.querySelectorAll("input")].map((x) => [x.name, x.value]),
-      );
-      q.querySelector("[data-quote-total]").textContent = money(
-        quoteTotal(values),
-      );
-    }
-  };
-  $("requestForm").elements.vehicle_id.onchange = (e) => {
-    const v = vehicles.find((v) => v.id === e.target.value),
-      o = $("requestForm").elements.odometer;
-    o.min = v.odometer;
-    o.value = v.odometer;
-  };
-  $("requestForm").onsubmit = (e) =>
-    run(e, async () => {
-      const form = e.target,
-        data = Object.fromEntries(new FormData(form)),
-        quotes = [...document.querySelectorAll("[data-quote]")].map((q) =>
-          Object.fromEntries(
-            [...q.querySelectorAll("input:not([type=file])")].map((x) => [
-              x.name,
-              x.value,
-            ]),
-          ),
-        );
-      data.quotes = quotes;
-      const saved = await rpc("fleet_request_save", {
-        p_id: currentEdit.id || null,
-        p_revision: currentEdit.revision || null,
-        p_data: data,
-      });
-      // Retain the saved ID immediately: an upload retry must never create a duplicate request.
-      currentEdit = (await rpc("fleet_detail", { p_id: saved })).request;
-      for (const [i, q] of [
-        ...document.querySelectorAll("[data-quote]"),
-      ].entries()) {
-        const file = q.querySelector("input[type=file]").files[0];
-        if (file) {
-          const fileId = await upload(saved, "quote", file);
-          quotes[i].file_id = fileId;
-          q.querySelector("[name=file_id]").value = fileId;
-          q.querySelector("input[type=file]").value = "";
-          q.querySelector("input[type=file]").required = false;
-        }
-      }
-      const latest = (await rpc("fleet_detail", { p_id: saved })).request;
-      await rpc("fleet_request_save", {
-        p_id: saved,
-        p_revision: latest.revision,
-        p_data: { ...data, quotes },
-      });
-      await load();
-      $("fleetDialog").close();
-      status("تم حفظ المسودة. افتحها من طلبات الصيانة لإرسالها للاعتماد.");
-    });
+async function requestEditor(id){
+ let r={};if(id)r=(await rpc('fleet_detail',{p_id:id})).request;currentEdit=r;
+ const vehicles=context.vehicles.filter(v=>v.can_request&&v.active),v=vehicles.find(v=>v.id===r.vehicle_id)||vehicles[0];
+ show(id?`تعديل الطلب #${r.number}`:'طلب صيانة جديد','جميع الحقول الظاهرة مطلوبة. النصوص 10 أحرف على الأقل، وحفظ المسودة لا يرسل الطلب للاعتماد.',`<form id="requestForm" class="fleet-form"><label>السيارة<select name="vehicle_id" required>${vehicles.map(v=>opt(v.id,`${v.driver_name||''} — ${v.plate} — ${v.vehicle_type}`,r.vehicle_id||vehicles[0]?.id)).join('')}</select></label><label>المحاسب المسؤول<select name="accountant_id" required><option value="">اختر المحاسب</option>${context.accountants.filter(a=>a.id!==context.user_id).map(a=>opt(a.id,a.name,r.accountant_id)).join('')}</select></label><label>نوع الطلب<select name="request_type" required>${Object.entries(types).map(([k,t])=>opt(k,t,r.request_type||'repair')).join('')}</select></label><label id="maintenanceKindField">نوع الصيانة الدورية<select name="maintenance_kind"><option value="">اختر نوع الصيانة</option>${Object.entries(maintenanceKinds).map(([k,t])=>opt(k,t,r.maintenance_kind)).join('')}</select></label><label id="stopsVehicleField">هل يتطلب الإصلاح توقف السيارة؟<select name="stops_vehicle"><option value="">اختر…</option>${opt('true','نعم',r.stops_vehicle===true?'true':'')}${opt('false','لا',r.stops_vehicle===false?'false':'')}</select></label><label id="needsTowField">هل يتطلب توفير سطحة لنقل السيارة للورشة؟<select name="needs_tow"><option value="">اختر…</option>${opt('true','نعم',r.needs_tow===true?'true':'')}${opt('false','لا',r.needs_tow===false?'false':'')}</select></label>${field('odometer','قراءة العداد الحالية (كم)',r.odometer??v?.odometer??0,'number',`required min="${v?.odometer||0}" step="1"`)}<label class="fleet-wide">تفاصيل الصيانة المطلوبة<textarea name="description" required minlength="10" maxlength="4000">${esc(r.description)}</textarea></label><label class="fleet-wide">سبب العطل والملاحظات<textarea name="fault_notes" required minlength="10" maxlength="4000">${esc(r.fault_notes)}</textarea></label><div class="fleet-wide"><h3>عروض الأسعار</h3><p id="quoteRequirement" class="fleet-muted"></p></div><div id="quotesHost" class="fleet-form fleet-wide">${(r.quotes?.length?r.quotes:[{},{}]).map(quoteEditor).join('')}</div><div class="fleet-wide">${button('إضافة عرض','id="addQuote"',true)}</div><label>العرض المختار<select name="selected_quote" id="selectedQuote" required></select></label><p class="fleet-wide fleet-finance">حتى 300 ريال: استعاضة بعد الإصلاح. أكثر من 300 ريال: صرف مسبق ثم الإصلاح والتسوية. الصيانة الطارئة تُراجع لدى مسؤول الأسطول دون مبرر استعجال إضافي.</p><div class="fleet-wide fleet-action-buttons"><button type="submit" name="intent" value="draft" class="fleet-btn secondary">حفظ مسودة</button><button type="submit" name="intent" value="send" class="fleet-btn">إرسال الطلب للاعتماد</button></div></form>`);
+ const form=$('requestForm');
+ const refresh=()=>{const select=$('selectedQuote'),old=select.value;select.innerHTML=[...$('quotesHost').children].map((q,i)=>opt(i,`عرض ${i+1}`,old||r.selected_quote||0)).join('');};
+ const conditions=()=>{const emergency=form.elements.request_type.value==='emergency',stops=emergency&&form.elements.stops_vehicle.value==='true';for(const [host,key,visible]of[['maintenanceKindField','maintenance_kind',!emergency],['stopsVehicleField','stops_vehicle',emergency],['needsTowField','needs_tow',stops]]){$(host).hidden=!visible;form.elements[key].required=visible;form.elements[key].disabled=!visible;}
+ const min=emergency&&stops&&form.elements.needs_tow.value==='true'?1:2;$('quoteRequirement').textContent=min===1?'عرض واحد على الأقل: صيانة طارئة مع توقف السيارة والحاجة إلى سطحة. لكل عرض مرفقان مستقلان.':'عرضان على الأقل من ورشتين مختلفتين، مع مرفق قطع الغيار ومرفق أجرة اليد لكل عرض.';
+ while($('quotesHost').children.length<min)$('quotesHost').insertAdjacentHTML('beforeend',quoteEditor({},$('quotesHost').children.length));
+ if(min===1&&$('quotesHost').children.length===2){const second=$('quotesHost').children[1];if(!second.querySelector('[name=supplier]').value&&!second.querySelector('[name=parts_file_id]').value&&!second.querySelector('[name=parts_file]').files.length&&!second.querySelector('[name=labor_file]').files.length)second.remove();}
+ refresh();};
+ for(const key of['request_type','stops_vehicle','needs_tow'])form.elements[key].onchange=conditions;conditions();
+ $('addQuote').onclick=()=>{if($('quotesHost').children.length<10)$('quotesHost').insertAdjacentHTML('beforeend',quoteEditor({},$('quotesHost').children.length));refresh();};
+ $('quotesHost').onclick=e=>{const remove=e.target.closest('[data-remove-quote]');if(remove){remove.closest('[data-quote]').remove();refresh();}};
+ $('quotesHost').oninput=e=>{const q=e.target.closest('[data-quote]');if(q)q.querySelector('[data-quote-total]').textContent=money(quoteTotal(Object.fromEntries([...q.querySelectorAll('input:not([type=file])')].map(x=>[x.name,x.value]))));};
+ form.elements.vehicle_id.onchange=()=>{const v=vehicles.find(v=>v.id===form.elements.vehicle_id.value);form.elements.odometer.min=v.odometer;form.elements.odometer.value=v.odometer;};
+ form.onsubmit=e=>run(e,async()=>{const send=e.submitter?.value==='send';const data=Object.fromEntries(new FormData(form));data.upgrade_workflow=true;data.stops_vehicle=data.request_type==='emergency'&&data.stops_vehicle==='true';data.needs_tow=data.stops_vehicle&&data.needs_tow==='true';
+ const rows=[...$('quotesHost').children];data.quotes=rows.map(q=>Object.fromEntries([...q.querySelectorAll('input:not([type=file])')].map(x=>[x.name,englishDigits(x.value).trim()])));
+ if(data.quotes.length<minimumQuotes(data))throw Error(`يلزم توفير ${minimumQuotes(data)} عروض أسعار على الأقل.`);
+ const saved=await rpc('fleet_request_save',{p_id:currentEdit.id||null,p_revision:currentEdit.revision||null,p_data:data});currentEdit=(await rpc('fleet_detail',{p_id:saved})).request;
+ for(const[i,q]of rows.entries())for(const kind of['parts','labor']){const input=q.querySelector(`[name=${kind}_file]`);if(input.files[0]){const fid=await upload(saved,'quote_'+kind,input.files[0]);data.quotes[i][kind+'_file_id']=fid;q.querySelector(`[name=${kind}_file_id]`).value=fid;input.value='';input.required=false;}}
+ const latest=(await rpc('fleet_detail',{p_id:saved})).request;await rpc('fleet_request_save',{p_id:saved,p_revision:latest.revision,p_data:data});currentEdit=(await rpc('fleet_detail',{p_id:saved})).request;
+ if(send)await rpc('fleet_command',{p_id:saved,p_revision:currentEdit.revision,p_action:'submit',p_data:{}});
+ await load();$('fleetDialog').close();status(send?'تم إرسال الطلب للاعتماد.':'تم حفظ المسودة.');});
 }
 async function upload(id, kind, file) {
   if (
@@ -307,7 +230,7 @@ async function openRequest(id) {
   show(
     `طلب صيانة #${r.number}`,
     `${meta.driver_name || ""} · ${meta.plate || ""}`,
-    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>المورد</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td>${money(q.parts)}</td><td>${money(q.labor)}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc({ quote: "عرض سعر", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
+    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>نوع الصيانة: <b>${esc(maintenanceKinds[r.maintenance_kind]||'—')}</b></p><p>توقف السيارة: <b>${r.stops_vehicle?'نعم':'لا'}</b></p><p>توفير سطحة: <b>${r.needs_tow?'نعم':'لا'}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>الورشة</th><th>جوال الورشة</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr class="${i===r.selected_quote?'fleet-selected-quote':''}"><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td dir="ltr">${esc(q.phone||'—')}</td><td>${money(q.parts)}</td><td>${money(q.labor)}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc({ quote: "عرض سعر سابق",quote_parts:"عرض قطع الغيار",quote_labor:"عرض أجرة اليد",repair_photo:"صورة الإصلاح", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
   );
 }
 function actionEditor(action) {
@@ -331,7 +254,7 @@ function actionEditor(action) {
       "السبب",
       "",
       "text",
-      'required minlength="3" maxlength="1000"',
+      'required minlength="10" maxlength="1000"',
     );
   if (action === "request_increase")
     fields += amountField("total", "الإجمالي المطلوب بعد الزيادة");
@@ -339,6 +262,7 @@ function actionEditor(action) {
     fields +=
       amountField("total", "إجمالي الفاتورة") +
       fileField("invoice", "الفاتورة", true) +
+      `<label>صورة الإصلاح<input name="repair_photo" type="file" accept="image/png,image/jpeg" required><small>صورة واضحة للإصلاح المنفذ.</small></label>` +
       `<label class="fleet-wide"><span><input name="received" type="checkbox" required style="width:auto"> أؤكد اكتمال الإصلاح واستلام السيارة</span></label><p class="fleet-muted fleet-wide">إذا شملت الفاتورة ضريبة، تحقق من اسم المؤسسة ورقمها الضريبي. الزيادة تحتاج اعتمادًا مسبقًا قبل تنفيذها.</p>`;
   if (["confirm_advance", "settle"].includes(action)) {
     const diff =
@@ -356,7 +280,7 @@ function actionEditor(action) {
         "مرجع العملية / التسوية",
         "",
         "text",
-        'required minlength="3" maxlength="200"',
+        'required minlength="10" maxlength="200"',
       ) +
       (diff.amount
         ? fileField(
@@ -366,6 +290,7 @@ function actionEditor(action) {
           )
         : "");
   }
+  if(action==='approve'&&r.workflow_version===2&&['manager_review','fleet_review'].includes(r.state)&&!r.invoice_id&&Number(r.advance)===0)fields+=`<label>العرض المعتمد<select name="selected_quote" required>${r.quotes.map((q,i)=>opt(i,`${q.supplier} — ${money(quoteTotal(q))} ر.س`,r.selected_quote)).join('')}</select></label><p class="fleet-wide">يمكن تغيير العرض قبل الاعتماد؛ يُعاد تحديد مسار الاعتماد والصرف حسب المبلغ المختار.</p>`;
   if (!fields) fields = '<p class="fleet-wide">هل تؤكد تنفيذ هذا الإجراء؟</p>';
   $("actionHost").innerHTML =
     `<section class="fleet-card" style="margin-top:20px"><h3>${esc(actions[action])}</h3><form id="actionForm" class="fleet-form">${fields}<div class="fleet-wide"><button type="submit" class="fleet-btn">تأكيد الإجراء</button></div></form></section>`;
@@ -379,8 +304,9 @@ function actionEditor(action) {
           "invoice",
           e.target.elements.invoice.files[0],
         );
+        if(r.workflow_version===2)data.repair_photo_id=await upload(r.id,'repair_photo',e.target.elements.repair_photo.files[0]);
         data.received = true;
-        delete data.invoice;
+        delete data.invoice;delete data.repair_photo;
       }
       if (["confirm_advance", "settle"].includes(action)) {
         const diff =
