@@ -140,3 +140,71 @@
 @media print{.atwar-shell{display:block!important;grid-template-columns:none!important;min-height:0!important}.atwar-main{overflow:visible!important;margin:0!important}.atwar-content{max-width:none!important}body{background:white!important}}
 /* Short policy clauses flow together; only the browser's page boundaries paginate them. */
 @media print{#policyApp .policy-section,#policyApp .policy-section[hidden]{break-before:auto!important;padding-top:12px;margin-bottom:16px}#policyApp .policy-section h2{break-after:avoid}#policyApp .policy-section-kicker{break-after:avoid}}
+/* Preserve the approved job-based salary matrix and independent progression columns. */
+#policyApp .policy-salary-controls{display:flex;gap:12px;flex-wrap:wrap;margin:23px 0 10px;align-items:center}
+#policyApp .policy-salary-controls input{flex:1 1 320px;min-width:0;max-width:650px}
+#policyApp .policy-salary-controls select{width:auto;min-width:130px}
+#policyApp .policy-salary-controls button{width:auto;padding:10px 15px;border:1px solid #ccd6e2;background:white;color:#203551;cursor:pointer;font:inherit}
+#policyApp .policy-salary-count{font-size:11px;color:#677991;margin:8px 0 20px}
+#policyApp .policy-salary-scroll{overflow:auto;max-width:100%;direction:rtl;border:1px solid #ccd7e5;border-radius:6px;background:white;margin:20px 0 28px;overscroll-behavior:contain}
+#policyApp .policy-progress-scroll{max-height:68vh}
+#policyApp .policy-registry-scroll{max-height:72vh}
+#policyApp .policy-progress-table,#policyApp .policy-registry-table{border-collapse:collapse;line-height:1.9;width:100%;font-size:12px}
+#policyApp .policy-progress-table{min-width:1900px;font-size:11px}
+#policyApp .policy-registry-table{min-width:1250px}
+#policyApp .policy-progress-table th,#policyApp .policy-registry-table th{background:#203d62;color:white;text-align:center;padding:13px 10px;border:1px solid #46607d;font-weight:700}
+#policyApp .policy-progress-table thead,#policyApp .policy-registry-table thead{position:sticky;top:0;z-index:3}
+#policyApp .policy-progress-table thead tr:last-child th{background:#365575;font-size:10px}
+#policyApp .policy-progress-table td,#policyApp .policy-registry-table td{padding:14px 10px;border:1px solid #dce3ec;text-align:center;vertical-align:middle}
+#policyApp .policy-progress-table tbody tr:nth-child(even),#policyApp .policy-registry-table tbody tr:nth-child(even){background:#f6f8fb}
+#policyApp .salary-job-cell{min-width:300px;max-width:350px;position:sticky;right:0;z-index:1;background:white;text-align:right!important;box-shadow:-3px 0 5px #233b5010}
+#policyApp .policy-progress-table tbody tr:nth-child(even) .salary-job-cell,#policyApp .policy-registry-table tbody tr:nth-child(even) .salary-job-cell{background:#f6f8fb}
+#policyApp .policy-progress-table thead tr:first-child th:nth-child(3),#policyApp .policy-registry-table th:nth-child(3){position:sticky;right:0;z-index:4;background:#203d62}
+#policyApp .salary-grade-cell{min-width:60px;font-weight:700;background:#f8fafc}
+#policyApp .salary-group-cell{min-width:110px;max-width:140px;background:var(--salary-group-bg);color:var(--salary-group-ink);border-inline-start:3px solid var(--salary-group-ink)!important}
+#policyApp .salary-group-cell strong{display:block;font-size:28px}
+#policyApp .salary-group-cell span{display:block;font-size:11px;font-weight:700}
+#policyApp .salary-group-P{--salary-group-bg:#eeeaf4;--salary-group-ink:#706080}
+#policyApp .salary-group-N{--salary-group-bg:#edf1e3;--salary-group-ink:#617341}
+#policyApp .salary-group-T{--salary-group-bg:#e5edf6;--salary-group-ink:#45698c}
+#policyApp .salary-group-S{--salary-group-bg:#e4efed;--salary-group-ink:#46786c}
+#policyApp .salary-group-M{--salary-group-bg:#f5ecde;--salary-group-ink:#9b7539}
+#policyApp .salary-group-L{--salary-group-bg:#e5e8ef;--salary-group-ink:#354a69}
+#policyApp .salary-entry{background:#edf4f7!important;font-weight:700}
+#policyApp .salary-cap{background:#f3ebdb!important;color:#7f5c20;font-weight:700}
+#policyApp .salary-unused{color:#bac3cf;background:#f5f6f8!important}
+#policyApp .policy-progress-table .policy-number{min-width:60px}
+#policyApp .salary-nation-cell{min-width:85px}
+#policyApp .salary-range{min-width:115px;font-weight:700}
+#policyApp .salary-benefit{min-width:85px;max-width:145px}
+#policyApp .policy-salary-print,#policyApp .policy-point-cards,#policyApp .policy-registry-cards{display:none}
+#policyApp .policy-point-card{background:white;border:1px solid #dce3ec;border-top:3px solid #c5a25d;border-radius:6px;padding:18px;margin-bottom:14px;break-inside:avoid}
+#policyApp .salary-card-kicker{font-size:11px;font-weight:700;color:#9b7838;margin:0 0 7px}
+#policyApp .policy-point-card h4{font-size:14px;margin:8px 0 15px;line-height:1.9;color:#203551}
+#policyApp .policy-points-grid{display:flex;flex-wrap:wrap;gap:7px}
+#policyApp .policy-points-grid>div{padding:8px 12px;border:1px solid #dce3ec;border-radius:4px;min-width:78px;text-align:center}
+#policyApp .policy-points-grid small{display:block;font-size:9px;color:#677991}
+#policyApp .policy-points-grid .policy-number{display:block;font-size:12px;font-weight:700}
+#policyApp .policy-registry-cards dl{display:grid;grid-template-columns:1fr 1.25fr;gap:8px 14px;font-size:12px;margin:0}
+#policyApp .policy-registry-cards dt{color:#677991}
+#policyApp .policy-registry-cards dd{margin:0;font-weight:700}
+#policyApp .policy-salary-empty{text-align:center;padding:24px}
+@media(max-width:700px){#policyApp .policy-salary-controls{gap:8px}#policyApp .policy-salary-controls input{flex-basis:100%;max-width:none}#policyApp .policy-salary-controls select{flex:1;min-width:110px}#policyApp .policy-salary-scroll{display:none}#policyApp .policy-point-cards,#policyApp .policy-registry-cards{display:block}}
+@media print{
+ #policyApp .policy-salary-screen,#policyApp .policy-salary-controls,#policyApp .policy-salary-count{display:none!important}
+ #policyApp .policy-salary-print{display:block!important}
+ #policyApp .policy-salary-print .policy-salary-scroll{display:block;max-height:none;overflow:visible;border-radius:0}
+ #policyApp .policy-registry-table{min-width:0;width:100%;font-size:8px}
+ #policyApp .policy-registry-table td,#policyApp .policy-registry-table th{padding:5px;min-width:0;max-width:none;position:static!important;box-shadow:none!important}
+ #policyApp .policy-registry-table .salary-job-cell{min-width:0;max-width:260px}
+ #policyApp .policy-registry-table thead{position:static;display:table-header-group}
+ #policyApp .policy-registry-table th{background:#e5eaf0!important;color:#142b49!important}
+ #policyApp .policy-registry-table tr{break-inside:avoid}
+ #policyApp .policy-point-card{padding:10px;margin-bottom:10px;border-radius:0}
+ #policyApp .policy-point-card h4{font-size:11px;margin:3px 0 8px}
+ #policyApp .policy-points-grid>div{min-width:65px;padding:5px 8px}
+ #policyApp .policy-points-grid .policy-number{font-size:10px}
+ #policyApp .policy-points-grid small{font-size:8px}
+}
+#policyApp .policy-point-cards.policy-salary-print{display:none}
+@media print{#policyApp .policy-point-cards.policy-salary-print{display:block!important}}
