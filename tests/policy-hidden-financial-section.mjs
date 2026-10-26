@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {policyReadingSections} from '../assets/js/policy-content.mjs';
+const content=Array.from({length:8},(_,i)=>({id:`compensation-section-${i+1}`,title:`section ${i+1}`,body:`body ${i+1}`}));
+const original=JSON.stringify(content);
+const sections=policyReadingSections(content,'POL-COMPENSATION');
+assert.deepEqual(sections.map(x=>x.number),[1,2,3,4,5,6,8]);
+assert.equal(sections.at(-1).section.id,'compensation-section-8');
+assert.equal(JSON.stringify(content),original);
+assert.equal(policyReadingSections(content,'OTHER').length,8);
+const ui=readFileSync('assets/js/policies-page.js','utf8');
+assert.match(ui,/readingSections.map\(\(\{section,number\}\)/);
+assert.match(ui,/:readingSections.map\(\(\{section:s,number\}\)/);
+assert.match(ui,/policy-edit-print.*readingSections.map/);
+assert.match(ui,/contentForm\(v.content\)/);
+console.log('Financial section omitted from reader and print; references retain number 8 and source remains intact.');
