@@ -1,0 +1,14 @@
+import '../scripts/test-it-support-files-db.mjs';
+import {readFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const page=await readFile('it-support/index.html','utf8');
+assert(!page.includes('إعداد المسؤولين'));
+assert(page.includes('data-display="KANBAN"'));
+assert(page.includes('data-display="LIST"'));
+const admin=await readFile('assets/js/admin-access-page.mjs','utf8');
+assert(admin.includes('itSupportOwnerForm'));
+const {validateFiles}=await import('../assets/js/it-support-files.mjs');
+validateFiles([{name:'photo.jpg',type:'image/jpeg',size:100}]);
+assert.throws(()=>validateFiles([{name:'x.html',type:'text/html',size:100}]));
+assert.throws(()=>validateFiles([{name:'x.png',type:'image/png',size:10485761}]));
+console.log('IT support: purchase-only approvals, file privacy and validation, centralized owners, task-style views passed.');

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
-    <link rel="stylesheet" href="../assets/css/it-support.css?v=1" />
+    <link rel="stylesheet" href="../assets/css/it-support.css?v=2" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
@@ -41,10 +41,13 @@
           <p id="pageStatus" role="status" aria-live="polite">
             جارٍ التحقق من الصلاحيات…
           </p>
-          <nav class="rec-tabs" aria-label="أقسام الدعم">
-<button data-view="mine" aria-current="page">طلباتي</button><button data-view="queue" hidden>قائمة التشغيل</button><button data-view="approvals">بانتظار اعتمادي</button><button data-view="reports" hidden>لوحة الإشراف</button><button data-view="settings" hidden>إعداد المسؤولين</button>
-</nav><div class="rec-form-grid"><label>البحث<input id="search" type="search" placeholder="رقم الطلب أو الموضوع أو الموظف"></label><label>الحالة<select id="stateFilter"><option value="">جميع الحالات</option></select></label></div>
-          <section id="viewContent" aria-live="polite"></section>
+          <section class="it-filter-bar" aria-label="تصفية الطلبات وطريقة العرض">
+<label>البحث<input id="search" type="search" placeholder="رقم الطلب أو الموضوع أو الموظف"></label>
+<label>الحالة<select id="stateFilter"><option value="">جميع الحالات</option></select></label>
+<select id="scopeFilter" aria-label="نطاق الطلبات" hidden><option value="all">جميع الطلبات المتاحة</option><option value="mine">طلباتي</option></select>
+<div class="view-switch" role="group" aria-label="طريقة العرض"><button type="button" class="rec-btn secondary" data-display="LIST" aria-pressed="true">قائمة</button><button type="button" class="rec-btn secondary" data-display="KANBAN" aria-pressed="false">كانبان</button></div>
+</section>
+<section id="viewContent" aria-live="polite"></section>
           <dialog id="recDialog" aria-labelledby="dialogTitle">
             <header>
               <div>
@@ -61,6 +64,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/it-support-page.mjs?v=1"></script>
+    <script type="module" src="../assets/js/it-support-page.mjs?v=2"></script>
   </body>
 </html>
