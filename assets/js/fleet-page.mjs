@@ -1,3 +1,4 @@
+import {initWorkboard} from './fleet-workboard.mjs?v=20261026';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261025";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
@@ -20,7 +21,8 @@ import {
 const esc = value => escapeHTML(englishDigits(value));
 const $ = (id) => document.getElementById(id),
   sb = await window.atwarGetSupabase();
-let operations,
+let workboard,
+  operations,
   context,
   currentDetail,
   currentEdit,
@@ -62,6 +64,7 @@ function show(title, subtitle, body) {
   if (!$("fleetDialog").open) $("fleetDialog").showModal();
 }
 function switchTab(id) {
+  if(['requests','handovers'].includes(id))id='dashboard';
   if(document.querySelector(`[data-tab="${id}"]`)?.hidden)return;
   for (const b of document.querySelectorAll("[data-tab]")) {
     const active = b.dataset.tab === id;
@@ -74,6 +77,7 @@ async function load() {
   context = await rpc("fleet_snapshot");
   render();
   if(operations)await operations.refresh();
+  workboard?.render();
   if(initialView && context.finance_only && !context.can_view_vehicles)switchTab("requests");
   initialView=false;
   status("");
@@ -133,6 +137,7 @@ function render() {
   $("vehicleEmpty").hidden = context.vehicles.length > 0;
   renderRequests();
   operations?.render();
+  workboard?.render();
 }
 function renderRequests() {
   if (!context) return;
@@ -425,6 +430,7 @@ $("stateFilter").innerHTML =
 $("requestSearch").oninput = renderRequests;
 $("stateFilter").onchange = renderRequests;
 operations=initFleetOperations({rpc,show,run,getContext:()=>context,reload:load,openRequest,switchTab});
+workboard=initWorkboard({getContext:()=>context,getOperations:()=>operations?.getData()});
 try {
   const {
     data: { session },

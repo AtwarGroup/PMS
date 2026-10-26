@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/fleet.css?v=3" />
-    <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=3" />
+    <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=20261026" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
@@ -32,9 +32,9 @@
               <h1>إدارة الأسطول</h1>
               <p>السيارات وعهد السائقين، من طلب الصيانة إلى التسوية.</p>
             </div>
-            <button id="newRequest" class="fleet-btn" hidden disabled>
-              طلب صيانة جديد
-            </button>
+            <div class="fleet-create-actions" id="fleetCreateActions"><button id="newRequest" class="fleet-btn" hidden disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>طلب صيانة جديد
+            </button></div>
             <a class="fleet-btn secondary" href="user-guide.html">دليل الاستخدام</a>
           </header>
           <p id="fleetStatus" role="status" aria-live="polite">
@@ -263,6 +263,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/fleet-page.mjs?v=20261025"></script>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=20261026"></script>
   </body>
 </html>

@@ -82,15 +82,15 @@ try {
     await p.locator("#actionForm button[type=submit]").click();
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
     await expect(p.locator("#fleetStatus")).toHaveText("تم تنفيذ الإجراء وتوثيقه.");
-    await p.locator("[data-tab=requests]").click();
-    await p.locator("#requestRows tr").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
+    await p.locator("[data-tab=dashboard]").click();
+    await p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
     await expect(p.locator("#fleetDialog")).toBeVisible();
   }
   async function open(actor, description) {
     const p = await pageFor(actor);
-    await p.locator("[data-tab=requests]").click();
+    await p.locator("[data-tab=dashboard]").click();
     await p
-      .locator("#requestRows tr")
+      .locator("#fleetWorkRows article[data-work-kind=maintenance]")
       .filter({ hasText: description })
       .getByRole("button", { name: "عرض الطلب" })
       .click();
@@ -207,8 +207,8 @@ try {
   await expect(p.locator("#vehicleRows tr")).toHaveCount(3);
   p = await pageFor("outsider");
   await expect(p.locator("#newRequest")).toBeDisabled();
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestEmpty")).toBeVisible();
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article")).toHaveCount(0);
   const admin = await pageFor("admin");
   await admin.goto(app.url + "/admin/users.html?qa=admin");
   await expect(admin.locator("#accessStatus")).toHaveAttribute(
@@ -229,8 +229,8 @@ try {
     admin.locator('#directRules [data-permission="fleet.requests.read"]'),
   ).toHaveValue("all");
   p = await pageFor("outsider");
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestRows tr")).toHaveCount(2);
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(2);
   await admin
     .locator('#directRules [data-permission="fleet.requests.read"]')
     .selectOption("");
@@ -239,8 +239,8 @@ try {
     "تم حفظ المنح المباشر.",
   );
   p = await pageFor("outsider");
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestEmpty")).toBeVisible();
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article")).toHaveCount(0);
   console.log(
     "PASS UI: existing account administration grants and revokes fleet access, with persisted direct-grant scope.",
   );
@@ -335,11 +335,12 @@ try {
   await app.db.exec("update private.hr_employees set manager_id='00000000-0000-4000-8000-000000000001'where profile_id='00000000-0000-4000-8000-000000000002'");
   await seedAssignedVehicle(app.db,app.rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 888',vin:'QA-MANAGER-888',vehicle_type:'سيارة المدير',driver_id:'00000000-0000-4000-8000-000000000002',odometer:0,active:true},p_reason:'اختبار سيارة المدير'});
   p=await pageFor('manager');
-  await expect(p.locator('#dashboardScope option')).toHaveCount(2);
-  await p.locator('#dashboardScope').selectOption('team');
-  await expect(p.locator('#openCount')).toHaveText('1');
-  await p.locator('#dashboardScope').selectOption('personal');
-  await expect(p.locator('#openCount')).toHaveText('0');
+  await expect(p.locator('#workScope option[value=team]')).not.toHaveAttribute('hidden','');
+  await p.locator('#workScope').selectOption('team');
+  await expect(p.locator('#fleetWorkRows')).toContainText('صيانة تجريبية 150');
+  await p.locator('#workScope').selectOption('mine');
+  await expect(p.locator('#fleetWorkRows article')).toHaveCount(0);
+  await p.locator('#workScope').selectOption('all');
   await p.locator('#newRequest').click();
   await expect(p.locator('[name=request_type] option')).toHaveCount(2);
   await expect(p.locator('[name=vehicle_id] option')).toHaveCount(3);
@@ -351,8 +352,8 @@ try {
   await expect(p.locator('#newRequest')).toBeHidden();
   await expect(p.locator('[data-tab=vehicles]')).toBeHidden();
   await expect(p.locator('[data-tab=documents]')).toBeHidden();
-  await expect(p.locator('[data-tab=requests]')).toHaveAttribute('aria-selected','true');
-  await expect(p.locator('#requestRows tr')).toHaveCount(0);
+  await expect(p.locator('[data-tab=dashboard]')).toHaveAttribute('aria-selected','true');
+  await expect(p.locator('#fleetWorkRows article[data-work-kind=maintenance]')).toHaveCount(0);
   p=await pageFor('fleet');
   await expect(p.locator('#newRequest')).toBeEnabled();
   await expect(p.locator('.atwar-nav a[href$="fleet/index.html"]')).toHaveCount(1);

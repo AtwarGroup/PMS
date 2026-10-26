@@ -29,6 +29,8 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
  $('fleetDialog').addEventListener('close',cleanup);
  const panel=document.createElement('section');panel.id='handovers';panel.hidden=true;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby','tab-handovers');panel.innerHTML='<div class="fleet-card-heading"><div><h2>محاضر تسليم واستلام السيارات</h2><p class="fleet-muted">يبدأ المستلم بالفحص، ثم مراجعة المسلّم وقرار الأسطول والإقرار النهائي.</p></div><button type="button" id="newHandover" class="atwar-btn primary" hidden>طلب استلام سيارة</button></div><div class="fleet-filters"><input id="handoverSearch" type="search" placeholder="بحث باللوحة أو اسم الموظف" aria-label="بحث المحاضر"><select id="handoverFilter" aria-label="حالة المحضر"><option value="">كل الحالات</option>'+Object.entries(handoverNames).map(([v,t])=>option(v,t,'')).join('')+'</select></div><div id="handoverRows"></div>';
  $('fleetDialog').before(panel);
+ document.getElementById('fleetCreateActions').append(document.getElementById('newHandover'));
+ $('newHandover').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 16V9l2-5h12l2 5v7M4 10h16M7 16v4m10-4v4M8 13h1m6 0h1"/></svg>طلب استلام سيارة';
  const tab=document.createElement('button');tab.id='tab-handovers';tab.type='button';tab.dataset.tab='handovers';tab.setAttribute('role','tab');tab.setAttribute('aria-controls','handovers');tab.setAttribute('aria-selected','false');tab.tabIndex=-1;tab.textContent='التسليم والاستلام';tab.hidden=true;tab.onclick=()=>switchTab('handovers');document.querySelector('.fleet-tabs').append(tab);
  tab.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-tab]')].filter(t=>!t.hidden);const i=e.key==='Home'?0:e.key==='End'?tabs.length-1:(tabs.indexOf(tab)+(e.key==='ArrowLeft'?1:-1)+tabs.length)%tabs.length;tabs[i].click();tabs[i].focus();};
  const exceptions=document.createElement('section');exceptions.id='fleetExceptions';exceptions.className='fleet-card fleet-exceptions';$('dashboard').append(exceptions);
@@ -146,5 +148,5 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
   if(removePhoto)run(e,async()=>{await rpc('fleet_handover_photo_delete',{p_id:removePhoto.dataset.deletePhoto});removePhoto.closest('p').remove();});
  });
  $('newHandover').onclick=pickHandover;$('handoverSearch').oninput=renderHandovers;$('handoverFilter').onchange=renderHandovers;
- return {refresh,render,journeyHTML:requestJourney,vehicleProfile,openHandover};
+ return {refresh,render,getData:()=>data,journeyHTML:requestJourney,vehicleProfile,openHandover};
 }
