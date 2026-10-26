@@ -1,0 +1,12 @@
+import '../scripts/test-it-support-deadlines.mjs';
+import {overdue,delayDays} from '../assets/js/it-support-model.mjs';
+import assert from 'node:assert/strict';
+const now=new Date('2026-10-26T13:00:00Z');
+const t={state:'working',due_at:'2026-10-24T13:00:00Z'};
+assert.equal(overdue(t,now),true);assert.equal(delayDays(t,now),2);
+for(const state of ['approval','resolved','closed','cancelled','rejected'])assert.equal(overdue({...t,state},now),false);
+assert.equal(overdue({...t,due_at:null},now),false);
+assert.equal(overdue({...t,due_at:'2026-10-26T14:00:00Z'},now),false);
+assert.equal(overdue({...t,due_at:now.toISOString()},now),false);
+assert.equal(delayDays({...t,due_at:'2026-10-25T22:00:00Z'},now),0);
+console.log('Overdue badges: business deadlines, Riyadh calendar day counts, pending approvals and archives passed.');

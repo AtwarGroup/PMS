@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
-    <link rel="stylesheet" href="../assets/css/it-support.css?v=3" />
+    <link rel="stylesheet" href="../assets/css/it-support.css?v=4" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
@@ -44,7 +44,7 @@
           <section id="supportMetrics" class="task-suite-metrics" aria-label="ملخص طلبات الدعم"></section>
 <section class="task-filter-bar" aria-label="تصفية طلبات الدعم">
 <input id="search" type="search" aria-label="البحث في الطلبات" placeholder="بحث في طلبات الدعم…">
-<div id="quickFilters"><button class="qf active" data-filter="all" aria-pressed="true">الكل</button><button class="qf" data-filter="today" aria-pressed="false">اليوم</button><button class="qf" data-filter="new" aria-pressed="false">جديدة</button><button class="qf" data-filter="working" aria-pressed="false">قيد المعالجة</button><button class="qf" data-filter="approval" aria-pressed="false">بانتظار الاعتماد</button><button class="qf" data-filter="waiting" aria-pressed="false">بانتظار الرد</button></div>
+<div id="quickFilters"><button class="qf active" data-filter="all" aria-pressed="true">الكل</button><button class="qf" data-filter="overdue" aria-pressed="false">متأخرة</button><button class="qf" data-filter="today" aria-pressed="false">اليوم</button><button class="qf" data-filter="new" aria-pressed="false">جديدة</button><button class="qf" data-filter="working" aria-pressed="false">قيد المعالجة</button><button class="qf" data-filter="approval" aria-pressed="false">بانتظار الاعتماد</button><button class="qf" data-filter="waiting" aria-pressed="false">بانتظار الرد</button></div>
 <div class="view-switch" role="group" aria-label="طريقة العرض"><button type="button" data-display="LIST" class="active" aria-pressed="true">قائمة</button><button type="button" data-display="KANBAN" aria-pressed="false">كانبان</button></div>
 <select id="sortFilter" aria-label="ترتيب الطلبات"><option value="default">الترتيب الافتراضي</option><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="priority">الأولوية</option></select>
 <select id="scopeFilter" aria-label="نطاق الطلبات" hidden><option value="all">جميع الطلبات المتاحة</option><option value="mine">طلباتي</option></select>
@@ -67,6 +67,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/it-support-page.mjs?v=4"></script>
+    <script type="module" src="../assets/js/it-support-page.mjs?v=5"></script>
   </body>
 </html>
