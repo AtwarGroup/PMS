@@ -12,11 +12,11 @@ begin
  t:=public.project_command(p,1,'task',jsonb_build_object('title','QA baseline task','assignee_id',m,'start_date','2026-10-02','due_date','2026-10-10'));
  select revision into r from public.projects where id=p;
  select jsonb_build_array(jsonb_build_object('id',id,'revision',revision)) into versions from public.tasks where id=t;
- begin perform public.capture_project_baseline(p,r-1,versions);raise exception 'Stale project revision accepted';exception when serialization_failure then null;end;
+ begin perform public.capture_project_baseline(p,r-1,versions);raise exception 'Stale project revision accepted';exception when sqlstate 'PT409' then null;end;
  task_row:=public.update_task_safe(t,1,'{"title":"QA baseline task changed"}');
- begin perform public.capture_project_baseline(p,r,versions);raise exception 'Stale task revision accepted';exception when serialization_failure then null;end;
+ begin perform public.capture_project_baseline(p,r,versions);raise exception 'Stale task revision accepted';exception when sqlstate 'PT409' then null;end;
  select jsonb_build_array(jsonb_build_object('id',id,'revision',revision)) into versions from public.tasks where id=t;
- begin perform public.capture_project_baseline(p,r,'[]');raise exception 'Incomplete task snapshot accepted';exception when serialization_failure then null;end;
+ begin perform public.capture_project_baseline(p,r,'[]');raise exception 'Incomplete task snapshot accepted';exception when sqlstate 'PT409' then null;end;
  perform public.capture_project_baseline(p,r,versions);
  select task_snapshot into original from public.project_baselines where project_id=p;
  if jsonb_array_length(original)<>1 or original->0->>'title'<>'QA baseline task changed' then raise exception 'Wrong original snapshot';end if;

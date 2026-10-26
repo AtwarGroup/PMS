@@ -20,9 +20,9 @@ begin
  v:=public.save_kpi_measurement(rid,e,j,revision,0,0,d);
  if (v->>'revision')::integer<>1 or v->'indicator_snapshot' is distinct from ctx->'job'->'indicators'->0 then raise exception 'Wrong saved indicator snapshot';end if;
  if not exists(select 1 from public.kpi_measurements where id=rid) then raise exception 'Own record unreadable';end if;
- begin perform public.save_kpi_measurement(rid,e,j,revision,0,0,d);raise exception 'Stale result accepted';exception when serialization_failure then null;end;
- begin perform public.save_kpi_measurement(gen_random_uuid(),e,j,revision,0,0,d);raise exception 'Duplicate period accepted';exception when serialization_failure then null;end;
- begin perform public.save_kpi_measurement(gen_random_uuid(),e,j,revision+1,0,0,d);raise exception 'Stale published revision accepted';exception when serialization_failure then null;end;
+ begin perform public.save_kpi_measurement(rid,e,j,revision,0,0,d);raise exception 'Stale result accepted';exception when sqlstate 'PT409' then null;end;
+ begin perform public.save_kpi_measurement(gen_random_uuid(),e,j,revision,0,0,d);raise exception 'Duplicate period accepted';exception when sqlstate 'PT409' then null;end;
+ begin perform public.save_kpi_measurement(gen_random_uuid(),e,j,revision+1,0,0,d);raise exception 'Stale published revision accepted';exception when sqlstate 'PT409' then null;end;
  begin perform public.save_kpi_measurement(rid,e,j,revision,1,1,d);raise exception 'Indicator identity changed';exception when insufficient_privilege then null;end;
  begin perform public.save_kpi_measurement(rid,e,j,revision,0,1,d||'{"weight":100}');raise exception 'Unsupported score definition accepted';exception when invalid_parameter_value then null;end;
  begin perform public.save_kpi_measurement(rid,e,j,revision,0,1,d||'{"period_end":"2026-09-30"}');raise exception 'Invalid period accepted';exception when invalid_parameter_value then null;end;

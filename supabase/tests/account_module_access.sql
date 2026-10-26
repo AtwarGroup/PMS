@@ -29,7 +29,7 @@ begin
  select module_revision into r from public.profiles where id=e;
  perform public.account_access_save(e,'employee',true,array[]::text[],r);
  -- Stale changes fail before modifying any account setting.
- denied:=false;begin perform public.account_access_save(e,'manager',true,array['policies'],r);exception when serialization_failure then denied:=true;end;if not denied then raise exception 'Stale module update accepted';end if;
+ denied:=false;begin perform public.account_access_save(e,'manager',true,array['policies'],r);exception when sqlstate 'PT409' then denied:=true;end;if not denied then raise exception 'Stale module update accepted';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',e,'role','authenticated')::text,true);
  if exists(select 1 from public.tasks where id=t)or exists(select 1 from public.quick_notes where id=note)or exists(select 1 from public.projects)or exists(select 1 from public.policies)then raise exception 'Disabled unit leaked raw rows';end if;
  ctx:=public.account_module_context();if jsonb_array_length(ctx->'allowed')<>0 then raise exception 'Empty selection widened';end if;

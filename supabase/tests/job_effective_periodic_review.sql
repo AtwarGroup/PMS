@@ -11,7 +11,7 @@ begin
  again:=public.create_job_description_draft(request_id,payload);assert j.id=again.id and j.revision=again.revision;
  perform set_config('test.job_id',j.id::text,true);perform set_config('test.payload',payload::text,true);
  j:=public.save_job_description_draft(j.id,j.revision,payload);assert j.revision=2;
- begin perform public.save_job_description_draft(j.id,1,payload);raise exception 'Expected conflict';exception when serialization_failure then null;end;
+ begin perform public.save_job_description_draft(j.id,1,payload);raise exception 'Expected conflict';exception when sqlstate 'PT409' then null;end;
  j:=public.submit_job_description_draft(j.id,j.revision);assert j.status='IN_REVIEW' and j.reviewer_id='2347fbff-372e-43d1-a2e4-094f5b3159bf'::uuid;
  perform set_config('test.revision',j.revision::text,true);
 end $$;
@@ -108,7 +108,7 @@ do $$ declare j public.job_descriptions%rowtype; r public.job_periodic_reviews%r
  select * into after_job from public.job_descriptions where id=j.id;
  assert after_job.revision=j.revision and after_job.published_snapshot=j.published_snapshot and after_job.status='PUBLISHED';
  assert r.due_on>(now() at time zone 'Asia/Riyadh')::date;
- begin perform public.complete_job_periodic_review(j.id,1,(j.published_snapshot->>'revision')::integer,'إعادة مكررة');raise exception 'Expected stale review';exception when serialization_failure then null;end;
+ begin perform public.complete_job_periodic_review(j.id,1,(j.published_snapshot->>'revision')::integer,'إعادة مكررة');raise exception 'Expected stale review';exception when sqlstate 'PT409' then null;end;
 end $$;
 do $$ declare j public.job_descriptions%rowtype;r public.job_periodic_reviews%rowtype;begin
  select * into j from public.job_descriptions where id=current_setting('test.job_id')::uuid;
