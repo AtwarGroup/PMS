@@ -45,7 +45,7 @@ begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',manager_profile,'role','authenticated')::text,true);
  j:=public.employee_master_save(target,'salary',rev,'{"basic":2100,"allowances":0}',today,'QA salary edit');
  if(j#>>'{salary,total}')::numeric<>2100 or jsonb_array_length(j->'history')<>1 then raise exception 'Salary total or audit incorrect';end if;
- denied:=false;begin perform public.employee_master_save(target,'salary',rev,'{"basic":2200,"allowances":0}',today,'QA stale edit');exception when serialization_failure then denied:=true;end;
+ denied:=false;begin perform public.employee_master_save(target,'salary',rev,'{"basic":2200,"allowances":0}',today,'QA stale edit');exception when sqlstate 'PT409' then denied:=true;end;
  if not denied then raise exception 'Stale revision accepted';end if;
  denied:=false;begin perform public.employee_master_save(target,'salary',rev+1,'{"basic":-1,"allowances":0}',today,'QA negative salary');exception when check_violation then denied:=true;end;
  if not denied then raise exception 'Negative salary accepted';end if;

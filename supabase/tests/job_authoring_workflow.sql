@@ -11,7 +11,7 @@ begin
  again:=public.create_job_description_draft(request_id,payload);assert j.id=again.id and j.revision=again.revision;
  perform set_config('test.job_id',j.id::text,true);perform set_config('test.payload',payload::text,true);
  j:=public.save_job_description_draft(j.id,j.revision,payload);assert j.revision=2;
- begin perform public.save_job_description_draft(j.id,1,payload);raise exception 'Expected conflict';exception when serialization_failure then null;end;
+ begin perform public.save_job_description_draft(j.id,1,payload);raise exception 'Expected conflict';exception when sqlstate 'PT409' then null;end;
  j:=public.submit_job_description_draft(j.id,j.revision);assert j.status='IN_REVIEW' and j.reviewer_id='2347fbff-372e-43d1-a2e4-094f5b3159bf'::uuid;
  perform set_config('test.revision',j.revision::text,true);
 end $$;

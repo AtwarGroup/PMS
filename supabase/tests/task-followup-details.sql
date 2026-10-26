@@ -12,8 +12,8 @@ begin
  if (c->>'can_edit')::boolean is distinct from true then raise exception 'Expected editor access';end if;
  r:=public.save_task_followup(t,true,'سبب تجريبي','إجراء تجريبي','assignee',current_date+1,0,rev);
  if (r->'followup'->>'revision')::integer<>1 then raise exception 'Initial revision failed';end if;
- begin perform public.save_task_followup(t,false,'','','assignee',null,0,rev);raise exception 'Stale follow-up accepted';exception when serialization_failure then null;end;
- begin perform public.save_task_followup(t,false,'','','assignee',null,1,rev+1);raise exception 'Stale task accepted';exception when serialization_failure then null;end;
+ begin perform public.save_task_followup(t,false,'','','assignee',null,0,rev);raise exception 'Stale follow-up accepted';exception when sqlstate 'PT409' then null;end;
+ begin perform public.save_task_followup(t,false,'','','assignee',null,1,rev+1);raise exception 'Stale task accepted';exception when sqlstate 'PT409' then null;end;
  begin perform public.save_task_followup(t,false,'','','invalid',null,1,rev);raise exception 'Invalid owner accepted';exception when invalid_parameter_value then null;end;
  begin update public.task_followup_details set reason='bypass' where task_id=t;raise exception 'Direct update accepted';exception when insufficient_privilege then null;end;
  r:=public.save_task_followup(t,false,'تم الحل','المتابعة العادية','creator',null,1,rev);

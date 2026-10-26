@@ -52,8 +52,8 @@ begin
  if private.has_permission('tasks.read_all')then raise exception 'Disabled role retained task permission';end if;
  denied:=false;begin perform public.employee_master_detail(outside_id);exception when insufficient_privilege then denied:=true;end;if not denied then raise exception 'Disabled role retained salary permission';end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',a,'role','authenticated')::text,true);
- denied:=false;begin perform public.access_role_save(rid,1,'QA stale','',true,rules);exception when serialization_failure then denied:=true;end;if not denied then raise exception 'Stale role revision accepted';end if;
- denied:=false;begin perform public.access_assign_roles(m,array[]::uuid[],array[]::uuid[]);exception when serialization_failure then denied:=true;end;if not denied then raise exception 'Stale assignment accepted';end if;
+ denied:=false;begin perform public.access_role_save(rid,1,'QA stale','',true,rules);exception when sqlstate 'PT409' then denied:=true;end;if not denied then raise exception 'Stale role revision accepted';end if;
+ denied:=false;begin perform public.access_assign_roles(m,array[]::uuid[],array[]::uuid[]);exception when sqlstate 'PT409' then denied:=true;end;if not denied then raise exception 'Stale assignment accepted';end if;
  rid2:=public.access_role_save(null,null,'QA indirect '||gen_random_uuid(),'',true,'[{"permission":"tasks.assign_indirect","scope":"team"}]');
  denied:=false;begin perform public.access_assign_roles(e,array[rid2],array[]::uuid[]);exception when raise_exception then denied:=true;end;if not denied then raise exception 'Employee got manager-only capability';end if;
  denied:=false;begin perform public.access_account_update(a,'employee',false);exception when raise_exception then denied:=true;end;if not denied then raise exception 'Self admin lockout accepted';end if;
