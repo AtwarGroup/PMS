@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>دعم تقنية المعلومات — ATWAR ONE</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
+    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
+    <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
+    <link rel="stylesheet" href="../assets/css/it-support.css?v=1" />
+    <script src="https://unpkg.com/lucide@1.47.0"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/module-access.js?v=2.8.1"></script>
+    <script src="../assets/js/supabase-runtime.js"></script>
+    <script src="../assets/js/session-service.js?v=2.5.2"></script>
+    <script src="../assets/js/shell-components.js?v=2.8.5"></script>
+    <script src="../assets/js/ui-feedback.js?v=2.5.27"></script>
+  </head>
+  <body>
+    <div class="atwar-shell">
+      <atwar-sidebar active="it_support"></atwar-sidebar>
+      <section class="atwar-main">
+        <atwar-header></atwar-header>
+        <main class="atwar-content recruitment-page">
+          <header class="atwar-page-head">
+            <div>
+              <p class="recruitment-eyebrow">
+                الخدمات التقنية · الدعم والمساندة
+              </p>
+              <h1>دعم تقنية المعلومات</h1>
+              <p>طلباتك التقنية، ومسؤولها الحالي، ومتابعة الحل في مكان واحد.</p>
+            </div>
+            <button id="createRequest" class="rec-btn" hidden>
+              طلب دعم جديد
+            </button>
+          </header>
+          <p id="pageStatus" role="status" aria-live="polite">
+            جارٍ التحقق من الصلاحيات…
+          </p>
+          <nav class="rec-tabs" aria-label="أقسام الدعم">
+<button data-view="mine" aria-current="page">طلباتي</button><button data-view="queue" hidden>قائمة التشغيل</button><button data-view="approvals">بانتظار اعتمادي</button><button data-view="reports" hidden>لوحة الإشراف</button><button data-view="settings" hidden>إعداد المسؤولين</button>
+</nav><div class="rec-form-grid"><label>البحث<input id="search" type="search" placeholder="رقم الطلب أو الموضوع أو الموظف"></label><label>الحالة<select id="stateFilter"><option value="">جميع الحالات</option></select></label></div>
+          <section id="viewContent" aria-live="polite"></section>
+          <dialog id="recDialog" aria-labelledby="dialogTitle">
+            <header>
+              <div>
+                <p class="recruitment-eyebrow">ATWAR ONE · دعم تقنية المعلومات</p>
+                <h2 id="dialogTitle"></h2>
+              </div>
+              <button id="closeDialog" class="rec-btn secondary" type="button">
+                إغلاق
+              </button>
+            </header>
+            <div id="dialogBody"></div>
+            <p id="dialogStatus" role="status" aria-live="polite"></p>
+          </dialog>
+        </main>
+      </section>
+    </div>
+    <script type="module" src="../assets/js/it-support-page.mjs?v=1"></script>
+  </body>
+</html>

@@ -12,6 +12,7 @@
   if(/\/job-library\//.test(p))return 'job_library';
   if(/\/fleet\//.test(p))return 'fleet';
   if(/\/recruitment\//.test(p))return 'recruitment';
+  if(/\/it-support\//.test(p))return 'it_support';
   for(const m of current?.catalog||[]){const route=new URL(m.path,location.origin+'/').pathname,dir=route.slice(0,route.lastIndexOf('/'));if(p===route||dir&&!['/admin','/profile'].includes(dir)&&p.startsWith(dir+'/'))return m.key;}
   return '';
  };
@@ -39,10 +40,10 @@
   if(/\/login\.html$/.test(location.pathname))return;
   try{const context=await load(sb);if(!context)return;
    const unit=routeModule();if(unit&&!allowed(unit)){
-    const home=new URL(location.pathname.includes('/admin/')||/\/(tasks|completed|recurring|my-day|approvals|attachments|workspace|follow-up|projects|policies|communication|communication-trial|team|job-library|fleet|recruitment)\//.test(location.pathname)?'../home.html':'home.html',location.href);
+    const home=new URL(location.pathname.includes('/admin/')||/\/(tasks|completed|recurring|my-day|approvals|attachments|workspace|follow-up|projects|policies|communication|communication-trial|team|job-library|fleet|recruitment|it-support)\//.test(location.pathname)?'../home.html':'home.html',location.href);
     home.searchParams.set('access','denied');location.replace(home.href);throw Error('ATWAR_MODULE_DENIED');
    }
-  }catch(error){if(error?.code==='42501'&&!current){const nested=/\/(admin|tasks|completed|recurring|my-day|approvals|attachments|workspace|follow-up|projects|policies|communication|communication-trial|team|job-library|fleet|recruitment|profile|notifications|search)\//.test(location.pathname);location.replace(new URL(nested?'../login.html':'login.html',location.href).href);}if(routeModule())document.body.style.visibility='hidden';throw error;}
+  }catch(error){if(error?.code==='42501'&&!current){const nested=/\/(admin|tasks|completed|recurring|my-day|approvals|attachments|workspace|follow-up|projects|policies|communication|communication-trial|team|job-library|fleet|recruitment|it-support|profile|notifications|search)\//.test(location.pathname);location.replace(new URL(nested?'../login.html':'login.html',location.href).href);}if(routeModule())document.body.style.visibility='hidden';throw error;}
  }
  window.AtwarModules=Object.freeze({routeModule,allowed,apply,load,guard,get context(){return current;}});
  document.addEventListener('DOMContentLoaded',apply);
