@@ -12,3 +12,8 @@ export function renderPolicyBody(body){
  const paragraph=[line];i++;while(i<lines.length&&lines[i].trim()&&!lines[i].startsWith('|')&&!lines[i].startsWith('### '))paragraph.push(lines[i++]);out.push(`<p>${esc(paragraph.join('\n')).replaceAll('\n','<br>')}</p>`);
  }return out.join('');
 }
+
+// Preserve source numbering while omitting the archived financial section from reading and print.
+export function policyReadingSections(content,code){
+ return content.map((section,index)=>({section,number:index+1})).filter(({section})=>code!=='POL-COMPENSATION'||section.id!=='compensation-section-7');
+}
