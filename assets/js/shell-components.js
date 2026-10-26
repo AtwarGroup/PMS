@@ -144,7 +144,9 @@
       const recurringAllowed=!s || ['manager','admin'].includes(s.role);
       const executiveAllowed=!s || s.role==='admin'||(s.permissions||[]).includes('tasks.read_all');
       const taskModuleOpen=/\/(tasks|completed|recurring)\//.test(currentPath);
-      const taskNav=taskModuleOpen?`
+      const supportModuleOpen=/\/it-support\//.test(currentPath);
+      const supportArchive=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
+      const taskNav=supportModuleOpen?`<nav class="atwar-header-task-nav" aria-label="قائمة دعم تقنية المعلومات"><a class="${supportArchive?'':'active'}" href="${d}it-support/index.html"><i data-lucide="monitor-cog"></i><span>النشطة</span></a><a class="${supportArchive?'active':''}" href="${d}it-support/index.html?scope=COMPLETED"><i data-lucide="archive"></i><span>المكتملة</span></a></nav>`:taskModuleOpen?`
         <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
           <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive"></i><span>المكتملة</span></a>
