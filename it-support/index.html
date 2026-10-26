@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/recruitment.css?v=1" />
-    <link rel="stylesheet" href="../assets/css/it-support.css?v=2" />
+    <link rel="stylesheet" href="../assets/css/it-support.css?v=3" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
@@ -25,7 +25,7 @@
       <atwar-sidebar active="it_support"></atwar-sidebar>
       <section class="atwar-main">
         <atwar-header></atwar-header>
-        <main class="atwar-content recruitment-page">
+        <main class="atwar-content recruitment-page it-support-page">
           <header class="atwar-page-head">
             <div>
               <p class="recruitment-eyebrow">
@@ -41,11 +41,14 @@
           <p id="pageStatus" role="status" aria-live="polite">
             جارٍ التحقق من الصلاحيات…
           </p>
-          <section class="it-filter-bar" aria-label="تصفية الطلبات وطريقة العرض">
-<label>البحث<input id="search" type="search" placeholder="رقم الطلب أو الموضوع أو الموظف"></label>
-<label>الحالة<select id="stateFilter"><option value="">جميع الحالات</option></select></label>
+          <section id="supportMetrics" class="task-suite-metrics" aria-label="ملخص طلبات الدعم"></section>
+<section class="task-filter-bar" aria-label="تصفية طلبات الدعم">
+<input id="search" type="search" aria-label="البحث في الطلبات" placeholder="بحث في طلبات الدعم…">
+<div id="quickFilters"><button class="qf active" data-filter="all" aria-pressed="true">الكل</button><button class="qf" data-filter="today" aria-pressed="false">اليوم</button><button class="qf" data-filter="new" aria-pressed="false">جديدة</button><button class="qf" data-filter="working" aria-pressed="false">قيد المعالجة</button><button class="qf" data-filter="approval" aria-pressed="false">بانتظار الاعتماد</button><button class="qf" data-filter="waiting" aria-pressed="false">بانتظار الرد</button></div>
+<div class="view-switch" role="group" aria-label="طريقة العرض"><button type="button" data-display="LIST" class="active" aria-pressed="true">قائمة</button><button type="button" data-display="KANBAN" aria-pressed="false">كانبان</button></div>
+<select id="sortFilter" aria-label="ترتيب الطلبات"><option value="default">الترتيب الافتراضي</option><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="priority">الأولوية</option></select>
 <select id="scopeFilter" aria-label="نطاق الطلبات" hidden><option value="all">جميع الطلبات المتاحة</option><option value="mine">طلباتي</option></select>
-<div class="view-switch" role="group" aria-label="طريقة العرض"><button type="button" class="rec-btn secondary" data-display="LIST" aria-pressed="true">قائمة</button><button type="button" class="rec-btn secondary" data-display="KANBAN" aria-pressed="false">كانبان</button></div>
+<select id="stateFilter" hidden aria-label="حالة الطلب"><option value="">جميع الحالات</option></select>
 </section>
 <section id="viewContent" aria-live="polite"></section>
           <dialog id="recDialog" aria-labelledby="dialogTitle">
@@ -64,6 +67,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/it-support-page.mjs?v=2"></script>
+    <script type="module" src="../assets/js/it-support-page.mjs?v=3"></script>
   </body>
 </html>
