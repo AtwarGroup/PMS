@@ -58,6 +58,7 @@ try {
       .selectOption({ label: "المحاسب التجريبي" });
     await p.locator("[name=description]").fill("صيانة تجريبية " + amount);
     await p.locator('[name=maintenance_kind]').selectOption('tire');
+    await p.locator('[name=odometer]').fill('12510');
     await p.locator('[name=fault_notes]').fill('تشخيص العطل والملاحظات التجريبية');
     for (let i = 0; i < 2; i++) {
       const q = p.locator("[data-quote]").nth(i);
@@ -405,6 +406,7 @@ try {
   await mobile.locator('#newRequest').click();
   await mobile.locator('[name=accountant_id]').selectOption({label:'المحاسب التجريبي'});
   await mobile.locator('[name=description]').fill('طلب من كاميرا الجوال');
+  await mobile.locator('[name=odometer]').fill('12510');
   const png={name:'camera.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64')};
   const first=mobile.locator('[data-quote]').first();
   await expect(first.getByRole('button',{name:'التصوير بالكاميرا'}).first()).toBeVisible();

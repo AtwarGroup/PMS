@@ -12,6 +12,8 @@ async function draft(amount=250,opts={}){
  await rpc('driver','fleet_request_save',{p_id:id,p_revision:1,p_data:data});return{id,data};
 }
 await assert.rejects(()=>rpc('driver','fleet_request_save',{p_id:null,p_revision:null,p_data:{vehicle_id:car,accountant_id:ids.accountant,request_type:'repair',description:'قصير',fault_notes:'قصير',odometer:120,quotes:[]}}),/10 أحرف/);
+const zeroCar=await seedAssignedVehicle(db,rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'ZERO CHECK',vehicle_type:'اختبار العداد',active:true,driver_id:ids.driver,odometer:0},p_reason:'اختبار إلزام قراءة العداد'});
+await assert.rejects(()=>draft(250,{vehicle_id:zeroCar,odometer:0}),/أكبر من صفر/);
 const small=await draft();await command('driver',small.id,'submit');assert.equal((await detail('manager',small.id)).request.state,'manager_review');await assert.rejects(()=>command('outsider',small.id,'approve'),/denied/i);
 await command('manager',small.id,'approve');await assert.rejects(async()=>command('driver',small.id,'confirm_repair',{total:200,invoice_id:await upload('driver',small.id,'invoice'),received:true}),/صورة الإصلاح/);
 await command('driver',small.id,'confirm_repair',{total:200,invoice_id:await upload('driver',small.id,'invoice'),repair_photo_id:await upload('driver',small.id,'repair_photo'),received:true});await command('fleet',small.id,'approve');await command('accountant',small.id,'settle',{amount:200,reference:'QA-REIMBURSEMENT',evidence_id:await upload('accountant',small.id,'payment')});assert.equal((await detail('driver',small.id)).request.state,'closed');
