@@ -13,3 +13,5 @@ assert.equal(filterWorkItems(items,{scope:'mine'}).length,2);
 assert.equal(filterWorkItems(items,{query:'مسؤول الأسطول'}).length,2);
 assert.equal(filterWorkItems(items,{scope:'done'}).length,0);
 console.log('PASS unified list: mixed types, party scope, separate stage filters, responsible search and independent custody approvals.');
+
+const financial=workItems(c,{...data,advances:[{id:'m',overdue:true}]}).find(x=>x.id==='m');assert.equal(financial.unsettledAdvance,true);assert.equal(financial.overdue,true);

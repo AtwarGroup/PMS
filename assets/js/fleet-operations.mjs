@@ -33,17 +33,15 @@ export function initFleetOperations({rpc,show,run,getContext,reload,openRequest,
  $('newHandover').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 16V9l2-5h12l2 5v7M4 10h16M7 16v4m10-4v4M8 13h1m6 0h1"/></svg>طلب استلام سيارة';
  const tab=document.createElement('button');tab.id='tab-handovers';tab.type='button';tab.dataset.tab='handovers';tab.setAttribute('role','tab');tab.setAttribute('aria-controls','handovers');tab.setAttribute('aria-selected','false');tab.tabIndex=-1;tab.textContent='التسليم والاستلام';tab.hidden=true;tab.onclick=()=>switchTab('handovers');document.querySelector('.fleet-tabs').append(tab);
  tab.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-tab]')].filter(t=>!t.hidden);const i=e.key==='Home'?0:e.key==='End'?tabs.length-1:(tabs.indexOf(tab)+(e.key==='ArrowLeft'?1:-1)+tabs.length)%tabs.length;tabs[i].click();tabs[i].focus();};
- const exceptions=document.createElement('section');exceptions.id='fleetExceptions';exceptions.className='fleet-card fleet-exceptions';$('dashboard').append(exceptions);
+
  const error=e=>{$('fleetStatus').textContent=e.message||String(e);$('fleetStatus').dataset.error='true';};
  async function finish(message){await reload();$('fleetDialog').close();$('fleetStatus').textContent=message;}
  async function refresh(){data=await rpc('fleet_operations_context');render();}
  function render(){
   if(!data)return;const c=getContext();tab.hidden=!(data.handover_options?.can_start||c.can_manage||data.handovers.length);if(tab.hidden&&tab.getAttribute('aria-selected')==='true')switchTab('requests');$('newHandover').hidden=!data.handover_options?.can_start;renderHandovers();
-  const scope=$('dashboardScope').value;const ownVehicles=new Set(c.vehicles.filter(v=>scope==='all'||(scope==='personal'?v.driver_id===c.employee_id:(c.team_employee_ids||[]).includes(v.driver_id))).map(v=>v.id));
-  const ownRequests=new Set(c.requests.filter(r=>scope==='all'||(scope==='personal'?r.driver_id===c.employee_id:(c.team_employee_ids||[]).includes(r.driver_id))).map(r=>r.id));
-  const groups=[['طلبات تجاوزت مدة المرحلة',data.overdue_requests.filter(r=>ownRequests.has(r.id)),r=>`${button('طلب #'+r.number,`data-request="${esc(r.id)}"`)}<span>${esc(r.plate)} · ${esc(states[r.state])} · ${esc(r.journey.waiting_days)} يوم</span>`],['عهد مصروفة لم تُسوّ',data.advances.filter(r=>ownRequests.has(r.id)),r=>`${button('طلب #'+r.number,`data-request="${esc(r.id)}"`)}<span>${esc(r.plate)} · ${money(r.advance)} ر.س${r.overdue?' · تجاوزت مدة المتابعة':''}</span>`],['وثائق تحتاج متابعة',data.documents.filter(d=>ownVehicles.has(d.vehicle_id)),d=>`${button(d.plate,`data-profile="${esc(d.vehicle_id)}"`)}<span>${esc(documentNames[d.kind])} · ${esc(d.expires_on)}${d.expired?' · منتهية':''}</span>`],['سيارات دون سائق',data.unassigned.filter(v=>ownVehicles.has(v.id)),v=>button(v.plate,`data-profile="${esc(v.id)}"`)],['سيارات تحت الصيانة أو متوقفة',data.unavailable.filter(v=>ownVehicles.has(v.id)),v=>`${button(v.plate,`data-profile="${esc(v.id)}"`)}<span>${esc(statusNames[v.operational_status])} · ${esc(v.operational_reason)}</span>`]];
-  exceptions.innerHTML=`<div class="fleet-card-heading"><div><h2>الاستثناءات والمتابعة</h2><p class="fleet-muted">حسب نطاقك وصلاحياتك. المدد للتذكير والمتابعة ولا توقف دورة الطلب.</p></div>${data.can_configure?button('إعدادات مدد المتابعة','id="workflowSettings"'):''}</div><div class="fleet-exception-grid">${groups.map(([title,rows,html])=>`<details ${rows.length?'open':''}><summary>${esc(title)} <b>${rows.length}</b></summary>${rows.length?rows.map(r=>`<div class="fleet-exception-row">${html(r)}</div>`).join(''):empty}</details>`).join('')}</div>`;
-  $('workflowSettings')?.addEventListener('click',settings);
+  const settingsHost=$('fleetFollowupSettings');
+  if(settingsHost){settingsHost.innerHTML=data.can_configure?button('إعدادات مدد المتابعة','id="workflowSettings"'):'';$('workflowSettings')?.addEventListener('click',settings);}
+
  }
  function renderHandovers(){
   if(!data)return;const search=$('handoverSearch').value.trim().toLowerCase(),state=$('handoverFilter').value;

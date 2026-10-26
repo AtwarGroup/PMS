@@ -27,3 +27,6 @@
 @media(max-width:700px){.fleet-task-row-main{flex-wrap:wrap}.fleet-task-row-copy{flex-basis:calc(100% - 44px)}.fleet-task-row-main>.fleet-btn{margin-inline-start:auto}.fleet-task-filter-bar>input{flex-basis:100%;width:100%}.fleet-task-secondary-filters select{min-width:0;flex-basis:100%;width:100%}.fleet-task-filter-bar .view-switch{margin-inline-start:auto}.fleet-create-actions{width:100%}.fleet-create-actions button{flex:1;justify-content:center}.fleet-work-kanban{grid-template-columns:repeat(4,260px)}}
 
 .fleet-task-kind svg{width:16px;height:16px}
+
+.fleet-work-kanban{grid-template-columns:repeat(3,minmax(240px,1fr))}.fleet-workboard[data-archive="true"] .fleet-work-kanban{grid-template-columns:minmax(0,1fr)}
+@media(max-width:700px){.fleet-work-kanban{grid-template-columns:repeat(3,260px)}}
