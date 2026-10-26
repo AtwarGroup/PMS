@@ -15,3 +15,5 @@ assert.equal(filterWorkItems(items,{scope:'done'}).length,0);
 console.log('PASS unified list: mixed types, party scope, separate stage filters, responsible search and independent custody approvals.');
 
 const financial=workItems(c,{...data,advances:[{id:'m',overdue:true}]}).find(x=>x.id==='m');assert.equal(financial.unsettledAdvance,true);assert.equal(financial.overdue,true);
+
+const late=workItems(c,{...data,settings:{stage_days:3},overdue_requests:[{id:'m',journey:{state_since:'2026-10-01T00:00:00Z'}}]}).find(x=>x.id==='m');assert.equal(late.dueAt,Date.parse('2026-10-04T00:00:00Z'));assert.ok(late.delayDays>0);

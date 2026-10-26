@@ -1,6 +1,6 @@
-import {initWorkboard} from './fleet-workboard.mjs?v=20261026.4';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261026.5';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
-import {initFleetOperations} from "./fleet-operations.mjs?v=20261026.4";
+import {initFleetOperations} from "./fleet-operations.mjs?v=20261026.5";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,

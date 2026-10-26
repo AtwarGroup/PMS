@@ -30,3 +30,5 @@
 
 .fleet-work-kanban{grid-template-columns:repeat(3,minmax(240px,1fr))}.fleet-workboard[data-archive="true"] .fleet-work-kanban{grid-template-columns:minmax(0,1fr)}
 @media(max-width:700px){.fleet-work-kanban{grid-template-columns:repeat(3,260px)}}
+
+.fleet-workboard .fleet-task-row.is-overdue{background:linear-gradient(90deg,rgba(254,242,242,.85),#fff)!important;border-inline-start:3px solid #e11d48!important}.fleet-workboard .kanban-column-overdue .kanban-column-head{border-top-color:#e11d48;background:#fff1f2}.fleet-metric-link{background:none;border:0;padding:0;color:#be123c;text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}.fleet-work-kanban{grid-template-columns:repeat(4,minmax(240px,1fr))}@media(max-width:700px){.fleet-work-kanban{grid-template-columns:repeat(4,260px)}}
