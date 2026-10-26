@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
     <link rel="stylesheet" href="../assets/css/fleet.css?v=3" />
-    <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=20261026.5" />
+    <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=20261026.6" />
     <script src="https://unpkg.com/lucide@1.47.0"></script>
     <script src="../assets/js/supabase-config.js"></script>
     <script src="../assets/js/module-access.js?v=2.8.1"></script>
@@ -29,13 +29,12 @@
           <header class="fleet-heading atwar-page-head">
             <div>
               <p class="fleet-eyebrow">العمليات · أسطول السيارات</p>
-              <h1>إدارة الأسطول</h1>
+              <div class="fleet-title-line"><h1>إدارة الأسطول</h1><a id="fleetHelp" class="fleet-help" href="user-guide.html" aria-label="دليل الاستخدام" title="دليل الاستخدام"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1.1-1.5 2.5M12 16.5h.01"/></svg></a></div>
               <p>السيارات وعهد السائقين، من طلب الصيانة إلى التسوية.</p>
             </div>
             <div class="fleet-create-actions" id="fleetCreateActions"><button id="newRequest" class="fleet-btn" hidden disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>طلب صيانة جديد
             </button></div>
-            <a class="fleet-btn secondary" href="user-guide.html">دليل الاستخدام</a>
           </header>
           <p id="fleetStatus" role="status" aria-live="polite">
             جارٍ تحميل بيانات الأسطول…
@@ -263,6 +262,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/fleet-page.mjs?v=20261026.5"></script>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=20261026.6"></script>
   </body>
 </html>
