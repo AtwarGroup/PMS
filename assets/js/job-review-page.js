@@ -214,7 +214,7 @@ async function createProposal(section,index,action) {
   if (!reason || reason.trim().length < 2) return;
   const response = await sb.from('job_description_change_requests').insert({job_description_id:job.id,section,item_index:index >= 0 ? index : null,action,original_value:original,proposed_value:['DELETE','COMMENT'].includes(action) ? null : proposed,reason:reason.trim(),manager_id:me.id});
   if (response.error) return toast(response.error.message);
-  await loadRelated();
+  if(!await tryLoadRelated())return;
   render();
   toast('حُفظ المقترح دون تغيير النسخة الرئيسية');
 }
@@ -245,7 +245,7 @@ async function decideProposal(id,decision) {
   const response=await sb.rpc('decide_job_description_proposal',{p_proposal_id:id,p_expected_revision:job.revision,p_decision:decision,p_value:value,p_note:note});
   if(response.error)return toast(response.error.message);
   job=response.data;
-  await loadRelated();
+  if(!await tryLoadRelated())return;
   render();
   toast(decision === 'REJECTED' ? 'رُفض المقترح' : 'طُبق المقترح على المسودة');
 }
@@ -287,9 +287,9 @@ async function transition(status) {
       `تاريخ السريان: ${date}. تصبح النسخة الجديدة متاحة وتُفتح مهام الإقرار عند بدء السريان، وتبقى النسخة الحالية متاحة حتى ذلك الوقت.`];
     if(!await window.AtwarUI.confirm({title:'مراجعة أثر نشر الإصدار الموافق عليه',message:message.join('\n\n'),confirmText:'تأكيد النشر'}))return;
     const release=await sb.rpc('approve_job_effective_date',{p_job_id:publication.id,p_expected_revision:publication.revision,p_effective_date:date});
-    if(release.error)return toast(release.error.message);job=release.data;await loadRelated();render();if(job.status==='PUBLISHED')void dispatchPublicationEmails();return toast(job.status==='PUBLISHED'?'اعتُمد الوصف وبدأ سريانه':'اعتُمد الوصف وحُفظ موعد السريان');
+    if(release.error)return toast(release.error.message);job=release.data;if(!await tryLoadRelated())return;render();if(job.status==='PUBLISHED')void dispatchPublicationEmails();return toast(job.status==='PUBLISHED'?'اعتُمد الوصف وبدأ سريانه':'اعتُمد الوصف وحُفظ موعد السريان');
   }
-  if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;await loadRelated();render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
+  if(status==='IN_REVIEW'){const r=await sb.rpc('submit_job_description_draft',{p_job_id:job.id,p_expected_revision:job.revision});if(r.error)return toast(r.error.message);job=r.data;if(!await tryLoadRelated())return;render();return toast('أرسل الوصف إلى المدير المباشر للمراجعة');}
   if (status === 'MANAGER_APPROVED' && proposals.some(item => item.status === 'PENDING' && item.action !== 'COMMENT')) return toast('اتخذ قرارًا في جميع المقترحات أولًا');
   const payload = {status,updated_by:me.id};
   if (status === 'IN_REVIEW') payload.submitted_at = new Date().toISOString();
@@ -305,7 +305,7 @@ async function managerDone() {
   const response = await sb.rpc('complete_job_description_review',{p_job_id:job.id});
   if (response.error) return toast(response.error.message);
   job = response.data;
-  await loadRelated();
+  if(!await tryLoadRelated())return;
   activeTab = 'review';
   render();
   toast('تم الإرسال إلى مدير النظام للمراجعة والاعتماد');
@@ -327,7 +327,7 @@ async function finishFinalReview() {
     if (result.error.message?.includes('Resolve pending proposals first')) {
       editing = false;
       activeTab = 'review';
-      await loadRelated();
+      if(!await tryLoadRelated())return;
       render();
       return toast('أضيفت مقترحات جديدة بانتظار القرار. راجعها قبل إنهاء المراجعة.');
     }
@@ -343,7 +343,7 @@ async function assignEmployee() {
   if (!profileId) return toast('اختر الموظف أولًا');
   const response = await sb.from('employee_job_assignments').upsert({profile_id:profileId,job_description_id:job.id,assigned_by:me.id,updated_by:me.id},{onConflict:'profile_id'});
   if (response.error) return toast(response.error.message);
-  await loadRelated();
+  if(!await tryLoadRelated())return;
   if(job.status==='PUBLISHED')void dispatchPublicationEmails();
   render();
   toast(job.status === 'PUBLISHED' ? 'تم الربط وإشعار الموظف' : 'تم الربط؛ سيظهر الوصف للموظف بعد النشر');
@@ -361,7 +361,7 @@ async function addComment() {
   if (!body || body.length < 2) return;
   const response = await sb.from('job_description_comments').insert({job_description_id:job.id,author_id:me.id,body});
   if (response.error) return toast(response.error.message);
-  await loadRelated();
+  if(!await tryLoadRelated())return;
   render();
 }
 
@@ -403,7 +403,7 @@ async function loadRelated() {
     sb.from('job_periodic_reviews').select('*').eq('job_description_id',job.id).maybeSingle(),
     me.role==='admin'?sb.from('job_periodic_review_events').select('*').eq('job_description_id',job.id).order('reviewed_at',{ascending:false}).limit(20):Promise.resolve({data:[]})
   ]);
-  for(const response of responses.slice(6))if(response.error)throw response.error;
+  for(const response of responses)if(response.error)throw response.error;
   schedules=responses[6].data||[];periodicReview=responses[7].data||null;periodicEvents=responses[8].data||[];
   const scheduled=openSchedule();job.scheduled_effective_date=scheduled?.effective_date;job.schedule_status=scheduled?.status;
   proposals = responses[0].data || [];
@@ -415,6 +415,8 @@ async function loadRelated() {
   if (responses[5].error) throw responses[5].error;
   weightReferences = (responses[5].data || []).filter(row => row.source_revision === responses[5].data?.[0]?.source_revision);
 }
+
+async function tryLoadRelated(){try{await loadRelated();return true}catch(error){console.error('Job review refresh failed',error);toast('تعذر تحديث بيانات الوصف. تحقق من الاتصال وأعد المحاولة.');return false}}
 
 async function boot() {
   ({data:{session}} = await sb.auth.getSession());
@@ -439,7 +441,7 @@ async function boot() {
   if(canStage('PUBLISH'))void dispatchPublicationEmails();
 }
 
-async function returnForChanges(){const reason=await window.AtwarUI.prompt({title:'إعادة الوصف للتعديل',message:'حدد المطلوب تصحيحه؛ يُحفظ السبب وتُفتح مهمة للإعداد.',required:true});if(reason===null)return;const r=await sb.rpc('return_job_description_for_changes',{p_job_id:job.id,p_expected_revision:job.revision,p_reason:reason});if(r.error)return toast(r.error.message);job=r.data;editing=false;await loadRelated();render();toast('أعيد الوصف للتعديل وسُجل السبب');}
+async function returnForChanges(){const reason=await window.AtwarUI.prompt({title:'إعادة الوصف للتعديل',message:'حدد المطلوب تصحيحه؛ يُحفظ السبب وتُفتح مهمة للإعداد.',required:true});if(reason===null)return;const r=await sb.rpc('return_job_description_for_changes',{p_job_id:job.id,p_expected_revision:job.revision,p_reason:reason});if(r.error)return toast(r.error.message);job=r.data;editing=false;if(!await tryLoadRelated())return;render();toast('أعيد الوصف للتعديل وسُجل السبب');}
 
 function versionHistoryView(){const previous=job.published_snapshot;const fields=[['المسمى',previous?.title,job.title],['الغرض',previous?.purpose,job.purpose],...['responsibilities','authorities','kpis','reports','qualifications','relationships'].map(key=>[{responsibilities:'المهام والمسؤوليات',authorities:'الصلاحيات',kpis:'المؤشرات',reports:'المخرجات',qualifications:'المؤهلات',relationships:'العلاقات'}[key],previous?.content?.[key],job.content?.[key]])];const text=value=>typeof value==='object'?JSON.stringify(value,null,2):value||'—';return `<section class="content-card"><h2>مقارنة المسودة بالنسخة المنشورة</h2>${previous?fields.filter(([,a,b])=>JSON.stringify(a)!==JSON.stringify(b)).map(([label,a,b])=>`<article class="comparison-card"><h3>${esc(label)}</h3><div class="compare-columns"><div><small>النسخة المنشورة ${esc(previous.revision)}</small><p style="white-space:pre-wrap">${esc(text(a))}</p></div><div><small>المسودة الحالية</small><p style="white-space:pre-wrap">${esc(text(b))}</p></div></div></article>`).join('')||'<p>لا توجد تغييرات عن المحتوى المنشور.</p>':'<p>لم يُنشر إصدار سابق لهذا الوصف.</p>'}</section><section class="content-card"><h2>سجل الإصدارات والقرارات</h2><div style="overflow:auto"><table class="workflow-history"><thead><tr><th>الإصدار</th><th>الإجراء</th><th>المسؤول</th><th>التاريخ</th><th>السبب</th></tr></thead><tbody>${versions.map(v=>`<tr><td>${v.revision}</td><td>${esc({CREATED:'إنشاء',UPDATED:'تحديث',SUBMITTED:'إرسال للمراجعة',CHANGES_REQUESTED:'إعادة للتعديل',MANAGER_APPROVED:'إنهاء مراجعة المدير',PUBLISHED:'نشر الإصدار الموافق عليه',ARCHIVED:'أرشفة'}[v.action]||v.action)}</td><td>${esc(users.find(u=>u.id===v.actor_id)?.full_name||'المسؤول المسجل')}</td><td>${new Date(v.created_at).toLocaleString('ar-SA')}</td><td>${esc(v.change_note||'—')}</td></tr>`).join('')}</tbody></table></div></section>`;}
 
@@ -447,7 +449,7 @@ document.querySelectorAll('[data-tab]').forEach(button => button.onclick = () =>
 boot().catch(error => {
   console.error(error);
   document.body.style.visibility = 'visible';
-  byId('reviewState').textContent = 'تعذر فتح المراجعة: ' + error.message;
+  const state=byId('reviewState');state.replaceChildren();const message=document.createElement('p');message.textContent='تعذر تحميل بيانات الوصف الوظيفي. تحقق من الاتصال ثم أعد المحاولة.';const retry=document.createElement('button');retry.type='button';retry.className='atwar-btn';retry.textContent='إعادة المحاولة';retry.onclick=()=>location.reload();state.append(message,retry);
 });
 
 function openSchedule(){return schedules.find(s=>['PENDING','BLOCKED'].includes(s.status));}
@@ -456,21 +458,21 @@ function lifecycleView(){return renderJobLifecycle({job,scheduled:openSchedule()
 
 async function cancelEffectiveDate(){
  const s=openSchedule(),note=await window.AtwarUI.prompt({title:'إلغاء جدولة السريان',message:'يسجل السبب ويعود الوصف إلى بانتظار الاعتماد. النسخة السارية تبقى متاحة.',required:true});if(note===null)return;
- const r=await sb.rpc('cancel_job_effective_date',{p_schedule_id:s.id,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('ألغيت الجدولة وسُجل السبب');
+ const r=await sb.rpc('cancel_job_effective_date',{p_schedule_id:s.id,p_note:note});if(r.error)return toast(r.error.message);if(!await tryLoadRelated())return;render();toast('ألغيت الجدولة وسُجل السبب');
 }
 async function savePeriodicReview(){
  const r=await sb.rpc('save_job_periodic_review',{p_job_id:job.id,p_expected_revision:periodicReview?.revision||0,p_reviewer_id:byId('periodicOwner')?.value,p_due_on:byId('periodicDue')?.value,p_interval_months:Number(byId('periodicInterval')?.value),p_enabled:byId('periodicEnabled')?.value==='true'});
- if(r.error)return toast(r.error.message);lifecycleDirty=false;await loadRelated();render();toast('حُفظ إعداد المراجعة الدورية');
+ if(r.error)return toast(r.error.message);lifecycleDirty=false;if(!await tryLoadRelated())return;render();toast('حُفظ إعداد المراجعة الدورية');
 }
 async function completePeriodicReview(){
  const decision={id:job.id,reviewRevision:periodicReview.revision,publishedRevision:Number(job.published_snapshot.revision)};
  const note=await window.AtwarUI.prompt({title:'خلاصة المراجعة الدورية',message:'أكد أن النسخة السارية مناسبة ولم تستلزم تعديلًا.',value:'تمت المراجعة ولا توجد تغييرات.',required:true});if(note===null)return;
- const r=await sb.rpc('complete_job_periodic_review',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('سُجلت المراجعة وحدد موعدها التالي دون تغيير الإصدار');
+ const r=await sb.rpc('complete_job_periodic_review',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);if(!await tryLoadRelated())return;render();toast('سُجلت المراجعة وحدد موعدها التالي دون تغيير الإصدار');
 }
 
 async function refreshLifecycle(){
  if(!job||editing||lifecycleDirty||refreshingLifecycle||document.visibilityState==='hidden'||document.activeElement?.matches('input,select,textarea'))return;
- refreshingLifecycle=true;try{const r=await sb.from('job_descriptions').select('*').eq('id',job.id).maybeSingle();if(r.error||!r.data)return;job=r.data;await loadRelated();render();}catch(error){console.warn('تعذر تحديث حالة دورة الوصف',error.message);}finally{refreshingLifecycle=false;}
+ refreshingLifecycle=true;try{const r=await sb.from('job_descriptions').select('*').eq('id',job.id).maybeSingle();if(r.error||!r.data)return;job=r.data;if(!await tryLoadRelated())return;render();}catch(error){console.warn('تعذر تحديث حالة دورة الوصف',error.message);}finally{refreshingLifecycle=false;}
 }
 setInterval(refreshLifecycle,60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refreshLifecycle();});
@@ -479,7 +481,7 @@ window.addEventListener('beforeunload',e=>{if(lifecycleDirty){e.preventDefault()
 async function requestPeriodicChange(){
  const decision={id:job.id,reviewRevision:periodicReview.revision,publishedRevision:Number(job.published_snapshot.revision)};
  const note=await window.AtwarUI.prompt({title:'طلب تحديث الوصف بعد المراجعة الدورية',message:'وضح التعديلات المطلوبة. يُحفظ الطلب وتُفتح مهمة لمسؤول إعداد الأوصاف، وتبقى النسخة السارية دون تغيير.',required:true});if(note===null)return;
- const r=await sb.rpc('request_job_periodic_change',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);await loadRelated();render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
+ const r=await sb.rpc('request_job_periodic_change',{p_job_id:decision.id,p_expected_revision:decision.reviewRevision,p_published_revision:decision.publishedRevision,p_note:note});if(r.error)return toast(r.error.message);if(!await tryLoadRelated())return;render();toast('حُفظ طلب التحديث وفتحت مهمة لمسؤول الإعداد');if(canStage('DRAFT'))location.href=`create.html?id=${encodeURIComponent(job.id)}`;
 }
 
 function historyView(){if(me.role!=='admin')return ''; const labels={PENDING:'معتمد بانتظار السريان',PUBLISHED:'بدأ السريان',CANCELLED:'ألغيت الجدولة',BLOCKED:'تعذر بدء السريان'};return versionHistoryView()+`<section class="content-card"><h2>سجل السريان والجدولة</h2><div class="comment-list">${schedules.map(s=>`<div class="comment"><b>${esc(labels[s.status])} — السريان ${esc(s.effective_date)}</b><small>اعتمد في ${new Date(s.approved_at).toLocaleString('ar-SA')} • ${esc(users.find(u=>u.id===s.approved_by)?.full_name||'المعتمد المسجل')}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>`).join('')||'<p>لا توجد قرارات سريان مجدولة مسجلة لهذا الوصف.</p>'}</div></section>`;}
