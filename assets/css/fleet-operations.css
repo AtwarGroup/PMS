@@ -39,3 +39,5 @@
 @media(max-width:700px){.fleet-tabs{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap}.fleet-tabs>*{flex-shrink:0}}
 
 .fleet-work-kanban{grid-template-columns:repeat(5,minmax(240px,1fr))}@media(max-width:700px){.fleet-work-kanban{grid-template-columns:repeat(5,260px)}}
+
+.fleet-workboard[hidden]{display:none!important}
