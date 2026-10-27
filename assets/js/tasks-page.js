@@ -683,6 +683,8 @@ onAuthStateChanged(auth,async(user)=>{
   users=[];
   tasks=[];
   tasksInitialLoadReady=false;
+  for(const id of ['stat-total','stat-completed','stat-progress','stat-pending','stat-approval','stat-delayed']){const metric=document.getElementById(id);if(metric)metric.textContent='—';}
+  const count=document.getElementById('visibleCount');if(count)count.textContent='جارٍ تحميل المهام…';
   selectedTaskKey=null;
   assigneeFilterValue='ALL';
 
@@ -1237,6 +1239,7 @@ function subscribeVisibleTasks(){
 
   if(!scoped.length){
     tasks=[];
+    tasksInitialLoadReady=true;
     renderTasks();
     updateStats();
     return;
@@ -1265,8 +1268,13 @@ function subscribeVisibleTasks(){
     },
     error=>{
       console.error('Tasks listener:',error);
-      pendingInitialOwners.clear();
-      scheduleRender();
+      clearTimeout(renderTimer);
+      if(!tasksInitialLoadReady){
+        initializedAuthUid=null;
+        showSessionLoadError('تعذر تحميل المهام. تحقق من الاتصال ثم أعد المحاولة.');
+      }else{
+        showToast('تعذر تحديث المهام. تحقق من الاتصال ثم أعد المحاولة.','error');
+      }
       setSaveStatus('error');
     }
   );
