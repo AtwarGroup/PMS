@@ -28,5 +28,5 @@ export async function startCommunicationAlerts(){
  }
  channel=sb.channel('communication-global:'+actor).on('postgres_changes',{event:'*',schema:'public',table:'communication_revisions',filter:'user_id=eq.'+actor},()=>void refresh()).subscribe(status=>{if(status==='SUBSCRIBED')void refresh();});
  timer=setInterval(()=>void refresh(),20000);document.addEventListener('visibilitychange',refresh);window.addEventListener('online',refresh);
- window.addEventListener('pagehide',()=>{clear();auth.data.subscription.unsubscribe();document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',refresh);},{once:true});await refresh();
+ window.addEventListener('pagehide',event=>{clear();document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',refresh);if(event.persisted)window.addEventListener('pageshow',()=>{void startCommunicationAlerts();},{once:true});},{once:true});await refresh();
 }
