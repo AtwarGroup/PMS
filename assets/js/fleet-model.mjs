@@ -14,8 +14,8 @@ export const states = {
   rejected: "مرفوض نهائيًا",
 };
 export const types = {
-  repair: "صيانة",
-  emergency: "عطل طارئ",
+  repair: "صيانة دورية",
+  emergency: "صيانة طارئة",
 };
 export const actions = {
   submit: "إرسال الطلب",
@@ -127,3 +127,6 @@ export function dashboardRequests(context, scope) {
  if(scope==='team')return context.requests.filter(r=>(context.team_employee_ids||[]).includes(r.driver_id));
  return context.requests;
 }
+
+export const maintenanceKinds={tire:'تغيير كفر',battery:'تغيير بطارية',engine_flush:'تنظيف دورة الماكينة',inspection_service:'صيانة للفحص الدوري'};
+export const minimumQuotes=r=>r.request_type==='emergency'&&r.stops_vehicle&&r.needs_tow?1:2;
