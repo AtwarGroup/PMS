@@ -2,8 +2,8 @@ import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.0";
-import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.8";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.1";
+import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.15";
 
 const compatConfig = {};
@@ -975,7 +975,7 @@ async function checkOverdueNotifications(){
   // مهام المستخدم نفسه: إشعار لكل مهمة حتى يعرف المهمة المطلوبة مباشرة.
   const own=overdueTasks.filter(t=>String(t._ownerUid||'')===String(currentUser.uid||''));
   for(const task of own){
-    const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity);
+    const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity,undefined,task.approvalPausedDays);
     await createUniqueNotification(
       currentUser.uid,
       `overdue_${task._ownerUid}_${task._key}_${today}`,
@@ -2204,7 +2204,7 @@ function filteredTasks(){
         if(String(t._ownerUid||'')!==String(assignee))return false;
       }
     }
-    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity);
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays);
 
     // Filters coming from the home dashboard.
     if(homeFilterValue==='OPEN' && t.status==='مكتملة')return false;
@@ -2282,7 +2282,7 @@ function renderKanban(rows){
   host.innerHTML=columns.map(({status,label,color,smart})=>{
     const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
-      const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),progress=normalizeProgress(t.progress);
+      const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays),progress=normalizeProgress(t.progress);
       return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${isCurrentlyOverdue(t)?'text-rose-600':'text-slate-400'}">${delay>0?(isCurrentlyOverdue(t)?'متأخرة ':'تأخر التسليم ')+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
     return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
@@ -2306,7 +2306,7 @@ function renderTasks(){
   box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
   document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
   rows.forEach(t=>{
-    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity),key=compositeKey(t);
+    const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays),key=compositeKey(t);
     const selected=key===selectedTaskKey;
     const due=t.end||'بدون تاريخ';
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
@@ -2780,7 +2780,7 @@ function renderDetails(){
   managerNotes.classList.toggle('bg-slate-50',!canManagerNote);
   managerNotes.placeholder=canManagerNote?'ملاحظة خاصة بالمدير...':'ملاحظات المدير — للقراءة فقط';
   document.getElementById('detailCreatedBy').textContent=task.createdBy||'';
-  const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity),duration=calcDuration(task.start,task.end);
+  const delay=calcDelay(task.end,task.actualEnd,task.status,task.submittedAt,task.activity,undefined,task.approvalPausedDays),duration=calcDuration(task.start,task.end);
   document.getElementById('detailDuration').textContent=`${duration} يوم`;
   const delayEl=document.getElementById('detailDelay');
   delayEl.textContent=`${delay} يوم`;
@@ -2834,7 +2834,7 @@ async function loadTaskCommunicationSources(task){
 function clearSelection(){pendingAssigneeChange=null;transientSelectedTask=null;selectedTaskKey=null;setSaveStatus('saved');renderTasks();renderDetails()}
 
 function isCurrentlyOverdue(t){
-  return ['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0;
+  return ['قيد الانتظار','قيد التنفيذ'].includes(t.status)&&calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays)>0;
 }
 
 function updateStats(){
@@ -2843,8 +2843,8 @@ function updateStats(){
     const completionDate=t=>t.completedAt?localDateISO(new Date(t.completedAt)):(t.actualEnd||'');
     const completedThisMonth=tasks.filter(t=>completionDate(t).startsWith(month)).length;
     const measurable=tasks.filter(t=>completionDate(t)&&t.end);
-    const onTime=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)===0).length;
-    const late=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)>0).length;
+    const onTime=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays)===0).length;
+    const late=measurable.filter(t=>calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays)>0).length;
     const durations=tasks.map(t=>{
       const end=completionDate(t);if(!t.start||!end)return null;
       const days=Math.round((new Date(end+'T00:00:00')-new Date(t.start+'T00:00:00'))/86400000);
@@ -2875,7 +2875,7 @@ async function exportToExcel(){
     {header:'الحالة',key:'status',width:14},{header:'الأولوية',key:'priority',width:12},{header:'الإنجاز %',key:'progress',width:12},
     {header:'التأخير (يوم)',key:'delay',width:14},{header:'ملاحظات',key:'notes',width:30},{header:'ملاحظات المدير',key:'managerNotes',width:30}
   ];
-  tasks.forEach(t=>ws.addRow({...t,delay:calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity)}));
+  tasks.forEach(t=>ws.addRow({...t,delay:calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays)}));
   ws.getRow(1).font={bold:true};
   const buf=await wb.xlsx.writeBuffer(),blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='tasks_export.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);

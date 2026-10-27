@@ -54,12 +54,17 @@ function profileLegacy(p){
 
 async function loadChildren(taskIds,taskRows=[]){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
-  if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map()};
-  const [activitiesRows,subtaskRows,attachmentRows]=await Promise.all([
+  if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map(),pausedDays:new Map()};
+  const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Riyadh';
+  const pausePromise=(async()=>{const rows=[];for(let i=0;i<ids.length;i+=100){const {data,error}=await sb.rpc('task_approval_pause_days',{p_task_ids:ids.slice(i,i+100),p_timezone:timezone});if(error)throw error;rows.push(...(data||[]));}return rows;})();
+  const [activitiesRows,subtaskRows,attachmentRows,pauseRows]=await Promise.all([
     readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids),
     readRelatedRows(chunk=>sb.from('subtasks').select('*').in('task_id',chunk).order('position',{ascending:true}),ids),
-    readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids)
+    readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids),
+    pausePromise
   ]);
+  const pausedDays=new Map(pauseRows.map(row=>[String(row.task_id),Number(row.paused_days)]));
+  if(ids.some(id=>!pausedDays.has(String(id))))throw new Error('Task delay summary unavailable');
   const [ar,sr,fr]=[activitiesRows,subtaskRows,attachmentRows].map(data=>({data}));
   // A failed child read must never become an empty editable collection.
   for(const response of [ar,sr,fr])if(response.error)throw response.error;
@@ -76,7 +81,7 @@ async function loadChildren(taskIds,taskRows=[]){
       (attachments.get(t.id)||attachments.set(t.id,[]).get(t.id)).push(x);
     }
   }
-  return {activities,subtasks,attachments};
+  return {activities,subtasks,attachments,pausedDays};
 }
 
 function taskLegacy(t,children,profileNames=new Map()){
@@ -98,7 +103,7 @@ function taskLegacy(t,children,profileNames=new Map()){
     approvedAt:ms(t.approved_at)||null,approvedBy:t.approved_by_name_snapshot||'',returnedAt:ms(t.returned_at)||null,returnedBy:t.returned_by_name_snapshot||'',
     reopenedAt:ms(t.reopened_at)||null,reopenedBy:t.reopened_by_name_snapshot||'',completedAt:ms(t.completed_at)||null,
     cancelledAt:ms(t.cancelled_at)||null,cancelReason:t.cancel_reason||'',slaHours:t.sla_hours??null,slaDueAt:ms(t.sla_due_at)||null,
-    activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
+    approvalPausedDays:children?.pausedDays?.get(String(t.id))??null,activity:children?.activities?.get(t.id)||[],subtasks:children?.subtasks?.get(t.id)||[],attachments:children?.attachments?.get(t.id)||[],
     jobWorkflow:t.legacy_metadata?.job_workflow||null,
     projectId:t.project_id||null,batchId:t.batch_id||null,
     _relationalId:t.id
