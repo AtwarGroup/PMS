@@ -16,7 +16,7 @@
     for(const duplicate of matches)duplicate.remove();
     style.rel='stylesheet';style.dataset.atwarAppTheme='1';style.href=href;document.head.append(style);
   };
-  if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261004-open',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
+  if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261027-bfcache',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
     if(document.querySelector('link[data-atwar-typography]'))return;
     const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
@@ -355,8 +355,21 @@
     }
     await refresh();
     headerEl._atwarRefreshNotifications=refresh;
-    const timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000);
-    window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+    let timer;
+    const startRefreshTimer=()=>{
+      clearInterval(timer);
+      timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000);
+    };
+    const stopRefreshTimer=event=>{
+      clearInterval(timer);
+      if(event.persisted)window.addEventListener('pageshow',()=>{
+        startRefreshTimer();
+        void refresh();
+        window.addEventListener('pagehide',stopRefreshTimer,{once:true});
+      },{once:true});
+    };
+    startRefreshTimer();
+    window.addEventListener('pagehide',stopRefreshTimer,{once:true});
   };
 
   // One heartbeat per document; server decides identity and timestamp.
