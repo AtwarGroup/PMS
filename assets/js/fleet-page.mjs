@@ -1,4 +1,4 @@
-import {initWorkboard} from './fleet-workboard.mjs?v=20261027.4';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261027.5';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
@@ -73,8 +73,8 @@ function switchTab(id) {
     $(b.dataset.tab).hidden = !active;
   }
   const sectionTitle = {vehicles:'سجل السيارات',documents:'الوثائق والتنبيهات'}[id];
-  const inCompleted = document.body.dataset.fleetView === 'archive';
-  const dashboardTitle = inCompleted ? (new URLSearchParams(location.search).get('view') === 'archive' ? 'أرشيف الطلبات' : 'الطلبات المكتملة') : 'إدارة الأسطول';
+  const dashboardTitle = workboard?.title() || 'إدارة الأسطول';
+  workboard?.syncSelection(id === 'dashboard');
   document.querySelector('.fleet-heading h1').textContent = sectionTitle || dashboardTitle;
 }
 async function load() {
@@ -414,7 +414,7 @@ $("fleetDialog").addEventListener("cancel", (e) => {
   if (busy) e.preventDefault();
 });
 for (const b of document.querySelectorAll("[data-tab]")) {
-  b.onclick = () => switchTab(b.dataset.tab);
+  b.onclick = () => b.dataset.tab==='dashboard' ? workboard.setMode('active') : switchTab(b.dataset.tab);
   b.onkeydown = (e) => {
     if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
       e.preventDefault();
@@ -441,7 +441,7 @@ $("stateFilter").innerHTML =
 $("requestSearch").oninput = renderRequests;
 $("stateFilter").onchange = renderRequests;
 operations=initFleetOperations({rpc,show,run,getContext:()=>context,reload:load,openRequest,switchTab});
-workboard=initWorkboard({getContext:()=>context,getOperations:()=>operations?.getData()});
+workboard=initWorkboard({getContext:()=>context,getOperations:()=>operations?.getData(),switchTab});
 try {
   const {
     data: { session },
