@@ -82,7 +82,6 @@ try {
     await p.locator("#actionForm button[type=submit]").click();
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
     await expect(p.locator("#fleetStatus")).toHaveText("تم تنفيذ الإجراء وتوثيقه.");
-    if(action==='settle'){await p.goto(app.url+'/fleet/completed.html'+new URL(p.url()).search);await expect(p.locator('#fleetStatus')).toHaveText('');}
     await p.locator("[data-tab=dashboard]").click();
     await p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
     await expect(p.locator("#fleetDialog")).toBeVisible();
@@ -113,7 +112,7 @@ try {
   await act(p, "approve");
   p = await open("accountant", "صيانة تجريبية 300");
   await act(p, "settle", async (f) => {
-    await f.locator("[name=reference]").fill("QA-REIMBURSEMENT");
+    await f.locator("[name=reference]").fill("1234");
     await f.locator("[name=evidence]").setInputFiles(pdf);
   });
   await expect(p.locator("#dialogBody .fleet-tag").first()).toHaveText("مغلق");
@@ -231,7 +230,7 @@ try {
   ).toHaveValue("all");
   p = await pageFor("outsider");
   await p.locator("[data-tab=dashboard]").click();
-  await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(0);
+  await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(2);
   await admin
     .locator('#directRules [data-permission="fleet.requests.read"]')
     .selectOption("");

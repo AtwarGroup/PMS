@@ -1,6 +1,6 @@
-import {initWorkboard} from './fleet-workboard.mjs?v=20261026.6';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261027.1';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
-import {initFleetOperations} from "./fleet-operations.mjs?v=20261026.6";
+import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
 import {
   englishDigits,
@@ -286,7 +286,7 @@ function actionEditor(action) {
         "مرجع العملية / التسوية",
         "",
         "text",
-        'required minlength="10" maxlength="200"',
+        'required minlength="4" maxlength="200"',
       ) +
       (diff.amount
         ? fileField(
