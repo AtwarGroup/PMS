@@ -9,9 +9,11 @@ begin
   if coalesce(cardinality(p_task_ids),0)>100 then
     raise exception 'At most 100 tasks per request' using errcode='22023';
   end if;
-  if p_timezone is null or length(p_timezone)>64 or not exists(select 1 from pg_catalog.pg_timezone_names where name=p_timezone) then
+  if p_timezone is null or length(p_timezone)>64 then
     raise exception 'Invalid timezone' using errcode='22023';
   end if;
+  -- Validate without scanning the complete pg_timezone_names catalog on every refresh.
+  perform pg_catalog.timezone(p_timezone, now());
   return query
   with allowed as (
     select t.id from public.tasks t
