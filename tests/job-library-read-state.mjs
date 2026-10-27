@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const source=readFileSync(new URL('../assets/js/job-library-page.js',import.meta.url),'utf8');
+const start=source.indexOf('async function openJob(id)');
+const end=source.indexOf('\nfunction ',source.indexOf('async function loadReviewData(id)',start));
+assert.ok(start>=0&&end>start);
+const nodes=new Map();
+for(const id of ['workspace','editorCode','editorTitle','editorMeta','editorActions','editorTabs','editorBody'])nodes.set(id,{hidden:false,textContent:'',replaceChildren(){}});
+let fail=false,release;const gate=new Promise(r=>release=r);let delayed=false;
+const sb={from(name){return {select(){return this},eq(_field,id){this.id=id;return this},async order(){if(delayed&&this.id==='old')await gate;if(fail&&name==='job_description_forms')return {data:null,error:new Error('offline')};return {data:name==='job_description_forms'?[{form_library:{id:'form'},usage_note:'note'}]:[{id:'proposal'}],error:null}}}}};
+const ctx=vm.createContext({sb,jobs:[{id:'old',title:'قديم'},{id:'new',title:'جديد'}],current:null,editing:false,activeTab:'overview',proposals:[],linkedForms:[],el:id=>nodes.get(id),renderDataState:(node,state)=>{node.state=state},renderEditor:()=>{nodes.get('editorBody').state={state:'ready'};},console});
+vm.runInContext(source.slice(start,end)+'\nthis.openJob=openJob;',ctx);
+fail=true;await ctx.openJob('old');assert.equal(nodes.get('editorBody').state.state,'error');assert.equal(typeof nodes.get('editorBody').state.onRetry,'function');
+fail=false;await nodes.get('editorBody').state.onRetry();assert.equal(nodes.get('editorBody').state.state,'ready');
+delayed=true;const old=ctx.openJob('old');await ctx.openJob('new');release();await old;assert.equal(nodes.get('editorTitle').textContent,'جديد');assert.equal(nodes.get('editorBody').state.state,'ready');
+console.log('PASS job library loading, failure retry and stale selection handling');
