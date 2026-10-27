@@ -90,7 +90,7 @@
             aria-labelledby="tab-dashboard"
           >
             <label class="fleet-dashboard-scope">نطاق لوحة المتابعة<select id="dashboardScope" aria-label="نطاق لوحة المتابعة"></select></label>
-            <div class="fleet-metrics">
+            <div class="fleet-metrics" hidden>
               <article data-tone="blue" class="atwar-metric">
                 <span>طلبات مفتوحة</span><strong id="openCount">—</strong>
               </article>
@@ -106,7 +106,7 @@
                 <span>طلبات أُغلقت</span><strong id="closedCount">—</strong>
               </article>
             </div>
-            <div class="fleet-dashboard-grid">
+            <div class="fleet-dashboard-grid" hidden>
               <section class="fleet-card">
                 <h2>بانتظار إجرائك</h2>
                 <div id="myQueue"></div>
@@ -262,6 +262,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/fleet-page.mjs?v=20261027.2"></script>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=20261027.3"></script>
   </body>
 </html>

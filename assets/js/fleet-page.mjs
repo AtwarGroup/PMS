@@ -1,4 +1,4 @@
-import {initWorkboard} from './fleet-workboard.mjs?v=20261027.2';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261027.3';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
@@ -72,6 +72,10 @@ function switchTab(id) {
     b.tabIndex = active ? 0 : -1;
     $(b.dataset.tab).hidden = !active;
   }
+  const sectionTitle = {vehicles:'سجل السيارات',documents:'الوثائق والتنبيهات'}[id];
+  const inCompleted = document.body.dataset.fleetView === 'archive';
+  const dashboardTitle = inCompleted ? (new URLSearchParams(location.search).get('view') === 'archive' ? 'أرشيف الطلبات' : 'الطلبات المكتملة') : 'إدارة الأسطول';
+  document.querySelector('.fleet-heading h1').textContent = sectionTitle || dashboardTitle;
 }
 async function load() {
   context = await rpc("fleet_snapshot");
