@@ -285,12 +285,12 @@
 
     <!-- Stats -->
     <section class="task-suite-metrics">
-      <div class="task-suite-metric" data-tone="blue"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">0</div></div>
-      <div class="task-suite-metric" data-tone="success"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">0</div></div>
-      <div class="task-suite-metric" data-tone="blue"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">0</div></div>
-      <div class="task-suite-metric" data-tone="warning"><p id="statPendingLabel">لم تبدأ</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">0</div></div>
-      <div id="statApprovalCard" class="task-suite-metric" data-tone="purple"><p>بانتظار الاعتماد</p><div id="stat-approval" class="text-lg font-black mt-0.5">0</div></div>
-      <div class="task-suite-metric" data-tone="danger" title="مهام لم تبدأ أو قيد التنفيذ تجاوزت الموعد؛ لا يشمل بانتظار الاعتماد"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">0</div></div>
+      <div class="task-suite-metric" data-tone="blue"><p id="statTotalLabel">إجمالي المهام النشطة</p><div id="stat-total" class="text-lg font-black mt-0.5">—</div></div>
+      <div class="task-suite-metric" data-tone="success"><p id="statCompletedLabel">مكتملة</p><div id="stat-completed" class="text-lg font-black mt-0.5 text-emerald-600">—</div></div>
+      <div class="task-suite-metric" data-tone="blue"><p id="statProgressLabel">قيد التنفيذ</p><div id="stat-progress" class="text-lg font-black mt-0.5 text-blue-600">—</div></div>
+      <div class="task-suite-metric" data-tone="warning"><p id="statPendingLabel">لم تبدأ</p><div id="stat-pending" class="text-lg font-black mt-0.5 text-amber-600">—</div></div>
+      <div id="statApprovalCard" class="task-suite-metric" data-tone="purple"><p>بانتظار الاعتماد</p><div id="stat-approval" class="text-lg font-black mt-0.5">—</div></div>
+      <div class="task-suite-metric" data-tone="danger" title="مهام لم تبدأ أو قيد التنفيذ تجاوزت الموعد؛ لا يشمل بانتظار الاعتماد"><p id="statDelayedLabel">متأخرة</p><div id="stat-delayed" class="text-lg font-black mt-0.5 text-rose-600">—</div></div>
     </section>
 
     <!-- Manager Dashboard -->
@@ -360,7 +360,7 @@
         <div id="listHeaderSticky" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
           <h2 class="font-black text-lg">المهام</h2>
           <button id="batchFollowButton" type="button" class="batch-action" hidden>متابعة الإسناد الجماعي</button>
-          <span id="visibleCount" class="text-xs font-bold text-slate-500">0 مهام</span>
+          <span id="visibleCount" class="text-xs font-bold text-slate-500">جارٍ تحميل المهام…</span>
         </div>
           <div id="quickAddBox" role="region" aria-label="إضافة مهمة جديدة" class="hidden px-4 py-3 border-b border-blue-100 bg-blue-50/60">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.4fr)_minmax(180px,1fr)_150px_150px_auto] gap-2 items-end">
@@ -602,7 +602,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.8.10"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.8.11"></script>
 
 <script src="../assets/js/permissions.js?v=2.8.0"></script>
 <script>
