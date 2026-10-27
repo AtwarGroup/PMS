@@ -1,4 +1,4 @@
-import {initWorkboard} from './fleet-workboard.mjs?v=20261027.3';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261027.4';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
@@ -78,13 +78,21 @@ function switchTab(id) {
   document.querySelector('.fleet-heading h1').textContent = sectionTitle || dashboardTitle;
 }
 async function load() {
+  workboard?.setLoading(true);
+  status('جارٍ تحميل بيانات الأسطول…');
+  try {
   context = await rpc("fleet_snapshot");
   render();
   if(operations)await operations.refresh();
+  workboard?.setLoading(false);
   workboard?.render();
   if(initialView && context.finance_only && !context.can_view_vehicles)switchTab("requests");
   initialView=false;
   status("");
+  } catch (error) {
+    status('تعذر تحميل بيانات الأسطول. حدّث الصفحة وأعد المحاولة.', true);
+    throw error;
+  }
 }
 function render() {
   $('newRequest').hidden=!context.can_create;
@@ -141,7 +149,6 @@ function render() {
   $("vehicleEmpty").hidden = context.vehicles.length > 0;
   renderRequests();
   operations?.render();
-  workboard?.render();
 }
 function renderRequests() {
   if (!context) return;
