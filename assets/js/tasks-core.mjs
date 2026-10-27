@@ -46,7 +46,7 @@ function approvalPausedDays(activity){
   return paused;
 }
 
-export function calcDelay(end,actualEnd,status,submittedAt,activity,now=new Date()){
+export function calcDelay(end,actualEnd,status,submittedAt,activity,now=new Date(),privatePauseDays=null){
   const endDay=calendarDaySerial(end);
   if(endDay===null)return 0;
   if(status==='مكتملة'&&!actualEnd&&!submittedAt)return 0;
@@ -61,7 +61,7 @@ export function calcDelay(end,actualEnd,status,submittedAt,activity,now=new Date
   }
 
   const compareDay=calendarDaySerial(compare);
-  return compareDay===null?0:Math.max(0,compareDay-endDay-approvalPausedDays(activity));
+  return compareDay===null?0:Math.max(0,compareDay-endDay-(privatePauseDays===null?approvalPausedDays(activity):Math.max(0,Number(privatePauseDays)||0)));
 }
 
 export function normalizeProgress(value){

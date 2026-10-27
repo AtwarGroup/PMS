@@ -16,7 +16,7 @@ const sb={
   if(table==='subtasks'&&offlineChild)return {data:null,error:networkError()};
   return {data:table==='tasks'?[structuredClone(row)]:table==='subtasks'?structuredClone(child):[],error:null};
  }).then(yes,no);return q;},
- async rpc(name,args){writeCalls++;if(offlineWrite)throw networkError();
+ async rpc(name,args){if(name==='task_approval_pause_days')return {data:args.p_task_ids.map(task_id=>({task_id,paused_days:0})),error:null};writeCalls++;if(offlineWrite)throw networkError();
   if(conflict){conflict=false;row.notes='other user note';row.revision++;return {data:null,error:new Error('ATWAR_CONFLICT: task changed')};}
   assert.equal(args.p_expected_revision,row.revision);
   Object.assign(row,args.p_patch,{revision:row.revision+1});return {data:structuredClone(row),error:null};},

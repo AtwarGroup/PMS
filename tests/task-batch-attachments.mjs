@@ -16,7 +16,7 @@ try {
 } finally {globalThis.open=originalOpen;}
 const source=readFileSync('assets/js/supabase-firebase-compat.js','utf8');
 let failShared=false;
-const context=vm.createContext({readRelatedRows,ms:()=>1,sb:{from(table){const result={error:table==='task_batch_attachments'&&failShared?new Error('Access failed'):null,data:table==='task_batch_attachments'?[{id:'shared',batch_id:'batch-a',file_name:'تعليمات',storage_path:'owner/batch/file',size_bytes:10}]:[]};return {select(){return this;},in(){return this;},order(){return this;},range(){return this;},then(resolve){return Promise.resolve(result).then(resolve);}};}}});
+const context=vm.createContext({readRelatedRows,ms:()=>1,sb:{async rpc(name,{p_task_ids}){assert.equal(name,'task_approval_pause_days');return {data:p_task_ids.map(task_id=>({task_id,paused_days:0}))};},from(table){const result={error:table==='task_batch_attachments'&&failShared?new Error('Access failed'):null,data:table==='task_batch_attachments'?[{id:'shared',batch_id:'batch-a',file_name:'تعليمات',storage_path:'owner/batch/file',size_bytes:10}]:[]};return {select(){return this;},in(){return this;},order(){return this;},range(){return this;},then(resolve){return Promise.resolve(result).then(resolve);}};}}});
 vm.runInContext(source.slice(source.indexOf('async function loadChildren('),source.indexOf('function taskLegacy(')),context);
 const children=await context.loadChildren(['task-a','task-b','task-c'],[{id:'task-a',batch_id:'batch-a'},{id:'task-b',batch_id:'batch-a'},{id:'task-c'}]);
 assert.equal(children.attachments.get('task-a')[0].sharedBatch,true);
