@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {workItems,filterWorkItems,isArchived} from '../assets/js/fleet-workboard.mjs';
+import {workItems,filterWorkItems,isArchived,workboardItems} from '../assets/js/fleet-workboard.mjs';
 const c={employee_id:'receiver',user_id:'user',team_employee_ids:['team'],employees:[{id:'sender',name:'المسلّم'}],requests:[{id:'m',number:1,driver_id:'team',state:'fleet_review',request_type:'repair',description:'صيانة',journey:{responsibles:[{name:'مسؤول الأسطول'}]}}],can_approve:true};
 const data={handovers:[{id:'h',number:2,employee_id:'receiver',deliverer_id:'sender',employee_name:'المستلم',state:'fleet_review',workflow_version:2},{id:'s',number:3,employee_id:'other',deliverer_id:'receiver',state:'pending_sender'}]};
 const items=workItems(c,data);
@@ -21,3 +21,7 @@ const late=workItems(c,{...data,settings:{stage_days:3},overdue_requests:[{id:'m
 const now=Date.parse('2026-10-27T12:00:00Z'),day=86400000;
 for(const state of ['closed','accepted']){assert.equal(isArchived({done:true,state,completedAt:new Date(now-7*day+1).toISOString()},now),false);assert.equal(isArchived({done:true,state,completedAt:new Date(now-7*day).toISOString()},now),true);assert.equal(isArchived({done:true,state,completedAt:null},now),true);}
 assert.equal(isArchived({done:true,state:'rejected'},now),true);assert.equal(isArchived({done:false,state:'repair'},now),false);
+
+const ended=[{id:"recent",done:true,state:"closed",completedAt:new Date(now-day).toISOString()},{id:"older",done:true,state:"accepted",completedAt:new Date(now-8*day).toISOString()},{id:"rejected",done:true,state:"rejected"},{id:"cancelled",done:true,state:"cancelled"},{id:"open",done:false,state:"repair"}];
+assert.deepEqual(workboardItems(ended,true,now).map(x=>x.id),["recent","older","rejected","cancelled"]);
+assert.deepEqual(workboardItems(ended,false,now).map(x=>x.id),["recent","open"]);
