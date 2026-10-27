@@ -8,7 +8,7 @@ for (const [file,entity,tab] of [['job-review-page.js','job','review'],['job-lib
  async function run(rows,error=null,readError=null) {
   let calls=0,rendered=0,messages=[];
   const chain={select(){return this},eq(){return this},order:async()=>({data:rows,error:readError})};
-  const context={sb:{from:()=>chain,rpc:async()=>{calls++;return {error,data:{id:'job',final_reviewed_at:'done'}}}},[entity]:{id:'job'},proposals:[],editing:true,activeTab:'overview',toast:m=>messages.push(m),render:()=>rendered++,renderEditor:()=>rendered++,loadRelated:async()=>{},loadReviewData:async()=>{}};
+  const context={sb:{from:()=>chain,rpc:async()=>{calls++;return {error,data:{id:'job',final_reviewed_at:'done'}}}},[entity]:{id:'job'},proposals:[],editing:true,activeTab:'overview',toast:m=>messages.push(m),render:()=>rendered++,renderEditor:()=>rendered++,loadRelated:async()=>{},tryLoadRelated:async()=>true,loadReviewData:async()=>{}};
   vm.createContext(context);await vm.runInContext(body+';finishFinalReview()',context);
   return {calls,rendered,messages,context};
  }
