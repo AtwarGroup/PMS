@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>الطلبات المكتملة — ATWAR ONE</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
+    <link rel="stylesheet" href="../assets/css/app-theme.css?v=2.8.5" />
+    <link rel="stylesheet" href="../assets/css/fleet.css?v=3" />
+    <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=20261027.1" />
+    <script src="https://unpkg.com/lucide@1.47.0"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/module-access.js?v=2.8.1"></script>
+    <script src="../assets/js/supabase-runtime.js"></script>
+    <script src="../assets/js/session-service.js?v=2.5.2"></script>
+    <script src="../assets/js/shell-components.js?v=2.8.5"></script>
+    <script src="../assets/js/ui-feedback.js?v=2.5.27"></script>
+  </head>
+  <body data-fleet-view="archive">
+    <div class="atwar-shell">
+      <atwar-sidebar active="fleet"></atwar-sidebar>
+      <section class="atwar-main">
+        <atwar-header></atwar-header>
+        <main class="atwar-content fleet-page">
+          <header class="fleet-heading atwar-page-head">
+            <div>
+              <p class="fleet-eyebrow">العمليات · أسطول السيارات</p>
+              <div class="fleet-title-line"><h1>إدارة الأسطول</h1><a id="fleetHelp" class="fleet-help" href="user-guide.html" aria-label="دليل الاستخدام" title="دليل الاستخدام"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1.1-1.5 2.5M12 16.5h.01"/></svg></a></div>
+              <p>السيارات وعهد السائقين، من طلب الصيانة إلى التسوية.</p>
+            </div>
+            <div class="fleet-create-actions" id="fleetCreateActions"><button id="newRequest" class="fleet-btn" hidden disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>طلب صيانة جديد
+            </button></div>
+          </header>
+          <p id="fleetStatus" role="status" aria-live="polite">
+            جارٍ تحميل بيانات الأسطول…
+          </p>
+          <div
+            class="fleet-tabs"
+            role="tablist"
+            aria-label="أقسام إدارة الأسطول"
+          >
+            <button
+              id="tab-dashboard"
+              role="tab"
+              aria-selected="true"
+              aria-controls="dashboard"
+              data-tab="dashboard"
+            >
+              لوحة المتابعة</button
+            ><button
+              id="tab-requests"
+              role="tab"
+              aria-selected="false"
+              aria-controls="requests"
+              data-tab="requests"
+              tabindex="-1"
+            >
+              طلبات الصيانة</button
+            ><button
+              id="tab-vehicles"
+              hidden
+              role="tab"
+              aria-selected="false"
+              aria-controls="vehicles"
+              data-tab="vehicles"
+              tabindex="-1"
+            >
+              سجل السيارات
+            </button>
+            <button
+              id="tab-documents"
+              hidden
+              role="tab"
+              aria-selected="false"
+              aria-controls="documents"
+              data-tab="documents"
+              tabindex="-1"
+            >
+              الوثائق والتنبيهات
+            </button>
+          </div>
+          <section
+            id="dashboard"
+            role="tabpanel"
+            aria-labelledby="tab-dashboard"
+          >
+            <label class="fleet-dashboard-scope">نطاق لوحة المتابعة<select id="dashboardScope" aria-label="نطاق لوحة المتابعة"></select></label>
+            <div class="fleet-metrics">
+              <article data-tone="blue" class="atwar-metric">
+                <span>طلبات مفتوحة</span><strong id="openCount">—</strong>
+              </article>
+              <article data-tone="warning" class="atwar-metric">
+                <span>عهد مصروفة لم تُسوّ</span
+                ><strong id="outstanding">—</strong><small>ر.س</small>
+              </article>
+              <article data-tone="blue" class="atwar-metric">
+                <span>تكلفة الصيانة المغلقة</span
+                ><strong id="totalCost">—</strong><small>ر.س</small>
+              </article>
+              <article data-tone="success" class="atwar-metric">
+                <span>طلبات أُغلقت</span><strong id="closedCount">—</strong>
+              </article>
+            </div>
+            <div class="fleet-dashboard-grid">
+              <section class="fleet-card">
+                <h2>بانتظار إجرائك</h2>
+                <div id="myQueue"></div>
+              </section>
+              <section class="fleet-card">
+                <h2>متابعة مراحل العمل</h2>
+                <div id="stageSummary"></div>
+                <p class="fleet-muted">تُحسب المؤشرات من السجلات المتاحة لك.</p>
+              </section>
+            </div>
+          </section>
+          <section
+            id="requests"
+            role="tabpanel"
+            aria-labelledby="tab-requests"
+            hidden
+          >
+            <section class="fleet-card">
+              <div class="fleet-filters">
+                <label
+                  >البحث<input
+                    id="requestSearch"
+                    type="search"
+                    placeholder="رقم الطلب أو السائق أو السيارة" /></label
+                ><label
+                  >المرحلة<select id="stateFilter">
+                    <option value="">جميع المراحل</option>
+                  </select></label
+                >
+              </div>
+              <div class="fleet-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>الطلب</th>
+                      <th>السائق / السيارة</th>
+                      <th>الوصف</th>
+                      <th>المرحلة</th>
+                      <th>المعتمد</th>
+                      <th>الإجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody id="requestRows"></tbody>
+                </table>
+              </div>
+              <p id="requestEmpty" hidden>لا توجد طلبات مطابقة.</p>
+            </section>
+          </section>
+          <section
+            id="vehicles"
+            role="tabpanel"
+            aria-labelledby="tab-vehicles"
+            hidden
+          >
+            <section class="fleet-card">
+              <header class="fleet-card-heading">
+                <div>
+                  <h2>سجل السيارات</h2>
+                  <p class="fleet-muted">
+                    عهد السائقين وسجل الصيانة والتكلفة لكل سيارة.
+                  </p>
+                </div>
+                <button id="importVehicles" class="fleet-btn secondary" hidden>
+                  استيراد سجل السيارات</button
+                ><button id="newVehicle" class="fleet-btn" hidden>
+                  إضافة سيارة
+                </button>
+              </header>
+              <div class="fleet-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>اللوحة / الهيكل</th>
+                      <th>السيارة</th>
+                      <th>السائق</th>
+                      <th>المدينة</th>
+                      <th>العداد</th>
+                      <th>الحالة</th>
+                      <th>الإجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vehicleRows"></tbody>
+                </table>
+              </div>
+              <p id="vehicleEmpty" hidden>
+                لا توجد سيارات متاحة. راجع مسؤول الأسطول لربط سيارتك.
+              </p>
+            </section>
+          </section>
+          <section
+            id="documents"
+            role="tabpanel"
+            aria-labelledby="tab-documents"
+            hidden
+          >
+            <section class="fleet-card">
+              <header class="fleet-card-heading">
+                <div>
+                  <h2>وثائق السيارات والتنبيهات</h2>
+                  <p id="documentRules" class="fleet-muted"></p>
+                </div>
+                <div class="fleet-form-actions">
+                  <button id="refreshDocuments" class="fleet-btn secondary">
+                    تحديث العرض</button
+                  ><button id="documentSettings" class="fleet-btn" hidden>
+                    إعدادات التنبيه
+                  </button>
+                </div>
+              </header>
+              <p class="fleet-muted">
+                تنبيه قبل الانتهاء وتنبيه عند انتهاء الصلاحية، دون تكرار يومي.
+                المستلمون: مسؤول الأسطول والسائق ومديره المباشر.
+              </p>
+              <div class="fleet-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>السيارة / السائق</th>
+                      <th>التفويض</th>
+                      <th>رخصة السير</th>
+                      <th>التأمين</th>
+                      <th>الفحص الدوري</th>
+                      <th>الإجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody id="documentRows"></tbody>
+                </table>
+              </div>
+              <p id="documentEmpty" hidden>لا توجد سيارات متاحة لك.</p>
+            </section>
+          </section>
+          <dialog
+            id="fleetDialog"
+            class="fleet-dialog"
+            aria-labelledby="dialogTitle"
+          >
+            <header>
+              <div>
+                <h2 id="dialogTitle"></h2>
+                <p id="dialogSubtitle" class="fleet-muted"></p>
+              </div>
+              <button
+                id="closeDialog"
+                type="button"
+                class="fleet-btn secondary"
+              >
+                إغلاق
+              </button>
+            </header>
+            <div id="dialogBody"></div>
+            <p id="dialogStatus" role="status" aria-live="polite"></p>
+          </dialog>
+        </main>
+      </section>
+    </div>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=20261027.1"></script>
+  </body>
+</html>

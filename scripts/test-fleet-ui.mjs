@@ -57,13 +57,18 @@ try {
       .locator("[name=accountant_id]")
       .selectOption({ label: "المحاسب التجريبي" });
     await p.locator("[name=description]").fill("صيانة تجريبية " + amount);
-    for (let i = 0; i < 3; i++) {
+    await p.locator('[name=maintenance_kind]').selectOption('tire');
+    await p.locator('[name=odometer]').fill('12510');
+    await p.locator('[name=fault_notes]').fill('تشخيص العطل والملاحظات التجريبية');
+    for (let i = 0; i < 2; i++) {
       const q = p.locator("[data-quote]").nth(i);
       await q.locator("[name=supplier]").fill("ورشة تجريبية " + i);
       await q.locator("[name=parts]").fill(String(amount + i));
-      await q.locator("[type=file][name=file]").setInputFiles(pdf);
+      await q.locator("[name=phone]").fill("0501234567");
+      await q.locator("[type=file][name=parts_file]").setInputFiles({...pdf,buffer:Buffer.from("%PDF-1.4 parts "+i)});
+      await q.locator("[type=file][name=labor_file]").setInputFiles({...pdf,buffer:Buffer.from("%PDF-1.4 labor "+i)});
     }
-    await p.getByRole("button", { name: "حفظ المسودة والمرفقات" }).click();
+    await p.getByRole("button", { name: "حفظ مسودة" }).click();
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
     await expect(p.locator("#fleetStatus")).toContainText("تم حفظ المسودة");
     await open(actor,"صيانة تجريبية " + amount);
@@ -77,15 +82,15 @@ try {
     await p.locator("#actionForm button[type=submit]").click();
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
     await expect(p.locator("#fleetStatus")).toHaveText("تم تنفيذ الإجراء وتوثيقه.");
-    await p.locator("[data-tab=requests]").click();
-    await p.locator("#requestRows tr").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
+    await p.locator("[data-tab=dashboard]").click();
+    await p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
     await expect(p.locator("#fleetDialog")).toBeVisible();
   }
   async function open(actor, description) {
     const p = await pageFor(actor);
-    await p.locator("[data-tab=requests]").click();
+    await p.locator("[data-tab=dashboard]").click();
     await p
-      .locator("#requestRows tr")
+      .locator("#fleetWorkRows article[data-work-kind=maintenance]")
       .filter({ hasText: description })
       .getByRole("button", { name: "عرض الطلب" })
       .click();
@@ -100,13 +105,14 @@ try {
   await act(p, "confirm_repair", async (f) => {
     await f.locator("[name=total]").fill("290");
     await f.locator("[name=invoice]").setInputFiles(pdf);
+    await f.locator("[name=repair_photo]").setInputFiles({name:"repair.png",mimeType:"image/png",buffer:Buffer.from("89504e470d0a1a0a","hex")});
     await f.locator("[name=received]").check();
   });
   p = await open("fleet", "صيانة تجريبية 300");
   await act(p, "approve");
   p = await open("accountant", "صيانة تجريبية 300");
   await act(p, "settle", async (f) => {
-    await f.locator("[name=reference]").fill("QA-REIMBURSEMENT");
+    await f.locator("[name=reference]").fill("1234");
     await f.locator("[name=evidence]").setInputFiles(pdf);
   });
   await expect(p.locator("#dialogBody .fleet-tag").first()).toHaveText("مغلق");
@@ -137,6 +143,7 @@ try {
   await act(p, "confirm_repair", async (f) => {
     await f.locator("[name=total]").fill("400");
     await f.locator("[name=invoice]").setInputFiles(pdf);
+    await f.locator("[name=repair_photo]").setInputFiles({name:"repair.png",mimeType:"image/png",buffer:Buffer.from("89504e470d0a1a0a","hex")});
     await f.locator("[name=received]").check();
   });
   p = await open("accountant", "صيانة تجريبية 301");
@@ -159,9 +166,11 @@ try {
   await expect(p.locator("#fleetDialog")).not.toBeVisible();
   const addedCar=(await app.rpc('fleet','fleet_snapshot')).vehicles.find(v=>v.plate==='QA 9876');
   assert.equal(addedCar.driver_id,null);
-  const handover=await app.rpc('fleet','fleet_handover_save',{p_id:null,p_revision:null,p_data:{vehicle_id:addedCar.id,kind:'issue',employee_id:'00000000-0000-4000-8000-000000000003',odometer:0,fuel_level:50,keys_count:1,spare_tire:true,tools:true,marks:[],no_marks:true,notes:''}});
-  await app.rpc('fleet','fleet_handover_command',{p_id:handover,p_revision:1,p_action:'submit',p_reason:''});
-  await app.rpc('driver','fleet_handover_command',{p_id:handover,p_revision:2,p_action:'accept',p_reason:''});
+  const handover=await app.rpc('driver','fleet_handover_save',{p_id:null,p_revision:null,p_data:{vehicle_id:addedCar.id,deliverer_id:'00000000-0000-4000-8000-000000000004',diagram_type:'sedan',odometer:0,fuel_level:50,keys_count:1,spare_tire:true,tools:true,marks:[],no_marks:true,notes:''}});
+  await app.rpc('driver','fleet_handover_command',{p_id:handover,p_revision:1,p_action:'submit',p_reason:''});
+  await app.rpc('fleet','fleet_handover_command',{p_id:handover,p_revision:2,p_action:'sender_review',p_reason:''});
+  await app.rpc('admin','fleet_handover_command',{p_id:handover,p_revision:3,p_action:'approve_notes',p_reason:''});
+  await app.rpc('driver','fleet_handover_command',{p_id:handover,p_revision:4,p_action:'receive_final',p_reason:''});
   p = await pageFor("driver");
   await p.locator("#newRequest").click();
   await expect(p.locator("[name=vehicle_id] option")).toHaveCount(2);
@@ -198,8 +207,8 @@ try {
   await expect(p.locator("#vehicleRows tr")).toHaveCount(3);
   p = await pageFor("outsider");
   await expect(p.locator("#newRequest")).toBeDisabled();
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestEmpty")).toBeVisible();
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article")).toHaveCount(0);
   const admin = await pageFor("admin");
   await admin.goto(app.url + "/admin/users.html?qa=admin");
   await expect(admin.locator("#accessStatus")).toHaveAttribute(
@@ -220,8 +229,8 @@ try {
     admin.locator('#directRules [data-permission="fleet.requests.read"]'),
   ).toHaveValue("all");
   p = await pageFor("outsider");
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestRows tr")).toHaveCount(2);
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(2);
   await admin
     .locator('#directRules [data-permission="fleet.requests.read"]')
     .selectOption("");
@@ -230,8 +239,8 @@ try {
     "تم حفظ المنح المباشر.",
   );
   p = await pageFor("outsider");
-  await p.locator("[data-tab=requests]").click();
-  await expect(p.locator("#requestEmpty")).toBeVisible();
+  await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article")).toHaveCount(0);
   console.log(
     "PASS UI: existing account administration grants and revokes fleet access, with persisted direct-grant scope.",
   );
@@ -326,11 +335,12 @@ try {
   await app.db.exec("update private.hr_employees set manager_id='00000000-0000-4000-8000-000000000001'where profile_id='00000000-0000-4000-8000-000000000002'");
   await seedAssignedVehicle(app.db,app.rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'MANAGER 888',vin:'QA-MANAGER-888',vehicle_type:'سيارة المدير',driver_id:'00000000-0000-4000-8000-000000000002',odometer:0,active:true},p_reason:'اختبار سيارة المدير'});
   p=await pageFor('manager');
-  await expect(p.locator('#dashboardScope option')).toHaveCount(2);
-  await p.locator('#dashboardScope').selectOption('team');
-  await expect(p.locator('#openCount')).toHaveText('1');
-  await p.locator('#dashboardScope').selectOption('personal');
-  await expect(p.locator('#openCount')).toHaveText('0');
+  await expect(p.locator('#workScope option[value=team]')).not.toHaveAttribute('hidden','');
+  await p.locator('#workScope').selectOption('team');
+  await expect(p.locator('#fleetWorkRows')).toContainText('صيانة تجريبية 150');
+  await p.locator('#workScope').selectOption('mine');
+  await expect(p.locator('#fleetWorkRows article')).toHaveCount(0);
+  await p.locator('#workScope').selectOption('all');
   await p.locator('#newRequest').click();
   await expect(p.locator('[name=request_type] option')).toHaveCount(2);
   await expect(p.locator('[name=vehicle_id] option')).toHaveCount(3);
@@ -342,8 +352,8 @@ try {
   await expect(p.locator('#newRequest')).toBeHidden();
   await expect(p.locator('[data-tab=vehicles]')).toBeHidden();
   await expect(p.locator('[data-tab=documents]')).toBeHidden();
-  await expect(p.locator('[data-tab=requests]')).toHaveAttribute('aria-selected','true');
-  await expect(p.locator('#requestRows tr')).toHaveCount(0);
+  await expect(p.locator('[data-tab=dashboard]')).toHaveAttribute('aria-selected','true');
+  await expect(p.locator('#fleetWorkRows article[data-work-kind=maintenance]')).toHaveCount(0);
   p=await pageFor('fleet');
   await expect(p.locator('#newRequest')).toBeEnabled();
   await expect(p.locator('.atwar-nav a[href$="fleet/index.html"]')).toHaveCount(1);
@@ -353,7 +363,7 @@ try {
   await create(175,'fleet');
   p=await open('fleet','صيانة تجريبية 175');
   await act(p,'approve');
-  await act(p,'confirm_repair',async f=>{await f.locator('[name=total]').fill('175');await f.locator('[name=invoice]').setInputFiles(pdf);await f.locator('[name=received]').check();});
+  await act(p,'confirm_repair',async f=>{await f.locator('[name=total]').fill('175');await f.locator('[name=invoice]').setInputFiles(pdf);await f.locator('[name=repair_photo]').setInputFiles({name:'repair.png',mimeType:'image/png',buffer:Buffer.from('89504e470d0a1a0a','hex')});await f.locator('[name=received]').check();});
   await act(p,'approve');
   await expect(p.locator('[data-action=settle]')).toHaveCount(0);
   p=await open('admin','صيانة تجريبية 175');
@@ -397,29 +407,31 @@ try {
   await mobile.locator('#newRequest').click();
   await mobile.locator('[name=accountant_id]').selectOption({label:'المحاسب التجريبي'});
   await mobile.locator('[name=description]').fill('طلب من كاميرا الجوال');
+  await mobile.locator('[name=odometer]').fill('12510');
   const png={name:'camera.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64')};
   const first=mobile.locator('[data-quote]').first();
-  await expect(first.getByRole('button',{name:'التصوير بالكاميرا'})).toBeVisible();
+  await expect(first.getByRole('button',{name:'التصوير بالكاميرا'}).first()).toBeVisible();
   const chooserEvent=mobile.waitForEvent('filechooser');
-  await first.getByRole('button',{name:'التصوير بالكاميرا'}).click();
+  await first.getByRole('button',{name:'التصوير بالكاميرا'}).first().click();
   const chooser=await chooserEvent;
   assert.equal(await chooser.element().getAttribute('capture'),'environment');
   await chooser.setFiles(png);
   await expect(first.locator('.atwar-attachment-preview img')).toBeVisible();
-  assert.equal(await first.locator('[name=file]').evaluate(e=>e.files[0].name),'camera.png');
-  await first.getByRole('button',{name:'حذف المرفق'}).click();
-  assert.equal(await first.locator('[name=file]').evaluate(e=>e.files.length),0);
-  await first.locator('[data-attachment-source=camera]').setInputFiles(png);
-  for(let i=0;i<3;i++){
+  assert.equal(await first.locator('[name=parts_file]').evaluate(e=>e.files[0].name),'camera.png');
+  await first.getByRole('button',{name:'حذف المرفق'}).first().click();
+  assert.equal(await first.locator('[name=parts_file]').evaluate(e=>e.files.length),0);
+  await first.locator('[data-attachment-source=camera]').first().setInputFiles(png);
+  await mobile.locator('[name=maintenance_kind]').selectOption('tire');await mobile.locator('[name=fault_notes]').fill('معاينة العطل من خلال الجوال');
+  for(let i=0;i<2;i++){
     const q=mobile.locator('[data-quote]').nth(i);
-    await q.locator('[name=supplier]').fill('ورشة جوال '+i);
+    await q.locator('[name=supplier]').fill('ورشة جوال تجريبية '+i);await q.locator('[name=phone]').fill('0501234567');await q.locator('[name=labor_file]').setInputFiles({...pdf,buffer:Buffer.from('%PDF-1.4 mobile labor '+i)});
     await q.locator('[name=parts]').fill('100');
-    if(i)await q.locator('[name=file]').setInputFiles(pdf);
+    if(i)await q.locator('[name=parts_file]').setInputFiles({...pdf,buffer:Buffer.from('%PDF-1.4 mobile parts '+i)});
   }
   assert.equal(await mobile.locator('[name=description]').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=16),true);
   assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'Mobile form overflow');
   await mobile.screenshot({path:'test-results/fleet-mobile-camera.png',fullPage:true});
-  await mobile.getByRole('button',{name:'حفظ المسودة والمرفقات'}).click();
+  await mobile.getByRole('button',{name:'حفظ مسودة'}).click();
   await expect(mobile.locator('#fleetDialog')).not.toBeVisible();
   await expect(mobile.locator('#fleetStatus')).toContainText('تم حفظ المسودة');
   console.log('PASS UI: 320/360/390/412/740px, mobile drawer, keyboard close, camera capture, preview, removal and real draft upload.');
