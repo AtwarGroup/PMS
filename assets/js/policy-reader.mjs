@@ -1,31 +1,42 @@
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const normalizePolicySearch = value => String(value ?? '').normalize('NFKD').replace(/[\u064b-\u065f\u0670\u0640]/g, '').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[٠-٩]/g,c=>String(c.charCodeAt(0)-1632)).toLowerCase();
-export function searchPolicy(sections, query) {
+export function searchPolicy(sections, query, options = {}) {
  const term = normalizePolicySearch(query.trim());
  if(term.length < 2) return [];
  return sections.flatMap(({section,number}) => {
-  const clauses = section.body.split(/\n\s*\n/).map(text=>text.trim()).filter(Boolean);
-  const matches = clauses.filter(text=>normalizePolicySearch(text).includes(term));
-  if(!matches.length && normalizePolicySearch(section.title).includes(term)) matches.push(clauses[0] || section.title);
-  return matches.map(text=>({id:section.id,number,title:section.title,clause:text.match(/^(\d+\.\d+)/)?.[1] || '',text}));
+  const clauses = section.body.split(/\n\s*\n/).map(text=>text.trim()).filter(Boolean).flatMap(text=>{
+   if(options.code!=='POL-COMPENSATION'||!text.startsWith('|'))return [{text}];
+   const lines=text.split('\n').filter(Boolean),isTable=/^\|[\s:|\-]+\|$/.test(lines[1]||'');
+   return isTable?lines.slice(2).map(line=>({text:line.slice(1,-1).split('|').map(c=>c.trim()).join(' | '),cells:line.slice(1,-1).split('|').map(c=>c.trim())})):[{text}];
+  });
+  const matches = clauses.filter(({text})=>normalizePolicySearch(text).includes(term));
+  if(!matches.length && normalizePolicySearch(section.title).includes(term)) matches.push(clauses[0] || {text:section.title});
+  return matches.map(({text,cells})=>({id:section.id,number,title:section.title,cells,clause:text.match(/^(\d+\.\d+)/)?.[1] || '',text}));
  });
 }
 // Presentation only: keep the stored policy text intact.
-export function renderTravelBody(body, renderBody) {
+export function renderTravelBody(body, renderBody, options = {}) {
  let html=renderBody(body);
  if(body.startsWith('### بيانات الإصدار والاعتماد\n')) {
   const end=body.indexOf('\n\n');
   if(end>0){const rows=body.slice(0,end).split('\n').slice(1).map(line=>{const at=line.indexOf(':');return at>0?`<div><dt>${esc(line.slice(0,at))}</dt><dd>${esc(line.slice(at+1).trim())}</dd></div>`:`<div><dd>${esc(line)}</dd></div>`;}).join('');html=`<div class="travel-meta"><h3>بيانات الإصدار والاعتماد</h3><dl>${rows}</dl></div>`+renderBody(body.slice(end+2));}
  }
  html=html.replace(/<p>(\d+\.\d+)(\s+)([\s\S]*?)<\/p>/g,(_,n,space,text)=>`<p class="travel-clause"><span class="travel-clause-number" dir="ltr">${n}</span>${space}<span class="travel-clause-text">${text}</span></p>`);
- return html.replace('<table class="policy-data-table">','<table class="policy-data-table"><colgroup><col style="width:80px"><col><col style="width:120px"></colgroup>');
+ return options.code==='POL-COMPENSATION'?html:html.replace('<table class="policy-data-table">','<table class="policy-data-table"><colgroup><col style="width:80px"><col><col style="width:120px"></colgroup>');
 }
 const groups = [ ['نظرة عامة',[1,2]], ['التعريفات والإجراءات',[3,4,5]], ['الانتداب ومستحقاته',[6,7]], ['النقل الوظيفي',[8,9]], ['أحكام التنفيذ',[10,11,12,13]], ['الحوكمة والتوثيق',[14,15,16]] ];
-export function renderTravelReader(sections, renderBody, notes) {
- return `<div class="travel-reader"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${groups.map(([title,numbers],groupIndex)=>`<details ${groupIndex===0?'open':''}><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(section.title)}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(section.title)}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderTravelBody(section.body,renderBody)}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
+export function policyReaderGroups(sections, code='POL-TRAVEL') {
+ const selected=code==='POL-COMPENSATION'?[['التعريف والهيكل الوظيفي',[1,2]],['السلم والمزايا',[3,4]],['إدارة الرواتب والاعتمادات',[5,6]],['المراجع',[8]]]:groups;
+ return selected.filter(([,numbers])=>sections.some(s=>numbers.includes(s.number)));
+}
+export function renderTravelReader(sections, renderBody, notes, options = {}) {
+ const indexGroups=policyReaderGroups(sections,options.code);
+
+ return `<div class="travel-reader" data-policy-code="${esc(options.code||'POL-TRAVEL')}"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${indexGroups.map(([title,numbers],groupIndex)=>`<details ${groupIndex===0?'open':''}><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(section.title)}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(section.title)}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderTravelBody(section.body,renderBody,options)}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
 }
 export function wireTravelReader(host, sections) {
  const input=host.querySelector('#travelSearch'); if(!input)return;
+ const code=host.querySelector('.travel-reader').dataset.policyCode;
  const results=host.querySelector('#travelResults'),status=host.querySelector('#travelSearchStatus');
  const panels=[...host.querySelectorAll('[data-travel-panel]')];
  const nav=[...host.querySelectorAll('[data-travel-target]')];
@@ -44,18 +55,33 @@ export function wireTravelReader(host, sections) {
    if(found){frag.append(node.textContent.slice(previous));node.replaceWith(frag);}
   });
  }
+ function revealSalaryMatch(panel,match,query){
+  const term=normalizePolicySearch(query.trim());
+  panel.querySelectorAll('.policy-registry-widget,.policy-progression-widget').forEach(widget=>{
+   const search=widget.querySelector('input[type="search"]'),grade=widget.querySelector('.policy-salary-controls select'),nation=widget.querySelector('select[aria-label="شريحة الراتب"]');
+   if(!search||!grade)return;
+   const exactGrade=[...grade.options].find(option=>normalizePolicySearch(option.value)===term&&option.value);
+   const rowGrade=match.cells&&[...grade.options].find(option=>option.value===match.cells[0]&&option.value);
+   const card=[...widget.querySelectorAll('.policy-salary-print .policy-point-card')].find(el=>normalizePolicySearch(el.textContent).includes(term));
+   const job=rowGrade?match.cells[1]:card?.querySelector('h4')?.textContent;
+   if(!job&&!exactGrade)return;
+   grade.value=rowGrade?.value||exactGrade?.value||'';search.value=job||'';if(nation)nation.value='all';
+   search.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+ }
  function openSection(id,match){
   const panel=panels.find(p=>p.dataset.travelPanel===id);if(!panel)return;
   const indexLink=nav.find(b=>b.dataset.travelTarget===id);const group=indexLink?.closest('details');if(group)group.open=true;
-  panel.open=true;results.hidden=true;nav.forEach(button=>{const current=button.dataset.travelTarget===id;button.classList.toggle('active',current);if(current)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');});
+  panel.open=true;results.hidden=true;if(code==='POL-COMPENSATION'&&match)revealSalaryMatch(panel,match,input.value);nav.forEach(button=>{const current=button.dataset.travelTarget===id;button.classList.toggle('active',current);if(current)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');});
   clearHighlights();if(input.value.trim())highlight(panel,input.value);
   const clause=match?.clause;
   const target=clause?[...panel.querySelectorAll('.policy-body p')].find(p=>p.textContent.trim().startsWith(clause+' ')):null;
-  const focus=target||panel.querySelector('mark.travel-match')||panel.querySelector('summary');
+  const visibleMark=[...panel.querySelectorAll('mark.travel-match')].find(mark=>mark.getClientRects().length);
+  const focus=target||visibleMark||panel.querySelector('summary');
   focus.setAttribute('tabindex','-1');focus.focus({preventScroll:true});scroll(focus);
  }
  function runSearch(){
-  clearTimeout(timer);clearHighlights();const query=input.value.trim();matches=searchPolicy(sections,query);
+  clearTimeout(timer);clearHighlights();const query=input.value.trim();matches=searchPolicy(sections,query,{code});
   results.hidden=!query||normalizePolicySearch(query).length<2;
   status.textContent=!query?'':normalizePolicySearch(query).length<2?'اكتب حرفين على الأقل للبحث.':matches.length?`${matches.length} نتيجة في كامل السياسة`:'لا توجد نتائج مطابقة. جرّب كلمة أخرى أو رقم البند.';
   results.replaceChildren();

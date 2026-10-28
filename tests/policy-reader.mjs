@@ -19,3 +19,15 @@ const presentation=renderTravelBody('### بيانات الإصدار والاع�
 assert(presentation.includes('<dl>'));assert(presentation.includes('<dt>رمز السياسة</dt>'));assert(presentation.includes('POL-TRAVEL'));assert(presentation.includes('class="travel-clause-number" dir="ltr">1.1</span>'));assert(presentation.includes('نص السياسة دون تغيير.'));
 assert.equal((html.match(/<details open>/g)||[]).length,1,'Only the overview index group starts expanded');
 console.log('PASS compact metadata and numbered clause presentation');
+const {policyReaderGroups}=await import('../assets/js/policy-reader.mjs');
+const {policyReadingSections}=await import('../assets/js/policy-content.mjs');
+const salaryContent=Array.from({length:8},(_,i)=>({id:'compensation-section-'+(i+1),title:i===7?'المراجع':'قسم '+(i+1),body:i===6?'نص مخفي فقط':i===2?'| الدرجة | الوظيفة | غير السعودي | السعودي |\n| --- | --- | --- | --- |\n| T3 | محاسب | 4,000 | 6,000 |\n| M2 | مدير مالي | 12,000 | 15,000 |':'نص القسم '+(i+1)}));
+const salarySections=policyReadingSections(salaryContent,'POL-COMPENSATION');
+assert.deepEqual(salarySections.map(s=>s.number),[1,2,3,4,5,6,8]);
+assert.equal(searchPolicy(salarySections,'مخفي',{code:'POL-COMPENSATION'}).length,0);
+const salaryGroups=policyReaderGroups(salarySections,'POL-COMPENSATION');assert.deepEqual(salaryGroups.flatMap(g=>g[1]),[1,2,3,4,5,6,8]);
+const jobMatch=searchPolicy(salarySections,'مدير مالي',{code:'POL-COMPENSATION'});assert.equal(jobMatch.length,1);assert.deepEqual(jobMatch[0].cells,['M2','مدير مالي','12,000','15,000']);
+const salaryHTML=renderTravelReader(salarySections,renderPolicyBody,()=>'',{code:'POL-COMPENSATION'});
+assert(!salaryHTML.includes('compensation-section-7'));assert(salaryHTML.includes('data-travel-target="compensation-section-8"'));assert(!salaryHTML.includes('الانتداب ومستحقاته'));assert(!salaryHTML.includes('<colgroup>'));assert(salaryHTML.includes('<th scope="col">السعودي</th>'));
+assert(renderTravelReader(sections,renderPolicyBody,()=>'',{code:'POL-TRAVEL'}).includes('<colgroup>'));
+console.log('PASS compensation reader: correct index, archived section excluded, references keep number 8, salary-row search, original matrix columns');
