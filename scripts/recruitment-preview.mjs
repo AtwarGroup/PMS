@@ -69,15 +69,16 @@ const seed = {
   interviewer_ids: [ids.manager],
   criteria: [{ key: "technical", label: "الكفاءة الفنية", weight: 100 }],
 };
+// Preview the current approved five-owner workflow, with distinct synthetic reviewers.
+await db.exec("alter table public.job_descriptions add column if not exists purpose text;alter table public.job_descriptions add column if not exists content jsonb;update public.job_descriptions set purpose=published_snapshot->>'purpose',content=published_snapshot->'content';");
+await db.exec(await fs.readFile(path.join(root,'scripts/releases/recruitment/upgrade.sql'),'utf8'));
+await db.exec(await fs.readFile(path.join(root,'scripts/releases/recruitment/approved-workflow.sql'),'utf8'));
+for(const [key,permission]of [['accountant','recruitment.finance'],['accountant2','recruitment.personnel'],['fleet','recruitment.approve'],['outsider','recruitment.development']])await db.query('update public.profiles set permissions=permissions||$1::text[] where id=$2',[[permission],ids[key]]);
+await db.query('update private.hr_employees set manager_id=$1 where profile_id=$2',[ids.manager,ids.admin]);
+await call('admin','recruitment_route_settings',{p_action:'save',p_data:{revision:1,finance_id:ids.accountant,hr_id:ids.accountant2,approver_id:ids.fleet,recruiter_id:ids.admin,development_id:ids.outsider}});
 const rid = await call("admin", "recruitment_request_create", { p_data: seed });
 await call("admin","recruitment_request_action",{p_id:rid,p_revision:1,p_action:"submit",p_data:{note:"إرسال الطلب التجريبي"}});
-for (let revision = 2; revision <= 5; revision++)
-  await call("admin", "recruitment_request_action", {
-    p_id: rid,
-    p_revision: revision,
-    p_action: "approve",
-    p_data: {note:"اعتماد المرحلة التجريبية",request_type_checked:true,saudization_checked:true,profession_checked:true},
-  });
+for(const [actor,revision,data]of [['manager',2,{}],['accountant',3,{budget_checked:true}],['accountant2',4,{need_checked:true,vacancy_checked:true,request_type_checked:true,saudization_checked:true,profession_checked:true}],['fleet',5,{}]])await call(actor,'recruitment_request_action',{p_id:rid,p_revision:revision,p_action:'approve',p_data:{note:'اعتماد المرحلة التجريبية',...data}});
 await call("admin", "recruitment_candidate_add", {
   p_request: rid,
   p_data: {

@@ -38,5 +38,58 @@ await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringif
 await db.query("select private.access_role_save($1,$2,$3,$4,false,$5)",[role.id,role.revision,role.name,role.description,JSON.stringify([{permission:'recruitment.approve',scope:'all'}])]);
 assert.equal((await db.query("select 'recruitment.approve'=any(permissions) allowed from public.profiles where id=$1",[id(2)])).rows[0].allowed,false);
 console.log('PASS role normalization: exact access preservation, repeat application, visible assignments and role revocation');
+// Approved five-owner workflow supersedes the earlier simplified baseline.
+await db.query("select private.access_role_save($1,$2,$3,$4,true,$5)",[role.id,role.revision+1,role.name,role.description,JSON.stringify([{permission:'recruitment.approve',scope:'all'}])]);
+await db.exec(await fs.readFile('scripts/releases/recruitment/approved-workflow.sql','utf8'));
+await db.exec(await fs.readFile('scripts/releases/recruitment/approved-workflow.sql','utf8'));
+const five=(await db.query('select public.recruitment_route_settings() c')).rows[0].c;
+await db.query("select public.recruitment_route_settings('save',$1)",[JSON.stringify({revision:five.revision,finance_id:id(4),hr_id:id(5),approver_id:id(2),recruiter_id:id(6),development_id:id(3)})]);
+const approvedCycle=await fs.readFile('scripts/releases/recruitment/test-approved-cycle.sql','utf8');
+await db.exec(approvedCycle);
+const exceptionCycle=approvedCycle.replace("-- FINANCE_DECISION",`perform public.recruitment_request_action(r.id,(select revision from private.recruitment_requests where id=r.id),'reject','{"note":"عدم توفر موازنة معتمدة"}');
+assert(select status='finance_exception'from private.recruitment_requests where id=r.id),'finance rejection must route automatically to CEO';
+assert(select owner_id=ceo from private.recruitment_tasks where key='request:'||r.id),'finance exception task owner';
+perform set_config('request.jwt.claims',jsonb_build_object('sub',ceo,'role','authenticated')::text,true);
+perform public.recruitment_request_action(r.id,(select revision from private.recruitment_requests where id=r.id),'approve','{"note":"اعتماد استثناء الموازنة"}');
+perform set_config('request.jwt.claims',jsonb_build_object('sub',finance,'role','authenticated')::text,true);
+-- SKIP_FINANCE_APPROVE`)
+.replace(" perform public.recruitment_request_action(r.id,(select revision from private.recruitment_requests where id=r.id),'approve','{\"note\":\"مراجعة الموازنة واعتمادها\",\"budget_checked\":true}');",'')
+.replace('-- HR_DECISION',`perform public.recruitment_request_action(r.id,(select revision from private.recruitment_requests where id=r.id),'reject','{"note":"طلب استثناء الاحتياج والتوطين"}');
+assert(select status='hr_exception'from private.recruitment_requests where id=r.id),'personnel rejection must route automatically to development';
+perform set_config('request.jwt.claims',jsonb_build_object('sub',dev,'role','authenticated')::text,true);`)
+.replace('-- OFFER_HR_DECISION',`perform public.recruitment_offer_action(o,'reject','طلب استثناء من مراجعة شؤون الموظفين');
+assert(select state='development_review'from private.recruitment_offers where id=o),'offer rejection routes to development';
+assert(select owner_id=dev from private.recruitment_tasks where key='offer:'||o),'offer exception task owner';
+perform set_config('request.jwt.claims',jsonb_build_object('sub',dev,'role','authenticated')::text,true);`);
+await db.exec(exceptionCycle);
+const exceptionDenied=`begin;do $test$declare r private.recruitment_requests;stage text;actor uuid;begin
+for stage in select unnest(array['finance_exception','hr_exception'])loop
+select * into strict r from private.recruitment_requests where number=11;
+r.id:=gen_random_uuid();r.public_token:=gen_random_uuid();r.number:=nextval(pg_get_serial_sequence('private.recruitment_requests','number'));r.revision:=1;r.status:=stage;r.created_by:='70000000-0000-4000-8000-000000000008';r.hr_id:='70000000-0000-4000-8000-000000000005';r.finance_id:='70000000-0000-4000-8000-000000000004';r.approver_id:='70000000-0000-4000-8000-000000000002';r.development_id:='70000000-0000-4000-8000-000000000003';r.recruiter_id:='70000000-0000-4000-8000-000000000006';r.route:='advertised';
+insert into private.recruitment_requests overriding system value select r.*;
+actor:=case stage when 'finance_exception'then r.approver_id else r.development_id end;
+perform set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated')::text,true);
+perform public.recruitment_request_action(r.id,1,'reject','{"note":"عدم اعتماد الاستثناء للاختبار"}');
+assert(select status='rejected'from private.recruitment_requests where id=r.id),'rejected exception must stop request';
+assert not exists(select 1 from private.recruitment_batches where request_id=r.id),'no sourcing after rejected exception';
+end loop;end $test$;rollback;`;
+await db.exec(exceptionDenied);
+const approveOffer=" perform public.recruitment_offer_action(o,'approve','اعتماد العرض التجريبي');";
+const rejectedOffer=approvedCycle.split(approveOffer)[0]+`perform public.recruitment_offer_action(o,'reject','إعادة العرض للتعديل من الرئيس التنفيذي');
+assert(select state='returned'from private.recruitment_offers where id=o),'rejected final offer returns for preparation';
+perform set_config('request.jwt.claims',jsonb_build_object('sub',recruiter,'role','authenticated')::text,true);
+denied:=false;begin perform public.recruitment_offer_action(o,'sent','محاولة إرسال عرض غير معتمد');exception when raise_exception or insufficient_privilege then denied:=true;end;assert denied,'cannot send rejected offer';
+end $test$;rollback;`;
+await db.exec(rejectedOffer);
+const separateRoles=await fs.readFile('scripts/releases/recruitment/separate-approved-roles.sql','utf8');
+await db.exec(separateRoles);await db.exec(separateRoles);
+assert.equal((await db.query("select 'recruitment.personnel'=any(permissions) allowed from public.profiles where id=$1",[id(6)])).rows[0].allowed,false,'recruiter must lose personnel review grant');
+for(const [n,name]of [[5,'مراجع شؤون الموظفين للتوظيف'],[4,'مراجع موازنة التوظيف']]){
+ const rr=(await db.query('select id from private.access_roles where name=$1',[name])).rows[0].id;
+ await db.query('select private.access_assign($1,$2,$3)',[id(n),[rr],[]]);
+}
+await db.exec(approvedCycle);
+console.log('PASS independent recruitment/personnel/finance roles; exception rejection stops sourcing; CEO rejection prevents offer sending');
+console.log('PASS approved workflow: finance then personnel then CEO, automatic budget/personnel exceptions, HR and department offer review, independent owners, queues, notifications and completion');
 await db.exec('set role anon');await assert.rejects(db.query('select * from private.recruitment_email_outbox'));await db.exec('reset role');
 console.log('PASS current-live schema upgrade, repeat application, unchanged history, three-role setup, full current recruitment workflow and email authorization');await db.close();

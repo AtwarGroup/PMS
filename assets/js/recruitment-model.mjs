@@ -16,7 +16,7 @@ export const requestStates = {
   hr_exception: "استثناء مشرف تطوير الأعمال",
   finance_exception: "استثناء الرئيس التنفيذي",
   cancellation_approval: "اعتماد إلغاء الطلب",
-  hr_review: "مراجعة مسؤول التوظيف والتوطين",
+  hr_review: "مراجعة شؤون الموظفين والاحتياج والتوطين",
   finance_review: "مراجعة الميزانية",
   approval: "اعتماد الاحتياج",
   open: "مفتوح",
