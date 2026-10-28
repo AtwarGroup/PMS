@@ -398,3 +398,7 @@ body.travel-policy-page .atwar-main{overflow:visible!important}
  #policyApp .travel-section .policy-data-table th,#policyApp .travel-section .policy-data-table td,#policyApp .travel-section .policy-data-table td:first-child{font-size:9px!important;padding:7px}
  #policyApp .travel-section .policy-table-wrap{overflow:visible;border-radius:0;margin:12px 0}
 }
+/* Leave room for the search result count while navigating to a matched clause. */
+#policyApp .travel-index{top:230px;max-height:calc(100dvh - 254px)}
+#policyApp .travel-section,#policyApp .travel-section .policy-body p,#policyApp .travel-section .policy-body p.travel-clause,#policyApp mark.travel-match{scroll-margin-top:245px}
+@media(max-width:760px){#policyApp .travel-index{position:static;max-height:none}}
