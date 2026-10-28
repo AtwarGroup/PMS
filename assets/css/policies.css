@@ -402,3 +402,37 @@ body.travel-policy-page .atwar-main{overflow:visible!important}
 #policyApp .travel-index{top:230px;max-height:calc(100dvh - 254px)}
 #policyApp .travel-section,#policyApp .travel-section .policy-body p,#policyApp .travel-section .policy-body p.travel-clause,#policyApp mark.travel-match{scroll-margin-top:245px}
 @media(max-width:760px){#policyApp .travel-index{position:static;max-height:none}}
+
+/* Compensation uses the same reader with its own multi-column matrices. */
+#policyApp.policy-compensation-reader .travel-section .policy-data-table{table-layout:auto;width:100%;min-width:0;line-height:1.9}
+#policyApp.policy-compensation-reader .travel-section .policy-data-table th{white-space:normal;text-align:start;overflow-wrap:normal;word-break:normal;padding:13px 14px}
+#policyApp.policy-compensation-reader .travel-section .policy-data-table td,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:first-child,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:last-child{width:auto;white-space:normal;text-align:start;font-size:14px!important;font-weight:500;padding:14px;line-height:1.9;overflow-wrap:anywhere}
+#policyApp.policy-compensation-reader .travel-section .policy-data-table td:first-child{font-weight:700;color:#294863}
+#policyApp.policy-compensation-reader .travel-section .policy-salary-controls{gap:10px;margin:20px 0 10px}
+#policyApp.policy-compensation-reader .travel-section .policy-salary-controls input{min-height:44px;font-size:14px}
+#policyApp.policy-compensation-reader .travel-section .policy-salary-controls select{font-size:13px;min-height:44px}
+#policyApp.policy-compensation-reader .travel-section .policy-salary-controls button{font-size:13px;border-radius:6px}
+#policyApp.policy-compensation-reader .travel-section .policy-body .policy-salary-count,#policyApp.policy-compensation-reader .travel-section .policy-body .policy-progression-intro{font-size:13px!important;color:#60748b!important;line-height:1.9!important;margin-bottom:16px}
+#policyApp.policy-compensation-reader .travel-section .policy-body .salary-card-kicker{font-size:12px!important;font-weight:700!important;color:#866a34!important;line-height:1.8!important;margin:0 0 8px}
+#policyApp.policy-compensation-reader .policy-point-card{padding:20px;border-color:#d6e0eb;border-radius:7px;box-shadow:none}
+#policyApp.policy-compensation-reader .policy-point-card h4{font-size:16px;line-height:1.85;color:#243e5b;margin:6px 0 18px}
+#policyApp.policy-compensation-reader .policy-registry-cards dl{font-size:14px;line-height:1.9;grid-template-columns:1fr 1fr;gap:10px 16px}
+#policyApp.policy-compensation-reader .policy-registry-cards dt{color:#64768c;font-weight:500}
+#policyApp.policy-compensation-reader .policy-registry-cards dd{color:#293f58;font-weight:700}
+#policyApp.policy-compensation-reader .policy-points-grid .policy-number{font-size:14px}
+#policyApp.policy-compensation-reader .policy-points-grid small{font-size:11px}
+#policyApp.policy-compensation-reader .policy-salary-pagination{font-size:13px;margin-top:18px}
+#policyApp.policy-compensation-reader .policy-salary-pagination button{border-radius:5px;min-height:40px}
+#policyApp.policy-compensation-reader .travel-section .policy-salary-scroll{max-width:100%}
+#policyApp.policy-compensation-reader .travel-section .policy-table-wrap{overflow-x:auto}
+@media(max-width:1050px){#policyApp.policy-compensation-reader.policy-salary-simplified .policy-salary-screen>.policy-point-cards,#policyApp.policy-compensation-reader.policy-salary-simplified .policy-salary-screen>.policy-registry-cards{grid-template-columns:1fr}}
+@media(max-width:760px){#policyApp.policy-compensation-reader .policy-point-card{padding:16px}#policyApp.policy-compensation-reader .travel-section .policy-data-table td,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:first-child,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:last-child{font-size:13px!important;padding:12px}#policyApp.policy-compensation-reader .travel-section .policy-table-wrap{overflow:visible}}
+@media print{
+ #policyApp.policy-compensation-reader .travel-section .policy-data-table td,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:first-child,#policyApp.policy-compensation-reader .travel-section .policy-data-table td:last-child,#policyApp.policy-compensation-reader .travel-section .policy-data-table th{font-size:9px!important;padding:7px}
+ #policyApp.policy-compensation-reader .travel-section .policy-table-wrap{overflow:visible}
+ #policyApp.policy-compensation-reader .policy-point-card{padding:10px;border-radius:0}
+ #policyApp.policy-compensation-reader .policy-point-card h4{font-size:11px;margin:4px 0 8px}
+ #policyApp.policy-compensation-reader .policy-points-grid .policy-number{font-size:10px}
+ #policyApp.policy-compensation-reader .policy-points-grid small{font-size:8px}
+ #policyApp.policy-compensation-reader .travel-section .policy-body .salary-card-kicker{font-size:9px!important}
+}
