@@ -10,7 +10,7 @@ import {
   dashboard,
 } from "./recruitment-model.mjs?v=workflow2";
 const $ = (id) => document.getElementById(id);
-const routeFields = [["approver_id","معتمد الاحتياج والعرض الوظيفي","approve"],["recruiter_id","مسؤول التوظيف","manage"],["development_id","مشرف تطوير الأعمال","development"]];
+const routeFields = [["finance_id","المدير المالي — مراجعة الموازنة","finance"],["hr_id","شؤون الموظفين — مراجعة الاحتياج والعرض","personnel"],["approver_id","الرئيس التنفيذي — الاعتماد والاستثناء المالي","approve"],["recruiter_id","مسؤول التوظيف — الإعداد والتنفيذ","manage"],["development_id","مشرف تطوير الأعمال — الاستثناءات","development"]];
 let routeSettings;
 let sb,
   context,
@@ -404,7 +404,9 @@ const eventLabel = (action) =>
     offer_created: "إعداد عرض",
     offer_finance_review: "مراجعة العرض",
     offer_approval: "رفع العرض للاعتماد",
-    offer_approved: "اعتماد العرض",
+    offer_approved: "اعتماد الرئيس التنفيذي للعرض",
+    offer_department_review: "إحالة العرض لمراجعة مدير الإدارة",
+    offer_development_review: "إحالة العرض لمراجعة الاستثناء",
     offer_sent: "تسجيل إرسال العرض",
     offer_accepted: "قبول العرض",
     offer_declined: "رفض العرض",
@@ -434,9 +436,9 @@ function requestAction(action) {
             `${r.job_snapshot.title}\n${r.job_snapshot.purpose || ""}\n${Object.values(r.job_snapshot.content?.qualifications || {}).join("\n")}`,
             'required minlength="20" maxlength="10000"',
           )
-        : (action === "approve" && r.status === "hr_review" ? `<label class="rec-check wide"><input type="checkbox" name="request_type_checked" required>تم التحقق من نوع الطلب: ${r.request_type === "replacement" ? "إحلال" : "جديد"}</label><label class="rec-check wide"><input type="checkbox" name="saudization_checked" required>يتوافق الطلب مع خطة التوطين</label><label class="rec-check wide"><input type="checkbox" name="profession_checked" required>تم التحقق من أهلية المهنة وفئة المرشح ومتطلبات التوطين</label>` : "") + area(
+        : (action === "approve" && r.status === "finance_review" ? `<label class="rec-check wide"><input type="checkbox" name="budget_checked" required>تمت مراجعة موازنة الاحتياج</label>` : action === "approve" && r.status === "hr_review" ? `<label class="rec-check wide"><input type="checkbox" name="need_checked" required>تم التحقق من الحاجة الفعلية</label><label class="rec-check wide"><input type="checkbox" name="vacancy_checked" required>تم التحقق من وجود شاغر متاح</label><label class="rec-check wide"><input type="checkbox" name="request_type_checked" required>تم التحقق من نوع الطلب: ${r.request_type === "replacement" ? "إحلال" : "جديد"}</label><label class="rec-check wide"><input type="checkbox" name="saudization_checked" required>يتوافق الطلب مع خطة التوطين</label><label class="rec-check wide"><input type="checkbox" name="profession_checked" required>تم التحقق من أهلية المهنة وفئة المرشح ومتطلبات التوطين</label>` : "") + area(
             "note",
-            "الملاحظات / مبرر القرار",
+            "الملاحظات / مبرر القرار أو الاستثناء",
             "",
             'required minlength="3" maxlength="3000"',
           ),
@@ -444,7 +446,7 @@ function requestAction(action) {
     ),
   );
   bindForm(async (data) => {
-    for (const k of ["request_type_checked","saudization_checked","profession_checked"]) if(data[k]) data[k]=true;
+    for (const k of ["request_type_checked","saudization_checked","profession_checked","budget_checked","need_checked","vacancy_checked"]) if(data[k]) data[k]=true;
     await rpc("recruitment_request_action", {
       p_id: r.id,
       p_revision: r.revision,
@@ -575,7 +577,8 @@ function renderApplication(id) {
 }
 const offerState = (s) =>
   ({
-    hr_review: "مراجعة مسؤول التوظيف",
+    hr_review: "مراجعة شؤون الموظفين",
+    department_review: "مراجعة مدير الإدارة الطالبة",
     development_review: "مراجعة استثناء مشرف تطوير الأعمال",
     returned: "معاد للتعديل",
     finance_review: "مراجعة شؤون الموظفين",
@@ -591,7 +594,8 @@ function offerButtons(o) {
   const r = detail.request;
   let actions = [];
   if (
-    (o.state === "hr_review" && context.manage && r.hr_id === context.user_id) ||
+    (o.state === "hr_review" && context.personnel && r.hr_id === context.user_id) ||
+    (o.state === "department_review" && r.department_approver_id === context.user_id) ||
     (o.state === "development_review" && context.development && r.development_id === context.user_id) ||
     (o.state === "approval" &&
       context.approve &&
@@ -775,7 +779,7 @@ function offerForm(id) {
           "",
           'maxlength="3000"',
         ) +
-        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يعتمده صاحب الصلاحية المحدد في مسار التوظيف. استثناءات الراتب والمزايا تمر أولًا بمشرف تطوير الأعمال.</p><details class="wide"><summary>عرض مرجع الرواتب والدرجات</summary><div class="rec-table"><table><thead><tr><th>المسمى</th><th>الدرجة</th><th>النطاق</th></tr></thead><tbody>${context.salaries.map(s=>`<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(candidate.saudi?s.saudi_min:s.expat_min)} – ${money(candidate.saudi?s.saudi_max:s.expat_max)}</td></tr>`).join("")}</tbody></table></div></details><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
+        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يعتمده صاحب الصلاحية المحدد في مسار التوظيف. يراجع شؤون الموظفين العرض أولًا؛ رفضه أو الاستثناء المالي يحال لمشرف تطوير الأعمال، ثم مدير الإدارة الطالبة والرئيس التنفيذي.</p><details class="wide"><summary>عرض مرجع الرواتب والدرجات</summary><div class="rec-table"><table><thead><tr><th>المسمى</th><th>الدرجة</th><th>النطاق</th></tr></thead><tbody>${context.salaries.map(s=>`<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(candidate.saudi?s.saudi_min:s.expat_min)} – ${money(candidate.saudi?s.saudi_max:s.expat_max)}</td></tr>`).join("")}</tbody></table></div></details><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
       "حفظ ورفع للاعتماد",
     ),
   );
@@ -1025,7 +1029,7 @@ function requestExtras(r){
   if(context.user_id===r.supervisor_id&&b.state==='review')actions.push(['batch_none','لم يتم اختيار أحد من الدفعة']);
   if(context.user_id===r.development_id&&b.number>=3&&b.state==='exhausted')actions.push(['batch_resume','اعتماد استئناف توفير المرشحين']);
  }
- return `<section class="rec-card" id="requestWorkflow"><h3>إجراءات الطلب</h3><details><summary>دورة العمل</summary><p class="rec-muted">المشرف ← اعتماد الإدارة للاحتياج ← مراجعة مسؤول التوظيف والتوطين ← اعتماد الاحتياج ← مقابلة وتقييم واختيار المدير المباشر للمرشح ← إعداد واعتماد العرض الوظيفي ← القبول والمباشرة والتعيين</p></details><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
+ return `<section class="rec-card" id="requestWorkflow"><h3>إجراءات الطلب</h3><details><summary>دورة العمل</summary><p class="rec-muted">مقدم الطلب ← مدير الإدارة ← المدير المالي للموازنة ← شؤون الموظفين للاحتياج والشاغر والتوطين ← الرئيس التنفيذي ← مسؤول التوظيف. العرض: مسؤول التوظيف ← شؤون الموظفين ← مدير الإدارة الطالبة ← الرئيس التنفيذي.</p></details><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
 }
 function applicationExtras(a,r){
  const active=r.status==='open', recruiter=context.user_id===r.recruiter_id, manager=!!r.interview_manager_id&&context.user_id===r.interview_manager_id&&context.user_id!==r.approver_id;
