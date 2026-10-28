@@ -387,3 +387,11 @@ a:focus-visible {
 .recruitment-page .rec-btn { min-height:40px; font-size:13px; }
 .recruitment-page .rec-filter { gap:10px; }
 @media(max-width:700px){ .recruitment-page .rec-tabs{flex-wrap:nowrap;overflow-x:auto;gap:20px}.recruitment-page .rec-card{padding:16px} }
+
+.rec-navigation{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--atwar-border,#dce5ee)}
+.rec-navigation .rec-tabs{margin:0;border:0;flex:1}
+.rec-tools{display:flex;gap:8px;flex-wrap:wrap;padding-block:8px}
+.rec-request-summary{display:flex;flex-wrap:wrap;gap:12px 24px;padding:14px 0;color:var(--atwar-text)}
+.rec-request-facts,.rec-request-requirements{border:1px solid var(--atwar-border,#dce5ee);border-radius:12px;padding:16px;margin-block:16px}
+.rec-request-facts>summary,.rec-request-requirements>summary{cursor:pointer;font-weight:700}
+@media(max-width:700px){.rec-navigation{display:block}.rec-tools .rec-btn{flex:1}.rec-filter{flex-wrap:wrap}.rec-filter select{flex:1;min-width:140px}}
