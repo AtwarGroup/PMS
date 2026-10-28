@@ -14,3 +14,8 @@ assert(html.includes('<table'));assert(html.includes('data-travel-panel="request
 const hostile=renderTravelReader([{number:1,section:{id:'<script>',title:'<img onerror=alert(1)>',body:'<script>alert(1)</script>'}}],renderPolicyBody,()=> '');
 assert(!hostile.includes('<script>'));assert(!hostile.includes('<img '));assert(hostile.includes('&lt;script&gt;'));
 console.log('PASS policy reader: clause numbers, Arabic normalization, full body/table/title search and escaped content');
+const {renderTravelBody}=await import('../assets/js/policy-reader.mjs');
+const presentation=renderTravelBody('### بيانات الإصدار والاعتماد\nرمز السياسة: POL-TRAVEL\nرقم الإصدار: V2.2\n\n### الغرض\n1.1 نص السياسة دون تغيير.',renderPolicyBody);
+assert(presentation.includes('<dl>'));assert(presentation.includes('<dt>رمز السياسة</dt>'));assert(presentation.includes('POL-TRAVEL'));assert(presentation.includes('class="travel-clause-number" dir="ltr">1.1</span>'));assert(presentation.includes('نص السياسة دون تغيير.'));
+assert.equal((html.match(/<details open>/g)||[]).length,1,'Only the overview index group starts expanded');
+console.log('PASS compact metadata and numbered clause presentation');

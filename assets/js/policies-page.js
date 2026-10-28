@@ -1,4 +1,4 @@
-import {renderTravelReader,wireTravelReader} from './policy-reader.mjs?v=2.8.13';
+import {renderTravelReader,wireTravelReader} from './policy-reader.mjs?v=2.8.14';
 import {renderPolicyCard} from './policy-cards.mjs?v=2.8.9';
 import {hasPolicyDraftChanges} from './policy-draft-state.mjs?v=2.8.12';
 import {enhancePolicySalaryTables} from './policy-salary-tables.mjs?v=2.8.8';
@@ -22,7 +22,7 @@ function collect(){return [...host.querySelectorAll('.policy-edit-section')].map
 function draftChanged(version){return hasPolicyDraftChanges(version,collect(),host.querySelector('#policyEdit').elements.namedItem('label').value);}
 function wireSections(){host.querySelectorAll('[data-remove-section]').forEach(b=>b.onclick=()=>{if(host.querySelectorAll('.policy-edit-section').length>1)b.closest('.policy-edit-section').remove();else noteError({message:'يجب أن تحتوي السياسة على بند واحد على الأقل.'});});host.querySelector('[data-add-section]')?.addEventListener('click',()=>{host.querySelector('#policySections').insertAdjacentHTML('beforeend',contentForm([{id:crypto.randomUUID(),title:'بند جديد',body:''}]));wireRemove();});}
 function wireRemove(){host.querySelectorAll('[data-remove-section]').forEach(b=>b.onclick=()=>{if(host.querySelectorAll('.policy-edit-section').length>1)b.closest('.policy-edit-section').remove();});}
-async function list(){host.className="policy-wrap policy-catalog";const policies=await readAllRows(()=>sb.from('policies').select('*').order('title')),vs=await readAllRows(()=>sb.from('policy_versions').select('id,policy_id,status,version_number,effective_date').order('version_number',{ascending:false}));
+async function list(){document.body.classList.remove('travel-policy-page');host._disposeTravelReader?.();host.className="policy-wrap policy-catalog";const policies=await readAllRows(()=>sb.from('policies').select('*').order('title')),vs=await readAllRows(()=>sb.from('policy_versions').select('id,policy_id,status,version_number,effective_date').order('version_number',{ascending:false}));
  host.innerHTML=`<section class="policy-box policy-hero"><div class="policy-toolbar"><div><h1>مكتبة السياسات</h1></div>${profile.role==='admin'?'<button class="atwar-btn primary" id="newPolicy">إضافة سياسة</button>':''}</div><p class="policy-muted">إعداد، مراجعة، موافقة، اعتماد. تظهر السياسات السارية للفئات المحددة لها.</p></section><section class="policy-filter"><label class="atwar-field">البحث عن سياسة<input class="atwar-input" id="policySearch" type="search" placeholder="الاسم أو الرمز"></label></section><div class="policy-grid" id="policyCards">${policies.map(p=>renderPolicyCard(p,vs.find(v=>v.policy_id===p.id),date)).join('')||'<section class="policy-box">لا توجد سياسات متاحة لك حاليًا.</section>'}</div>`;
  host.querySelector('#policySearch').oninput=e=>host.querySelectorAll('[data-search]').forEach(c=>c.hidden=!c.dataset.search.includes(e.target.value.trim()));host.querySelector('#newPolicy')?.addEventListener('click',createForm);
 }
@@ -34,7 +34,7 @@ async function detail(id,versionId){const rows=await query(sb.from('policies').s
 }
 function renderDetail(worker){host._disposeTravelReader?.();host._disposeTravelReader=null;host.className="policy-wrap policy-document"+(simpleSalary?" policy-salary-simplified":"");const v=selected,p=policy,editable=v.status==='PREPARATION'&&(profile.role==='admin'||p.preparer_id===profile.id),canDecide=p[owners[stages.indexOf(v.status)]]===profile.id&&v.status!=='APPROVED',live=versions.find(x=>x.status==='APPROVED'&&x.effective_date<=today());
  const readingSections=policyReadingSections(v.content,p.code);
- const travel=p.code==='POL-TRAVEL';if(travel&&!editing)host.classList.add('policy-travel-reader');
+ const travel=p.code==='POL-TRAVEL';document.body.classList.toggle('travel-policy-page',travel&&!editing);if(travel&&!editing)host.classList.add('policy-travel-reader');
  const hasSalary=v.content.some(s=>s.body.includes('| الدرجة | الوظيفة | غير السعودي | السعودي |'));
  const canComment=v.status!=='APPROVED'&&(worker||(p.review_commenter_ids||[]).includes(profile.id));
  const options=versions.map(x=>`<option value="${x.id}" ${x.id===v.id?'selected':''}>الإصدار ${x.version_number} — ${esc(x.version_label)} — ${labels[x.status]}</option>`).join('');

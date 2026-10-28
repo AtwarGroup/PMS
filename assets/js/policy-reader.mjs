@@ -10,9 +10,19 @@ export function searchPolicy(sections, query) {
   return matches.map(text=>({id:section.id,number,title:section.title,clause:text.match(/^(\d+\.\d+)/)?.[1] || '',text}));
  });
 }
+// Presentation only: keep the stored policy text intact.
+export function renderTravelBody(body, renderBody) {
+ let html=renderBody(body);
+ if(body.startsWith('### بيانات الإصدار والاعتماد\n')) {
+  const end=body.indexOf('\n\n');
+  if(end>0){const rows=body.slice(0,end).split('\n').slice(1).map(line=>{const at=line.indexOf(':');return at>0?`<div><dt>${esc(line.slice(0,at))}</dt><dd>${esc(line.slice(at+1).trim())}</dd></div>`:`<div><dd>${esc(line)}</dd></div>`;}).join('');html=`<div class="travel-meta"><h3>بيانات الإصدار والاعتماد</h3><dl>${rows}</dl></div>`+renderBody(body.slice(end+2));}
+ }
+ html=html.replace(/<p>(\d+\.\d+)(\s+)([\s\S]*?)<\/p>/g,(_,n,space,text)=>`<p class="travel-clause"><span class="travel-clause-number" dir="ltr">${n}</span>${space}<span class="travel-clause-text">${text}</span></p>`);
+ return html.replace('<table class="policy-data-table">','<table class="policy-data-table"><colgroup><col style="width:80px"><col><col style="width:120px"></colgroup>');
+}
 const groups = [ ['نظرة عامة',[1,2]], ['التعريفات والإجراءات',[3,4,5]], ['الانتداب ومستحقاته',[6,7]], ['النقل الوظيفي',[8,9]], ['أحكام التنفيذ',[10,11,12,13]], ['الحوكمة والتوثيق',[14,15,16]] ];
 export function renderTravelReader(sections, renderBody, notes) {
- return `<div class="travel-reader"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${groups.map(([title,numbers])=>`<details open><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(section.title)}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(section.title)}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderBody(section.body)}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
+ return `<div class="travel-reader"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${groups.map(([title,numbers],groupIndex)=>`<details ${groupIndex===0?'open':''}><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(section.title)}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(section.title)}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderTravelBody(section.body,renderBody)}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
 }
 export function wireTravelReader(host, sections) {
  const input=host.querySelector('#travelSearch'); if(!input)return;
@@ -36,6 +46,7 @@ export function wireTravelReader(host, sections) {
  }
  function openSection(id,match){
   const panel=panels.find(p=>p.dataset.travelPanel===id);if(!panel)return;
+  const indexLink=nav.find(b=>b.dataset.travelTarget===id);const group=indexLink?.closest('details');if(group)group.open=true;
   panel.open=true;results.hidden=true;nav.forEach(button=>{const current=button.dataset.travelTarget===id;button.classList.toggle('active',current);if(current)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');});
   clearHighlights();if(input.value.trim())highlight(panel,input.value);
   const clause=match?.clause;
@@ -55,6 +66,7 @@ export function wireTravelReader(host, sections) {
  results.addEventListener('click',e=>{const button=e.target.closest('[data-travel-result]');if(button){const match=matches[Number(button.dataset.travelResult)];openSection(match.id,match);}});
  host.querySelector('#travelClear').onclick=()=>{input.value='';runSearch();input.focus();};
  nav.forEach(button=>button.onclick=()=>openSection(button.dataset.travelTarget));
+ host.querySelectorAll('.travel-index nav>details').forEach(group=>group.addEventListener('toggle',()=>{if(group.open)host.querySelectorAll('.travel-index nav>details').forEach(other=>{if(other!==group)other.open=false;});}));
  host.querySelector('#travelExpand').onclick=()=>panels.forEach(panel=>panel.open=true);
  host.querySelector('#travelCollapse').onclick=()=>{panels.forEach(panel=>panel.open=false);nav.forEach(button=>{button.classList.remove('active');button.removeAttribute('aria-current');});};
  host.querySelectorAll('.travel-back-index').forEach(button=>button.onclick=()=>{const index=host.querySelector('#travelIndex');index.focus({preventScroll:true});scroll(index);});
