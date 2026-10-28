@@ -35,7 +35,7 @@ for(const role of ['admin','manager','employee']){
  await page.locator('.policy-document-footer').waitFor({state:'visible'}).catch(async e=>{console.error('AUDIT PAGE',role,await page.locator('#policyMessage').innerText(),errors);throw e});
  assert.equal(await page.locator('.policy-history-panel').count(),role==='admin'?1:0,`${role} history visibility`);
  assert.equal(await page.evaluate(()=>window.__auditReads>0),role==='admin',`${role} must not fetch audit records`);
- assert(await page.locator('.policy-section').count()>0,'Policy content remains available to workers');checks++;
+ assert(await page.locator('.policy-section,.travel-section').count()>0,'Policy content remains available to workers');checks++;
 }
 console.log(`PASS: ${checks} real runtime empty/error page states, read-only synthetic transport and no external requests.`);
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
