@@ -24,5 +24,19 @@ await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringif
 const cfg=(await db.query('select public.recruitment_route_settings() c')).rows[0].c;
 await db.query("select public.recruitment_route_settings('save',$1)",[JSON.stringify({revision:cfg.revision,approver_id:id(2),recruiter_id:id(6),development_id:id(3)})]);
 for(const f of ['test-cycle.sql','test-email.sql'])await db.exec(await fs.readFile('scripts/releases/recruitment/'+f,'utf8'));
+// Normalize existing grants into roles; effective access and unrelated grants must stay identical.
+await db.query("insert into private.access_direct_tasks(profile_id,permissions)select id,permissions from public.profiles where id=any($1::uuid[])on conflict(profile_id)do update set permissions=excluded.permissions",[[id(2),id(3),id(6)]]);
+await db.query("update private.access_direct_tasks set permissions=permissions||array['recruitment.personnel'] where profile_id=$1",[id(6)]);
+await db.query('select private.access_rebuild_tasks($1)',[id(6)]);
+const accessBefore=(await db.query("select id,permissions,allowed_modules from public.profiles order by id")).rows;
+const roleSql=await fs.readFile('scripts/releases/recruitment/unify-access-roles.sql','utf8');
+await db.exec(roleSql);await db.exec(roleSql);
+assert.deepEqual((await db.query("select id,permissions,allowed_modules from public.profiles order by id")).rows,accessBefore);
+assert.equal((await db.query("select count(*)::int n from private.access_assignments where profile_id=any($1::uuid[])",[[id(2),id(3),id(6)]])).rows[0].n,3);
+const role=(await db.query("select * from private.access_roles where name='معتمد احتياجات وعروض التوظيف'")).rows[0];
+await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id(1),role:'authenticated'})]);
+await db.query("select private.access_role_save($1,$2,$3,$4,false,$5)",[role.id,role.revision,role.name,role.description,JSON.stringify([{permission:'recruitment.approve',scope:'all'}])]);
+assert.equal((await db.query("select 'recruitment.approve'=any(permissions) allowed from public.profiles where id=$1",[id(2)])).rows[0].allowed,false);
+console.log('PASS role normalization: exact access preservation, repeat application, visible assignments and role revocation');
 await db.exec('set role anon');await assert.rejects(db.query('select * from private.recruitment_email_outbox'));await db.exec('reset role');
 console.log('PASS current-live schema upgrade, repeat application, unchanged history, three-role setup, full current recruitment workflow and email authorization');await db.close();
