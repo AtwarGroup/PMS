@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {searchPolicy,renderTravelReader} from '../assets/js/policy-reader.mjs';
+import {renderPolicyBody} from '../assets/js/policy-content.mjs';
+const sections=[{number:5,section:{id:'requests',title:'تقديم الطلب والموافقات',body:'5.3 تقديم الطلب قبل 15 يومًا.\n\n5.5 تُستثنى الحالات العاجلة من مهلة التقديم.'}},{number:6,section:{id:'rates',title:'البدلات',body:'| الفئة | البدل |\n| --- | --- |\n| T | 125 ريال |'}}];
+assert.equal(searchPolicy(sections,'الحالات العاجلة')[0].clause,'5.5');
+assert.equal(searchPolicy(sections,'٥.٥')[0].clause,'5.5');
+assert.equal(searchPolicy(sections,'تستثني')[0].id,'requests');
+assert.equal(searchPolicy(sections,'125')[0].id,'rates');
+assert.equal(searchPolicy(sections,'البدلات')[0].id,'rates');
+assert.equal(searchPolicy(sections,'غير موجود').length,0);
+assert.equal(searchPolicy(sections,'ا').length,0);
+const html=renderTravelReader(sections,renderPolicyBody,()=> '');
+assert(html.includes('<table'));assert(html.includes('data-travel-panel="requests"'));
+const hostile=renderTravelReader([{number:1,section:{id:'<script>',title:'<img onerror=alert(1)>',body:'<script>alert(1)</script>'}}],renderPolicyBody,()=> '');
+assert(!hostile.includes('<script>'));assert(!hostile.includes('<img '));assert(hostile.includes('&lt;script&gt;'));
+console.log('PASS policy reader: clause numbers, Arabic normalization, full body/table/title search and escaped content');
