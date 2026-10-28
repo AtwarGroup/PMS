@@ -109,19 +109,19 @@ function render() {
           approval: r.approver_id,
         })[r.status] === context.user_id,
     );
-    root.innerHTML = `${taskPanel(snapshot.tasks || [])}<div class="rec-metrics">${[
-      ["شواغر مفتوحة", d.open],
-      ["احتياجات تحت الاعتماد", d.pending],
-      ["مرشحون في المقابلات", d.interviews],
-      ["باشروا العمل", d.hired],
+    root.innerHTML = `<div class="rec-metrics">${[
+      ["شواغر مفتوحة", d.open, "blue"],
+      ["احتياجات تحت الاعتماد", d.pending, "purple"],
+      ["مرشحون في المقابلات", d.interviews, "warning"],
+      ["باشروا العمل", d.hired, "success"],
     ]
       .map(
-        ([l, v]) =>
-          `<article class="rec-metric"><span>${l}</span><strong>${v}</strong></article>`,
+        ([l, v, tone]) =>
+          `<article class="rec-metric atwar-metric" data-tone="${tone}"><span>${l}</span><strong>${v}</strong></article>`,
       )
       .join(
         "",
-      )}</div><section class="rec-card"><h2>بانتظار إجرائك</h2>${mine.length ? requestRows(mine) : '<p class="rec-muted">لا توجد احتياجات بانتظار اعتمادك.</p>'}${(snapshot.offer_queue || []).map((o) => `<div class="rec-row"><div><strong>${esc(o.candidate_name)}</strong><p>${esc(o.job_title)} · ${esc(offerState(o.state))}</p></div>${button("فتح العرض", `data-application="${o.application_id}" data-request-id="${o.request_id}"`)}</div>`).join("")}</section><section class="rec-card"><h2>آخر الاحتياجات</h2>${requestRows(snapshot.requests.slice(0, 6))}</section>`;
+      )}</div>${taskPanel(snapshot.tasks || [])}<section class="rec-card"><h2>بانتظار إجرائك</h2>${mine.length ? requestRows(mine) : '<p class="rec-muted">لا توجد احتياجات بانتظار اعتمادك.</p>'}${(snapshot.offer_queue || []).map((o) => `<div class="rec-row"><div><strong>${esc(o.candidate_name)}</strong><p>${esc(o.job_title)} · ${esc(offerState(o.state))}</p></div>${button("فتح العرض", `data-application="${o.application_id}" data-request-id="${o.request_id}"`)}</div>`).join("")}</section><section class="rec-card"><h2>آخر الاحتياجات</h2>${requestRows(snapshot.requests.slice(0, 6))}</section>`;
   }
   if (view === "requests") {
     root.innerHTML = `<section class="rec-card"><div class="rec-filter"><input id="filterQuery" type="search" aria-label="البحث عن احتياج" placeholder="ابحث بالمسمى أو رقم الطلب"><select id="filterState" aria-label="حالة الطلب"><option value="">جميع الحالات</option>${Object.entries(
