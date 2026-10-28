@@ -7,3 +7,6 @@ supabase/.temp/
 
 __pycache__/
 *.pyc
+
+# Ignore local dependency symlink as well as installed directories.
+node_modules

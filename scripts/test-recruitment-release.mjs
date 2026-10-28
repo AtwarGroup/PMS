@@ -1,0 +1,28 @@
+import {createTestDB} from './fleet-test-db.mjs';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+process.on('uncaughtException',e=>{console.error(e.message,e.where||'');process.exit(1)});
+const {db}=await createTestDB();
+await db.exec("alter table public.job_descriptions add column published_snapshot jsonb;alter table public.job_descriptions add column purpose text;alter table public.job_descriptions add column content jsonb;create function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role'$$;");
+for(const f of ['20261023142622_recruitment_foundation.sql','20261023142952_recruitment_salary_reference_metadata.sql','20261023143441_recruitment_resume_storage.sql','20261023150534_recruitment_public_upload_session.sql','20261023191845_recruitment_approved_workflow.sql','20261023194438_recruitment_batch_validation.sql'])await db.exec(await fs.readFile('supabase/migrations/'+f,'utf8'));
+await db.exec(await fs.readFile('tests/fixtures/recruitment-live-functions.sql','utf8'));
+const id=n=>'70000000-0000-4000-8000-'+String(n).padStart(12,'0');
+const perms={2:['recruitment.approve'],3:['recruitment.development'],4:['recruitment.finance'],5:['recruitment.personnel'],6:['recruitment.manage']};
+for(let n=1;n<=8;n++){
+ await db.query("insert into public.profiles(id,email,full_name,role,allowed_modules,permissions)values($1,$2,$3,$4,array['recruitment'],$5)",[id(n),`release-${n}@example.test`,'حساب اختبار '+n,n===1?'admin':n>=7?'manager':'employee',perms[n]||[]]);
+ await db.query("insert into private.hr_employees(id,employee_code,full_name,email,department_id,section_id,title_id,profile_id,manager_id,join_date,effective_from) values($1,$2,$3,$4,'10000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000003',$1,$5,current_date,current_date)",[id(n),String(88000+n),'حساب اختبار '+n,`release-${n}@example.test`,n===8?id(7):null]);
+}
+await db.exec(`insert into public.job_descriptions(id,job_code,title,purpose,content,published_snapshot)values('20000000-0000-4000-8000-000000000001','QA-RELEASE','وظيفة اختبار','هدف تجريبي','{"qualifications":{"skills":"مهارات تجريبية"}}','{"title":"وظيفة اختبار","content":{"qualifications":{"skills":"مهارات تجريبية"}}}');insert into private.recruitment_salary_reference(id,title,grade,saudi_min,saudi_max,expat_min,expat_max,source_revision,benefits)values('20000000-0000-4000-8000-000000000002','وظيفة اختبار','T7',1000,20000,1000,20000,'fixture','{"text":"المزايا المعتمدة للاختبار"}');alter table private.recruitment_requests alter column number restart with 11;`);
+await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id(8),role:'authenticated'})]);
+await db.query('select public.recruitment_request_create($1)',[JSON.stringify({job_id:'20000000-0000-4000-8000-000000000001',department_id:'10000000-0000-4000-8000-000000000001',section_id:'10000000-0000-4000-8000-000000000002',company:'بيانات تاريخية محفوظة',location:'جدة',headcount:1,reason:'احتياج اختباري محفوظ',route:'referral',target_date:'2027-01-01',hr_id:id(5),finance_id:id(4),approver_id:id(2),recruiter_id:id(6),development_id:id(3),department_approver_id:id(7),supervisor_id:id(8),request_type:'new',interviewer_ids:[id(8),id(7)],criteria:[{key:'technical',label:'التقييم الفني',weight:100}]})]);
+const historical=(await db.query("select to_jsonb(r) value from private.recruitment_requests r where number=11")).rows[0].value;
+await db.exec(await fs.readFile('scripts/releases/recruitment/preflight.sql','utf8'));
+const sql=await fs.readFile('scripts/releases/recruitment/upgrade.sql','utf8');
+for(let i=0;i<2;i++)await db.exec(sql);
+const preserved=(await db.query("select to_jsonb(r)-'interview_manager_id' value from private.recruitment_requests r where number=11")).rows[0].value;assert.deepEqual(preserved,historical);
+await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:id(1),role:'authenticated'})]);
+const cfg=(await db.query('select public.recruitment_route_settings() c')).rows[0].c;
+await db.query("select public.recruitment_route_settings('save',$1)",[JSON.stringify({revision:cfg.revision,approver_id:id(2),recruiter_id:id(6),development_id:id(3)})]);
+for(const f of ['test-cycle.sql','test-email.sql'])await db.exec(await fs.readFile('scripts/releases/recruitment/'+f,'utf8'));
+await db.exec('set role anon');await assert.rejects(db.query('select * from private.recruitment_email_outbox'));await db.exec('reset role');
+console.log('PASS current-live schema upgrade, repeat application, unchanged history, three-role setup, full current recruitment workflow and email authorization');await db.close();
