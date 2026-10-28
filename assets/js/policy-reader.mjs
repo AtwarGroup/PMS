@@ -36,7 +36,7 @@ export function wireTravelReader(host, sections) {
  }
  function openSection(id,match){
   const panel=panels.find(p=>p.dataset.travelPanel===id);if(!panel)return;
-  panel.open=true;nav.forEach(button=>{const current=button.dataset.travelTarget===id;button.classList.toggle('active',current);if(current)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');});
+  panel.open=true;results.hidden=true;nav.forEach(button=>{const current=button.dataset.travelTarget===id;button.classList.toggle('active',current);if(current)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');});
   clearHighlights();if(input.value.trim())highlight(panel,input.value);
   const clause=match?.clause;
   const target=clause?[...panel.querySelectorAll('.policy-body p')].find(p=>p.textContent.trim().startsWith(clause+' ')):null;
