@@ -89,13 +89,12 @@ function candidateRows(rows) {
     ? `<div class="rec-table"><table><thead><tr><th>المرشح</th><th>الوظيفة</th><th>المصدر</th><th>المرحلة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((a) => `<tr><td>${esc(a.candidate_name)}</td><td>${esc(a.job_title)}</td><td>${esc(a.source)}</td><td>${badge(a.stage, stages)}</td><td>${button("ملف التقديم", `data-application="${a.id}" data-request-id="${a.request_id}"`)}</td></tr>`).join("")}</tbody></table></div>`
     : empty("لا توجد طلبات تقديم مطابقة.");
 }
-function render() {
-  const root = $("viewContent");
+function render(root = $("viewContent"), section = view) {
   for (const b of document.querySelectorAll("[data-view]")) {
     if (b.dataset.view === view) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
   }
-  if (view === "dashboard") {
+  if (section === "dashboard") {
     const d = dashboard(snapshot.requests, snapshot.applications);
     const mine = snapshot.requests.filter(
       (r) =>
@@ -121,10 +120,10 @@ function render() {
       )
       .join(
         "",
-      )}</div>${taskPanel(snapshot.tasks || [])}<section class="rec-card"><h2>بانتظار إجرائك</h2>${mine.length ? requestRows(mine) : '<p class="rec-muted">لا توجد احتياجات بانتظار اعتمادك.</p>'}${(snapshot.offer_queue || []).map((o) => `<div class="rec-row"><div><strong>${esc(o.candidate_name)}</strong><p>${esc(o.job_title)} · ${esc(offerState(o.state))}</p></div>${button("فتح العرض", `data-application="${o.application_id}" data-request-id="${o.request_id}"`)}</div>`).join("")}</section><section class="rec-card"><h2>آخر الاحتياجات</h2>${requestRows(snapshot.requests.slice(0, 6))}</section>`;
+      )}</div>${taskPanel((snapshot.tasks || []).filter(t=>t.owner_id===context.user_id && !t.done))}${interviewSchedule()}<section class="rec-card"><h2>بانتظار إجرائك</h2>${mine.length ? requestRows(mine) : '<p class="rec-muted">لا توجد احتياجات بانتظار اعتمادك.</p>'}${(snapshot.offer_queue || []).map((o) => `<div class="rec-row"><div><strong>${esc(o.candidate_name)}</strong><p>${esc(o.job_title)} · ${esc(offerState(o.state))}</p></div>${button("فتح العرض", `data-application="${o.application_id}" data-request-id="${o.request_id}"`)}</div>`).join("")}</section>`;
   }
-  if (view === "requests") {
-    root.innerHTML = `<section class="rec-card"><div class="rec-filter"><input id="filterQuery" type="search" aria-label="البحث عن احتياج" placeholder="ابحث بالمسمى أو رقم الطلب"><select id="filterState" aria-label="حالة الطلب"><option value="">جميع الحالات</option>${Object.entries(
+  if (section === "requests") {
+    root.innerHTML = `<section class="rec-card"><div class="rec-filter"><input id="filterQuery" type="search" aria-label="البحث عن احتياج" placeholder="ابحث بالمسمى أو رقم الطلب"><select id="filterScope" aria-label="عرض الطلبات"><option value="active">الطلبات الجارية</option><option value="archive">الأرشيف</option><option value="all">جميع الطلبات</option></select><select id="filterOwner" aria-label="المسؤول"><option value="">جميع المسؤولين</option>${context.people.filter(p=>snapshot.requests.some(r=>requestOwners(r).includes(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.full_name)}</option>`).join("")}</select><select id="filterState" aria-label="حالة الطلب"><option value="">جميع الحالات</option>${Object.entries(
       requestStates,
     )
       .map(([k, l]) => `<option value="${k}">${l}</option>`)
@@ -134,6 +133,8 @@ function render() {
         snapshot.requests.filter(
           (r) =>
             (!$("filterState").value || r.status === $("filterState").value) &&
+            ($("filterScope").value === "all" || (["closed","cancelled"].includes(r.status) === ($("filterScope").value === "archive"))) &&
+            (!$("filterOwner").value || requestOwners(r).includes($("filterOwner").value)) &&
             `${r.number} ${r.job_snapshot.title} ${r.company}`.includes(
               $("filterQuery").value.trim(),
             ),
@@ -142,10 +143,12 @@ function render() {
     };
     $("filterQuery").oninput = filter;
     $("filterState").onchange = filter;
+    $("filterScope").onchange = filter;
+    $("filterOwner").onchange = filter;
     filter();
   }
-  if (view === "candidates") {
-    root.innerHTML = `<section class="rec-card"><h2>طلبات المرشحين</h2><p class="rec-muted">ملف واحد للمرشح، وتقييم وقرار مستقل لكل شاغر.</p><div class="rec-filter"><input id="candidateQuery" type="search" aria-label="البحث عن مرشح" placeholder="اسم المرشح أو الوظيفة"><select id="candidateStage" aria-label="مرحلة المرشح"><option value="">جميع المراحل</option>${Object.entries(
+  if (section === "candidates") {
+    root.innerHTML = `<section class="rec-card"><h2>قاعدة المرشحين</h2><p class="rec-muted">ملف واحد للمرشح، وتقييم وقرار مستقل لكل شاغر.</p><div class="rec-filter"><input id="candidateQuery" type="search" aria-label="البحث عن مرشح" placeholder="اسم المرشح أو الوظيفة"><select id="candidateStage" aria-label="مرحلة المرشح"><option value="">جميع المراحل</option>${Object.entries(
       stages,
     )
       .map(([k, l]) => `<option value="${k}">${l}</option>`)
@@ -166,10 +169,7 @@ function render() {
     $("candidateStage").onchange = filter;
     filter();
   }
-  if (view === "interviews") {
-    root.innerHTML = `<section class="rec-card"><h2>متابعة المقابلات</h2><p class="rec-muted">افتح ملف المرشح لجدولة المقابلة أو إكمال تقييمها وتوثيق المقابلات السابقة.</p>${(snapshot.interviews || []).length ? `<div class="rec-table"><table><thead><tr><th>الموعد</th><th>المرشح</th><th>المقابل</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${snapshot.interviews.map((i) => `<tr><td>${esc(date(i.scheduled_at))}</td><td>${esc(i.candidate_name)}<br>${esc(i.job_title)}</td><td>${esc(name(i.interviewer_id))}</td><td>${esc({ scheduled: "مجدولة", completed: "مكتملة", absent: "لم يحضر" }[i.state])}</td><td>${button("فتح المقابلة", `data-application="${i.application_id}" data-request-id="${i.request_id}"`)}</td></tr>`).join("")}</tbody></table></div>` : empty("لا توجد مقابلات مسجلة.")}</section>`;
-  }
-  if (view === "reports") {
+  if (section === "reports") {
     const rows = Object.entries(stages).map(([s, l]) => [
       l,
       snapshot.applications.filter((a) => a.stage === s).length,
@@ -181,12 +181,24 @@ function render() {
     );
     root.innerHTML = `<section class="rec-card"><h2>مؤشرات حركة التوظيف</h2><p class="rec-muted">تعكس المؤشرات السجلات المتاحة لك.</p>${rows.map(([l, v]) => `<div class="rec-row"><span>${esc(l)}</span><strong>${v}</strong></div>`).join("")}<div class="rec-actions">${button("طباعة التقرير", "data-print")}</div></section><section class="rec-card"><h2>تجاوزت تاريخ المباشرة المستهدف</h2>${requestRows(overdue)}</section>`;
   }
-  if (view === "settings" && context.route_admin) {
+  if (section === "settings" && context.route_admin) {
     root.innerHTML = `<section class="rec-card"><h2>إعدادات مسار التوظيف</h2><p class="rec-muted">تطبق على الطلبات الجديدة. يحتفظ كل طلب قائم بمسؤوليه المسجلين عند إنشائه.</p><dl class="rec-detail">${routeFields.map(([key,label])=>`<dt>${esc(label)}</dt><dd>${esc(name(routeSettings?.[key]))}</dd>`).join("")}</dl><p class="rec-note">مقدم الطلب هو المشرف، ويُستخرج مدير الإدارة من تسلسله الإداري في سجل الموظفين.</p><div class="rec-actions">${button("تعديل مسؤولي المسار", "data-route-settings", false)}</div></section>`;
   }
-  if (view === "reference") {
-    root.innerHTML = `${calendarPanel()}<section class="rec-card"><h2>مرجع الرواتب والدرجات</h2><p class="rec-muted">نسخة مستوردة من منظومة السلم المعتمدة. الإجمالي يشمل الأساسي والسكن والمواصلات. ربط مسمى مختلف يتطلب توثيق المطابقة من الموارد البشرية.</p><div class="rec-table"><table><thead><tr><th>الوظيفة</th><th>الدرجة</th><th>السعودي</th><th>غير السعودي</th></tr></thead><tbody>${context.salaries.map((s) => `<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(s.saudi_min)} – ${money(s.saudi_max)}</td><td>${s.expat_min == null ? "—" : money(s.expat_min) + " – " + money(s.expat_max)}</td></tr>`).join("")}</tbody></table></div></section>`;
+  if (section === "calendar" && context.development) root.innerHTML = calendarPanel();
+  if (section === "reference") {
+    root.innerHTML = `<section class="rec-card"><h2>مرجع الرواتب والدرجات</h2><p class="rec-muted">نسخة مستوردة من منظومة السلم المعتمدة. الإجمالي يشمل الأساسي والسكن والمواصلات. ربط مسمى مختلف يتطلب توثيق المطابقة من الموارد البشرية.</p><div class="rec-table"><table><thead><tr><th>الوظيفة</th><th>الدرجة</th><th>السعودي</th><th>غير السعودي</th></tr></thead><tbody>${context.salaries.map((s) => `<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(s.saudi_min)} – ${money(s.saudi_max)}</td><td>${s.expat_min == null ? "—" : money(s.expat_min) + " – " + money(s.expat_max)}</td></tr>`).join("")}</tbody></table></div></section>`;
   }
+}
+function requestOwners(r) { return progress(r,snapshot.tasks || []).ownerIds; }
+function interviewSchedule() {
+  const scheduled=(snapshot.interviews || []).filter(i=>i.state==='scheduled').sort((a,b)=>Date.parse(a.scheduled_at)-Date.parse(b.scheduled_at));
+  return `<section class="rec-card"><h2>مواعيد المقابلات القادمة</h2><p class="rec-muted">افتح الموعد للوصول إلى ملف المرشح والتقييم.</p>${scheduled.length ? `<div class="rec-table"><table><thead><tr><th>الموعد</th><th>المرشح</th><th>المقابل</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${scheduled.map((i) => `<tr><td>${esc(date(i.scheduled_at))}</td><td>${esc(i.candidate_name)}<br>${esc(i.job_title)}</td><td>${esc(name(i.interviewer_id))}</td><td>${esc({ scheduled: "مجدولة", completed: "مكتملة", absent: "لم يحضر" }[i.state])}</td><td>${button("فتح المقابلة", `data-application="${i.application_id}" data-request-id="${i.request_id}"`)}</td></tr>`).join("")}</tbody></table></div>` : empty("لا توجد مقابلات قادمة.")}</section>`;
+}
+function openTool(tool) {
+  const titles={candidates:'قاعدة المرشحين',reports:'التقارير والطباعة',settings:'إعدادات مسار التوظيف',calendar:'تقويم العمل'};
+  if(!titles[tool] || tool==='candidates'&&!context.manage || tool==='settings'&&!context.route_admin || tool==='calendar'&&!context.development)return;
+  show(titles[tool],'');
+  render($('dialogBody'),tool);
 }
 function jobRequirements(job, salary) {
   const q = job?.content?.qualifications || {};
@@ -322,7 +334,7 @@ function renderRequest() {
     }[r.status] === context.user_id && r.created_by !== context.user_id;
   show(
     `REC-${r.number} · ${r.job_snapshot.title}`,
-    `${requestProgress(r)}<div class="rec-actions">${badge(r.status, requestStates)}${badge(r.route, routes)}${button("طباعة الطلب", "data-print")}</div><dl class="rec-detail">${[
+    `${requestProgress(r)}<div class="rec-actions">${badge(r.status, requestStates)}${badge(r.route, routes)}${button("طباعة الطلب", "data-print")}</div><div class="rec-request-summary"><span>الموقع: ${esc(r.location)}</span><span>المطلوب: ${r.headcount}</span><span>المباشرة المستهدفة: ${esc(r.target_date)}</span></div><details class="rec-request-facts"><summary>تفاصيل الاحتياج والمسؤولون ومعايير الاختيار</summary><dl class="rec-detail">${[
       ["نوع الاحتياج", r.request_type === "replacement" ? "إحلال / استبدال" : "جديد"],
       ...(r.request_type === "replacement" ? [["الموظف المراد استبداله", r.job_snapshot.replacement_employee ? `${r.job_snapshot.replacement_employee.employee_code} · ${r.job_snapshot.replacement_employee.full_name}` : "لم يحدد في الطلب السابق"]] : []),
       ["الموقع", r.location],
@@ -331,7 +343,6 @@ function renderRequest() {
       ["معتمد الإدارة للاحتياج", name(r.department_approver_id)],
       ["مسؤول المقابلة الثانية", r.interview_manager_id ? name(r.interview_manager_id) : "لا يوجد مدير إدارة مستقل مسند للمقابلة الثانية"],
       ["المدير المباشر واختيار المرشح", name(r.supervisor_id)],
-      ["مراجعة مسؤول التوظيف والتوطين", name(r.recruiter_id)],
       ["مسؤول التوظيف", name(r.recruiter_id)],
       ["مشرف تطوير الأعمال", name(r.development_id)],
 
@@ -342,8 +353,13 @@ function renderRequest() {
       .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
-      )}</dl><p class="rec-note">${esc(r.reason)}</p><details><summary>الوصف الوظيفي ومعايير الاختيار</summary><p class="rec-note">${esc(r.job_snapshot.purpose || "")}\n${esc(Object.values(r.job_snapshot.content?.qualifications || {}).join("\n"))}</p>${r.criteria.map((c) => `<p>${esc(c.label)} · ${c.weight}%</p>`).join("")}</details><div class="rec-actions">${ownStage ? button("اعتماد المرحلة", 'data-rec-action="approve"', false) + button("رفض الطلب", 'data-rec-action="reject"') : ""}${["draft", "rejected"].includes(r.status) && [r.created_by,r.recruiter_id,r.hr_id].includes(context.user_id) ? button("ربط سلم الرواتب", "data-link-salary") : ""}${context.manage && r.status === "open" && r.route === "advertised" ? button(r.published ? "إيقاف الإعلان" : "تجهيز ونشر الإعلان", `data-rec-action="${r.published ? "unpublish" : "publish"}"`) : ""}${!["closed", "cancelled", "rejected"].includes(r.status) && (context.manage || context.user_id === r.created_by) ? button("إضافة مرشح", "data-add-candidate", false) : ""}${context.user_id === r.department_approver_id && !["closed", "cancelled", "cancellation_approval"].includes(r.status) ? button("إلغاء الاحتياج", 'data-rec-action="cancel"') : ""}</div>${r.published ? `<p><a href="careers.html?job=${r.public_token}" target="_blank" rel="noopener">فتح صفحة التقديم للشاغر</a></p>` : ""}${requestExtras(r)}<section class="rec-card">${jobRequirements(r.job_snapshot,r.salary_snapshot)}<p>الجنسية المطلوبة: ${esc(r.job_snapshot.nationality || "غير محددة")}</p><p>متطلبات مقدم الطلب: ${esc(r.job_snapshot.additional_requirements || "لا توجد")}</p>${r.route === "referral" ? `<h3>السير الذاتية والمستندات المرفقة</h3>${(r.job_snapshot.referral_files || []).map(f=>button(f.name,`data-referral-path="${esc(f.path)}"`)).join("")}${[r.created_by,r.recruiter_id].includes(context.user_id) && ["draft","rejected","open"].includes(r.status) ? button("إرفاق السير الذاتية", "data-referral-upload") : ""}` : ""}</section><section class="rec-card"><h3>المرشحون لهذا الشاغر</h3>${detail.applications.length ? detail.applications.map((a) => `<div class="rec-row"><div><strong>${esc(a.candidate.full_name)}</strong><p>${badge(a.stage, stages)} · ${esc(a.source)}</p></div>${button("ملف المرشح", `data-detail-app="${a.id}"`)}</div>`).join("") : empty("أضف مرشح الإدارة أو انشر الإعلان لاستقبال الطلبات.")}</section>${context.route_admin ? `<details><summary>سجل الإجراءات والقرارات</summary><div class="rec-history">${detail.events.map((e) => `<p><strong>${esc(eventLabel(e.action))}</strong><br>${esc(e.note)}<br><small>${esc(name(e.actor_id))} · ${esc(date(e.created_at))}</small></p>`).join("")}</div></details>` : ""}`,
+      )}</dl><p class="rec-note">${esc(r.reason)}</p><details><summary>الوصف الوظيفي ومعايير الاختيار</summary><p class="rec-note">${esc(r.job_snapshot.purpose || "")}\n${esc(Object.values(r.job_snapshot.content?.qualifications || {}).join("\n"))}</p>${r.criteria.map((c) => `<p>${esc(c.label)} · ${c.weight}%</p>`).join("")}</details></details><div class="rec-actions" id="requestActions">${ownStage ? button("اعتماد المرحلة", 'data-rec-action="approve"', false) + button("رفض الطلب", 'data-rec-action="reject"') : ""}${["draft", "rejected"].includes(r.status) && [r.created_by,r.recruiter_id,r.hr_id].includes(context.user_id) ? button("ربط سلم الرواتب", "data-link-salary") : ""}${context.manage && r.status === "open" && r.route === "advertised" ? button(r.published ? "إيقاف الإعلان" : "تجهيز ونشر الإعلان", `data-rec-action="${r.published ? "unpublish" : "publish"}"`) : ""}${!["closed", "cancelled", "rejected"].includes(r.status) && (context.manage || context.user_id === r.created_by) ? button("إضافة مرشح", "data-add-candidate", false) : ""}${context.user_id === r.department_approver_id && !["closed", "cancelled", "cancellation_approval"].includes(r.status) ? button("إلغاء الاحتياج", 'data-rec-action="cancel"') : ""}</div>${r.published ? `<p><a href="careers.html?job=${r.public_token}" target="_blank" rel="noopener">فتح صفحة التقديم للشاغر</a></p>` : ""}${requestExtras(r)}<details class="rec-request-requirements"><summary>متطلبات الوظيفة والمرفقات</summary><section class="rec-card">${jobRequirements(r.job_snapshot,r.salary_snapshot)}<p>الجنسية المطلوبة: ${esc(r.job_snapshot.nationality || "غير محددة")}</p><p>متطلبات مقدم الطلب: ${esc(r.job_snapshot.additional_requirements || "لا توجد")}</p>${r.route === "referral" ? `<h3>السير الذاتية والمستندات المرفقة</h3>${(r.job_snapshot.referral_files || []).map(f=>button(f.name,`data-referral-path="${esc(f.path)}"`)).join("")}${[r.created_by,r.recruiter_id].includes(context.user_id) && ["draft","rejected","open"].includes(r.status) ? button("إرفاق السير الذاتية", "data-referral-upload") : ""}` : ""}</section></details><section class="rec-card" id="requestCandidates"><h3>المرشحون لهذا الطلب</h3>${detail.applications.length ? detail.applications.map((a) => `<div class="rec-row"><div><strong>${esc(a.candidate.full_name)}</strong><p>${badge(a.stage, stages)} · ${esc(a.source)}</p></div>${button("ملف المرشح", `data-detail-app="${a.id}"`)}</div>`).join("") : empty("أضف مرشح الإدارة أو انشر الإعلان لاستقبال الطلبات.")}</section>${context.route_admin ? `<details><summary>سجل الإجراءات والقرارات</summary><div class="rec-history">${detail.events.map((e) => `<p><strong>${esc(eventLabel(e.action))}</strong><br>${esc(e.note)}<br><small>${esc(name(e.actor_id))} · ${esc(date(e.created_at))}</small></p>`).join("")}</div></details>` : ""}`,
   );
+  const body=$('dialogBody'), facts=body.querySelector('.rec-request-facts');
+  body.insertBefore(body.querySelector('#requestActions'),facts);
+  const workflow=body.querySelector('#requestWorkflow');
+  if(workflow)body.insertBefore(workflow,facts);
+  body.insertBefore(body.querySelector('#requestCandidates'),facts);
 }
 const eventLabel = (action) =>
   ({
@@ -759,7 +775,7 @@ function offerForm(id) {
           "",
           'maxlength="3000"',
         ) +
-        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يعتمده صاحب الصلاحية المحدد في مسار التوظيف. استثناءات الراتب والمزايا تمر أولًا بمشرف تطوير الأعمال.</p><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
+        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يعتمده صاحب الصلاحية المحدد في مسار التوظيف. استثناءات الراتب والمزايا تمر أولًا بمشرف تطوير الأعمال.</p><details class="wide"><summary>عرض مرجع الرواتب والدرجات</summary><div class="rec-table"><table><thead><tr><th>المسمى</th><th>الدرجة</th><th>النطاق</th></tr></thead><tbody>${context.salaries.map(s=>`<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(candidate.saudi?s.saudi_min:s.expat_min)} – ${money(candidate.saudi?s.saudi_max:s.expat_max)}</td></tr>`).join("")}</tbody></table></div></details><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
       "حفظ ورفع للاعتماد",
     ),
   );
@@ -865,7 +881,8 @@ document.addEventListener("click", async (e) => {
   try {
     if(b.dataset.emailOffer){b.disabled=true;try{const result=await sendRecruitmentEmail(sb,b.dataset.emailOffer,'offer');status(result.message,!result.sent,$('recDialog').open);}finally{b.disabled=false;}}
     else if(b.dataset.offerLink){workflowForm('portal_link',b.dataset.offerLink);}
-    else if (b.dataset.view) {
+    else if (b.dataset.tool) openTool(b.dataset.tool);
+    else if (b.dataset.view && ["dashboard","requests"].includes(b.dataset.view)) {
       view = b.dataset.view;
       render();
     } else if (b.dataset.recTask) await openTask(b.dataset.recTask,b.dataset.taskRequest);
@@ -918,10 +935,10 @@ try {
     await window.AtwarModules.guard(sb);
     context = await rpc("recruitment_context");
     $("createRequest").hidden = !context.can_request;
-    document.querySelector('[data-view="settings"]').hidden = !context.route_admin;
+    document.querySelector('[data-tool="settings"]').hidden = !context.route_admin;
     if (context.route_admin) routeSettings = await rpc("recruitment_route_settings");
-    document.querySelector('[data-view="reference"]').hidden =
-      !context.salaries.length;
+    document.querySelector('[data-tool="candidates"]').hidden = !context.manage;
+    document.querySelector('[data-tool="calendar"]').hidden = !context.development;
     await refresh();
     setInterval(() => { if (!busy && !$("recDialog").open) refresh().catch(e=>status(e.message,true)); }, 60000);
     status("");
@@ -992,7 +1009,7 @@ async function openTask(key, requestId) {
 }
 function taskPanel(tasks){
   const overdue=tasks.filter(t=>new Date(t.due_at)<new Date());
-  return `<section class="rec-card"><h2>المهام والمتابعة <span class="rec-tag">${overdue.length} متأخرة</span></h2>${tasks.length ? tasks.map(t=>`<div class="rec-row"><div><strong>${esc(t.label)}</strong><p class="rec-muted">${esc(name(t.owner_id))} · الموعد: ${esc(date(t.due_at))}${new Date(t.due_at)<new Date()?' · متأخر':''}${t.escalated?' · وصل لمسؤول التوظيف للمتابعة':''}</p></div>${taskButton(t)}</div>`).join('') : empty('لا توجد مهام معلقة.')}</section>`;
+  return `<section class="rec-card"><h2>إجراءاتي ومواعيد المباشرة <span class="rec-tag">${overdue.length} متأخرة</span></h2>${tasks.length ? tasks.map(t=>`<div class="rec-row"><div><strong>${esc(t.label)}</strong><p class="rec-muted">${esc(name(t.owner_id))} · الموعد: ${esc(date(t.due_at))}${new Date(t.due_at)<new Date()?' · متأخر':''}${t.escalated?' · وصل لمسؤول التوظيف للمتابعة':''}</p></div>${taskButton(t)}</div>`).join('') : empty('لا توجد مهام معلقة.')}</section>`;
 }
 function requestExtras(r){
  const mine=[r.created_by,r.supervisor_id].includes(context.user_id), recruiter=context.user_id===r.recruiter_id;
@@ -1008,7 +1025,7 @@ function requestExtras(r){
   if(context.user_id===r.supervisor_id&&b.state==='review')actions.push(['batch_none','لم يتم اختيار أحد من الدفعة']);
   if(context.user_id===r.development_id&&b.number>=3&&b.state==='exhausted')actions.push(['batch_resume','اعتماد استئناف توفير المرشحين']);
  }
- return `<section class="rec-card"><h3>دورة الطلب</h3><p class="rec-muted">المشرف ← اعتماد الإدارة للاحتياج ← مراجعة مسؤول التوظيف والتوطين ← اعتماد الاحتياج ← مقابلة وتقييم واختيار المدير المباشر للمرشح ← إعداد واعتماد العرض الوظيفي ← القبول والمباشرة والتعيين</p><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
+ return `<section class="rec-card" id="requestWorkflow"><h3>إجراءات الطلب</h3><details><summary>دورة العمل</summary><p class="rec-muted">المشرف ← اعتماد الإدارة للاحتياج ← مراجعة مسؤول التوظيف والتوطين ← اعتماد الاحتياج ← مقابلة وتقييم واختيار المدير المباشر للمرشح ← إعداد واعتماد العرض الوظيفي ← القبول والمباشرة والتعيين</p></details><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
 }
 function applicationExtras(a,r){
  const active=r.status==='open', recruiter=context.user_id===r.recruiter_id, manager=!!r.interview_manager_id&&context.user_id===r.interview_manager_id&&context.user_id!==r.approver_id;
