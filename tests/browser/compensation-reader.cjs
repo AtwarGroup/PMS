@@ -45,7 +45,7 @@ const root=path.resolve(__dirname,'../..');
   assert.equal(await page.locator('[data-travel-panel][open]').count(),7);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page-level horizontal overflow');
   assert.equal(await page.evaluate(()=>JSON.stringify(window.__state.v.content)),original,'Reading and search never change stored content');
-  assert.equal((await page.evaluate(()=>window.__state.calls)).length,0,'No write RPCs');
+  assert.deepEqual((await page.evaluate(()=>window.__state.calls)).filter(call=>call.name!=='presence_ping'),[],'Only the expected shell presence heartbeat is allowed; no policy write RPCs');
   assert.deepEqual(errors,[]);
   console.log('PASS compensation reader: index, hidden section, salary result beyond pagination, highlights, print restore and layout',width);
  }
