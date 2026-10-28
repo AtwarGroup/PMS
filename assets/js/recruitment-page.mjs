@@ -1,3 +1,6 @@
+import {sendRecruitmentEmail} from './recruitment-email.mjs?v=mail1';
+import {offerDocument,printOfferDocument} from './recruitment-offer.mjs?v=offer2';
+import { approvalSteps, progress, elapsed, taskDestination } from "./recruitment-progress.mjs?v=tasknav3";
 import {
   stages,
   requestStates,
@@ -5,9 +8,10 @@ import {
   escapeHTML as esc,
   money,
   dashboard,
-  defaultCriteria,
-} from "./recruitment-model.mjs?v=2";
+} from "./recruitment-model.mjs?v=workflow2";
 const $ = (id) => document.getElementById(id);
+const routeFields = [["approver_id","معتمد الاحتياج والعرض الوظيفي","approve"],["recruiter_id","مسؤول التوظيف","manage"],["development_id","مشرف تطوير الأعمال","development"]];
+let routeSettings;
 let sb,
   context,
   snapshot,
@@ -77,7 +81,7 @@ async function refresh() {
 }
 function requestRows(rows) {
   return rows.length
-    ? `<div class="rec-table"><table><thead><tr><th>الطلب والوظيفة</th><th>المسار</th><th>العدد</th><th>المباشرة المستهدفة</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((r) => `<tr><td><strong>REC-${r.number} · ${esc(r.job_snapshot.title)}</strong><br><small>${esc(r.company)} · ${esc(r.location)}</small></td><td>${esc(routes[r.route])}</td><td>${snapshot.applications.filter((a) => a.request_id === r.id && a.stage === "hired").length} / ${r.headcount}</td><td>${esc(r.target_date)}</td><td>${badge(r.status, requestStates)}</td><td>${button("فتح الطلب", `data-request="${r.id}"`)}</td></tr>`).join("")}</tbody></table></div>`
+    ? `<div class="rec-table"><table><thead><tr><th>الطلب والوظيفة</th><th>المسار</th><th>العدد</th><th>المباشرة المستهدفة</th><th>المرحلة الحالية</th><th>بانتظار إجراء</th><th>الإجراء</th></tr></thead><tbody>${rows.map((r) => `<tr><td><strong>REC-${r.number} · ${esc(r.job_snapshot.title)}</strong><br><small>${esc(r.location)}</small></td><td>${esc(routes[r.route])}</td><td>${snapshot.applications.filter((a) => a.request_id === r.id && a.stage === "hired").length} / ${r.headcount}</td><td>${esc(r.target_date)}</td><td>${badge(r.status, requestStates)}</td><td>${progress(r,snapshot.tasks || []).ownerIds.map(name).map(esc).join("، ") || "—"}</td><td>${button("فتح الطلب", `data-request="${r.id}"`)}</td></tr>`).join("")}</tbody></table></div>`
     : empty("لا توجد احتياجات وظيفية في هذا العرض.");
 }
 function candidateRows(rows) {
@@ -106,14 +110,14 @@ function render() {
         })[r.status] === context.user_id,
     );
     root.innerHTML = `${taskPanel(snapshot.tasks || [])}<div class="rec-metrics">${[
-      ["شواغر مفتوحة", d.open, "blue"],
-      ["احتياجات تحت الاعتماد", d.pending, "purple"],
-      ["مرشحون في المقابلات", d.interviews, "warning"],
-      ["باشروا العمل", d.hired, "success"],
+      ["شواغر مفتوحة", d.open],
+      ["احتياجات تحت الاعتماد", d.pending],
+      ["مرشحون في المقابلات", d.interviews],
+      ["باشروا العمل", d.hired],
     ]
       .map(
-        ([l, v, tone]) =>
-          `<article class="rec-metric atwar-metric" data-tone="${tone}"><span>${l}</span><strong>${v}</strong></article>`,
+        ([l, v]) =>
+          `<article class="rec-metric"><span>${l}</span><strong>${v}</strong></article>`,
       )
       .join(
         "",
@@ -175,39 +179,52 @@ function render() {
         r.target_date < new Date().toISOString().slice(0, 10) &&
         !["closed", "rejected", "cancelled"].includes(r.status),
     );
-    root.innerHTML = `<section class="rec-card"><h2>مؤشرات حركة التوظيف</h2><p class="rec-muted">تعكس المؤشرات السجلات المتاحة لك.</p>${rows.map(([l, v, tone]) => `<div class="rec-row"><span>${esc(l)}</span><strong>${v}</strong></div>`).join("")}<div class="rec-actions">${button("طباعة التقرير", "data-print")}</div></section><section class="rec-card"><h2>تجاوزت تاريخ المباشرة المستهدف</h2>${requestRows(overdue)}</section>`;
+    root.innerHTML = `<section class="rec-card"><h2>مؤشرات حركة التوظيف</h2><p class="rec-muted">تعكس المؤشرات السجلات المتاحة لك.</p>${rows.map(([l, v]) => `<div class="rec-row"><span>${esc(l)}</span><strong>${v}</strong></div>`).join("")}<div class="rec-actions">${button("طباعة التقرير", "data-print")}</div></section><section class="rec-card"><h2>تجاوزت تاريخ المباشرة المستهدف</h2>${requestRows(overdue)}</section>`;
+  }
+  if (view === "settings" && context.route_admin) {
+    root.innerHTML = `<section class="rec-card"><h2>إعدادات مسار التوظيف</h2><p class="rec-muted">تطبق على الطلبات الجديدة. يحتفظ كل طلب قائم بمسؤوليه المسجلين عند إنشائه.</p><dl class="rec-detail">${routeFields.map(([key,label])=>`<dt>${esc(label)}</dt><dd>${esc(name(routeSettings?.[key]))}</dd>`).join("")}</dl><p class="rec-note">مقدم الطلب هو المشرف، ويُستخرج مدير الإدارة من تسلسله الإداري في سجل الموظفين.</p><div class="rec-actions">${button("تعديل مسؤولي المسار", "data-route-settings", false)}</div></section>`;
   }
   if (view === "reference") {
     root.innerHTML = `${calendarPanel()}<section class="rec-card"><h2>مرجع الرواتب والدرجات</h2><p class="rec-muted">نسخة مستوردة من منظومة السلم المعتمدة. الإجمالي يشمل الأساسي والسكن والمواصلات. ربط مسمى مختلف يتطلب توثيق المطابقة من الموارد البشرية.</p><div class="rec-table"><table><thead><tr><th>الوظيفة</th><th>الدرجة</th><th>السعودي</th><th>غير السعودي</th></tr></thead><tbody>${context.salaries.map((s) => `<tr><td>${esc(s.title)}</td><td>${esc(s.grade)}</td><td>${money(s.saudi_min)} – ${money(s.saudi_max)}</td><td>${s.expat_min == null ? "—" : money(s.expat_min) + " – " + money(s.expat_max)}</td></tr>`).join("")}</tbody></table></div></section>`;
   }
 }
+function jobRequirements(job, salary) {
+  const q = job?.content?.qualifications || {};
+  const text = v => typeof v === "string" ? v : v?.text || v?.name || "";
+  return `<h3>متطلبات الوظيفة</h3><p>${esc(job?.purpose || "")}</p><h4>المهام والمسؤوليات</h4><ul>${(job?.content?.responsibilities || []).map(x=>`<li>${esc(text(x))}</li>`).join("") || "<li>لم تسجل في الوصف الحالي</li>"}</ul><dl class="rec-detail"><dt>سنوات الخبرة</dt><dd>${esc(q.experience || "لم تحدد")}</dd><dt>المؤهل التعليمي والتخصص</dt><dd>${esc(q.education || "لم يحدد")}</dd><dt>التخصص</dt><dd>${esc(q.specialization || q.major || q.education || "لم يحدد")}</dd><dt>المهارات</dt><dd>${esc(q.skills || "لم تحدد")}</dd></dl><h4>الراتب حسب السلم المقترح — إجمالي شهري</h4>${salary ? `<p>الدرجة: ${esc(salary.grade)} · السعودي: ${money(salary.saudi_min)} – ${money(salary.saudi_max)} · غير السعودي: ${salary.expat_min == null ? "غير متاح" : money(salary.expat_min)+" – "+money(salary.expat_max)}</p>` : "<p>لا يوجد نطاق مربوط بهذا المسمى في مرجع السلم الحالي.</p>"}`;
+}
+function validateReferralFiles(files) {
+  if(files.some(f=>!f.size || f.size>5242880 || f.type!=="application/pdf")) throw Error("اختر ملفات PDF حتى 5 ميجابايت لكل ملف.");
+}
+async function uploadReferralFiles(id, files) {
+  for(const file of files) {
+    const doc=await rpc("recruitment_referral_prepare",{p_request:id,p_name:file.name});
+    const {error}=await sb.storage.from("recruitment-referrals").upload(doc.path,file,{contentType:"application/pdf",upsert:false});
+    if(error) throw Error(error.message);
+  }
+}
+function referralUploadForm() {
+  const id=detail.request.id;
+  show("إرفاق السير الذاتية",formBody('<label class="wide">السيرة الذاتية / مستندات المرشح<input name="files" type="file" accept="application/pdf" multiple required></label>'));
+  bindForm(async(_,form)=>{const files=[...form.elements.files.files];validateReferralFiles(files);await uploadReferralFiles(id,files);await openRequest(id);});
+}
 function createRequest() {
-  const people = (kind) =>
-    context.people.filter((p) => p[kind]).map((p) => [p.id, p.full_name]);
+  if (!context.requester_org) {
+    status("أكمل ربط الحساب بملف الموظف والإدارة والقسم قبل إنشاء طلب التوظيف.", true);
+    return false;
+  }
   show(
     "طلب احتياج وظيفي",
     formBody(
       select(
         "job_id",
-        "المسمى والوصف المعتمد",
+        "المسمى الوظيفي",
         context.jobs.map((j) => [j.id, `${j.job_code} · ${j.title}`]),
         "",
         "",
       ) +
-        select(
-          "department_id",
-          "الإدارة",
-          context.departments.map((d) => [d.id, d.name]),
-          "",
-          "required",
-        ) +
-        select("section_id", "القسم", [], "", "required") +
-        select(
-          "manager_id",
-          "المدير المباشر للموظف الجديد",
-          context.managers.map((p) => [p.id, p.full_name]),
-        ) +
-        field("company", "الشركة", "", "text", 'required maxlength="120"') +
+        field("request_department", "الإدارة", context.requester_org?.department_name || "غير مرتبط", "text", "readonly") +
+        field("request_section", "القسم", context.requester_org?.section_name || "غير مرتبط", "text", "readonly") +
         field(
           "location",
           "الفرع / موقع العمل",
@@ -231,38 +248,16 @@ function createRequest() {
         ) +
         select(
           "route",
-          "مسار التوظيف",
-          Object.entries(routes),
+          "هل لدى الإدارة مرشح؟",
+          [["advertised", "لا، نحتاج البحث عن مرشحين"], ["referral", "نعم، يوجد مرشح لدى الإدارة"]],
           "advertised",
           "required",
         ) +
-        select(
-          "hr_id",
-          "أخصائي شؤون الموظفين",
-          people("personnel"),
-          "",
-          "required",
-        ) +
-        select(
-          "finance_id",
-          "مراجع الميزانية",
-          people("finance"),
-          "",
-          "required",
-        ) +
-        select(
-          "approver_id",
-          "الرئيس التنفيذي",
-          people("approve"),
-          "",
-          "required",
-        ) +
-        select("department_approver_id", "مدير الإدارة", context.people.map(p=>[p.id,p.full_name]), "", "required") +
-        select("supervisor_id", "المدير المباشر / المشرف", context.people.map(p=>[p.id,p.full_name]), "", "required") +
-        select("recruiter_id", "مسؤول التوظيف", people("manage"), "", "required") +
-        select("development_id", "مشرف تطوير الأعمال", people("development"), "", "required") +
         select("request_type", "نوع الاحتياج", [["new","جديد"],["replacement","إحلال / استبدال"]], "new", "required") +
-        field("draft_title", "مسمى المسودة إذا لم يعتمد الوصف بعد") +
+        `<div id="replacementEmployee" hidden>${select("replacement_employee_id", "الموظف المراد استبداله", (context.replacement_employees || []).map(e=>[e.id,`${e.employee_code} · ${e.full_name}`]), "", "disabled")}<small>${context.replacement_employees?.length ? "اختر الموظف التابع لك مباشرة وفق سجل الموظفين." : "لا يوجد موظفون مرتبطون بك كمدير مباشر؛ راجع سجل الموظفين."}</small></div>` +
+        select("nationality", "الجنسية المطلوبة للوظيفة", [["غير محددة","جميع الجنسيات"],["سعودي","سعودي"],["مصري","مصري"],["يمني","يمني"],["سوداني","سوداني"],["أردني","أردني"],["سوري","سوري"],["باكستاني","باكستاني"],["هندي","هندي"],["بنغلاديشي","بنغلاديشي"],["فلبيني","فلبيني"],["نيبالي","نيبالي"],["غير سعودي","غير سعودي — أي جنسية"]], "غير محددة", "required") +
+        area("additional_requirements", "متطلبات إضافية من مقدم الطلب", "", 'maxlength="3000"') +
+        `<div id="referralUpload" class="wide" hidden><label>السيرة الذاتية / مستندات المرشح<input name="referral_files" type="file" accept="application/pdf" multiple><small>يمكن إرفاق عدة ملفات PDF، حتى 5 ميجابايت لكل ملف.</small></label></div>` +
         select("linked_request_id", "الطلب السابق عند الإحلال أو إعادة التقديم", snapshot.requests.map(x=>[x.id,`REC-${x.number} · ${x.job_snapshot.title}`])) +
         area(
           "reason",
@@ -270,40 +265,48 @@ function createRequest() {
           "",
           'required maxlength="3000"',
         ) +
-        `<label class="wide">المشاركون في المقابلات<select name="interviewer_ids" multiple size="4">${context.people.map((p) => `<option value="${p.id}">${esc(p.full_name)}</option>`).join("")}</select></label><div id="jobPreview" class="rec-note wide"></div><div class="wide"><h3>معايير تقييم المقابلة</h3><p class="rec-muted">المعايير العامة ثابتة، ويحدد المعيار الفني وفق الوصف الوظيفي. مجموع الأوزان ١٠٠٪.</p></div>${defaultCriteria.map((c,i)=>field(`criterion_label_${i}`,i===1?"المعيار الفني المرتبط بالوصف":c.label,c.label,"text",i===1?'required maxlength="250"':'required readonly')+field(`criterion_weight_${i}`,"الوزن ٪",c.weight,"number",'required min="1" max="100"')).join("")}`,
+        `<div id="jobPreview" class="rec-note wide"></div><p class="rec-muted wide">يُحدد مسار الموافقات والمسؤولون تلقائيًا وفق الهيكل التنظيمي وإعدادات التوظيف.</p>`,
       "حفظ المسودة",
     ),
   );
   const form = $("dialogBody").querySelector("form");
-  const updateSections = () => {
-    form.elements.section_id.innerHTML =
-      '<option value="">اختر…</option>' +
-      context.sections
-        .filter((s) => s.department_id === form.elements.department_id.value)
-        .map((s) => `<option value="${s.id}">${esc(s.name)}</option>`)
-        .join("");
+  form.elements.route.onchange = () => { $("referralUpload").hidden = form.elements.route.value !== "referral"; };
+  form.elements.request_type.onchange = () => {
+    const replacement = form.elements.request_type.value === "replacement";
+    $("replacementEmployee").hidden = !replacement;
+    form.elements.replacement_employee_id.disabled = !replacement;
+    form.elements.replacement_employee_id.required = replacement;
+    if(!replacement) form.elements.replacement_employee_id.value = "";
   };
-  form.elements.department_id.onchange = updateSections;
+  form.elements.job_id.required = true;
   form.elements.job_id.onchange = () => {
-    const j = context.jobs.find((j) => j.id === form.elements.job_id.value);
-    const salary = context.salaries.find(
-      (s) => s.title.trim() === j?.title?.trim(),
-    );
-    $("jobPreview").textContent = j
-      ? `${j.snapshot.purpose || ""}\n${Object.values(j.snapshot.content?.qualifications || {}).join("\n")}\n${salary ? "الدرجة: " + salary.grade + " · نطاق السعودي: " + money(salary.saudi_min) + " – " + money(salary.saudi_max) + " · نطاق غير السعودي: " + (salary.expat_min == null ? "غير متاح" : money(salary.expat_min) + " – " + money(salary.expat_max)) : "يُربط السلم تلقائيًا عند تطابق المسمى، وتراجع الموارد البشرية أي مسمى يحتاج مطابقة."}`
-      : "";
+    const j = context.jobs.find(j => j.id === form.elements.job_id.value);
+    const salary = context.salaries.find(s => s.id === j?.salary_id || s.title.trim() === j?.title?.trim());
+    $("jobPreview").innerHTML = j ? jobRequirements(j.snapshot, salary) : "";
   };
   bindForm(async (data, form) => {
+    delete data.request_department;
+    delete data.request_section;
     data.headcount = Number(data.headcount);
-    data.interviewer_ids = new FormData(form).getAll("interviewer_ids");
-    data.criteria = defaultCriteria.map((c,i)=>({key:c.key,label:data[`criterion_label_${i}`],weight:Number(data[`criterion_weight_${i}`])}));
+    const files = data.route === "referral" ? [...form.elements.referral_files.files] : [];
+    validateReferralFiles(files);
+    delete data.referral_files;
     const id = await rpc("recruitment_request_create", { p_data: data });
+    try { await uploadReferralFiles(id, files); }
+    catch(e) { await openRequest(id); throw Error("تم حفظ المسودة؛ تعذر رفع بعض المرفقات. افتح إرفاق السير الذاتية لإكمالها. " + e.message); }
     await openRequest(id);
   });
+  return true;
 }
 async function openRequest(id) {
   detail = await rpc("recruitment_detail", { p_request: id });
   renderRequest();
+}
+function requestProgress(r) {
+ const p=progress(r,detail.tasks || []);
+ const label=requestStates[r.status] || r.status;
+ const owners=p.ownerIds.map(name).join("، ") || "لا يوجد إجراء معلق";
+ return `<section class="rec-progress" aria-label="متابعة مراحل طلب التوظيف"><ol>${approvalSteps.map(([key,label],i)=>`<li class="${i===p.current?"current":p.current!=null&&i<p.current?"complete":""}" ${i===p.current?'aria-current="step"':''}><span>${i+1}</span><p>${esc(label)}</p></li>`).join("")}</ol><div class="rec-progress-meta"><p>المرحلة الحالية: <strong>${esc(label)}</strong></p><p>بانتظار إجراء: <strong>${esc(owners)}</strong></p>${!p.terminal?`<p>منذ: ${esc(p.since?date(p.since):"تاريخ بدء المرحلة غير متوفر")} ${p.since?` · ${esc(elapsed(p.since))}`:""}</p>`:""}</div><p class="rec-progress-next">الإجراء التالي: ${esc(p.action)}</p>${r.status==='open'&&p.pending.length?`<div class="rec-table"><table><thead><tr><th>الإجراء المعلق</th><th>المسؤول</th><th>مدة الانتظار</th><th>الموعد المستهدف</th><th>الإجراء</th></tr></thead><tbody>${p.pending.map(t=>`<tr><td>${esc(t.label)}</td><td>${esc(name(t.owner_id))}</td><td>${esc(elapsed(t.started_at))}</td><td>${esc(date(t.due_at))}</td><td>${taskButton(t)}</td></tr>`).join("")}</tbody></table></div>`:""}</section>`;
 }
 function renderRequest() {
   const r = detail.request;
@@ -316,28 +319,30 @@ function renderRequest() {
           hr_review: r.hr_id,
       finance_review: r.finance_id,
       approval: r.approver_id,
-    }[r.status] === context.user_id;
+    }[r.status] === context.user_id && r.created_by !== context.user_id;
   show(
     `REC-${r.number} · ${r.job_snapshot.title}`,
-    `<div class="rec-actions">${badge(r.status, requestStates)}${badge(r.route, routes)}${button("طباعة الطلب", "data-print")}</div><dl class="rec-detail">${[
-      ["الشركة", r.company],
+    `${requestProgress(r)}<div class="rec-actions">${badge(r.status, requestStates)}${badge(r.route, routes)}${button("طباعة الطلب", "data-print")}</div><dl class="rec-detail">${[
+      ["نوع الاحتياج", r.request_type === "replacement" ? "إحلال / استبدال" : "جديد"],
+      ...(r.request_type === "replacement" ? [["الموظف المراد استبداله", r.job_snapshot.replacement_employee ? `${r.job_snapshot.replacement_employee.employee_code} · ${r.job_snapshot.replacement_employee.full_name}` : "لم يحدد في الطلب السابق"]] : []),
       ["الموقع", r.location],
       ["العدد المطلوب", r.headcount],
       ["تاريخ المباشرة", r.target_date],
-      ["مدير الإدارة", name(r.department_approver_id)],
-      ["المشرف", name(r.supervisor_id)],
-      ["شؤون الموظفين", name(r.hr_id)],
+      ["معتمد الإدارة للاحتياج", name(r.department_approver_id)],
+      ["مسؤول المقابلة الثانية", r.interview_manager_id ? name(r.interview_manager_id) : "لا يوجد مدير إدارة مستقل مسند للمقابلة الثانية"],
+      ["المدير المباشر واختيار المرشح", name(r.supervisor_id)],
+      ["مراجعة مسؤول التوظيف والتوطين", name(r.recruiter_id)],
       ["مسؤول التوظيف", name(r.recruiter_id)],
       ["مشرف تطوير الأعمال", name(r.development_id)],
-      ["الميزانية", name(r.finance_id)],
-      ["الاعتماد", name(r.approver_id)],
+
+      ["معتمد الاحتياج والعرض", name(r.approver_id)],
       ["الدرجة", r.salary_snapshot?.grade || "تظهر للمخولين"],
       ["مرجع السلم", r.salary_snapshot?.title || "تظهر للمخولين"],
     ]
-      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
+      .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
-      )}</dl><p class="rec-note">${esc(r.reason)}</p><details><summary>الوصف الوظيفي ومعايير الاختيار</summary><p class="rec-note">${esc(r.job_snapshot.purpose || "")}\n${esc(Object.values(r.job_snapshot.content?.qualifications || {}).join("\n"))}</p>${r.criteria.map((c) => `<p>${esc(c.label)} · ${c.weight}%</p>`).join("")}</details><div class="rec-actions">${ownStage ? button("اعتماد المرحلة", 'data-rec-action="approve"', false) + button("رفض الطلب", 'data-rec-action="reject"') : ""}${["draft", "rejected"].includes(r.status) && [r.created_by,r.recruiter_id,r.hr_id].includes(context.user_id) ? button("ربط سلم الرواتب", "data-link-salary") : ""}${context.manage && r.status === "open" && r.route === "advertised" ? button(r.published ? "إيقاف الإعلان" : "تجهيز ونشر الإعلان", `data-rec-action="${r.published ? "unpublish" : "publish"}"`) : ""}${!["closed", "cancelled", "rejected"].includes(r.status) && (context.manage || context.user_id === r.created_by) ? button("إضافة مرشح", "data-add-candidate", false) : ""}${context.user_id === r.department_approver_id && !["closed", "cancelled", "cancellation_approval"].includes(r.status) ? button("إلغاء الاحتياج", 'data-rec-action="cancel"') : ""}</div>${r.published ? `<p><a href="careers.html?job=${r.public_token}" target="_blank" rel="noopener">فتح صفحة التقديم للشاغر</a></p>` : ""}${requestExtras(r)}<section class="rec-card"><h3>المرشحون لهذا الشاغر</h3>${detail.applications.length ? detail.applications.map((a) => `<div class="rec-row"><div><strong>${esc(a.candidate.full_name)}</strong><p>${badge(a.stage, stages)} · ${esc(a.source)}</p></div>${button("ملف المرشح", `data-detail-app="${a.id}"`)}</div>`).join("") : empty("أضف مرشح الإدارة أو انشر الإعلان لاستقبال الطلبات.")}</section>${context.audit_admin?`<details><summary>سجل الإجراءات والقرارات</summary><div class="rec-history">${detail.events.map((e) => `<p><strong>${esc(eventLabel(e.action))}</strong><br>${esc(e.note)}<br><small>${esc(name(e.actor_id))} · ${esc(date(e.created_at))}</small></p>`).join("")}</div></details>`:''}`,
+      )}</dl><p class="rec-note">${esc(r.reason)}</p><details><summary>الوصف الوظيفي ومعايير الاختيار</summary><p class="rec-note">${esc(r.job_snapshot.purpose || "")}\n${esc(Object.values(r.job_snapshot.content?.qualifications || {}).join("\n"))}</p>${r.criteria.map((c) => `<p>${esc(c.label)} · ${c.weight}%</p>`).join("")}</details><div class="rec-actions">${ownStage ? button("اعتماد المرحلة", 'data-rec-action="approve"', false) + button("رفض الطلب", 'data-rec-action="reject"') : ""}${["draft", "rejected"].includes(r.status) && [r.created_by,r.recruiter_id,r.hr_id].includes(context.user_id) ? button("ربط سلم الرواتب", "data-link-salary") : ""}${context.manage && r.status === "open" && r.route === "advertised" ? button(r.published ? "إيقاف الإعلان" : "تجهيز ونشر الإعلان", `data-rec-action="${r.published ? "unpublish" : "publish"}"`) : ""}${!["closed", "cancelled", "rejected"].includes(r.status) && (context.manage || context.user_id === r.created_by) ? button("إضافة مرشح", "data-add-candidate", false) : ""}${context.user_id === r.department_approver_id && !["closed", "cancelled", "cancellation_approval"].includes(r.status) ? button("إلغاء الاحتياج", 'data-rec-action="cancel"') : ""}</div>${r.published ? `<p><a href="careers.html?job=${r.public_token}" target="_blank" rel="noopener">فتح صفحة التقديم للشاغر</a></p>` : ""}${requestExtras(r)}<section class="rec-card">${jobRequirements(r.job_snapshot,r.salary_snapshot)}<p>الجنسية المطلوبة: ${esc(r.job_snapshot.nationality || "غير محددة")}</p><p>متطلبات مقدم الطلب: ${esc(r.job_snapshot.additional_requirements || "لا توجد")}</p>${r.route === "referral" ? `<h3>السير الذاتية والمستندات المرفقة</h3>${(r.job_snapshot.referral_files || []).map(f=>button(f.name,`data-referral-path="${esc(f.path)}"`)).join("")}${[r.created_by,r.recruiter_id].includes(context.user_id) && ["draft","rejected","open"].includes(r.status) ? button("إرفاق السير الذاتية", "data-referral-upload") : ""}` : ""}</section><section class="rec-card"><h3>المرشحون لهذا الشاغر</h3>${detail.applications.length ? detail.applications.map((a) => `<div class="rec-row"><div><strong>${esc(a.candidate.full_name)}</strong><p>${badge(a.stage, stages)} · ${esc(a.source)}</p></div>${button("ملف المرشح", `data-detail-app="${a.id}"`)}</div>`).join("") : empty("أضف مرشح الإدارة أو انشر الإعلان لاستقبال الطلبات.")}</section>${context.route_admin ? `<details><summary>سجل الإجراءات والقرارات</summary><div class="rec-history">${detail.events.map((e) => `<p><strong>${esc(eventLabel(e.action))}</strong><br>${esc(e.note)}<br><small>${esc(name(e.actor_id))} · ${esc(date(e.created_at))}</small></p>`).join("")}</div></details>` : ""}`,
   );
 }
 const eventLabel = (action) =>
@@ -354,7 +359,7 @@ const eventLabel = (action) =>
     candidate_reused: "ربط ملف مرشح موجود",
     candidate_transferred: "ترشيح المرشح لطلب آخر",
     candidate_previous: "حفظ البيانات السابقة قبل التعديل",
-    second_interview: "طلب مقابلة ثانية من مدير الإدارة",
+    second_interview: "طلب مدير الإدارة مقابلة ثانية مستقلة",
     confirm_join: "تأكيد المدير المباشر للحضور",
     documents_exception: "موافقة مسؤول التوظيف على استكمال المستندات لاحقًا",
     document_review: "مراجعة مستند المرشح",
@@ -366,9 +371,10 @@ const eventLabel = (action) =>
     transfer: "ترشيح المرشح لوظيفة أخرى",
     offer_returned: "إعادة العرض للتعديل",
     offer_development_review: "رفع استثناء العرض لمشرف تطوير الأعمال",
-    offer_hr_review: "مراجعة أخصائي شؤون الموظفين للعرض",
+    offer_hr_review: "مراجعة مسؤول التوظيف للعرض",
     offer_extended: "تمديد صلاحية العرض بمبرر",
     request_approve: "اعتماد مرحلة",
+    request_reassign: "إعادة إسناد مسؤول المرحلة",
     request_reject: "رفض الطلب",
     request_link_salary: "ربط مرجع السلم",
     request_publish: "نشر الإعلان",
@@ -467,6 +473,7 @@ function linkSalary() {
   });
 }
 function addCandidate() {
+  if(detail.request.route === "referral" && !context.manage) return referralUploadForm();
   const r = detail.request;
   show(
     "إضافة مرشح",
@@ -544,20 +551,20 @@ function renderApplication(id) {
       ["الفئة", c.saudi ? "سعودي" : "غير سعودي"],
       ["مصدر الترشيح", a.source],
     ]
-      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
+      .map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
       .join(
         "",
-      )}</dl><h3>السيرة والخبرة</h3><div class="rec-actions">${button("فتح السيرة الذاتية", `data-resume-open="${a.id}"`)}${context.manage || r.created_by === context.user_id ? button("إرفاق سيرة PDF", `data-resume-add="${a.id}"`) : ""}</div><p class="rec-note">${esc(c.experience)}\n${esc(c.resume_text)}</p><p class="rec-muted">${esc(a.referral_note)}</p><div class="rec-actions">${active && (a.stage === "assessment" ? context.user_id === r.department_approver_id : context.user_id === r.recruiter_id) && { screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage] ? button("نقل إلى " + stages[{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]], `data-stage-app="${a.id}" data-stage="${{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]}"`, false) : ""}${active && ["screening", "interview", "assessment"].includes(a.stage) && ([r.recruiter_id,r.supervisor_id,r.department_approver_id].includes(context.user_id)) ? button("جدولة / توثيق مقابلة", `data-interview-app="${a.id}"`) : ""}${active && context.user_id === r.recruiter_id && !a.internal_employee_id && ["recommended", "offer"].includes(a.stage) ? button("إعداد عرض وظيفي", `data-offer-app="${a.id}"`, false) : ""}${active && context.user_id === r.recruiter_id && a.stage === "accepted" && !a.internal_employee_id ? button("مراجعة وتسجيل الموظف", `data-join-app="${a.id}"`, false) + button("لم يباشر", `data-stage-app="${a.id}" data-stage="no_show"`) : ""}${active && !["hired", "rejected", "withdrawn", "no_show"].includes(a.stage) ? (context.user_id === r.department_approver_id ? button("استبعاد مع السبب", `data-stage-app="${a.id}" data-stage="rejected"`) : "") + (context.user_id === r.recruiter_id ? button("انسحاب", `data-stage-app="${a.id}" data-stage="withdrawn"`) : "") : ""}</div>${applicationExtras(a,r)}<section class="rec-card"><h3>المقابلات والتقييم</h3>${interviews.length ? interviews.map((i) => `<div class="rec-row"><div><strong>${esc(name(i.interviewer_id))}</strong> · ${esc(date(i.scheduled_at))}<p>${esc({ scheduled: "مجدولة", completed: "مكتملة", absent: "لم يحضر" }[i.state])}${i.score != null ? " · " + i.score + " / 100" : ""}</p><p class="rec-muted">${esc(i.notes)}</p>${i.state === "completed" ? `<p>${esc({ suitable: "مناسب", conditional: "مناسب بشروط", unsuitable: "غير مناسب" }[i.recommendation])}</p>` : ""}</div>${i.state === "scheduled" && i.interviewer_id === context.user_id ? button("تسجيل النتيجة", `data-complete-interview="${i.id}"`) : ""}</div>`).join("") : empty("لا توجد مقابلات مسجلة.")}</section>${detail.can_pay ? `<section class="rec-card"><h3>العروض الوظيفية</h3>${offers.length ? offers.map((o) => `<div class="rec-card"><strong>العرض · النسخة ${o.version}</strong><p>${money(o.total)} شهريًا · ${esc(offerState(o.state))}</p><dl class="rec-detail"><div><dt>الأساسي</dt><dd>${money(o.basic)}</dd></div><div><dt>السكن</dt><dd>${money(o.housing)}</dd></div><div><dt>المواصلات</dt><dd>${money(o.transport)}</dd></div><div><dt>الدرجة</dt><dd>${esc(o.salary_snapshot.grade)}</dd></div></dl><p class="rec-note">${esc(o.benefits)}</p><p>المباشرة المتوقعة: ${esc(o.start_date)} · صالح حتى ${esc(o.expires_on)}</p>${o.exception_reason ? `<p class="rec-note">استثناء عن النطاق: ${esc(o.exception_reason)}</p>` : ""}<div class="rec-actions">${offerButtons(o)}${["approved", "sent", "accepted"].includes(o.state) ? button("عرض / طباعة الخطاب", `data-print-offer="${o.id}"`) : ""}</div></div>`).join("") : empty("لا توجد عروض.")}</section>` : ""}`,
+      )}</dl><h3>السيرة والخبرة</h3><div class="rec-actions">${button("فتح السيرة الذاتية", `data-resume-open="${a.id}"`)}${context.manage || r.created_by === context.user_id ? button("إرفاق سيرة PDF", `data-resume-add="${a.id}"`) : ""}</div><p class="rec-note">${esc(c.experience)}\n${esc(c.resume_text)}</p><p class="rec-muted">${esc(a.referral_note)}</p><div class="rec-actions">${active && (a.stage === "assessment" ? context.user_id === r.supervisor_id : context.user_id === r.recruiter_id) && { screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage] ? button("نقل إلى " + stages[{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]], `data-stage-app="${a.id}" data-stage="${{ screening: "interview", interview: "assessment", assessment: "recommended" }[a.stage]}"`, false) : ""}${active && ["screening", "interview", "assessment"].includes(a.stage) && ([r.recruiter_id,r.supervisor_id,r.interview_manager_id].filter(Boolean).includes(context.user_id)) ? button("جدولة / توثيق مقابلة", `data-interview-app="${a.id}"`) : ""}${active && context.user_id === r.recruiter_id && !a.internal_employee_id && ["recommended", "offer"].includes(a.stage) ? button("إعداد عرض وظيفي", `data-offer-app="${a.id}"`, false) : ""}${active && context.user_id === r.recruiter_id && a.stage === "accepted" && !a.internal_employee_id ? button("مراجعة وتسجيل الموظف", `data-join-app="${a.id}"`, false) + button("لم يباشر", `data-stage-app="${a.id}" data-stage="no_show"`) : ""}${active && !["hired", "rejected", "withdrawn", "no_show"].includes(a.stage) ? (context.user_id === r.supervisor_id ? button("استبعاد مع السبب", `data-stage-app="${a.id}" data-stage="rejected"`) : "") + (context.user_id === r.recruiter_id ? button("انسحاب", `data-stage-app="${a.id}" data-stage="withdrawn"`) : "") : ""}</div>${applicationExtras(a,r)}<section class="rec-card"><h3>المقابلات والتقييم</h3>${interviews.length ? interviews.map((i) => `<div class="rec-row"><div><strong>${esc(name(i.interviewer_id))}</strong> · ${esc(date(i.scheduled_at))}<p>${esc({ scheduled: "مجدولة", completed: "مكتملة", absent: "لم يحضر" }[i.state])}${i.score != null ? " · " + i.score + " / 100" : ""}</p><p class="rec-muted">${esc(i.notes)}</p>${i.state === "completed" ? `<p>${esc({ suitable: "مناسب", conditional: "مناسب بشروط", unsuitable: "غير مناسب" }[i.recommendation])}</p>` : ""}</div>${i.state === "scheduled" && i.interviewer_id === context.user_id ? button("تسجيل النتيجة", `data-complete-interview="${i.id}"`) : ""}</div>`).join("") : empty("لا توجد مقابلات مسجلة.")}</section>${detail.can_pay ? `<section class="rec-card"><h3>العروض الوظيفية</h3>${offers.length ? offers.map((o) => `<div class="rec-card"><strong>العرض · النسخة ${o.version}</strong><p>${money(o.total)} شهريًا · ${esc(offerState(o.state))}</p><dl class="rec-detail"><div><dt>الأساسي</dt><dd>${money(o.basic)}</dd></div><div><dt>السكن</dt><dd>${money(o.housing)}</dd></div><div><dt>المواصلات</dt><dd>${money(o.transport)}</dd></div><div><dt>الدرجة</dt><dd>${esc(o.salary_snapshot.grade)}</dd></div></dl><p class="rec-note">${esc(o.benefits)}</p><p>المباشرة المقترحة: ${esc(o.start_date)} · صالح حتى ${esc(o.expires_on)}</p>${o.candidate_responded_at ? `<p class="rec-note">رد المرشح: ${esc(offerState(o.state))} · ${esc(date(o.candidate_responded_at))}${o.candidate_expected_start_date ? ` · المباشرة المتوقعة: ${esc(o.candidate_expected_start_date)}` : ""}</p>` : ""}${o.exception_reason ? `<p class="rec-note">استثناء عن النطاق: ${esc(o.exception_reason)}</p>` : ""}<div class="rec-actions">${offerButtons(o)}${!["superseded"].includes(o.state) ? button("عرض / طباعة الخطاب", `data-print-offer="${o.id}"`) : ""}</div></div>`).join("") : empty("لا توجد عروض.")}</section>` : ""}`,
   );
 }
 const offerState = (s) =>
   ({
-    hr_review: "مراجعة شؤون الموظفين",
+    hr_review: "مراجعة مسؤول التوظيف",
     development_review: "مراجعة استثناء مشرف تطوير الأعمال",
     returned: "معاد للتعديل",
     finance_review: "مراجعة شؤون الموظفين",
-    approval: "بانتظار الاعتماد",
-    approved: "معتمد",
+    approval: "اعتماد العرض الوظيفي",
+    approved: "العرض الوظيفي معتمد",
     sent: "تم الإرسال",
     accepted: "مقبول",
     declined: "مرفوض",
@@ -568,7 +575,7 @@ function offerButtons(o) {
   const r = detail.request;
   let actions = [];
   if (
-    (o.state === "hr_review" && context.personnel && r.hr_id === context.user_id) ||
+    (o.state === "hr_review" && context.manage && r.hr_id === context.user_id) ||
     (o.state === "development_review" && context.development && r.development_id === context.user_id) ||
     (o.state === "approval" &&
       context.approve &&
@@ -587,7 +594,7 @@ function offerButtons(o) {
       ["expired", "تسجيل انتهاء العرض"],
       ["extend", "تمديد الصلاحية ٧ أيام بمبرر"],
     ];
-  return actions
+  return (o.state==='sent'&&context.manage&&r.recruiter_id===context.user_id?button('إرسال العرض بالبريد',`data-email-offer="${o.id}"`):'')+((o.state==='sent'||o.state==='accepted')&&context.manage&&r.recruiter_id===context.user_id?button('رابط العرض والرد الإلكتروني',`data-offer-link="${o.application_id}"`):'')+actions
     .map(([k, l]) =>
       button(l, `data-offer-action="${k}" data-offer-id="${o.id}"`),
     )
@@ -618,7 +625,7 @@ function interviewForm(id, existing) {
     a = detail.applications.find((a) => a.id === id);
   const allowed = context.user_id===r.recruiter_id
     ? context.people.filter((p) =>
-        [r.supervisor_id, ...(a.second_interview_reason ? [r.department_approver_id] : [])].includes(p.id),
+        [r.supervisor_id, ...(a.second_interview_reason && r.interview_manager_id ? [r.interview_manager_id] : [])].includes(p.id),
       )
     : context.people.filter((p) => p.id === context.user_id);
   show(
@@ -736,7 +743,13 @@ function offerForm(id) {
           "number",
           'required min="0" step="0.01"',
         ) +
-        field("start_date", "المباشرة المتوقعة", "", "date", "required") +
+        select("issuer", "الجهة المصدرة للعرض", [["atwar","أطوار للتجارة"],["tirador","لوازم الأبواب — تيرادور"]], previous?.document_terms?.issuer || "", "required") +
+        field("probation_days", "فترة التجربة (بالأيام)", previous?.document_terms?.probation_days ?? 180, "number", 'required min="0" max="180" step="1"') +
+        field("annual_leave", "الإجازة السنوية", previous?.document_terms?.annual_leave || "", "text", 'required maxlength="120"') +
+        field("contract_duration", "مدة العقد", previous?.document_terms?.contract_duration || "", "text", 'required maxlength="120"') +
+        field("tickets", "تذاكر السفر", previous?.document_terms?.tickets || "حسب سياسة المنشأة", "text", 'required maxlength="120"') +
+        field("medical", "التأمين الطبي", previous?.document_terms?.medical || "حسب سياسة المنشأة", "text", 'required maxlength="120"') +
+        field("start_date", "المباشرة المقترحة في العرض", "", "date", "required") +
         `<p class="rec-note wide">صلاحية العرض ٧ أيام من تاريخ الإرسال. يمكن لمسؤول التوظيف تمديدها بمبرر دون تغيير الشروط.</p>` +
         area("benefits", "المزايا والشروط الإضافية", r.salary_snapshot?.benefits?.text || "", 'maxlength="3000"') +
         area("change_reason", "مبرر تعديل العرض", "", previous ? "required minlength=5 maxlength=3000" : "maxlength=3000") +
@@ -746,7 +759,7 @@ function offerForm(id) {
           "",
           'maxlength="3000"',
         ) +
-        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يراجعه أخصائي شؤون الموظفين ثم يعتمده الرئيس التنفيذي. استثناءات الراتب والمزايا تمر بمشرف تطوير الأعمال.</p><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
+        `<p class="rec-note wide">الدرجة: ${esc(r.salary_snapshot?.grade)} · المرجع: ${esc(r.salary_snapshot?.title)}<br>النطاق المعتمد: ${money(minimum)} – ${money(maximum)}<br>الإجمالي = الأساسي + السكن + المواصلات. يعتمده صاحب الصلاحية المحدد في مسار التوظيف. استثناءات الراتب والمزايا تمر أولًا بمشرف تطوير الأعمال.</p><p id="offerTotalPreview" class="rec-note wide" role="status"></p>`,
       "حفظ ورفع للاعتماد",
     ),
   );
@@ -769,6 +782,8 @@ function offerForm(id) {
   form.addEventListener("input", updateTotal);
   updateTotal();
   bindForm(async (data) => {
+    data.document_terms=Object.fromEntries(["issuer","annual_leave","contract_duration","tickets","medical"].map(k=>[k,data[k]]));
+    data.document_terms.probation_days=Number(data.probation_days);
     await rpc("recruitment_offer_create", { p_application: id, p_data: data });
     detail = await rpc("recruitment_detail", { p_request: r.id });
     renderApplication(id);
@@ -815,15 +830,16 @@ function joinForm(id) {
         "text",
         'inputmode="numeric" pattern="[0-9]+"',
       ) +
-        field("join_date", "تاريخ المباشرة الفعلي", "", "date", "required") +
-        select("existing_employee_id", "سجل الموظف الموجود عند مطابقة البريد", context.managers.map(p=>[p.id,p.full_name])) +
+        field("join_date", "تاريخ مباشرة الموظف الفعلي", "", "date", "required") +
+        select("existing_employee_id", "سجل الموظف الحالي (عند وجود سجل سابق فقط)", context.managers.map(p=>[p.id,p.full_name])) +
+        `<p class="rec-muted wide">اترك الحقل دون اختيار إذا كان الموظف جديدًا وليس له سجل سابق. إذا وُجد سجل بالبريد نفسه، تحقق من هويته ثم اختره لمنع التكرار.</p>` +
         area(
           "note",
-          "مرجع محضر المباشرة والمستندات المكتملة",
+          "رقم أو وصف محضر المباشرة",
           "",
-          'required minlength="3" maxlength="3000"',
+          'required minlength="3" maxlength="3000" placeholder="مثال: محضر مباشرة بتاريخ 01/11/2026"',
         ) +
-        `<p class="rec-note wide">يُتحقق آليًا من اعتماد المستندات أو وجود استثناء ساري، ومن تأكيد المدير المباشر لتاريخ الحضور.</p><p class="rec-muted wide">ينشأ سجل الموظف دون حساب دخول تلقائي. عند وجود سجل بالبريد نفسه، يلزم اختيار سجله بعد التحقق منه للربط.</p>`,
+        `<p class="rec-note wide">يجب اعتماد المستندات المطلوبة، أو وجود استثناء سارٍ لاستكمالها، وأن يؤكد المدير المباشر تاريخ المباشرة الفعلي قبل تسجيل الموظف.</p><p class="rec-muted wide">إنشاء سجل الموظف لا ينشئ حساب دخول تلقائيًا؛ يُدار حساب الدخول من صفحة المستخدمين والصلاحيات.</p>`,
       "تأكيد وإنشاء سجل الموظف",
     ),
   );
@@ -840,32 +856,20 @@ function printOffer(id) {
     r = detail.request;
   show(
     "العرض الوظيفي",
-    `<article class="rec-card"><p> ${esc(r.company)}</p><h2>عرض وظيفي</h2><p>السيد / ${esc(a.candidate.full_name)}</p><p>يسرنا تقديم العرض الوظيفي التالي:</p><dl class="rec-detail">${[
-      ["المسمى", r.job_snapshot.title],
-      ["الدرجة", o.salary_snapshot.grade],
-      ["موقع العمل", r.location],
-      ["نوع الدوام", "دوام كامل"],
-      ["الأساسي", money(o.basic)],
-      ["السكن", money(o.housing)],
-      ["المواصلات", money(o.transport)],
-      ["الإجمالي الشهري", money(o.total)],
-      ["تاريخ المباشرة المتوقع", o.start_date],
-      ["صلاحية العرض", o.expires_on],
-    ]
-      .map(([l, v, tone]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`)
-      .join(
-        "",
-      )}</dl><p class="rec-note">${esc(o.benefits)}</p><p>قبول المرشح: ____________________ التاريخ: ____________________</p><p class="rec-muted">نسخة ${o.version} · ${esc(offerState(o.state))}</p></article><div class="rec-actions">${button("طباعة", "data-print")}${button("العودة للمرشح", `data-detail-app="${a.id}"`)}</div>`,
+    offerDocument({...o,company:r.company,candidate:a.candidate.full_name,identity_no:a.candidate.identity_no,department:context.departments?.find(d=>d.id===r.department_id)?.name,title:r.job_snapshot.title,location:r.location,grade:o.salary_snapshot?.grade})+`<div class="rec-actions">${button("طباعة / حفظ PDF", "data-print-job-offer")}${button("العودة للمرشح", `data-detail-app="${a.id}"`)}</div>`,
   );
 }
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b || busy) return;
   try {
-    if (b.dataset.view) {
+    if(b.dataset.emailOffer){b.disabled=true;try{const result=await sendRecruitmentEmail(sb,b.dataset.emailOffer,'offer');status(result.message,!result.sent,$('recDialog').open);}finally{b.disabled=false;}}
+    else if(b.dataset.offerLink){workflowForm('portal_link',b.dataset.offerLink);}
+    else if (b.dataset.view) {
       view = b.dataset.view;
       render();
-    } else if (b.dataset.request) await openRequest(b.dataset.request);
+    } else if (b.dataset.recTask) await openTask(b.dataset.recTask,b.dataset.taskRequest);
+    else if (b.dataset.request) await openRequest(b.dataset.request);
     else if (b.dataset.application) {
       detail = await rpc("recruitment_detail", {
         p_request: b.dataset.requestId,
@@ -875,6 +879,8 @@ document.addEventListener("click", async (e) => {
     else if (b.dataset.detailApp) renderApplication(b.dataset.detailApp);
     else if (b.dataset.recAction) requestAction(b.dataset.recAction);
     else if (b.hasAttribute("data-link-salary")) linkSalary();
+    else if (b.hasAttribute("data-referral-upload")) referralUploadForm();
+    else if (b.hasAttribute("data-referral-path")) { const {data,error}=await sb.storage.from("recruitment-referrals").createSignedUrl(b.dataset.referralPath,60); if(error) throw Error(error.message); window.open(data.signedUrl,"_blank","noopener"); }
     else if (b.hasAttribute("data-add-candidate")) addCandidate();
     else if (b.dataset.stageApp)
       stageAction(b.dataset.stageApp, b.dataset.stage);
@@ -895,6 +901,7 @@ document.addEventListener("click", async (e) => {
     else if (b.dataset.documentReview) documentReview(b.dataset.documentReview);
     else if (b.dataset.updateReview) updateReview(b.dataset.updateReview);
     else if (b.dataset.printOffer) printOffer(b.dataset.printOffer);
+    else if (b.hasAttribute("data-print-job-offer")) printOfferDocument();
     else if (b.hasAttribute("data-print")) window.print();
   } catch (e) {
     status(e.message, true, $("recDialog").open);
@@ -911,6 +918,8 @@ try {
     await window.AtwarModules.guard(sb);
     context = await rpc("recruitment_context");
     $("createRequest").hidden = !context.can_request;
+    document.querySelector('[data-view="settings"]').hidden = !context.route_admin;
+    if (context.route_admin) routeSettings = await rpc("recruitment_route_settings");
     document.querySelector('[data-view="reference"]').hidden =
       !context.salaries.length;
     await refresh();
@@ -962,13 +971,33 @@ function resumeForm(id) {
 }
 
 const docLabels = {identity:'الهوية / الإقامة',passport:'الجواز',education:'الشهادة الدراسية',experience:'شهادات الخبرة',license:'الرخصة للسائق أو المندوب',dependents:'هويات المرافقين إن وجدوا',address:'العنوان الوطني',iban:'شهادة الآيبان'};
+function taskButton(t) {
+ return button(t.application_id ? "فتح الإجراء" : "فتح الطلب", `data-rec-task="${esc(t.key)}" data-task-request="${esc(t.request_id)}"`);
+}
+async function openTask(key, requestId) {
+ detail = await rpc("recruitment_detail", {p_request:requestId});
+ const task=(detail.tasks || []).find(t=>t.key===key&&!t.done);
+ const target=taskDestination(task,detail.interviews || [],context.user_id);
+ if(target.kind==='unavailable') { renderRequest(); status("تم تحديث هذه المهمة أو اكتمالها؛ راجع المهام الحالية.",false,true);return; }
+ if(target.kind==='request') return renderRequest();
+ if(!detail.applications.some(a=>a.id===target.id)) throw Error("ملف المرشح غير متاح؛ أعد تحميل الطلب.");
+ if(target.kind==='interview') return interviewForm(target.id,target.interview);
+ if(target.kind==='second-interview') {
+   interviewForm(target.id);
+   const form=$("dialogBody").querySelector("form");
+   if(form.elements.round)form.elements.round.value="2";
+   return;
+ }
+ renderApplication(target.id);
+}
 function taskPanel(tasks){
   const overdue=tasks.filter(t=>new Date(t.due_at)<new Date());
-  return `<section class="rec-card"><h2>المهام والمتابعة <span class="rec-tag">${overdue.length} متأخرة</span></h2>${tasks.length ? tasks.map(t=>`<div class="rec-row"><div><strong>${esc(t.label)}</strong><p class="rec-muted">${esc(name(t.owner_id))} · الموعد: ${esc(date(t.due_at))}${new Date(t.due_at)<new Date()?' · متأخر':''}${t.escalated?' · وصل لمسؤول التوظيف للمتابعة':''}</p></div>${button('فتح الطلب',`data-request="${t.request_id}"`)}</div>`).join('') : empty('لا توجد مهام معلقة.')}</section>`;
+  return `<section class="rec-card"><h2>المهام والمتابعة <span class="rec-tag">${overdue.length} متأخرة</span></h2>${tasks.length ? tasks.map(t=>`<div class="rec-row"><div><strong>${esc(t.label)}</strong><p class="rec-muted">${esc(name(t.owner_id))} · الموعد: ${esc(date(t.due_at))}${new Date(t.due_at)<new Date()?' · متأخر':''}${t.escalated?' · وصل لمسؤول التوظيف للمتابعة':''}</p></div>${taskButton(t)}</div>`).join('') : empty('لا توجد مهام معلقة.')}</section>`;
 }
 function requestExtras(r){
  const mine=[r.created_by,r.supervisor_id].includes(context.user_id), recruiter=context.user_id===r.recruiter_id;
  const actions=[];
+ if(context.route_admin&&!['closed','cancelled'].includes(r.status))actions.push(['reassign','إعادة إسناد مسؤول المرحلة']);
  if(mine&&['draft','rejected'].includes(r.status))actions.push(['submit','إرسال للموافقات'],['edit','تعديل المسودة / إعادة التقديم']);
  if(mine&&r.status==='rejected'&&['hr_review','finance_review'].includes(r.rejected_stage))actions.push(['exception','طلب استثناء بمبرر']);
  if(['closed','cancelled'].includes(r.status)&&context.can_request)actions.push(['copy','طلب جديد مرتبط بهذا الطلب']);
@@ -976,17 +1005,17 @@ function requestExtras(r){
  if(r.status==='open'&&r.route==='advertised'&&b){
   if(recruiter&&b.state==='sourcing')actions.push(['batch_submit',`تقديم الدفعة ${b.number} (${b.quota} مرشحين)`]);
   if(recruiter&&b.number===1&&b.state==='sourcing'&&r.sourcing_days===10)actions.push(['sourcing_days','تحديد ١٥ يومًا لوظيفة تخصصية / قيادية']);
-  if(context.user_id===r.department_approver_id&&b.state==='review')actions.push(['batch_none','لم يتم اختيار أحد من الدفعة']);
+  if(context.user_id===r.supervisor_id&&b.state==='review')actions.push(['batch_none','لم يتم اختيار أحد من الدفعة']);
   if(context.user_id===r.development_id&&b.number>=3&&b.state==='exhausted')actions.push(['batch_resume','اعتماد استئناف توفير المرشحين']);
  }
- return `<section class="rec-card"><h3>دورة الطلب</h3><p class="rec-muted">المشرف ← مدير الإدارة ← شؤون الموظفين والتوطين ← المدير المالي ← الرئيس التنفيذي ← مسؤول التوظيف</p><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
+ return `<section class="rec-card"><h3>دورة الطلب</h3><p class="rec-muted">المشرف ← اعتماد الإدارة للاحتياج ← مراجعة مسؤول التوظيف والتوطين ← اعتماد الاحتياج ← مقابلة وتقييم واختيار المدير المباشر للمرشح ← إعداد واعتماد العرض الوظيفي ← القبول والمباشرة والتعيين</p><div class="rec-actions">${actions.map(([k,l])=>button(l,`data-workflow="${k}"`)).join('')}</div>${b?`<p>الدفعة الحالية: ${b.number} · العدد ${b.quota} · ${esc({sourcing:'توفير المرشحين',review:'تقييم الإدارة',exhausted:b.number>=3?'توفير المرشحين متوقف؛ الطلب مفتوح':'مستنفدة',selected:'تم الاختيار'}[b.state])}</p>`:''}${r.versions?.length?`<details><summary>نسخ الطلب السابقة (${r.versions.length})</summary>${r.versions.map(v=>`<p>النسخة ${v.revision} · ${esc(v.job_snapshot?.title)} · العدد ${v.headcount} · ${esc(v.reason)}</p>`).join('')}</details>`:''}</section>${taskPanel(detail.tasks||[])}`;
 }
 function applicationExtras(a,r){
- const active=r.status==='open', recruiter=context.user_id===r.recruiter_id, manager=context.user_id===r.department_approver_id;
+ const active=r.status==='open', recruiter=context.user_id===r.recruiter_id, manager=!!r.interview_manager_id&&context.user_id===r.interview_manager_id&&context.user_id!==r.approver_id;
  const actions=[];
  if(active&&manager&&['screening','interview','assessment'].includes(a.stage)&&!a.second_interview_reason)actions.push(['second_interview','طلب مقابلة ثانية']);
  if(active&&context.user_id===r.supervisor_id&&a.stage==='accepted')actions.push(['confirm_join','تأكيد الحضور الفعلي']);
- if(recruiter&&(active||(a.stage==='hired'&&a.documents_exception_due))){actions.push(['portal_link','رابط المرشح لتحديث البيانات والمستندات'],['document_prepare','إرفاق مستند']);if(active)actions.push(['transfer','ترشيح لطلب آخر']);if(a.stage==='accepted')actions.push(['documents_exception','استثناء نقص مستندات'],['postpone','تأجيل المباشرة بالتنسيق']);if(a.stage==='screening'&&!a.internal_employee_id)actions.push(['internal_link','ربط ترشيح داخلي بموظف حالي']);}
+ if(recruiter&&(active||(a.stage==='hired'&&a.documents_exception_due))){actions.push(['portal_link','رابط المرشح لتحديث البيانات والمستندات'],['document_prepare','إرفاق مستند']);if(active)actions.push(['transfer','ترشيح لطلب آخر']);if(a.stage==='accepted')actions.push(['documents_exception','استثناء نقص مستندات'],['postpone','تأجيل المباشرة بالتنسيق']);if(a.stage==='screening')actions.push(['internal_link',a.internal_employee_id?'تحديث ربط الموظف ومديره الحالي':'ربط ترشيح داخلي بموظف حالي']);}
  if(active&&a.internal_employee_id){if(context.user_id===a.internal_manager_id&&!a.internal_approved)actions.push(['internal_approve','موافقة الإدارة الحالية على النقل']);if(a.internal_approved&&a.selection_approved&&context.user_id===r.approver_id&&a.stage==='recommended')actions.push(['internal_final','اعتماد النقل الداخلي وتنفيذه']);}
  const docs=(detail.documents||[]).filter(d=>d.application_id===a.id);
  const updates=(detail.updates||[]).filter(u=>u.application_id===a.id&&u.state==='pending');
@@ -998,8 +1027,9 @@ function workflowForm(action,app){
  const r=detail.request,a=detail.applications.find(x=>x.id===app);let fields='',title='توثيق الإجراء';
  const notes=()=>area('note','المبرر / مرجع القرار','','required minlength="5" maxlength="3000"');
  if(action==='copy'){
-  createRequest();const form=$('dialogBody').querySelector('form');for(const k of ['job_id','company','location','headcount','route','hr_id','finance_id','approver_id','department_approver_id','supervisor_id','recruiter_id','development_id','reason','department_id'])if(form.elements[k])form.elements[k].value=r[k]||'';form.elements.department_id.onchange();form.elements.section_id.value=r.section_id;form.elements.linked_request_id.value=r.id;form.elements.request_type.value=r.status==='closed'?'replacement':r.request_type;return;
+  if (!createRequest()) return;const form=$('dialogBody').querySelector('form');for(const k of ['job_id','location','headcount','route','hr_id','finance_id','approver_id','department_approver_id','supervisor_id','recruiter_id','development_id','reason'])if(form.elements[k])form.elements[k].value=r[k]||'';form.elements.linked_request_id.value=r.id;form.elements.request_type.value=r.status==='closed'?'replacement':r.request_type;form.elements.request_type.onchange();return;
  }
+ if(action==='reassign'){title='إعادة إسناد مسؤول المرحلة';fields=select('field','المرحلة',[['department_approver_id','مدير الإدارة'],...routeFields.map(([key,label])=>[key,label])],'','required')+select('profile_id','المسؤول البديل',context.people.filter(p=>p.id!==r.created_by).map(p=>[p.id,p.full_name]),'','required')+notes();}
  if(action==='submit'){title='إرسال طلب الاحتياج للموافقات';fields=notes();}
  if(action==='edit'){title='تعديل الطلب وحفظ نسخته السابقة';fields=select('job_id','الوصف المعتمد',context.jobs.map(j=>[j.id,j.title]),r.job_id)+field('headcount','العدد',r.headcount,'number','required min="1" max="100"')+field('target_date','المباشرة المستهدفة',r.target_date,'date','required')+area('reason','سبب الاحتياج',r.reason,'required')+notes();}
  if(['exception','sourcing_days','batch_none','second_interview','internal_approve'].includes(action))fields=notes();
@@ -1008,20 +1038,20 @@ function workflowForm(action,app){
  if(['confirm_join','internal_final'].includes(action))fields=field('join_date','تاريخ الحضور / النقل الفعلي','','date','required')+notes();
  if(action==='documents_exception')fields=field('due_date','موعد استكمال النواقص','','date','required')+notes();
  if(action==='postpone')fields=field('start_date','المباشرة الجديدة','','date','required')+`<label class="rec-check wide"><input type="checkbox" name="coordinated" required>تم التنسيق مع المدير المباشر</label>`+notes();
- if(action==='portal_link')fields='<p class="rec-note wide">رابط خاص صالح ٧ أيام؛ يتيح تقديم تغييرات ومستندات للمراجعة. شاركه مع المرشح من وسيلة التواصل المناسبة.</p>';
+ if(action==='portal_link')fields='<p class="rec-note wide">رابط خاص صالح ٧ أيام؛ يتيح الاطلاع على العرض المرسل والرد عليه وتحديد تاريخ المباشرة المتوقع، وتقديم تغييرات ومستندات للمراجعة. شاركه مع المرشح من وسيلة التواصل المناسبة.</p>';
  if(action==='document_prepare')fields=select('kind','نوع المستند',Object.entries(docLabels),'','required')+'<label>ملف PDF<input name="file" type="file" accept="application/pdf" required><small>حتى ٥ ميجابايت؛ تحفظ كل نسخة مستقلة.</small></label>';
  if(action==='transfer')fields=select('target_request','طلب التوظيف المستهدف',snapshot.requests.filter(x=>x.id!==r.id&&x.status==='open').map(x=>[x.id,`REC-${x.number} · ${x.job_snapshot.title}`]),'','required')+`<label class="rec-check wide"><input type="checkbox" name="consent" required>وافق المرشح على الترشيح للوظيفة وتم التحقق من الملاءمة</label>`+notes();
- if(action==='internal_link')fields=select('employee_id','الموظف الحالي',context.managers.map(p=>[p.id,p.full_name]),'','required')+select('current_manager_id','مدير الإدارة الحالية',context.people.map(p=>[p.id,p.full_name]),'','required')+notes();
+ if(action==='internal_link')fields=select('employee_id','الموظف الحالي',context.managers.map(p=>[p.id,p.full_name]),'','required')+'<p class="rec-muted wide">يُحدد المدير الحالي تلقائيًا من سجل الموظف، وتُلغى موافقة النقل السابقة عند إعادة الربط.</p>'+notes();
  show(title,formBody(fields,'تأكيد وحفظ'));
  bindForm(async(data,form)=>{
   for(const k of ['consent','coordinated'])if(data[k])data[k]=true;
   let result;
   if(action.startsWith('batch_')){if(action==='batch_submit')data.application_ids=new FormData(form).getAll('application_ids');await rpc('recruitment_batch_action',{p_request:r.id,p_action:{batch_submit:'submit',batch_none:'none_selected',batch_resume:'resume'}[action],p_data:data});}
-  else if(['submit','edit','exception','sourcing_days'].includes(action))await rpc('recruitment_request_action',{p_id:r.id,p_revision:r.revision,p_action:action,p_data:data});
+  else if(['submit','edit','exception','sourcing_days','reassign'].includes(action))await rpc('recruitment_request_action',{p_id:r.id,p_revision:r.revision,p_action:action,p_data:data});
   else{result=await rpc('recruitment_application_action',{p_application:app,p_action:action,p_data:data});if(action==='document_prepare')await uploadDocument(result.file_token,new FormData(form).get('file'));}
   if(action==='portal_link'){
    const url=new URL('candidate.html',location.href);url.searchParams.set('token',result.token);
-   show('رابط تحديث بيانات المرشح',`<p class="rec-note">هذا الرابط خاص بالمرشح وصالح ٧ أيام.</p>${field('portal_url','الرابط الخاص',url.href,'url','readonly')}<div class="rec-actions">${button('العودة للمرشح',`data-detail-app="${app}"`)}</div>`);return;
+   show('رابط العرض وبيانات المرشح',`<p class="rec-note">هذا الرابط خاص بالمرشح وصالح ٧ أيام.</p>${field('portal_url','الرابط الخاص',url.href,'url','readonly')}<div class="rec-actions">${button('العودة للمرشح',`data-detail-app="${app}"`)}</div>`);return;
   }
   detail=await rpc('recruitment_detail',{p_request:r.id});app?renderApplication(app):renderRequest();
  });
@@ -1036,3 +1066,19 @@ function updateReview(id){const u=detail.updates.find(x=>x.id===id);reviewRecord
 function reviewRecord(action,app,key,id){const rid=detail.request.id;show('مراجعة واعتماد',formBody(select('state','القرار',[['approved','اعتماد'],['rejected','إعادة للاستكمال']],'','required')+area('note','ملاحظات المراجعة','','required minlength="3"')));bindForm(async data=>{data[key]=id;await rpc('recruitment_application_action',{p_application:app,p_action:action,p_data:data});detail=await rpc('recruitment_detail',{p_request:rid});renderApplication(app);});}
 function calendarPanel(){if(!context.development)return '';return `<section class="rec-card"><h2>تقويم أيام العمل</h2><p class="rec-muted">الجمعة والسبت واليوم الوطني ويوم التأسيس مستثناة تلقائيًا. أضف تواريخ الإجازات الرسمية الأخرى المعتمدة.</p><div class="rec-actions">${button('إضافة إجازة رسمية','data-calendar="add"')}</div>${(context.holidays||[]).map(h=>`<div class="rec-row"><span>${esc(h.day)} · ${esc(h.label)}</span>${button('إزالة',`data-calendar="remove" data-day="${h.day}"`)}</div>`).join('')}</section>`;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-calendar]');if(!b||busy)return;const action=b.dataset.calendar;show('تقويم العمل',formBody(field('day','التاريخ',b.dataset.day||'','date','required')+field('label','اسم الإجازة','','text',action==='add'?'required':'')));bindForm(async data=>{await rpc('recruitment_calendar',{p_action:action,p_data:data});context=await rpc('recruitment_context');$('recDialog').close();});});
+
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-route-settings]");
+  if (!b || busy || !context.route_admin) return;
+  try {
+    routeSettings = await rpc("recruitment_route_settings");
+    show("إعدادات مسار التوظيف", formBody(routeFields.map(([key,label,permission]) => select(key,label,context.people.filter(p=>p[permission]).map(p=>[p.id,p.full_name]),routeSettings[key],"required")).join("")));
+    const revision = routeSettings.revision;
+    bindForm(async data => {
+      routeSettings = await rpc("recruitment_route_settings", {p_action:"save",p_data:{...routeSettings,...data,revision}});
+      context = await rpc("recruitment_context");
+      $("recDialog").close();
+    });
+  } catch (e) { status(e.message,true); }
+});

@@ -8,7 +8,8 @@
     "test:fleet:alerts": "node scripts/test-fleet-alerts.mjs",
     "build:assets": "esbuild assets/vendor/supabase-client.entry.mjs --bundle --platform=browser --format=esm --target=es2020 --minify --legal-comments=inline --outfile=assets/vendor/supabase-client.mjs && tailwindcss -c tailwind.tasks.config.js -i assets/css/tasks-tailwind-input.css -o assets/css/tasks-tailwind.min.css --minify",
     "test:recruitment:db": "node scripts/test-recruitment-db.mjs && node scripts/test-recruitment-policy.mjs",
-    "preview:recruitment": "node scripts/recruitment-preview.mjs"
+    "preview:recruitment": "node scripts/recruitment-preview.mjs",
+    "test:recruitment:release": "node scripts/test-recruitment-release.mjs && node scripts/test-recruitment-email.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

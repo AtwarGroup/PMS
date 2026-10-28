@@ -356,3 +356,24 @@ a:focus-visible {
     background: transparent;
   }
 }
+
+.rec-progress{background:#f7faff;border:1px solid #dbe5f3;border-radius:18px;padding:20px;margin-bottom:22px;color:#24415f}
+.rec-progress ol{display:flex;gap:12px;list-style:none;margin:0;padding:0;overflow-x:auto}
+.rec-progress li{flex:1;min-width:115px;text-align:center;border-bottom:3px solid #dce5f0;padding:4px 4px 12px;color:#69809e}
+.rec-progress li span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e0e7f0;font-weight:700}
+.rec-progress li p{font-size:13px;line-height:1.6;margin:10px 0 0}
+.rec-progress li.complete{color:#008d77;border-color:#00a78a}.rec-progress li.complete span{background:#dff8f0}
+.rec-progress li.current{color:#2c55df;border-color:#2c55df;font-weight:700}.rec-progress li.current span{background:#2c55df;color:white}
+.rec-progress-meta{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:12px}.rec-progress-meta p{margin:4px 0}
+.rec-progress-next{background:#e9f1ff;border-radius:10px;padding:14px;line-height:1.8;margin:14px 0 0}
+@media(max-width:600px){.rec-progress{padding:14px}.rec-progress-meta{display:block}}
+
+.rec-offer-document {line-height:1.9;overflow-wrap:anywhere}
+.rec-offer-response {border-top:1px solid var(--atwar-border,#dce5ee);padding-top:16px;margin-top:20px}
+@media print {
+ @page {size:A4;margin:15mm}
+ .rec-no-print,#portalStatus,.rec-public-header,#stagingBanner {display:none!important}
+ .rec-public {max-width:none;padding:0;margin:0}
+ .rec-offer-document {border:0;padding:0;break-inside:auto}
+ .rec-offer-document .rec-detail>div,.rec-offer-response {break-inside:avoid}
+}

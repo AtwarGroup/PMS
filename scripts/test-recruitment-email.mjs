@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import vm from 'node:vm';
+import {transform} from 'esbuild';
+import {sendRecruitmentEmail} from '../assets/js/recruitment-email.mjs';
+const source=await fs.readFile(new URL('../supabase/functions/recruitment-email/index.ts',import.meta.url),'utf8');
+const js=(await transform(source,{loader:'ts',target:'es2022'})).code;
+function runtime(configured=true,providerOk=true){let handler, sent=0, claimed=false, finished=false;
+ const vars={SUPABASE_URL:'https://eeaedzisysjarwvolbwq.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'test-service',SUPABASE_ANON_KEY:'test-anon',RECRUITMENT_EMAIL_ENABLED:'true',...(configured?{RESEND_API_KEY:'test-resend'}:{})};
+ const fakeFetch=async(url,init)=>{const body=JSON.parse(init.body);if(url.endsWith('recruitment_email_prepare'))return Response.json('00000000-0000-4000-8000-000000000001');if(url.endsWith('recruitment_email_claim')){if(finished)return Response.json({already_sent:true});if(claimed)return Response.json({busy:true});claimed=true;return Response.json({payload:{candidate:'<script>unsafe</script>',issuer:'tirador',version:1,title:'أخصائي',state:'accepted',expected_start_date:'2026-11-01'},portal_token:'test-token',recipient:'do-not-send@example.test'});}if(url.endsWith('recruitment_email_finish')){finished=!!body.p_provider_id;return Response.json(null);}if(url==='https://api.resend.com/emails'){sent++;assert.deepEqual(body.to,['Jobs@tiradorstores.com']);assert.ok(body.subject.startsWith('[اختبار'));assert.ok(!body.html.includes('<script>unsafe'));assert.ok(init.headers['Idempotency-Key']);assert.ok(body.text);return Response.json(providerOk?{id:'provider-test'}:{error:'mock'},{status:providerOk?200:500});}throw Error('Unexpected endpoint');};
+ vm.runInNewContext(js,{Deno:{env:{get:k=>vars[k]},serve:f=>handler=f},fetch:fakeFetch,Response,Request,Set,JSON,encodeURIComponent});return {call:req=>handler(req),sent:()=>sent};}
+const req=()=>new Request('https://function.test',{method:'POST',headers:{Origin:'https://test.atwargroup.com','Content-Type':'application/json'},body:JSON.stringify({offer_id:'00000000-0000-4000-8000-000000000099',event:'offer'})});
+const missing=runtime(false);assert.equal((await missing.call(req())).status,503);assert.equal(missing.sent(),0);
+const rt=runtime();assert.equal((await rt.call(req())).status,200);assert.equal((await rt.call(req())).status,200);assert.equal(rt.sent(),1);
+assert.equal((await rt.call(new Request('https://function.test',{method:'POST',headers:{Origin:'https://evil.example'},body:'{}'}))).status,403);
+assert.equal((await runtime(true,false).call(req())).status,502);
+let result=await sendRecruitmentEmail({functions:{invoke:async()=>({data:null,error:{context:{json:async()=>({error:'البريد غير مهيأ'})}}})}},'id','offer');assert.equal(result.sent,false);assert.equal(result.message,'البريد غير مهيأ');
+result=await sendRecruitmentEmail({functions:{invoke:async()=>({data:{pending:true}})}},'id','offer');assert.equal(result.sent,false);assert.equal(result.pending,true);
+result=await sendRecruitmentEmail({functions:{invoke:async()=>{throw Error('offline');}}},'id','offer');assert.equal(result.sent,false);
+console.log('PASS stage recipient restriction, XSS, deduplication, provider failures, missing config and honest client statuses');
