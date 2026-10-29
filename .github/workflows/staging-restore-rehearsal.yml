@@ -84,12 +84,22 @@ jobs:
             if test "$kind" = staging; then
               test "$RESTORE_DRILL_PROJECT_REF" = eeaedzisysjarwvolbwq
               node --input-type=module -e "const d=new URL(process.env.RESTORE_DRILL_DB_URL);const a=new URL(process.env.RESTORE_DRILL_SUPABASE_URL);const r='eeaedzisysjarwvolbwq';if(a.hostname!==r+'.supabase.co'||(d.hostname!=='db.'+r+'.supabase.co'&&!(d.hostname.endsWith('.pooler.supabase.com')&&decodeURIComponent(d.username)==='postgres.'+r)))throw Error('Staging target mismatch');"
+              docker run --rm -i -e PGCONNECT_TIMEOUT=30 postgres:17.6 psql "$RESTORE_DRILL_DB_URL" -X -At -v ON_ERROR_STOP=1 > "$work/storage-policy-restore.sql" <<'POLICIES'
+          SELECT format('CREATE POLICY %I ON %I.%I AS %s FOR %s TO %s%s%s;',p.polname,n.nspname,c.relname,CASE WHEN p.polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,CASE p.polcmd WHEN '*' THEN 'ALL' WHEN 'r' THEN 'SELECT' WHEN 'a' THEN 'INSERT' WHEN 'w' THEN 'UPDATE' WHEN 'd' THEN 'DELETE' END,(SELECT string_agg(CASE WHEN r=0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(r)) END,', ') FROM unnest(p.polroles)r),CASE WHEN p.polqual IS NULL THEN '' ELSE ' USING ('||pg_get_expr(p.polqual,p.polrelid)||')' END,CASE WHEN p.polwithcheck IS NULL THEN '' ELSE ' WITH CHECK ('||pg_get_expr(p.polwithcheck,p.polrelid)||')' END) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='storage' ORDER BY p.polname;
+          POLICIES
+              docker run --rm -i -e PGCONNECT_TIMEOUT=30 postgres:17.6 psql "$RESTORE_DRILL_DB_URL" -X -At -v ON_ERROR_STOP=1 > "$work/storage-policy-drop.sql" <<'POLICY_DROP'
+          SELECT format('DROP POLICY %I ON %I.%I;',p.polname,n.nspname,c.relname) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='storage' ORDER BY p.polname;
+          POLICY_DROP
+              test -s "$work/storage-policy-restore.sql"
               {
                 echo 'BEGIN;'
                 echo "SET LOCAL statement_timeout='120s';"
                 echo "SET LOCAL lock_timeout='15s';"
                 echo 'SET LOCAL session_replication_role=replica;'
+                echo "SET LOCAL idle_in_transaction_session_timeout='60s';"
+                cat "$work/storage-policy-drop.sql"
                 docker run --rm --volume "$work:/backup:ro" postgres:17.6 pg_restore --clean --if-exists --no-owner --schema=public --schema=private --schema=migration --file=- /backup/database.dump
+                cat "$work/storage-policy-restore.sql"
                 echo 'ROLLBACK;'
               } > "$work/transaction-rehearsal.sql"
               if ! docker run --rm -i -e PGCONNECT_TIMEOUT=30 postgres:17.6 psql "$RESTORE_DRILL_DB_URL" -X -v ON_ERROR_STOP=1 < "$work/transaction-rehearsal.sql" > "$work/transaction-rehearsal.log" 2>&1; then
