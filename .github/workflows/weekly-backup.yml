@@ -62,7 +62,7 @@ jobs:
           docker run --rm \
             --volume "$work:/backup" \
             postgres:17.6 \
-            pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --no-privileges --file=/backup/database.dump
+            pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --file=/backup/database.dump
           docker run --rm \
             postgres:17.6 \
             pg_dumpall --dbname="$SUPABASE_DB_URL" --roles-only --no-role-passwords > "$work/roles.sql"
