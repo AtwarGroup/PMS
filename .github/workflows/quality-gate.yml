@@ -83,6 +83,7 @@ jobs:
           node tests/browser/employee-access.cjs
           node tests/browser/account-modules.cjs
           node tests/browser/home-resilience.cjs
+          node tests/browser/data-state.cjs
           node tests/browser/theme-legibility.cjs
           node tests/browser/theme-contract.cjs
           node tests/browser/theme-dynamic.cjs

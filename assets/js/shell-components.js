@@ -14,7 +14,9 @@
     const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
     const style=matches.shift()||document.createElement('link');
     for(const duplicate of matches)duplicate.remove();
-    style.rel='stylesheet';style.dataset.atwarAppTheme='1';style.href=href;document.head.append(style);
+    style.rel='stylesheet';style.dataset.atwarAppTheme='1';
+    if(style.href!==href)style.href=href;
+    document.head.append(style);
   };
   if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261027-bfcache',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
@@ -24,6 +26,9 @@
     document.head.append(style);
   };
   const loadVisualContract=()=>{loadCanonicalTheme();loadCanonicalTypography()};
+  // Start the shared CSS request during parsing; reapply cascade order after module CSS.
+  // This only loads presentation assets and never reveals authenticated content.
+  loadVisualContract();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadVisualContract,{once:true});
   else loadVisualContract();
   if(!document.querySelector('link[rel~="icon"]')){
