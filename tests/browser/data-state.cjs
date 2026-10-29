@@ -37,7 +37,38 @@ const root=path.resolve(__dirname,'../..');
   await page.evaluate(()=>window.rejectRetry(new Error('Offline')));
   await page.waitForFunction(()=>!document.querySelector('#host button').disabled);
   assert.equal(await page.locator('#host > div').getAttribute('aria-busy'),'false');
+  // Execute the actual notifications module against a delayed, read-only synthetic client.
+  const notificationHTML=fs.readFileSync(path.join(root,'notifications/index.html'),'utf8');
+  const moduleSource=notificationHTML.match(/<script type="module" id="notificationsSupabaseBinding">([\s\S]*?)<\/script>/)[1]
+   .replace(/import \{renderDataState\} from [^;]+;/,'const renderDataState=window.renderState;');
+  await page.evaluate(source=>{
+   document.body.innerHTML='<section id="notifList"></section><div id="notifEmpty" style="display:none">فارغ</div><div id="notifNotice"></div>';
+   window.notificationReads=0;
+   window.atwarGetSupabase=async()=>({
+    auth:{getSession:async()=>({data:{session:{user:{id:'isolated-user'}}}})},
+    from(table){
+     if(table==='profiles'){const query={select(){return query},eq(){return query},single:async()=>({data:{id:'isolated-user',role:'employee',active:true,status:'active'}})};return query}
+     if(table!=='notifications')throw Error('Unexpected table');
+     const query={select(){return query},order(){return query},limit(){window.notificationReads++;return new Promise(resolve=>{window.resolveNotifications=resolve})}};return query;
+    }
+   });
+   const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
+   window.notificationFixtureDone=new AsyncFunction(source)();
+  },moduleSource);
+  await page.waitForFunction(()=>typeof window.resolveNotifications==='function');
+  assert.equal(await page.locator('#notifEmpty').isVisible(),false,'Empty result must not appear while the read is pending');
+  assert.equal(await page.locator('#notifList [data-state="loading"]').count(),1);
+  await page.evaluate(()=>window.resolveNotifications({error:{message:'offline'}}));
+  await page.evaluate(()=>window.notificationFixtureDone);
+  assert.equal(await page.locator('#notifList [data-state="error"]').count(),1);
+  assert.equal(await page.locator('#notifEmpty').isVisible(),false);
+  await page.locator('#notifList button').click();
+  await page.waitForFunction(()=>window.notificationReads===2);
+  assert.equal(await page.locator('#notifList [data-state="loading"]').count(),1);
+  await page.evaluate(()=>window.resolveNotifications({data:[],error:null}));
+  await page.waitForFunction(()=>document.getElementById('notifEmpty').style.display==='block');
+  assert.equal(await page.locator('#notifList [data-state]').count(),0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: isolated data states at desktop and 412/390/360 widths; safe text, accessible state, retry lock and rejected retry recovery.');
+  console.log('PASS: isolated data states at desktop and 412/390/360 widths; safe text, accessible state, retry lock and rejected retry recovery. Actual notification module: slow read, failure, retry and successful empty read without premature empty result.');
  }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exit(1)});
