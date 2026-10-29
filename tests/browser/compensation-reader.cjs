@@ -25,6 +25,8 @@ const root=path.resolve(__dirname,'../..');
   assert.equal(await page.locator('[data-travel-target="compensation-section-8"]').count(),1);
   assert.equal(await page.locator('.policy-registry-widget .policy-salary-print .salary-job-cell').count(),5);
   assert(!(await page.locator('.policy-registry-widget .policy-salary-screen .policy-registry-cards').textContent()).includes('المدير العام'),'Target starts beyond the first results page');
+  assert.equal(await page.locator('.travel-meta').count(),1);
+  assert((await page.locator('.travel-meta').textContent()).includes('نسخة للمراجعة'));
   const original=await page.evaluate(()=>JSON.stringify(window.__state.v.content));
   await page.locator('#travelSearch').fill('المدير العام');
   await page.locator('#travelResults button').first().click();

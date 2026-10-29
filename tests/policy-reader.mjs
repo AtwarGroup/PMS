@@ -41,3 +41,19 @@ assert(!leaveHTML.includes('<colgroup>'));assert(leaveHTML.includes('<th scope="
 assert.deepEqual(searchPolicy(leaveSections,'٢٠٠٠',{code:'POL-LEAVE'})[0].cells,['اليمن','2000']);
 assert.equal(JSON.stringify(leaveContent),leaveOriginal);
 console.log('PASS leave reader: all 30 sections, seven index groups, table-row search, variable columns and unchanged source');
+
+const {policyOpening}=await import('../assets/js/policy-reader.mjs');
+const control='| بيان الوثيقة | التفاصيل |\n| --- | --- |\n| رمز السياسة | POL-LEAVE |\n| صاحب اعتماد السياسة | الرئيس التنفيذي وفق التفويض |\n| حالة الوثيقة | مسودة غير نافذة |\n| تاريخ الإصدار والنفاذ | يحدد في قرار الاعتماد النهائي |\n| النسخة المستبدلة | المرجع السابق <نسخة> |\n\nنص الغرض الأصلي.\n\n### أهداف السياسة\n| الهدف | الأثر |\n| --- | --- |\n| العدالة | وضوح الحقوق |';
+const parsed=policyOpening(control,{version:'V2.2'});
+assert(parsed.rows.some(([k,v])=>k==='صاحب اعتماد السياسة'&&v==='الرئيس التنفيذي وفق التفويض'));
+assert(parsed.extra.some(([k,v])=>k==='النسخة المستبدلة'&&v==='المرجع السابق <نسخة>'));
+assert(parsed.body.startsWith('نص الغرض الأصلي.'));
+const openingHTML=renderTravelBody(control,renderPolicyBody,{code:'POL-LEAVE',overview:true,document:{version:'V2.2'}});
+assert(!openingHTML.includes('<th scope="col">بيان الوثيقة</th>'));assert(openingHTML.includes('<th scope="col">الهدف</th>'));
+assert(openingHTML.includes('المرجع السابق &lt;نسخة&gt;'));assert(openingHTML.indexOf('بيانات الإصدار والاعتماد')<openingHTML.indexOf('الغرض من السياسة'));
+for(const code of ['POL-TRAVEL','POL-COMPENSATION','POL-LEAVE']){
+ const opening=renderTravelReader([{number:1,section:{id:'one',title:'العنوان الأصلي',body:'نص الغرض الأصلي.'}}],renderPolicyBody,()=>'',{code,document:{version:'نسخة تجريبية',status:'مراجعة'}});
+ assert(opening.includes('travel-meta'));assert(opening.includes('نسخة تجريبية'));assert(opening.includes('غير محدد'));assert(opening.includes('نص الغرض الأصلي.'));
+}
+assert.equal(policyOpening('| بيان الوثيقة | التفاصيل |\n| --- | --- |\n| غير متوقع | أ | ب |').body,'| بيان الوثيقة | التفاصيل |\n| --- | --- |\n| غير متوقع | أ | ب |');
+console.log('PASS shared document control: source values preserved, no invented approvals/dates, purpose first, only control table converted, escaped extra fields');
