@@ -2,6 +2,7 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {verifyStorageBackup} from './verify-storage-backup.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export function backupMime(object,bytes,bucket) {
   if(object.mime)return object.mime;
@@ -17,6 +18,7 @@ export async function restoreStorage({origin,sourceOrigin,key,directory,fetchImp
   if(target.origin===source.origin)throw Error('Refusing to restore storage into production');
   if(target.protocol!=='https:'&&!['127.0.0.1','localhost'].includes(target.hostname))throw Error('HTTPS required');
   if(!key)throw Error('Disposable target service key required');
+  await verifyStorageBackup(directory);
   const root=path.resolve(directory),manifest=JSON.parse(await readFile(path.join(root,'storage-manifest.json'),'utf8'));
   const request=async(route,options={})=>{
     const response=await fetchImpl(target.origin+'/storage/v1/'+route,{...options,headers:{Authorization:'Bearer '+key,apikey:key,...options.headers}});

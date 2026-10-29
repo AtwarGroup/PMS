@@ -35,6 +35,8 @@ test -s "$backup_dir/database.dump" || {
   exit 1
 }
 
+# Reject missing/corrupt attachment backups before any database or storage writes.
+node scripts/backup/verify-storage-backup.mjs "$backup_dir/storage"
 started_at="$(date -u +%s)"
 node scripts/backup/prepare-restore-roles.mjs "$backup_dir/roles.sql" | docker run --rm -i postgres:17.6 psql "$drill_url" -v ON_ERROR_STOP=1
 
