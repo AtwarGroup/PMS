@@ -1,0 +1,163 @@
+{
+  "environment": "Existing authenticated staging manager session, cloud Chrome, viewport width 1363. Same-origin responses use no-store. Ten sequential navigations, not controlled cold/warm cache sets or a Saudi user network.",
+  "instrumentation": "Staging-only opt-in DOM telemetry. Readiness is the first numeric homeStatOpen value, sampled every 100ms. CLS is maximum 1-second-gap/5-second layout-shift session excluding recent input; observed through readiness plus 2 seconds. No user records, tokens or external telemetry delivery.",
+  "baseline_site_version": 35,
+  "baseline_samples": [
+    {
+      "attempt": 1,
+      "readyMs": 12134.2,
+      "fcpMs": 8896,
+      "responseMs": 1089.1,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 2,
+      "readyMs": 5192.9,
+      "fcpMs": 1964,
+      "responseMs": 935.2,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 3,
+      "readyMs": 4720.9,
+      "fcpMs": 1712,
+      "responseMs": 710.7,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 4,
+      "readyMs": 3240.7,
+      "fcpMs": 604,
+      "responseMs": 84.6,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 5,
+      "readyMs": 3483.8,
+      "fcpMs": 748,
+      "responseMs": 69.3,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 6,
+      "readyMs": 4395.2,
+      "fcpMs": 1552,
+      "responseMs": 583.4,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 7,
+      "readyMs": 3171.5,
+      "fcpMs": 540,
+      "responseMs": 105.5,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 8,
+      "readyMs": 3561.8,
+      "fcpMs": 620,
+      "responseMs": 96.9,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 9,
+      "readyMs": 4904.6,
+      "fcpMs": 1664,
+      "responseMs": 238.6,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 10,
+      "readyMs": 3888.9,
+      "fcpMs": 912,
+      "responseMs": 105.4,
+      "cls": 0.0378
+    }
+  ],
+  "baseline_summary": {
+    "readyMedianMs": 4142.05,
+    "readyP95Ms": 12134.2,
+    "fcpMedianMs": 1232.0,
+    "fcpP95Ms": 8896
+  },
+  "after_samples": [
+    {
+      "attempt": 1,
+      "readyMs": 4772.3,
+      "fcpMs": 2116,
+      "responseMs": 1310,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 2,
+      "readyMs": 3611.9,
+      "fcpMs": 572,
+      "responseMs": 97.8,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 3,
+      "readyMs": 3404.2,
+      "fcpMs": 956,
+      "responseMs": 91.9,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 4,
+      "readyMs": 3750.6,
+      "fcpMs": 1196,
+      "responseMs": 90.1,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 5,
+      "readyMs": 3639.9,
+      "fcpMs": 1072,
+      "responseMs": 78.2,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 6,
+      "readyMs": 3242.3,
+      "fcpMs": 684,
+      "responseMs": 108.7,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 7,
+      "readyMs": 3548.1,
+      "fcpMs": 1016,
+      "responseMs": 425,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 8,
+      "readyMs": 3943.3,
+      "fcpMs": 1080,
+      "responseMs": 155.6,
+      "cls": 0.0378
+    },
+    {
+      "attempt": 9,
+      "readyMs": 5722,
+      "fcpMs": 2428,
+      "responseMs": 558.6,
+      "cls": 0
+    },
+    {
+      "attempt": 10,
+      "readyMs": 3230.7,
+      "fcpMs": 808,
+      "responseMs": 117.1,
+      "cls": 0.0378
+    }
+  ],
+  "after_site_version": 36,
+  "after_summary": {
+    "readyMedianMs": 3625.9,
+    "readyP95Ms": 5722,
+    "fcpMedianMs": 1044.0,
+    "fcpP95Ms": 2428
+  },
+  "comparison_limits": "Sequential, nonrandomized samples in the same existing session. Browser cache was not cleared or separately controlled. Cloud network and CDN warmth may affect both medians and tails; no universal or causal percentage-speed guarantee. Only homepage first-populated-summary readiness was measured; not every regional network, device, role or route. The 3-second target was not reached at the median. Source change preserves the exact existing Lucide version but moves its parser-blocking request from a third-party CDN to the application origin. Same-origin staging no-store headers may increase reported transfer bytes; this is not a bandwidth reduction claim."
+}

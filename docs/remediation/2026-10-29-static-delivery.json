@@ -1,0 +1,443 @@
+{
+  "captured_utc": "2026-10-29T16:09:46.648383+00:00",
+  "scope": "Independent HTTP requests from execution host; four concurrent workers. No browser cache, session, render, CLS or database timings. Not end-user readiness or a before/after improvement claim.",
+  "summary": [
+    {
+      "asset": "tasks/index.html",
+      "successes": 10,
+      "attempts": 10,
+      "median_ms": 4345.67,
+      "p95_ms": 5803.13
+    },
+    {
+      "asset": "fleet/index.html",
+      "successes": 10,
+      "attempts": 10,
+      "median_ms": 3959.79,
+      "p95_ms": 4091.8
+    },
+    {
+      "asset": "recruitment/index.html",
+      "successes": 10,
+      "attempts": 10,
+      "median_ms": 4038.68,
+      "p95_ms": 4104.65
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "successes": 10,
+      "attempts": 10,
+      "median_ms": 3648.83,
+      "p95_ms": 4106.47
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "successes": 10,
+      "attempts": 10,
+      "median_ms": 3969.62,
+      "p95_ms": 4075.13
+    }
+  ],
+  "samples": [
+    {
+      "asset": "tasks/index.html",
+      "attempt": 1,
+      "status": 200,
+      "total_ms": 5799.53,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 2,
+      "status": 200,
+      "total_ms": 5734.22,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 3,
+      "status": 200,
+      "total_ms": 5803.13,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 4,
+      "status": 200,
+      "total_ms": 5726.56,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 5,
+      "status": 200,
+      "total_ms": 4344.68,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 6,
+      "status": 200,
+      "total_ms": 4346.66,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 7,
+      "status": 200,
+      "total_ms": 4275.89,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 8,
+      "status": 200,
+      "total_ms": 4224.46,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 9,
+      "status": 200,
+      "total_ms": 3959.08,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "tasks/index.html",
+      "attempt": 10,
+      "status": 200,
+      "total_ms": 3959.95,
+      "bytes": 41211,
+      "sha256": "edc45ac90bf993bf5c6d4508cc991da216e8fa6730e9763c97f7bb781cfd6feb"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 1,
+      "status": 200,
+      "total_ms": 4054.84,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 2,
+      "status": 200,
+      "total_ms": 4062.98,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 3,
+      "status": 200,
+      "total_ms": 4091.8,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 4,
+      "status": 200,
+      "total_ms": 4000.23,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 5,
+      "status": 200,
+      "total_ms": 3904.98,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 6,
+      "status": 200,
+      "total_ms": 3928.46,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 7,
+      "status": 200,
+      "total_ms": 3948.74,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 8,
+      "status": 200,
+      "total_ms": 3970.84,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 9,
+      "status": 200,
+      "total_ms": 3895.54,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "fleet/index.html",
+      "attempt": 10,
+      "status": 200,
+      "total_ms": 3889.88,
+      "bytes": 11200,
+      "sha256": "8a651a5cb3202c12078b5b215472574a408a861d26091db54438a018cc7df23a"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 1,
+      "status": 200,
+      "total_ms": 4104.65,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 2,
+      "status": 200,
+      "total_ms": 4076.52,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 3,
+      "status": 200,
+      "total_ms": 4063.77,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 4,
+      "status": 200,
+      "total_ms": 4068.11,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 5,
+      "status": 200,
+      "total_ms": 4036.92,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 6,
+      "status": 200,
+      "total_ms": 4040.45,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 7,
+      "status": 200,
+      "total_ms": 4013.14,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 8,
+      "status": 200,
+      "total_ms": 4007.0,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 9,
+      "status": 200,
+      "total_ms": 3936.44,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "recruitment/index.html",
+      "attempt": 10,
+      "status": 200,
+      "total_ms": 3974.67,
+      "bytes": 3707,
+      "sha256": "9cdb74217d84e8d2386de8b62d27c2a38348f00f66562aced89e0da5e775fc1c"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 1,
+      "status": 200,
+      "total_ms": 4106.47,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 2,
+      "status": 200,
+      "total_ms": 4073.02,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 3,
+      "status": 200,
+      "total_ms": 3788.34,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 4,
+      "status": 200,
+      "total_ms": 3783.16,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 5,
+      "status": 200,
+      "total_ms": 3683.74,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 6,
+      "status": 200,
+      "total_ms": 3613.92,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 7,
+      "status": 200,
+      "total_ms": 3163.93,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 8,
+      "status": 200,
+      "total_ms": 3162.38,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 9,
+      "status": 200,
+      "total_ms": 3136.06,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/js/shell-components.js",
+      "attempt": 10,
+      "status": 200,
+      "total_ms": 3080.69,
+      "bytes": 34313,
+      "sha256": "3cb4f8982f0361ba194989be0ea656a7df619f2ef9994732a94d919f1a198432"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 1,
+      "status": 200,
+      "total_ms": 4075.13,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 2,
+      "status": 200,
+      "total_ms": 3996.2,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 3,
+      "status": 200,
+      "total_ms": 4027.03,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 4,
+      "status": 200,
+      "total_ms": 3988.7,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 5,
+      "status": 200,
+      "total_ms": 3943.15,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 6,
+      "status": 200,
+      "total_ms": 3983.94,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 7,
+      "status": 200,
+      "total_ms": 3955.3,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 8,
+      "status": 200,
+      "total_ms": 3949.02,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 9,
+      "status": 200,
+      "total_ms": 3767.33,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    },
+    {
+      "asset": "assets/css/app-theme.css",
+      "attempt": 10,
+      "status": 200,
+      "total_ms": 3686.94,
+      "bytes": 44640,
+      "sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16"
+    }
+  ]
+}

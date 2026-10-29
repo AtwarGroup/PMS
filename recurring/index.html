@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ATWAR ONE – المهام الدورية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@1.47.0"></script>
-<script src="../assets/js/shell-components.js?v=2.8.5"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
+<script src="../assets/vendor/lucide-1.47.0.min.js"></script>
+<script src="../assets/js/shell-components.js?v=2.8.6"></script><script src="../assets/js/ui-feedback.js?v=2.5.27"></script><script src="../assets/js/session-service.js?v=2.5.2"></script>
 <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26">
 <style>
 *{box-sizing:border-box}body{font-family:'Tajawal',sans-serif}
@@ -104,7 +104,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/module-access.js?v=2.8.1"></script><script src="../assets/js/supabase-runtime.js?v=2.8.0"></script>
 <script type="module">
-import {renderDataState} from "../assets/js/data-state.mjs?v=1";
+import {renderDataState} from "../assets/js/data-state.mjs?v=20261029-loading";
 import {weekdays,localInput,riyadhISO,validateRule,previewDates,ruleSummary,nextOccurrence} from "../assets/js/recurrence-core.mjs?v=2.5.44";
 const sb=await window.atwarGetSupabase();
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
