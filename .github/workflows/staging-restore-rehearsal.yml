@@ -99,6 +99,7 @@ jobs:
                 echo "SET LOCAL idle_in_transaction_session_timeout='60s';"
                 cat "$work/storage-policy-drop.sql"
                 docker run --rm --volume "$work:/backup:ro" postgres:17.6 pg_restore --clean --if-exists --no-owner --schema=public --schema=private --schema=migration --file=- /backup/database.dump
+                echo "SET LOCAL search_path=public,private,extensions;"
                 cat "$work/storage-policy-restore.sql"
                 echo 'ROLLBACK;'
               } > "$work/transaction-rehearsal.sql"
