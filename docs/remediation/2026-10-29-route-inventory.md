@@ -1,57 +1,59 @@
-# Source route inventory — 29 October 2026
+# Application route acceptance matrix — 29 October 2026
 
-51 current HTML routes. This is source inventory only; visual, state, role and workflow acceptance remain pending for every row. Dialog and tab counts are literal markup hints, not full dynamic coverage. Pages without shared shell include public/document pages and need their own review.
+51 application routes: 45 content pages and six legacy redirects. The 47-page content CI total includes two additional lab previews; it must not be presented as 47 application pages. All 45 application content pages are included in that successful static desktop/mobile pass. The six redirects are now explicitly covered by a required isolated browser gate using the actual redirect documents and synthetic destination pages.
 
-| Route | Shared shell | Native dialogs | Explicit tab roles | Acceptance |
-|---|---|---:|---:|---|
-| `admin/announcements.html` | yes | 0 | 0 | pending |
-| `admin/employees.html` | yes | 1 | 2 | pending |
-| `admin/forms.html` | yes | 0 | 0 | pending |
-| `admin/index.html` | yes | 0 | 0 | pending |
-| `admin/maintenance.html` | yes | 0 | 0 | pending |
-| `admin/templates/job-review.html` | no | 0 | 0 | pending |
-| `admin/templates/kpi-measurement.html` | no | 0 | 0 | pending |
-| `admin/templates/periodic-report.html` | no | 0 | 0 | pending |
-| `admin/templates/task-handover.html` | no | 0 | 0 | pending |
-| `admin/users.html` | yes | 5 | 7 | pending |
-| `approvals/index.html` | no | 0 | 0 | pending |
-| `attachments/index.html` | yes | 0 | 0 | pending |
-| `communication/index.html` | yes | 8 | 0 | pending |
-| `communication-trial/index.html` | no | 7 | 0 | pending |
-| `completed/index.html` | no | 0 | 0 | pending |
-| `fleet/completed.html` | yes | 1 | 4 | pending |
-| `fleet/index.html` | yes | 1 | 4 | pending |
-| `fleet/user-guide.html` | yes | 0 | 0 | pending |
-| `follow-up/index.html` | no | 0 | 0 | pending |
-| `home.html` | yes | 0 | 0 | pending |
-| `index.html` | no | 0 | 0 | pending |
-| `job-library/create.html` | yes | 0 | 0 | pending |
-| `job-library/employee-changes.html` | yes | 0 | 0 | pending |
-| `job-library/index.html` | yes | 0 | 4 | pending |
-| `job-library/review.html` | yes | 0 | 0 | pending |
-| `job-library/settings.html` | yes | 0 | 0 | pending |
-| `landing.html` | no | 0 | 0 | pending |
-| `login.html` | no | 0 | 0 | pending |
-| `my-day/index.html` | no | 0 | 0 | pending |
-| `notifications/index.html` | yes | 0 | 0 | pending |
-| `organization/index.html` | yes | 0 | 0 | pending |
-| `policies/index.html` | yes | 0 | 0 | pending |
-| `privacy.html` | no | 0 | 0 | pending |
-| `profile/index.html` | yes | 0 | 0 | pending |
-| `profile/job-description.html` | yes | 0 | 0 | pending |
-| `profile/measurements.html` | yes | 0 | 0 | pending |
-| `profile/security.html` | yes | 0 | 0 | pending |
-| `projects/index.html` | yes | 0 | 0 | pending |
-| `recruitment/candidate.html` | no | 0 | 0 | pending |
-| `recruitment/careers.html` | no | 0 | 0 | pending |
-| `recruitment/index.html` | yes | 1 | 0 | pending |
-| `recruitment/user-guide.html` | yes | 0 | 0 | pending |
-| `recurring/index.html` | yes | 1 | 0 | pending |
-| `search/index.html` | yes | 0 | 0 | pending |
-| `tasks/executive.html` | yes | 0 | 0 | pending |
-| `tasks/index.html` | yes | 0 | 0 | pending |
-| `tasks/user-guide.html` | no | 0 | 0 | pending |
-| `team/employee.html` | yes | 0 | 0 | pending |
-| `team/index.html` | no | 0 | 0 | pending |
-| `workspace/improvements.html` | yes | 1 | 0 | pending |
-| `workspace/index.html` | yes | 0 | 4 | pending |
+This matrix distinguishes layout coverage from functional and connected coverage. A static pass is not a claim that every dynamic workflow/state of that route ran live. Functional families use the actual application scripts and isolated PostgreSQL/synthetic transport, with external delivery blocked; connected checks are limited to the single authorized manager identity. No unavailable role is marked as a successful connected test. Final GitHub gate results for the released head are authoritative for the added redirect test.
+
+| Application route | Layout/redirect evidence | Functional evidence family | Connected evidence |
+|---|---|---|---|
+| `admin/announcements.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | not connected under this role; isolated/source evidence only |
+| `admin/employees.html` | desktop/mobile content gate passed (40916925405) | employee/account suite | authorized manager read-only check |
+| `admin/forms.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | not connected under this role; isolated/source evidence only |
+| `admin/index.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/maintenance.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/templates/job-review.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/templates/kpi-measurement.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/templates/periodic-report.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/templates/task-handover.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `admin/users.html` | desktop/mobile content gate passed (40916925405) | employee/account suite | not connected under this role; isolated/source evidence only |
+| `approvals/index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `attachments/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | not connected under this role; isolated/source evidence only |
+| `communication/index.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `communication-trial/index.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `completed/index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `fleet/completed.html` | desktop/mobile content gate passed (40916925405) | fleet role/workflow suite | not connected under this role; isolated/source evidence only |
+| `fleet/index.html` | desktop/mobile content gate passed (40916925405) | fleet role/workflow suite | manager denied as expected |
+| `fleet/user-guide.html` | desktop/mobile content gate passed (40916925405) | fleet role/workflow suite | not connected under this role; isolated/source evidence only |
+| `follow-up/index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `home.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | authorized manager read-only check |
+| `index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `job-library/create.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `job-library/employee-changes.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `job-library/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | authorized manager read-only check |
+| `job-library/review.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `job-library/settings.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `landing.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `login.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `my-day/index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `notifications/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | authorized manager read-only check |
+| `organization/index.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `policies/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | authorized manager read-only check |
+| `privacy.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `profile/index.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `profile/job-description.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | authorized manager read-only check |
+| `profile/measurements.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `profile/security.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `projects/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | authorized manager read-only check |
+| `recruitment/candidate.html` | desktop/mobile content gate passed (40916925405) | recruitment workflow/dialog suite | not connected under this role; isolated/source evidence only |
+| `recruitment/careers.html` | desktop/mobile content gate passed (40916925405) | recruitment workflow/dialog suite | not connected under this role; isolated/source evidence only |
+| `recruitment/index.html` | desktop/mobile content gate passed (40916925405) | recruitment workflow/dialog suite | authorized manager read-only check |
+| `recruitment/user-guide.html` | desktop/mobile content gate passed (40916925405) | recruitment workflow/dialog suite | not connected under this role; isolated/source evidence only |
+| `recurring/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | not connected under this role; isolated/source evidence only |
+| `search/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | not connected under this role; isolated/source evidence only |
+| `tasks/executive.html` | desktop/mobile content gate passed (40916925405) | task regressions/workflow suites | not connected under this role; isolated/source evidence only |
+| `tasks/index.html` | desktop/mobile content gate passed (40916925405) | task regressions/workflow suites | authorized manager read-only check |
+| `tasks/user-guide.html` | desktop/mobile content gate passed (40916925405) | task regressions/workflow suites | not connected under this role; isolated/source evidence only |
+| `team/employee.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `team/index.html` | six-route redirect smoke; required final CI gate | static/source contract only | not connected under this role; isolated/source evidence only |
+| `workspace/improvements.html` | desktop/mobile content gate passed (40916925405) | static/source contract only | not connected under this role; isolated/source evidence only |
+| `workspace/index.html` | desktop/mobile content gate passed (40916925405) | read-state browser suite | authorized manager read-only check |

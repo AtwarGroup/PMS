@@ -1,0 +1,12 @@
+{
+  "baseline": "21e6af36044be30861152ee81fbb08a0399f8733",
+  "candidate": "e64afb0743e208070206092cde2b6d45d5eb8f07",
+  "sourceRollbackDryRun": "passed",
+  "sourceApplySeconds": 0.053,
+  "retainedForCachedHtml": [
+    "assets/vendor/lucide-1.47.0.min.js",
+    "assets/vendor/lucide-1.47.0-LICENSE.txt",
+    "assets/vendor/lucide-1.47.0-PROVENANCE.md"
+  ],
+  "verified": "All baseline tracked source restored exactly; only the new pinned vendor files retained for cached new HTML. No production or database writes. Pages deployment/propagation is not included in elapsed time."
+}

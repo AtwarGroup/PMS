@@ -85,6 +85,7 @@ jobs:
           node tests/browser/home-resilience.cjs
           node tests/browser/data-state.cjs
           node tests/browser/shell-loading.cjs
+          node tests/browser/legacy-redirects.cjs
           node tests/browser/theme-legibility.cjs
           node tests/browser/theme-contract.cjs
           node tests/browser/theme-dynamic.cjs
