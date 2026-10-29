@@ -1,4 +1,4 @@
-import {renderTravelReader,wireTravelReader} from './policy-reader.mjs?v=2.8.16';
+import {renderTravelReader,wireTravelReader} from './policy-reader.mjs?v=2.8.17';
 import {renderPolicyCard} from './policy-cards.mjs?v=2.8.9';
 import {hasPolicyDraftChanges} from './policy-draft-state.mjs?v=2.8.12';
 import {enhancePolicySalaryTables} from './policy-salary-tables.mjs?v=2.8.8';
@@ -34,7 +34,7 @@ async function detail(id,versionId){const rows=await query(sb.from('policies').s
 }
 function renderDetail(worker){host._disposeTravelReader?.();host._disposeTravelReader=null;host.className="policy-wrap policy-document"+(simpleSalary?" policy-salary-simplified":"");const v=selected,p=policy,editable=v.status==='PREPARATION'&&(profile.role==='admin'||p.preparer_id===profile.id),canDecide=p[owners[stages.indexOf(v.status)]]===profile.id&&v.status!=='APPROVED',live=versions.find(x=>x.status==='APPROVED'&&x.effective_date<=today());
  const readingSections=policyReadingSections(v.content,p.code);
- const travel=['POL-TRAVEL','POL-COMPENSATION'].includes(p.code);document.body?.classList.toggle('travel-policy-page',travel&&!editing);if(travel&&!editing){host.classList.add('policy-travel-reader');if(p.code==='POL-COMPENSATION')host.classList.add('policy-compensation-reader');}
+ const travel=['POL-TRAVEL','POL-COMPENSATION','POL-LEAVE'].includes(p.code);document.body?.classList.toggle('travel-policy-page',travel&&!editing);if(travel&&!editing){host.classList.add('policy-travel-reader');if(p.code==='POL-LEAVE')host.classList.add('policy-leave-reader');if(p.code==='POL-COMPENSATION')host.classList.add('policy-compensation-reader');}
  const hasSalary=v.content.some(s=>s.body.includes('| الدرجة | الوظيفة | غير السعودي | السعودي |'));
  const canComment=v.status!=='APPROVED'&&(worker||(p.review_commenter_ids||[]).includes(profile.id));
  const options=versions.map(x=>`<option value="${x.id}" ${x.id===v.id?'selected':''}>الإصدار ${x.version_number} — ${esc(x.version_label)} — ${labels[x.status]}</option>`).join('');

@@ -436,3 +436,10 @@ body.travel-policy-page .atwar-main{overflow:visible!important}
  #policyApp.policy-compensation-reader .policy-points-grid small{font-size:8px}
  #policyApp.policy-compensation-reader .travel-section .policy-body .salary-card-kicker{font-size:9px!important}
 }
+
+/* Leave uses the approved reader with variable-width text and authority tables. */
+#policyApp.policy-leave-reader .travel-section .policy-data-table{table-layout:auto;width:100%;min-width:0}
+#policyApp.policy-leave-reader .travel-section .policy-data-table th{white-space:normal;text-align:start;overflow-wrap:anywhere}
+#policyApp.policy-leave-reader .travel-section .policy-data-table td,#policyApp.policy-leave-reader .travel-section .policy-data-table td:first-child,#policyApp.policy-leave-reader .travel-section .policy-data-table td:last-child{width:auto;white-space:normal;text-align:start;font-weight:500;overflow-wrap:anywhere}
+#policyApp.policy-leave-reader .travel-section .policy-data-table td:first-child{font-weight:700}
+@media print{#policyApp.policy-leave-reader .travel-section .policy-data-table th,#policyApp.policy-leave-reader .travel-section .policy-data-table td{font-size:9px!important;padding:7px}}
