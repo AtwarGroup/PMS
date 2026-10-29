@@ -1,0 +1,61 @@
+{
+  "method": "Staging-only temporary DOM telemetry: first numeric homeStatOpen, 50ms sampling; FCP from Performance API. No external telemetry. Ten sequential authenticated cloud Chrome desktop reloads; uncontrolled cache; nonrandomized; no physical Android or Saudi-network guarantee.",
+  "measurement_version": 39,
+  "final_staging_version": 40,
+  "final_staging_commit": "370009b333f48440b8df8b30385cfde3cba09bb6",
+  "temporary_instrumentation_removed": true,
+  "samples": [
+    {
+      "readyMs": 5192.9,
+      "fcpMs": 2428
+    },
+    {
+      "readyMs": 3164.5,
+      "fcpMs": 868
+    },
+    {
+      "readyMs": 2713.7,
+      "fcpMs": 672
+    },
+    {
+      "readyMs": 2627,
+      "fcpMs": 572
+    },
+    {
+      "readyMs": 2744.9,
+      "fcpMs": 752
+    },
+    {
+      "readyMs": 2753,
+      "fcpMs": 580
+    },
+    {
+      "readyMs": 3115.8,
+      "fcpMs": 748
+    },
+    {
+      "readyMs": 2670.2,
+      "fcpMs": 648
+    },
+    {
+      "readyMs": 2696.8,
+      "fcpMs": 556
+    },
+    {
+      "readyMs": 2652.8,
+      "fcpMs": 636
+    }
+  ],
+  "median_ready_ms": 2729.3,
+  "p95_ready_ms": 5192.9,
+  "under_3000_ms": 7,
+  "previous_local_icons_median_ready_ms": 3625.9,
+  "comparison_limit": "Prior readiness sampling was 100ms; current sampling 50ms. Measurements are observations, not a controlled causal experiment. Readiness is the task counter only, not every home data source.",
+  "payload_estimate": {
+    "scope": "Aggregate SQL JSON size in staging for 371 undeleted rows, not compressed HTTP bytes or the authenticated manager's exact row scope",
+    "all_columns_bytes": 805975,
+    "summary_columns_bytes": 192501
+  },
+  "source_commit": "2724c2cdad1450f361e6c98954b658ce312ef51e",
+  "production_commit": "2ed91656cbf33cd2a592b8f456b75bab08876a1a"
+}
