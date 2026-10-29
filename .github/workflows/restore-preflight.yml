@@ -75,12 +75,12 @@ jobs:
             node scripts/backup/verify-storage-backup.mjs "$work/storage"
             docker run --rm --volume "$work:/backup:ro" postgres:17.6 pg_restore --list /backup/database.dump > "$work/toc.txt"
             KIND="$kind" ARCHIVE="$latest" WORK="$work" node --input-type=module <<'NODE'
-            import fs from 'node:fs';
-            const lines=fs.readFileSync(process.env.WORK+'/toc.txt','utf8').split('\n');
-            const tables=lines.filter(l=>/ TABLE /.test(l)&&!l.includes('TABLE DATA'));
-            const schemas={}; for(const line of tables){const m=line.match(/ TABLE (\S+) /);if(m)schemas[m[1]]=(schemas[m[1]]||0)+1;}
-            console.log(JSON.stringify({kind:process.env.KIND,archive:process.env.ARCHIVE,schemas,tableData:lines.filter(l=>/ TABLE DATA /.test(l)).length,extensions:lines.filter(l=>/ EXTENSION /.test(l)&&!l.includes('COMMENT')).map(l=>l.replace(/^.* EXTENSION /,''))}));
-            NODE
+          import fs from 'node:fs';
+          const lines=fs.readFileSync(process.env.WORK+'/toc.txt','utf8').split('\n');
+          const tables=lines.filter(l=>/ TABLE /.test(l)&&!l.includes('TABLE DATA'));
+          const schemas={}; for(const line of tables){const m=line.match(/ TABLE (\S+) /);if(m)schemas[m[1]]=(schemas[m[1]]||0)+1;}
+          console.log(JSON.stringify({kind:process.env.KIND,archive:process.env.ARCHIVE,schemas,tableData:lines.filter(l=>/ TABLE DATA /.test(l)).length,extensions:lines.filter(l=>/ EXTENSION /.test(l)&&!l.includes('COMMENT')).map(l=>l.replace(/^.* EXTENSION /,''))}));
+          NODE
           done
           echo "Both remote encrypted archives verified; no restore or database writes performed."
 
