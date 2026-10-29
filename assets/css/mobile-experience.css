@@ -9,7 +9,8 @@
 @media(max-width:700px){
  .atwar-shell{grid-template-columns:minmax(0,1fr)!important}
  .atwar-main{min-width:0!important;width:100%!important}
- .atwar-sidebar{position:fixed!important;inset:0 0 0 auto!important;width:min(300px,86vw)!important;height:100dvh!important;min-height:0!important;z-index:1501!important;transform:translateX(105%);visibility:hidden;padding:16px!important;background:var(--atwar-surface,#fff)!important;box-shadow:0 0 30px #0f172a22}
+ /* Match the shared navy shell even when mobile CSS is inserted after shared.css. */
+ .atwar-sidebar{position:fixed!important;inset:0 0 0 auto!important;width:min(300px,86vw)!important;height:100dvh!important;min-height:0!important;z-index:1501!important;transform:translateX(105%);visibility:hidden;padding:16px!important;background:linear-gradient(180deg,var(--atwar-navy-2,#0c2342),var(--atwar-navy,#0b1d3a) 62%,#0a1a33)!important;color:#fff!important;box-shadow:0 0 30px #0f172a22}
  .atwar-navigation-open .atwar-sidebar{transform:none;visibility:visible}
  .atwar-sidebar .atwar-brand h1,.atwar-sidebar .atwar-brand p,.atwar-sidebar .atwar-nav span{display:initial!important}
  .atwar-sidebar .atwar-nav a{justify-content:flex-start!important;min-height:48px}
