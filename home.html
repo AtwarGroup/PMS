@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  const now=new Date();
  const gregorian=document.getElementById('currentGregorianDate');
  const hijri=document.getElementById('currentHijriDate');
- if(gregorian) gregorian.textContent=new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now);
- if(hijri) hijri.textContent=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{day:'numeric',month:'long',year:'numeric',era:'short'}).format(now);
+ if(gregorian) gregorian.textContent=new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now);
+ if(hijri) hijri.textContent=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',era:'short'}).format(now);
  const s=document.querySelector('[data-global-search]');
  if(s) s.addEventListener('keydown',e=>{
    if(e.key==='Enter' && s.value.trim()) location.href='search/index.html?q='+encodeURIComponent(s.value.trim());

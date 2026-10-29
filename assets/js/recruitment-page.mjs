@@ -43,6 +43,7 @@ const name = (id) => context.people.find((p) => p.id === id)?.full_name || "—"
 const date = (v) =>
   v
     ? new Date(v).toLocaleString("ar-SA", {
+        numberingSystem: "latn",
         dateStyle: "medium",
         timeStyle: "short",
       })
