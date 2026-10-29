@@ -1,0 +1,443 @@
+{
+  "commit": "f01f915d0962955a0481aab4336de197b0e05c32",
+  "checked_at_utc": "2026-10-29T20:18:48.544783+00:00",
+  "total_files": 62,
+  "matched": 62,
+  "scope": "Public static delivery only; source working tree must match tested and merged tree. No production authentication, business writes or real notifications.",
+  "results": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "expected_sha256": "2a441d3a468f4a414d5d5aaada8b13b35e57ec3a25dbca73cfc7a081e18ace66",
+      "served_sha256": "2a441d3a468f4a414d5d5aaada8b13b35e57ec3a25dbca73cfc7a081e18ace66",
+      "matches": true
+    },
+    {
+      "path": "home.html",
+      "status": 200,
+      "expected_sha256": "d3e07d57bae9411717cb83925270b767e4dd2f733f05e5d12493a31e3bcda019",
+      "served_sha256": "d3e07d57bae9411717cb83925270b767e4dd2f733f05e5d12493a31e3bcda019",
+      "matches": true
+    },
+    {
+      "path": "landing.html",
+      "status": 200,
+      "expected_sha256": "5710e8edf7abeb2a3edd7d5c6cd7c38d9d70836f5e8b4e0066d0cdeb9a96eab7",
+      "served_sha256": "5710e8edf7abeb2a3edd7d5c6cd7c38d9d70836f5e8b4e0066d0cdeb9a96eab7",
+      "matches": true
+    },
+    {
+      "path": "privacy.html",
+      "status": 200,
+      "expected_sha256": "95c7dab7057eccbcf57b1cef029923fb195aad48a76ccae812c7ecb3b6e4ef46",
+      "served_sha256": "95c7dab7057eccbcf57b1cef029923fb195aad48a76ccae812c7ecb3b6e4ef46",
+      "matches": true
+    },
+    {
+      "path": "login.html",
+      "status": 200,
+      "expected_sha256": "d9766d8fec64c5c875b2b9cd21b2a465f606d1b0ae1d9779a2d0b74f60a5ebdf",
+      "served_sha256": "d9766d8fec64c5c875b2b9cd21b2a465f606d1b0ae1d9779a2d0b74f60a5ebdf",
+      "matches": true
+    },
+    {
+      "path": "fleet/index.html",
+      "status": 200,
+      "expected_sha256": "8cec8a11fcee5f1c7db33b5262e746ade582c54974a1bce0dda8a7e042929631",
+      "served_sha256": "8cec8a11fcee5f1c7db33b5262e746ade582c54974a1bce0dda8a7e042929631",
+      "matches": true
+    },
+    {
+      "path": "fleet/completed.html",
+      "status": 200,
+      "expected_sha256": "91d4f68afc97ea62f699b3c812867606ac93c48f760cccc82c1f322ec154fe13",
+      "served_sha256": "91d4f68afc97ea62f699b3c812867606ac93c48f760cccc82c1f322ec154fe13",
+      "matches": true
+    },
+    {
+      "path": "fleet/user-guide.html",
+      "status": 200,
+      "expected_sha256": "aad192b641b5a18f8ea5132b7f52f96e24910228494456f4633bc5827144ef48",
+      "served_sha256": "aad192b641b5a18f8ea5132b7f52f96e24910228494456f4633bc5827144ef48",
+      "matches": true
+    },
+    {
+      "path": "job-library/index.html",
+      "status": 200,
+      "expected_sha256": "38dbad307267f44b613ec8474ebcd2468ac732215dd1974db6534f495f2a3031",
+      "served_sha256": "38dbad307267f44b613ec8474ebcd2468ac732215dd1974db6534f495f2a3031",
+      "matches": true
+    },
+    {
+      "path": "job-library/employee-changes.html",
+      "status": 200,
+      "expected_sha256": "e2d5f773d12e19f711ee6209a9fdd4cf3f5bdbff22c972f3d96be3001ee1174d",
+      "served_sha256": "e2d5f773d12e19f711ee6209a9fdd4cf3f5bdbff22c972f3d96be3001ee1174d",
+      "matches": true
+    },
+    {
+      "path": "job-library/review.html",
+      "status": 200,
+      "expected_sha256": "d865baa9e5863ac7c14b1332ea46a9af540b5a10fb96bad36eff4ea6a3af1c2e",
+      "served_sha256": "d865baa9e5863ac7c14b1332ea46a9af540b5a10fb96bad36eff4ea6a3af1c2e",
+      "matches": true
+    },
+    {
+      "path": "job-library/create.html",
+      "status": 200,
+      "expected_sha256": "d5678a9f1898d4dd9654d9949b60b32b5cdcbf101c8cd0d562ff46b723f15db9",
+      "served_sha256": "d5678a9f1898d4dd9654d9949b60b32b5cdcbf101c8cd0d562ff46b723f15db9",
+      "matches": true
+    },
+    {
+      "path": "job-library/settings.html",
+      "status": 200,
+      "expected_sha256": "50042d1a021300750223b4bb9dff478a591435d0e579d4d9832b532d85d6a296",
+      "served_sha256": "50042d1a021300750223b4bb9dff478a591435d0e579d4d9832b532d85d6a296",
+      "matches": true
+    },
+    {
+      "path": "communication-trial/index.html",
+      "status": 200,
+      "expected_sha256": "7a2e0c13215ff350f8b3d6c5a4ead4949eb769d4c549bd4f88031d501c762018",
+      "served_sha256": "7a2e0c13215ff350f8b3d6c5a4ead4949eb769d4c549bd4f88031d501c762018",
+      "matches": true
+    },
+    {
+      "path": "recurring/index.html",
+      "status": 200,
+      "expected_sha256": "ef1c8d5bc61178d201e9ab528c1a286e2bb905a9f40bd7969a71f54d3521e158",
+      "served_sha256": "ef1c8d5bc61178d201e9ab528c1a286e2bb905a9f40bd7969a71f54d3521e158",
+      "matches": true
+    },
+    {
+      "path": "tasks/index.html",
+      "status": 200,
+      "expected_sha256": "78a2b4eda4e7f996c8b23278103b94d8ac3f1a3ef35a1f6159e7dc0e8799f5fd",
+      "served_sha256": "78a2b4eda4e7f996c8b23278103b94d8ac3f1a3ef35a1f6159e7dc0e8799f5fd",
+      "matches": true
+    },
+    {
+      "path": "tasks/user-guide.html",
+      "status": 200,
+      "expected_sha256": "44c024d0c4344b2186920c0d77494675f6299a260d334059a5052b3294860dee",
+      "served_sha256": "44c024d0c4344b2186920c0d77494675f6299a260d334059a5052b3294860dee",
+      "matches": true
+    },
+    {
+      "path": "tasks/executive.html",
+      "status": 200,
+      "expected_sha256": "26814e6fbfce121a6f45b7c0373c9a96f08332b33d305bc8c45dce3dd84e7589",
+      "served_sha256": "26814e6fbfce121a6f45b7c0373c9a96f08332b33d305bc8c45dce3dd84e7589",
+      "matches": true
+    },
+    {
+      "path": "organization/index.html",
+      "status": 200,
+      "expected_sha256": "f40acf0155dfae74d35486fdec61a938d795a74ffb1246635bda5fea890ff7e6",
+      "served_sha256": "f40acf0155dfae74d35486fdec61a938d795a74ffb1246635bda5fea890ff7e6",
+      "matches": true
+    },
+    {
+      "path": "workspace/index.html",
+      "status": 200,
+      "expected_sha256": "2d987b29abbd215a1f2ac0b10103bef91fad4b17445afd280acb0d44c07fda0c",
+      "served_sha256": "2d987b29abbd215a1f2ac0b10103bef91fad4b17445afd280acb0d44c07fda0c",
+      "matches": true
+    },
+    {
+      "path": "workspace/improvements.html",
+      "status": 200,
+      "expected_sha256": "80263fdd7f3f73f504e72fa3522d74149696d46b9238eaf898cba9966c13758b",
+      "served_sha256": "80263fdd7f3f73f504e72fa3522d74149696d46b9238eaf898cba9966c13758b",
+      "matches": true
+    },
+    {
+      "path": "my-day/index.html",
+      "status": 200,
+      "expected_sha256": "bb03622725636e09085735e1fa24e7988493b3df8c0d855859a98eb552f450d1",
+      "served_sha256": "bb03622725636e09085735e1fa24e7988493b3df8c0d855859a98eb552f450d1",
+      "matches": true
+    },
+    {
+      "path": "completed/index.html",
+      "status": 200,
+      "expected_sha256": "c6344435d4bc843e92692dae1a28a63ddbdb15d4402882c1afe6cc22ec050b7a",
+      "served_sha256": "c6344435d4bc843e92692dae1a28a63ddbdb15d4402882c1afe6cc22ec050b7a",
+      "matches": true
+    },
+    {
+      "path": "communication/index.html",
+      "status": 200,
+      "expected_sha256": "beff386a05986735428440634e65acedaa06ab67035aa963921713b8551778a0",
+      "served_sha256": "beff386a05986735428440634e65acedaa06ab67035aa963921713b8551778a0",
+      "matches": true
+    },
+    {
+      "path": "profile/index.html",
+      "status": 200,
+      "expected_sha256": "e10a5eb60bd0f874302bc63afe8b6efe72eb3574b67a22e84712ddee4fff6512",
+      "served_sha256": "e10a5eb60bd0f874302bc63afe8b6efe72eb3574b67a22e84712ddee4fff6512",
+      "matches": true
+    },
+    {
+      "path": "profile/job-description.html",
+      "status": 200,
+      "expected_sha256": "dbbce95338edb91d5070536b5a6e225180556605c9492190f4cccd1935ea2adf",
+      "served_sha256": "dbbce95338edb91d5070536b5a6e225180556605c9492190f4cccd1935ea2adf",
+      "matches": true
+    },
+    {
+      "path": "profile/measurements.html",
+      "status": 200,
+      "expected_sha256": "9e6beeb0479fe8a7885d3bffdd4a8b8a9a789cc0fedbf4fb100db3f1297deb07",
+      "served_sha256": "9e6beeb0479fe8a7885d3bffdd4a8b8a9a789cc0fedbf4fb100db3f1297deb07",
+      "matches": true
+    },
+    {
+      "path": "profile/security.html",
+      "status": 200,
+      "expected_sha256": "76f422416e879e4080971fd82c9a520f37e41b5d05dd7b7b8ffd0da2edda9473",
+      "served_sha256": "76f422416e879e4080971fd82c9a520f37e41b5d05dd7b7b8ffd0da2edda9473",
+      "matches": true
+    },
+    {
+      "path": "approvals/index.html",
+      "status": 200,
+      "expected_sha256": "b8fd2ad4d462ad7419dcc0da8c5bda01db1f95878ec91231a8aa55979b2abfe2",
+      "served_sha256": "b8fd2ad4d462ad7419dcc0da8c5bda01db1f95878ec91231a8aa55979b2abfe2",
+      "matches": true
+    },
+    {
+      "path": "team/index.html",
+      "status": 200,
+      "expected_sha256": "ad5cc7bf2a8632f852922f38bb62dc16b94f2960b4deddb2f5a9fef6bd52f488",
+      "served_sha256": "ad5cc7bf2a8632f852922f38bb62dc16b94f2960b4deddb2f5a9fef6bd52f488",
+      "matches": true
+    },
+    {
+      "path": "team/employee.html",
+      "status": 200,
+      "expected_sha256": "37f61faaace30c9f36e6171c4847f8d02bf83b5cd3667a452195ade13226b6fe",
+      "served_sha256": "37f61faaace30c9f36e6171c4847f8d02bf83b5cd3667a452195ade13226b6fe",
+      "matches": true
+    },
+    {
+      "path": "projects/index.html",
+      "status": 200,
+      "expected_sha256": "237f4fea686d69899eb1a5dea3ff962f5344a5a1e5ca3f06ab1db98e7cf9dd85",
+      "served_sha256": "237f4fea686d69899eb1a5dea3ff962f5344a5a1e5ca3f06ab1db98e7cf9dd85",
+      "matches": true
+    },
+    {
+      "path": "attachments/index.html",
+      "status": 200,
+      "expected_sha256": "953c5659d466c13036b078b07551f4e7435944430794db83c37412d94e550a52",
+      "served_sha256": "953c5659d466c13036b078b07551f4e7435944430794db83c37412d94e550a52",
+      "matches": true
+    },
+    {
+      "path": "search/index.html",
+      "status": 200,
+      "expected_sha256": "85c9a5e2c9d1bf28a957f9e46115cc17b8b7d940b44af1e1fd1ccc9236e98c0a",
+      "served_sha256": "85c9a5e2c9d1bf28a957f9e46115cc17b8b7d940b44af1e1fd1ccc9236e98c0a",
+      "matches": true
+    },
+    {
+      "path": "notifications/index.html",
+      "status": 200,
+      "expected_sha256": "950e0e7faa5a925ff29501a040f4d832128b8ce2e809ac06baaab94a0184cff0",
+      "served_sha256": "950e0e7faa5a925ff29501a040f4d832128b8ce2e809ac06baaab94a0184cff0",
+      "matches": true
+    },
+    {
+      "path": "policies/index.html",
+      "status": 200,
+      "expected_sha256": "4ca6cc6be1bc6d54c93ae02ace82f476f098a4e90ff7d2279d4a7f65590271f1",
+      "served_sha256": "4ca6cc6be1bc6d54c93ae02ace82f476f098a4e90ff7d2279d4a7f65590271f1",
+      "matches": true
+    },
+    {
+      "path": "recruitment/index.html",
+      "status": 200,
+      "expected_sha256": "beeab258a0ef2f94c77984e1f163130c4ff3420b9b150e7fecd236d5b605309f",
+      "served_sha256": "beeab258a0ef2f94c77984e1f163130c4ff3420b9b150e7fecd236d5b605309f",
+      "matches": true
+    },
+    {
+      "path": "recruitment/candidate.html",
+      "status": 200,
+      "expected_sha256": "2608ac784693933818e9054b8d17f7ea6fcde7244e353df0982de18f7a396ed7",
+      "served_sha256": "2608ac784693933818e9054b8d17f7ea6fcde7244e353df0982de18f7a396ed7",
+      "matches": true
+    },
+    {
+      "path": "recruitment/user-guide.html",
+      "status": 200,
+      "expected_sha256": "a8cb5358142827336d1ce80af750469042f945e81062e1b26b2c4758bbd4b131",
+      "served_sha256": "a8cb5358142827336d1ce80af750469042f945e81062e1b26b2c4758bbd4b131",
+      "matches": true
+    },
+    {
+      "path": "recruitment/careers.html",
+      "status": 200,
+      "expected_sha256": "fe3315227b4fe01f3d316c8f25649cf62e20cb29ec559f5eeab46e650c0924ae",
+      "served_sha256": "fe3315227b4fe01f3d316c8f25649cf62e20cb29ec559f5eeab46e650c0924ae",
+      "matches": true
+    },
+    {
+      "path": "admin/index.html",
+      "status": 200,
+      "expected_sha256": "a0728c867cb9a92a5e7e444d9f484b76cab47eab4a4f5783d1a6822c89810cfd",
+      "served_sha256": "a0728c867cb9a92a5e7e444d9f484b76cab47eab4a4f5783d1a6822c89810cfd",
+      "matches": true
+    },
+    {
+      "path": "admin/announcements.html",
+      "status": 200,
+      "expected_sha256": "95031591fd45767f70ec9eb969bdf62d6446a5b08cb2a0efcd2b0125b512af53",
+      "served_sha256": "95031591fd45767f70ec9eb969bdf62d6446a5b08cb2a0efcd2b0125b512af53",
+      "matches": true
+    },
+    {
+      "path": "admin/forms.html",
+      "status": 200,
+      "expected_sha256": "656dad9ad23fc2deb1e63497d2146facae10d7c2668b708270510527974a31b9",
+      "served_sha256": "656dad9ad23fc2deb1e63497d2146facae10d7c2668b708270510527974a31b9",
+      "matches": true
+    },
+    {
+      "path": "admin/maintenance.html",
+      "status": 200,
+      "expected_sha256": "17677ae97b82747f7e33bfbfa9555d3d2ad4d084ef5e5184fa979d7c4a9e5eba",
+      "served_sha256": "17677ae97b82747f7e33bfbfa9555d3d2ad4d084ef5e5184fa979d7c4a9e5eba",
+      "matches": true
+    },
+    {
+      "path": "admin/users.html",
+      "status": 200,
+      "expected_sha256": "8467abeae52c0307993925b24c060a9ede097405ea9b9b57bfcb3552e25c6aef",
+      "served_sha256": "8467abeae52c0307993925b24c060a9ede097405ea9b9b57bfcb3552e25c6aef",
+      "matches": true
+    },
+    {
+      "path": "admin/employees.html",
+      "status": 200,
+      "expected_sha256": "329c5289bbba0f4b382e44f0dc50e971db4aa0bdfd264cab48d2d842a0dd4c6d",
+      "served_sha256": "329c5289bbba0f4b382e44f0dc50e971db4aa0bdfd264cab48d2d842a0dd4c6d",
+      "matches": true
+    },
+    {
+      "path": "follow-up/index.html",
+      "status": 200,
+      "expected_sha256": "500080e7ecddef28e3931d12306c7c3427941ddf947d35f6f56859ffc9fa5948",
+      "served_sha256": "500080e7ecddef28e3931d12306c7c3427941ddf947d35f6f56859ffc9fa5948",
+      "matches": true
+    },
+    {
+      "path": "admin/templates/job-review.html",
+      "status": 200,
+      "expected_sha256": "b0872ecb3b88d9f8c68c937073b762bc7abd1e739c56277dd9f6ba2be956a150",
+      "served_sha256": "b0872ecb3b88d9f8c68c937073b762bc7abd1e739c56277dd9f6ba2be956a150",
+      "matches": true
+    },
+    {
+      "path": "admin/templates/task-handover.html",
+      "status": 200,
+      "expected_sha256": "42486ce4a6827e3e461d86803142a51f6f2ea510b644575da2f87cb345bc5165",
+      "served_sha256": "42486ce4a6827e3e461d86803142a51f6f2ea510b644575da2f87cb345bc5165",
+      "matches": true
+    },
+    {
+      "path": "admin/templates/kpi-measurement.html",
+      "status": 200,
+      "expected_sha256": "e82b158235b80ab66d0ee6092ec35164ff404caa94d5acc44447e1c526207cf9",
+      "served_sha256": "e82b158235b80ab66d0ee6092ec35164ff404caa94d5acc44447e1c526207cf9",
+      "matches": true
+    },
+    {
+      "path": "admin/templates/periodic-report.html",
+      "status": 200,
+      "expected_sha256": "33e2c6b478e47955798dada76ec812753edd27018c3c944dc19b0e6dc07359c1",
+      "served_sha256": "33e2c6b478e47955798dada76ec812753edd27018c3c944dc19b0e6dc07359c1",
+      "matches": true
+    },
+    {
+      "path": "assets/css/mobile-experience.css",
+      "status": 200,
+      "expected_sha256": "92b3e279cfba29bd1628dd52aa2ad615897581cf7571b0a3c53c59ceda0d728b",
+      "served_sha256": "92b3e279cfba29bd1628dd52aa2ad615897581cf7571b0a3c53c59ceda0d728b",
+      "matches": true
+    },
+    {
+      "path": "assets/js/dashboard-data.mjs",
+      "status": 200,
+      "expected_sha256": "62877c50dea0d174dbc010b42d0c77edc95447fbad9fddb8bdbd854ad0747887",
+      "served_sha256": "62877c50dea0d174dbc010b42d0c77edc95447fbad9fddb8bdbd854ad0747887",
+      "matches": true
+    },
+    {
+      "path": "assets/js/shell-components.js",
+      "status": 200,
+      "expected_sha256": "d24908a52315bd17a7b276e6c36919b4d263abcd6e4c6ea9d6c2c7c48538f8b9",
+      "served_sha256": "d24908a52315bd17a7b276e6c36919b4d263abcd6e4c6ea9d6c2c7c48538f8b9",
+      "matches": true
+    },
+    {
+      "path": "assets/js/data-state.mjs",
+      "status": 200,
+      "expected_sha256": "72fdd49a48eea122d9ef3e21776839902ff781a024c8a041975e0da972fcd80a",
+      "served_sha256": "72fdd49a48eea122d9ef3e21776839902ff781a024c8a041975e0da972fcd80a",
+      "matches": true
+    },
+    {
+      "path": "assets/js/recruitment-page.mjs",
+      "status": 200,
+      "expected_sha256": "3864dae060ae5fb3f576a0a96eba0abde5b3dd6413e54d4818f8dda52188cc4c",
+      "served_sha256": "3864dae060ae5fb3f576a0a96eba0abde5b3dd6413e54d4818f8dda52188cc4c",
+      "matches": true
+    },
+    {
+      "path": "assets/vendor/lucide-1.47.0.min.js",
+      "status": 200,
+      "expected_sha256": "c3291ea757ff3da0fc45a41d3ff60d61da9b257314962c5cdded94ca0df05d7a",
+      "served_sha256": "c3291ea757ff3da0fc45a41d3ff60d61da9b257314962c5cdded94ca0df05d7a",
+      "matches": true
+    },
+    {
+      "path": "assets/vendor/lucide-1.47.0-LICENSE.txt",
+      "status": 200,
+      "expected_sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+      "served_sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+      "matches": true
+    },
+    {
+      "path": "assets/css/app-theme.css",
+      "status": 200,
+      "expected_sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16",
+      "served_sha256": "89014e1f0739d43d8d6a19f33b20d61548c9ebf894aeb9fed5c44bb98f61bf16",
+      "matches": true
+    },
+    {
+      "path": "assets/css/design-system.css",
+      "status": 200,
+      "expected_sha256": "696dc01a906b6559399bd26d1de46de4f862c21c4b88a904b5b28f4fdc567c50",
+      "served_sha256": "696dc01a906b6559399bd26d1de46de4f862c21c4b88a904b5b28f4fdc567c50",
+      "matches": true
+    },
+    {
+      "path": "assets/css/typography.css",
+      "status": 200,
+      "expected_sha256": "376c14f98b78eff708dbbbeaf13c93456f13cc1a193cecf644c5846a0f2c9087",
+      "served_sha256": "376c14f98b78eff708dbbbeaf13c93456f13cc1a193cecf644c5846a0f2c9087",
+      "matches": true
+    },
+    {
+      "path": "assets/js/supabase-config.js",
+      "status": 200,
+      "expected_sha256": "bed5a5ae24d3a2385c7f2715e3b432fc2613d8fc890fff3847aeffdaa413fc6b",
+      "served_sha256": "bed5a5ae24d3a2385c7f2715e3b432fc2613d8fc890fff3847aeffdaa413fc6b",
+      "matches": true
+    }
+  ]
+}
