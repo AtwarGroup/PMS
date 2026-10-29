@@ -20,9 +20,10 @@
   };
   if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261027-bfcache',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
-    if(document.querySelector('link[data-atwar-typography]'))return;
-    const style=document.createElement('link');style.rel='stylesheet';style.dataset.atwarTypography='1';
-    style.href=new URL('css/typography.css?v=2.8.4',assetRoot).href;
+    const style=document.querySelector('link[data-atwar-typography]')||document.createElement('link');
+    style.rel='stylesheet';style.dataset.atwarTypography='1';
+    const href=new URL('css/typography.css?v=2.8.4',assetRoot).href;
+    if(style.href!==href)style.href=href;
     document.head.append(style);
   };
   const loadVisualContract=()=>{loadCanonicalTheme();loadCanonicalTypography()};

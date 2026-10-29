@@ -16,3 +16,28 @@ No complete baseline measurements, database backup/restore validation, route cov
 Resume: restore working Chromium execution or use another supported isolated browser environment; verify actual deployed assets against source; inspect repository instructions and CI gates; inventory all current routes (plan's 50 are preliminary); capture cold/warm timing and role/state coverage with outbound integrations isolated; validate rollback before application changes. Then implement shared components, route coverage, evidence-based performance changes, full acceptance and release gates in approved order. Do not deploy until gates pass. Preserve identity, audit-log authorization, approval cycles, passwords and salary rules. No new costs or real test messages.
 
 Window closes 31 October 2026 22:00 Asia/Riyadh; reserve at least two hours for rollback. This checkpoint does not represent continuous unattended execution or completed remediation.
+
+## Continued execution — 29 October 2026
+
+Production baseline check: index.html, landing.html, assets/js/shell-components.js, assets/css/app-theme.css and assets/js/data-state.mjs were fetched and compared byte-for-byte to 21e6af3; all matched. This verifies those assets, not the identity of every deployed file or database state.
+
+Current source inventory is 51 application HTML routes (new recruitment guide included). Separate generated/lab fixtures account for the broader system audit's 61 HTML files. Route inventory is recorded in 2026-10-29-route-inventory.md; acceptance is still pending, not inferred from inclusion of shared CSS.
+
+Implemented on the isolated branch / draft PR #180:
+- Start the canonical theme and typography request while parsing; preserve final cascade order and avoid assigning an unchanged CSS URL again.
+- Share accessible loading/error/empty status semantics; ignore duplicate retry activation and recover from rejected callbacks without an unhandled rejection.
+- Notifications display loading until the first read settles, including retry; empty results appear only after a successful read.
+- Update all existing protected-page shell cache references to 2.8.6 and refresh the shared data-state import cache references. Three existing cache-contract assertions were updated consistently.
+- Add isolated browser coverage for safe text, loading/error/empty, duplicate retry prevention and recovery at desktop and 412/390/360 widths. Add a parsing-blocked test for early theme delivery and one canonical CSS request.
+
+Validation actually completed:
+- All 137 tests/*.mjs were executed locally: 134 passed initially; three expected-version assertions failed after the cache bump and passed on rerun after updating to the new version.
+- Separate system syntax/link audit passed: 61 HTML files and 282 JavaScript modules.
+- Local PostgreSQL emulation: fleet database, integrity, operations, review, private storage and feedback suites passed; recruitment database, policy, approved workflow/release and mocked email suites passed. No live business writes or actual emails were used.
+- GitHub run 40907311165: system/workflow audit passed; fleet/recruitment database workflow step, fleet browser workflow and notification history recovery passed. Remaining browser/theme steps were still running when this entry was written; final status must be checked before release.
+
+Local Chromium blocker diagnosed: socket() is denied in the execution environment. Reinstallation and restricted launch options did not resolve it. Existing GitHub CI can run Chromium, so browser validation continues there rather than treating local launch as an application failure.
+
+Not completed: comparable cold/warm performance distribution, physical Android test, all per-route dynamic state/role acceptance, verified operational backup/restore and full-system release readiness. No live deployment, maintenance, password, approval, salary, database or integration changes have been made. The next step is to check final browser CI results (including the additional early-theme test), address failures, then continue the approved per-unit state and layout work. Do not treat this initial shared-component package as full completion of the weekend plan.
+
+CI found a real cascade regression in the initial early-load change: typography remained ahead of inline page styles because its previous loader returned when a link existed. Corrected to move the same typography link after module CSS at DOMContentLoaded, without changing its URL. Full browser gates must rerun; the initial failed run is not accepted.
