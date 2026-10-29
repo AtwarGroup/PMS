@@ -17,6 +17,7 @@ if(width===390&&await page.locator('.atwar-sidebar').count()){
   await page.evaluate(order=>{const link=[...document.querySelectorAll('link[rel="stylesheet"]')].find(e=>new URL(e.href).pathname.endsWith('/mobile-experience.css'));if(!link)throw Error('Mobile stylesheet missing');if(order==='first')document.head.prepend(link);else document.head.append(link)},order);
   await page.locator('.atwar-mobile-menu').click();
   assert.equal(await page.locator('.atwar-mobile-menu').getAttribute('aria-expanded'),'true',`${rel}: drawer must open`);
+  await page.waitForFunction(()=>{const r=document.querySelector('.atwar-sidebar').getBoundingClientRect();return r.x>=-1&&r.right<=innerWidth+1});
   const drawer=await page.locator('.atwar-sidebar').evaluate(sidebar=>{
    const luminance=c=>c.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
    const contrast=color=>{const light=luminance(color.match(/[\d.]+/g).slice(0,3).map(Number)),dark=luminance([12,35,66]);return(Math.max(light,dark)+.05)/(Math.min(light,dark)+.05)};
