@@ -25,5 +25,9 @@ esac
   for(const extra of [{FAIL_RESTORE:'yes'},{FAIL_SQL:'yes'},{RESTORE_DRILL_DB_URL:env.SUPABASE_DB_URL},{ALLOW_RESTORE_DRILL:'no'}]) {
     result=run(extra); assert.notEqual(result.status,0); assert.doesNotMatch(result.stdout,/restore drill passed/);
   }
-  console.log('Restore execution guards and failure propagation passed.');
+  fs.rmSync(env.SQL_CAPTURE,{force:true});
+  fs.mkdirSync(path.join(dir,'storage','files'));fs.writeFileSync(path.join(dir,'storage','files','bad.bin'),'bad');
+  fs.writeFileSync(path.join(dir,'storage','storage-manifest.json'),JSON.stringify({version:2,bucketCount:1,buckets:[{id:'files',objectCount:1,objects:[{object:'bad.bin',size:3,sha256:'0'.repeat(64)}]}]}));
+  result=run({});assert.notEqual(result.status,0);assert.equal(fs.existsSync(env.SQL_CAPTURE),false,'Corrupt attachments must stop the drill before database writes');
+  console.log('Restore execution guards, attachment preflight before database writes and failure propagation passed.');
 } finally {fs.rmSync(dir,{recursive:true,force:true});}
