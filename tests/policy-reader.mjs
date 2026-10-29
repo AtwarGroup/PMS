@@ -31,3 +31,13 @@ const salaryHTML=renderTravelReader(salarySections,renderPolicyBody,()=>'',{code
 assert(!salaryHTML.includes('compensation-section-7'));assert(salaryHTML.includes('data-travel-target="compensation-section-8"'));assert(!salaryHTML.includes('الانتداب ومستحقاته'));assert(!salaryHTML.includes('<colgroup>'));assert(salaryHTML.includes('<th scope="col">السعودي</th>'));
 assert(renderTravelReader(sections,renderPolicyBody,()=>'',{code:'POL-TRAVEL'}).includes('<colgroup>'));
 console.log('PASS compensation reader: correct index, archived section excluded, references keep number 8, salary-row search, original matrix columns');
+
+const leaveContent=Array.from({length:30},(_,i)=>({id:'leave-'+(i+1),title:i<27?(i+1)+' عنوان القسم':'الملحق '+(i-26),body:i===29?'| الجنسية | قيمة البدل |\n| --- | --- |\n| مصر | 900 |\n| اليمن | 2000 |':'نص القسم '+(i+1)}));
+const leaveOriginal=JSON.stringify(leaveContent),leaveSections=policyReadingSections(leaveContent,'POL-LEAVE');
+assert.deepEqual(policyReaderGroups(leaveSections,'POL-LEAVE').flatMap(g=>g[1]),Array.from({length:30},(_,i)=>i+1));
+const leaveHTML=renderTravelReader(leaveSections,renderPolicyBody,()=>'',{code:'POL-LEAVE'});
+assert.equal((leaveHTML.match(/data-travel-target=/g)||[]).length,30);assert.equal((leaveHTML.match(/data-travel-panel=/g)||[]).length,30);
+assert(!leaveHTML.includes('<colgroup>'));assert(leaveHTML.includes('<th scope="col">قيمة البدل</th>'));assert(!leaveHTML.includes('1 عنوان القسم'));
+assert.deepEqual(searchPolicy(leaveSections,'٢٠٠٠',{code:'POL-LEAVE'})[0].cells,['اليمن','2000']);
+assert.equal(JSON.stringify(leaveContent),leaveOriginal);
+console.log('PASS leave reader: all 30 sections, seven index groups, table-row search, variable columns and unchanged source');

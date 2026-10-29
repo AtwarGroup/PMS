@@ -89,6 +89,7 @@ jobs:
           node tests/browser/theme-runtime.cjs
           node tests/browser/policy-editor.cjs
           node tests/browser/compensation-reader.cjs
+          node tests/browser/leave-reader.cjs
           PORT=4174 node scripts/recruitment-preview.mjs >/tmp/atwar-recruitment-theme.log 2>&1 &
           recruitment_pid=$!
           trap 'kill "$server_pid" "$recruitment_pid"' EXIT
