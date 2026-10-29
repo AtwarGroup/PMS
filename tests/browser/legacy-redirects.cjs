@@ -18,7 +18,7 @@ const cases=[
    const url=new URL(route.request().url());
    if(url.hostname!=='127.0.0.1')return route.abort();
    if(url.pathname===sourcePath)return route.fulfill({body:fs.readFileSync(path.join(root,url.pathname)),contentType:'text/html'});
-   return route.fulfill({body:'<!doctype html><html lang="ar"><head><title>Isolated destination</title></head><body><h1>وجهة اختبار معزولة</h1></body></html>',contentType:'text/html'});
+   return route.fulfill({body:'<!doctype html><html lang="ar"><head><meta charset="UTF-8"><title>Isolated destination</title></head><body><h1>وجهة اختبار معزولة</h1></body></html>',contentType:'text/html'});
   });
   for(const [source,target]of cases){
    sourcePath=new URL(source,'http://127.0.0.1:8765/').pathname;
