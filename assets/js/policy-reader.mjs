@@ -14,13 +14,34 @@ export function searchPolicy(sections, query, options = {}) {
   return matches.map(({text,cells})=>({id:section.id,number,title:section.title,cells,clause:text.match(/^(\d+\.\d+)/)?.[1] || '',text}));
  });
 }
-// Presentation only: keep the stored policy text intact.
-export function renderTravelBody(body, renderBody, options = {}) {
- let html=renderBody(body);
- if(body.startsWith('### بيانات الإصدار والاعتماد\n')) {
-  const end=body.indexOf('\n\n');
-  if(end>0){const rows=body.slice(0,end).split('\n').slice(1).map(line=>{const at=line.indexOf(':');return at>0?`<div><dt>${esc(line.slice(0,at))}</dt><dd>${esc(line.slice(at+1).trim())}</dd></div>`:`<div><dd>${esc(line)}</dd></div>`;}).join('');html=`<div class="travel-meta"><h3>بيانات الإصدار والاعتماد</h3><dl>${rows}</dl></div>`+renderBody(body.slice(end+2));}
+// Presentation only: extract document control without changing stored content.
+export function policyOpening(body, document = {}) {
+ let text=body,rows=[];
+ if(text.startsWith('### بيانات الإصدار والاعتماد\n')){
+  const end=text.indexOf('\n\n');
+  if(end>0){rows=text.slice(0,end).split('\n').slice(1).map(line=>{const at=line.indexOf(':');return at>0?[line.slice(0,at).trim(),line.slice(at+1).trim()]:['بيان إضافي',line];});text=text.slice(end+2);}
+ }else{
+  const lines=text.split('\n'),cells=line=>line.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+  if(lines[0]?.trim()==='| بيان الوثيقة | التفاصيل |'&&/^\|[\s:|\-]+\|$/.test(lines[1]||'')){
+   let end=2;while(end<lines.length&&lines[end].startsWith('|')){const row=cells(lines[end]);if(row.length!==2)return {body,rows:[],extra:[]};rows.push(row);end++;}text=lines.slice(end).join('\n').trimStart();
+  }
  }
+ const take=(pattern,fallbackLabel,fallback)=>{const index=rows.findIndex(([label])=>pattern.test(label));return index<0?[fallbackLabel,fallback||'غير محدد']:rows.splice(index,1)[0];};
+ const main=[take(/^رمز السياسة$/,'رمز السياسة',document.code),take(/^رقم الإصدار$/,'رقم الإصدار',document.version),take(/^(حالة الوثيقة|حالة السياسة)$/,'حالة السياسة',document.status),take(/^صاحب.*اعتماد.*$/,'صاحب صلاحية الاعتماد',document.authority)];
+ const combined=rows.findIndex(([label])=>label==='تاريخ الإصدار والنفاذ');
+ if(combined>=0)main.push(rows.splice(combined,1)[0]);
+ else main.push(take(/^تاريخ الإصدار$/,'تاريخ الإصدار',document.issued),take(/^تاريخ (النفاذ|السريان)$/,'تاريخ النفاذ',document.effective));
+ return {body:text,rows:main,extra:rows};
+}
+const metadataRows=rows=>rows.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('');
+export function renderTravelBody(body, renderBody, options = {}) {
+ const opening=options.overview||body.startsWith('### بيانات الإصدار والاعتماد\n');
+ let html;
+ if(opening){
+  const data=policyOpening(body,{code:options.code,...options.document});
+  const purpose=/^### (الغرض|الغرض من السياسة)\n/.test(data.body)?data.body:'### الغرض من السياسة\n'+data.body;
+  html=`<div class="travel-meta"><h3>بيانات الإصدار والاعتماد</h3><dl>${metadataRows(data.rows)}</dl>${data.extra.length?`<details class="policy-document-control"><summary>بيانات توثيق إضافية</summary><dl>${metadataRows(data.extra)}</dl></details>`:''}</div>`+renderBody(purpose);
+ }else html=renderBody(body);
  html=html.replace(/<p>(\d+\.\d+)(\s+)([\s\S]*?)<\/p>/g,(_,n,space,text)=>`<p class="travel-clause"><span class="travel-clause-number" dir="ltr">${n}</span>${space}<span class="travel-clause-text">${text}</span></p>`);
  return options.code&&options.code!=='POL-TRAVEL'?html:html.replace('<table class="policy-data-table">','<table class="policy-data-table"><colgroup><col style="width:80px"><col><col style="width:120px"></colgroup>');
 }
@@ -33,7 +54,7 @@ export function policyReaderGroups(sections, code='POL-TRAVEL') {
 export function renderTravelReader(sections, renderBody, notes, options = {}) {
  const indexGroups=policyReaderGroups(sections,options.code);
 
- return `<div class="travel-reader" data-policy-code="${esc(options.code||'POL-TRAVEL')}"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${indexGroups.map(([title,numbers],groupIndex)=>`<details ${groupIndex===0?'open':''}><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(readerTitle(section.title,options.code))}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(readerTitle(section.title,options.code))}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderTravelBody(section.body,renderBody,options)}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
+ return `<div class="travel-reader" data-policy-code="${esc(options.code||'POL-TRAVEL')}"><section class="travel-search" aria-label="البحث داخل السياسة"><label for="travelSearch">البحث في السياسة</label><div class="travel-search-field"><input id="travelSearch" type="search" placeholder="ابحث برقم البند أو كلمة في كامل السياسة…" autocomplete="off" aria-controls="travelResults"><button type="button" class="atwar-btn" id="travelClear">مسح البحث</button></div><p class="travel-search-status" id="travelSearchStatus" role="status" aria-live="polite"></p><div id="travelResults" class="travel-results" hidden></div></section><div class="travel-reader-grid"><aside class="travel-index" id="travelIndex" tabindex="-1"><h2>فهرس السياسة</h2><p>${sections.length} قسمًا · صفحة قراءة واحدة</p><nav aria-label="فهرس السياسة">${indexGroups.map(([title,numbers],groupIndex)=>`<details ${groupIndex===0?'open':''}><summary>${title}</summary>${sections.filter(s=>numbers.includes(s.number)).map(({section,number})=>`<button type="button" data-travel-target="${esc(section.id)}"><span>${String(number).padStart(2,'0')}</span>${esc(readerTitle(number===1?'الغرض من السياسة':section.title,options.code))}</button>`).join('')}</details>`).join('')}</nav></aside><div class="travel-reading"><div class="travel-controls"><button class="atwar-btn" type="button" id="travelExpand">فتح جميع الأقسام</button><button class="atwar-btn" type="button" id="travelCollapse">طيّ الجميع</button></div>${sections.map(({section,number},index)=>`<details class="travel-section" data-travel-panel="${esc(section.id)}" ${index===0?'open':''}><summary><span class="travel-section-number">${String(number).padStart(2,'0')}</span><h2>${esc(readerTitle(number===1?'الغرض من السياسة':section.title,options.code))}</h2></summary><div class="travel-section-content"><div class="policy-body">${renderTravelBody(section.body,renderBody,{...options,overview:number===1})}</div>${notes(section)}<button type="button" class="travel-back-index">العودة للفهرس ↑</button></div></details>`).join('')}</div></div></div>`;
 }
 export function wireTravelReader(host, sections) {
  const input=host.querySelector('#travelSearch'); if(!input)return;
@@ -77,6 +98,7 @@ export function wireTravelReader(host, sections) {
   clearHighlights();if(input.value.trim())highlight(panel,input.value);
   const clause=match?.clause;
   const target=clause?[...panel.querySelectorAll('.policy-body p')].find(p=>p.textContent.trim().startsWith(clause+' ')):null;
+  const firstMark=panel.querySelector('mark.travel-match');if(firstMark){let parent=firstMark.parentElement;while(parent&&parent!==panel){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement;}}
   const visibleMark=[...panel.querySelectorAll('mark.travel-match')].find(mark=>mark.getClientRects().length);
   const focus=target||visibleMark||panel.querySelector('summary');
   focus.setAttribute('tabindex','-1');focus.focus({preventScroll:true});scroll(focus);
@@ -97,7 +119,7 @@ export function wireTravelReader(host, sections) {
  host.querySelector('#travelExpand').onclick=()=>panels.forEach(panel=>panel.open=true);
  host.querySelector('#travelCollapse').onclick=()=>{panels.forEach(panel=>panel.open=false);nav.forEach(button=>{button.classList.remove('active');button.removeAttribute('aria-current');});};
  host.querySelectorAll('.travel-back-index').forEach(button=>button.onclick=()=>{const index=host.querySelector('#travelIndex');index.focus({preventScroll:true});scroll(index);});
- const print=()=>{const state=panels.map(p=>p.open);panels.forEach(p=>p.open=true);return()=>panels.forEach((p,i)=>p.open=state[i]);};
+ const print=()=>{const items=[...panels,...host.querySelectorAll('.policy-document-control')],state=items.map(p=>p.open);items.forEach(p=>p.open=true);return()=>items.forEach((p,i)=>p.open=state[i]);};
  let restore;const before=()=>{if(!restore)restore=print();},after=()=>{restore?.();restore=null;};
  window.addEventListener('beforeprint',before);window.addEventListener('afterprint',after);
  host._disposeTravelReader=()=>{clearTimeout(timer);window.removeEventListener('beforeprint',before);window.removeEventListener('afterprint',after);};
