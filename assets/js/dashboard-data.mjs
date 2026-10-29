@@ -1,5 +1,8 @@
 import {readAllRows} from './paged-read.mjs?v=2.8.0';
 
+// Summary/approval inputs only. Keep task bodies and legacy payloads off the home page.
+export const DASHBOARD_TASK_COLUMNS = 'id,status,assignee_id,creator_id,delegated_by_id,due_date,start_date,completed_at,actual_end_date,updated_at,task_type,project_id,deleted_at,approval_commissioner_id';
+
 // A failed source stays unavailable; it must never become a successful empty list.
 export async function readDashboardData(sb, profile, allowed = () => true) {
   const read = async (makeQuery, enabled = true) => {
@@ -8,7 +11,7 @@ export async function readDashboardData(sb, profile, allowed = () => true) {
     catch (error) { return {data: null, error}; }
   };
   const [tasks, followups, people, projects, announcements] = await Promise.all([
-    read(() => sb.from('tasks').select('*').is('deleted_at', null).order('updated_at', {ascending:false}), allowed('tasks')),
+    read(() => sb.from('tasks').select(DASHBOARD_TASK_COLUMNS).is('deleted_at', null).order('updated_at', {ascending:false}), allowed('tasks')),
     read(() => sb.from('follow_ups').select('*').eq('owner_id', profile.id), allowed('workspace')),
     read(() => {
       let query = sb.from('profiles').select('id,manager_id');
