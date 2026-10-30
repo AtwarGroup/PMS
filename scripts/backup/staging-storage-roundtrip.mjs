@@ -7,7 +7,7 @@ import {promisify} from 'node:util';
 import {verifyStorageBackup} from './verify-storage-backup.mjs';
 
 const digest=b=>createHash('sha256').update(b).digest('hex');
-export async function stagingStorageRoundtrip({directory,origin,key,bucket,fetchImpl=fetch,verifyPrivateAccess}) {
+export async function stagingStorageRoundtrip({directory,origin,key,bucket,fetchImpl=fetch,verifyPrivateAccess,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))}) {
   if(new URL(origin).origin!=='https://eeaedzisysjarwvolbwq.supabase.co')throw Error('Fixed staging target required');
   if(!key||!/^restore-drill-(production|staging)-[0-9]+$/.test(bucket))throw Error('Scoped temporary bucket required');
   await verifyStorageBackup(directory);
@@ -15,7 +15,7 @@ export async function stagingStorageRoundtrip({directory,origin,key,bucket,fetch
   if(manifest.version!==2)throw Error('Checksummed manifest v2 required');
   const request=async(route,options={})=>{
     const r=await fetchImpl(origin+'/storage/v1/'+route,{...options,signal:AbortSignal.timeout(60000),headers:{Authorization:'Bearer '+key,apikey:key,...options.headers}});
-    if(!r.ok)throw Error('Staging storage operation failed: '+r.status);
+    if(!r.ok){const error=Error('Staging storage operation failed: '+r.status);error.status=r.status;throw error;}
     return r;
   };
   const existing=await (await request('bucket')).json();
@@ -41,7 +41,10 @@ export async function stagingStorageRoundtrip({directory,origin,key,bucket,fetch
   } finally {
     if(created){
       await request('bucket/'+bucket+'/empty',{method:'POST'});
-      await request('bucket/'+bucket,{method:'DELETE'});
+      for(let attempt=0;attempt<3;attempt++){
+        try {await request('bucket/'+bucket,{method:'DELETE'});break;}
+        catch(error){if(error.status!==400||attempt===2)throw error;await wait(5000*(attempt+1));}
+      }
       const remaining=await (await request('bucket')).json();
       if(remaining.some(b=>b.id===bucket))throw Error('Temporary bucket cleanup incomplete');
     }
