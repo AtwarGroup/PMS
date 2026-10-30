@@ -87,15 +87,17 @@ jobs:
             fi
             docker run -d --name atwar-isolated --network none --volume "$work:/backup:ro" -e POSTGRES_PASSWORD="$(openssl rand -hex 24)" supabase/postgres:17.6.1.136 postgres -c config_file=/etc/postgresql/postgresql.conf -c cron.database_name=atwar_restore -c cron.launch_active_jobs=off > /dev/null
             ready=no
+            stable=0
             for attempt in $(seq 1 60); do
-              if test "$(docker exec atwar-isolated cat /proc/1/comm 2>/dev/null)" = postgres && docker exec atwar-isolated pg_isready -U supabase_admin >/dev/null 2>&1; then ready=yes; break; fi
+              if docker exec atwar-isolated psql -U supabase_admin -d postgres -X -qAt -c 'SELECT 1' >/dev/null 2>&1; then stable=$((stable+1)); else stable=0; fi
+              if test "$stable" -ge 5; then ready=yes; break; fi
               sleep 1
             done
             test "$ready" = yes || { echo "Isolated database did not become ready"; exit 1; }
             docker exec atwar-isolated createdb -U supabase_admin atwar_restore
             node scripts/backup/prepare-restore-roles.mjs "$work/roles.sql" | docker exec -i atwar-isolated psql -U supabase_admin -d atwar_restore -v ON_ERROR_STOP=1 > "$work/roles-restore.log" 2>&1
             if ! docker exec atwar-isolated pg_restore -U supabase_admin -d atwar_restore --exit-on-error --single-transaction --clean --if-exists --no-owner /backup/database.dump > "$work/restore.log" 2>&1; then
-              python3 -c 'import sys; s=open(sys.argv[1]).read().lower(); kinds=[x for x in ["server closed the connection unexpectedly","server closed connection unexpectedly","connection to server","permission denied","does not exist","already exists","cannot drop","syntax error","could not open input file","database system is starting up"] if x in s]; print("Isolated restore diagnostic classes: "+str(kinds))' "$work/restore.log"
+              python3 -c 'import sys; s=open(sys.argv[1]).read().lower(); kinds=[x for x in ["server closed the connection unexpectedly","server closed connection unexpectedly","connection to server","permission denied","does not exist","already exists","cannot drop","syntax error","could not open input file","could not open input","database system is starting up","input file","unsupported version","read-only file system","no space left"] if x in s]; print("Isolated restore diagnostic classes: "+str(kinds))' "$work/restore.log"
               echo "Isolated restore failed. Neither hosted database was modified."
               exit 1
             fi
