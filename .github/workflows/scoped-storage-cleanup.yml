@@ -1,0 +1,34 @@
+name: ATWAR Scoped Storage Test Cleanup
+on:
+  push:
+    branches: [quality/cleanup-storage-test-20261030]
+permissions:
+  contents: read
+concurrency:
+  group: atwar-restore-drill
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      STAGE_URL: ${{ secrets.RESTORE_DRILL_SUPABASE_URL }}
+      STAGE_KEY: ${{ secrets.RESTORE_DRILL_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Delete only the verified empty private test bucket
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const origin=process.env.STAGE_URL,bucket='restore-drill-production-40976623851';
+          assert.equal(new URL(origin).origin,'https://eeaedzisysjarwvolbwq.supabase.co');
+          const headers={apikey:process.env.STAGE_KEY,Authorization:'Bearer '+process.env.STAGE_KEY};
+          const request=(route,options={})=>fetch(origin+'/storage/v1/'+route,{...options,headers:{...headers,...options.headers},signal:AbortSignal.timeout(30000)});
+          const info=await request('bucket/'+bucket);
+          if(info.status===404){console.log('Prior test bucket already absent.');process.exit(0);}
+          assert(info.ok);assert.equal((await info.json()).public,false);
+          const list=await request('object/list/'+bucket,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefix:'',limit:1,offset:0})});
+          assert(list.ok);assert.equal((await list.json()).length,0,'Refusing to remove a nonempty bucket');
+          const result=await request('bucket/'+bucket,{method:'DELETE'});
+          if(!result.ok){const error=await result.json();console.log(JSON.stringify({status:result.status,error:error.error,message:error.message}));throw Error('Scoped test bucket cleanup failed');}
+          console.log('Verified empty private test bucket removed.');
+          NODE
