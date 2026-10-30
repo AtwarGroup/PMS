@@ -91,3 +91,6 @@ This closes the representative hosted keyboard check, not a universal accessibil
 2. Physical Android acceptance and representative end-to-end page timings: no physical Android device is exposed to the execution tools. Prior phone drawer evidence and viewport simulations remain complete but narrower evidence. Do not rerun them as a substitute.
 3. Production promotion: preserve as a separate gated action after the applicable acceptance is complete. Never promote staging trial/owner auth or blindly copy concurrent IT/recruitment work.
 The deployment window ends 2026-10-31 22:00 Asia/Riyadh. No outage or new paid resource was used. No continuous/background job remains.
+
+## Authentication handoff update
+Secure browser authentication selected the email/password method and submitted credentials without exposing them to the agent. Supabase then displayed an hCaptcha challenge. Dashboard sign-in is not yet verified and no Auth setting was changed. The challenge requires user completion in the retained cloud-browser tab; do not switch methods or retry credential entry automatically.
