@@ -8,6 +8,7 @@ const cases=[
  ['follow-up/index.html','/workspace/index.html'],
  ['index.html','/landing.html'],
  ['my-day/index.html','/tasks/index.html?scope=TODAY&owner=me'],
+ ['organization/index.html','/admin/employees.html#hierarchy'],
  ['team/index.html?q=synthetic#details','/admin/employees.html?q=synthetic#details']
 ];
 (async()=>{
@@ -27,6 +28,6 @@ const cases=[
    assert.equal(new URL(page.url()).pathname+new URL(page.url()).search+new URL(page.url()).hash,target);
    assert(await page.getByRole('heading',{name:'وجهة اختبار معزولة'}).isVisible());
   }
-  console.log('PASS: all six application redirect routes; correct scope/owner and team query/hash retained; no backend or external traffic.');
+  console.log('PASS: all seven application redirect routes; correct scope/owner and team query/hash retained; no backend or external traffic.');
  }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exit(1)});
