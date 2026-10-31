@@ -1,0 +1,398 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-31T12:29:38.743Z",
+  "origin": "https://atwar-one-staging.mbasunbol.chatgpt.site",
+  "cohort": "cloud-desktop",
+  "viewport": {
+    "width": 1363,
+    "height": 936
+  },
+  "protocol": "sequential warm-cache navigation, one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance",
+  "pages": {
+    "home": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 4150.1
+        },
+        {
+          "state": "ready",
+          "ms": 4326.8
+        },
+        {
+          "state": "ready",
+          "ms": 5346
+        },
+        {
+          "state": "ready",
+          "ms": 5346.4
+        },
+        {
+          "state": "ready",
+          "ms": 4514.4
+        },
+        {
+          "state": "ready",
+          "ms": 4329
+        },
+        {
+          "state": "ready",
+          "ms": 4329.7
+        },
+        {
+          "state": "ready",
+          "ms": 4330
+        },
+        {
+          "state": "ready",
+          "ms": 4330.1
+        },
+        {
+          "state": "ready",
+          "ms": 4330.1
+        },
+        {
+          "state": "ready",
+          "ms": 4329.5
+        },
+        {
+          "state": "ready",
+          "ms": 4330.5
+        },
+        {
+          "state": "ready",
+          "ms": 4329.8
+        },
+        {
+          "state": "ready",
+          "ms": 4332.5
+        },
+        {
+          "state": "ready",
+          "ms": 5342.4
+        },
+        {
+          "state": "ready",
+          "ms": 4865
+        },
+        {
+          "state": "ready",
+          "ms": 4328.1
+        },
+        {
+          "state": "ready",
+          "ms": 4329.5
+        },
+        {
+          "state": "ready",
+          "ms": 4330
+        },
+        {
+          "state": "ready",
+          "ms": 4330.2
+        },
+        {
+          "state": "ready",
+          "ms": 4330.4
+        },
+        {
+          "state": "ready",
+          "ms": 4330.6
+        },
+        {
+          "state": "ready",
+          "ms": 4329.8
+        },
+        {
+          "state": "ready",
+          "ms": 4328.3
+        },
+        {
+          "state": "ready",
+          "ms": 4331.6
+        },
+        {
+          "state": "ready",
+          "ms": 4329.2
+        },
+        {
+          "state": "ready",
+          "ms": 6363.5
+        },
+        {
+          "state": "ready",
+          "ms": 4330.4
+        },
+        {
+          "state": "ready",
+          "ms": 4329.8
+        },
+        {
+          "state": "ready",
+          "ms": 4329.7
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 3223.5
+      }
+    },
+    "tasks": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 8313.8
+        },
+        {
+          "state": "ready",
+          "ms": 7383.4
+        },
+        {
+          "state": "ready",
+          "ms": 8504
+        },
+        {
+          "state": "ready",
+          "ms": 8195.8
+        },
+        {
+          "state": "ready",
+          "ms": 9945.7
+        },
+        {
+          "state": "ready",
+          "ms": 7382.6
+        },
+        {
+          "state": "ready",
+          "ms": 7379.7
+        },
+        {
+          "state": "ready",
+          "ms": 7379.8
+        },
+        {
+          "state": "ready",
+          "ms": 7378.2
+        },
+        {
+          "state": "ready",
+          "ms": 7380.3
+        },
+        {
+          "state": "ready",
+          "ms": 7376.7
+        },
+        {
+          "state": "ready",
+          "ms": 7380.5
+        },
+        {
+          "state": "ready",
+          "ms": 9673
+        },
+        {
+          "state": "ready",
+          "ms": 5997
+        },
+        {
+          "state": "ready",
+          "ms": 7399.4
+        },
+        {
+          "state": "ready",
+          "ms": 7379.8
+        },
+        {
+          "state": "ready",
+          "ms": 7377.4
+        },
+        {
+          "state": "ready",
+          "ms": 7378.8
+        },
+        {
+          "state": "ready",
+          "ms": 7376.6
+        },
+        {
+          "state": "ready",
+          "ms": 8389
+        },
+        {
+          "state": "ready",
+          "ms": 8400.1
+        },
+        {
+          "state": "ready",
+          "ms": 7376.9
+        },
+        {
+          "state": "ready",
+          "ms": 7380
+        },
+        {
+          "state": "ready",
+          "ms": 7380.3
+        },
+        {
+          "state": "ready",
+          "ms": 7376.8
+        },
+        {
+          "state": "ready",
+          "ms": 7381.3
+        },
+        {
+          "state": "ready",
+          "ms": 7378
+        },
+        {
+          "state": "ready",
+          "ms": 7381.2
+        },
+        {
+          "state": "ready",
+          "ms": 8392
+        },
+        {
+          "state": "ready",
+          "ms": 7262.2
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 8427.9
+      }
+    },
+    "workspace": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 5030.9
+        },
+        {
+          "state": "ready",
+          "ms": 5346.1
+        },
+        {
+          "state": "ready",
+          "ms": 5346.4
+        },
+        {
+          "state": "ready",
+          "ms": 5345.8
+        },
+        {
+          "state": "ready",
+          "ms": 5346.6
+        },
+        {
+          "state": "ready",
+          "ms": 5345.4
+        },
+        {
+          "state": "ready",
+          "ms": 4865.1
+        },
+        {
+          "state": "ready",
+          "ms": 7376.9
+        },
+        {
+          "state": "ready",
+          "ms": 5346.6
+        },
+        {
+          "state": "ready",
+          "ms": 5347
+        },
+        {
+          "state": "ready",
+          "ms": 5343.2
+        },
+        {
+          "state": "ready",
+          "ms": 5345.3
+        },
+        {
+          "state": "ready",
+          "ms": 5399.8
+        },
+        {
+          "state": "ready",
+          "ms": 5291.9
+        },
+        {
+          "state": "ready",
+          "ms": 5346.7
+        },
+        {
+          "state": "ready",
+          "ms": 5346.5
+        },
+        {
+          "state": "ready",
+          "ms": 5345.2
+        },
+        {
+          "state": "ready",
+          "ms": 6361.7
+        },
+        {
+          "state": "ready",
+          "ms": 6362.9
+        },
+        {
+          "state": "ready",
+          "ms": 5029.2
+        },
+        {
+          "state": "ready",
+          "ms": 5346.9
+        },
+        {
+          "state": "ready",
+          "ms": 5335.7
+        },
+        {
+          "state": "ready",
+          "ms": 6362.2
+        },
+        {
+          "state": "ready",
+          "ms": 5346.3
+        },
+        {
+          "state": "ready",
+          "ms": 5346.8
+        },
+        {
+          "state": "ready",
+          "ms": 5345.1
+        },
+        {
+          "state": "ready",
+          "ms": 5346.5
+        },
+        {
+          "state": "ready",
+          "ms": 6362.6
+        },
+        {
+          "state": "ready",
+          "ms": 5346.8
+        },
+        {
+          "state": "ready",
+          "ms": 4868.8
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 5341.5
+      }
+    }
+  },
+  "complete": true
+}
