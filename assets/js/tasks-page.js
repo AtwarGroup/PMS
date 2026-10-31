@@ -159,7 +159,7 @@ function selectedTask(){
 
 function scrollSelectedTaskIntoView(focusDetails=false){
   if(!selectedTaskKey)return;
-  const el=document.querySelector(`[data-task-key="${CSS.escape(selectedTaskKey)}"]`);
+  const el=document.querySelector(`[data-task-key="${CSS.escape(selectedTaskKey)}"]`)||document.querySelector(`[data-kanban-task="${CSS.escape(selectedTaskKey)}"]`);
   if(el){
     el.scrollIntoView({behavior:'smooth',block:'center'});
     if(focusDetails){
@@ -2282,6 +2282,7 @@ async function handleKanbanDrop(taskKey,targetStatus){
 
 function renderKanban(rows){
   const host=document.getElementById('kanbanBoard');if(!host)return;
+  if(taskViewMode!=='KANBAN'||isCompletedArchiveView()){host.replaceChildren();return;}
   const isOverdue=isCurrentlyOverdue;
   const columns=[
     {status:'قيد الانتظار',label:'لم تبدأ',color:'#64748b'},
@@ -2315,7 +2316,7 @@ function renderTasks(){
   const box=document.getElementById('tasksList'),rows=sortTasksForDisplay(filteredTasks());
   box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
   document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
-  rows.forEach(t=>{
+  if(taskViewMode!=='KANBAN'||isCompletedArchiveView())rows.forEach(t=>{
     const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays),key=compositeKey(t);
     const selected=key===selectedTaskKey;
     const due=t.end||'بدون تاريخ';
