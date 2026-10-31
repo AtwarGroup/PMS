@@ -1,0 +1,401 @@
+{
+  "schema": 2,
+  "complete": true,
+  "interruptions": [],
+  "created_at": "2026-10-31T14:07:14.422Z",
+  "origin": "https://one.atwargroup.com",
+  "cohort": "android-device",
+  "viewport": {
+    "width": 360,
+    "height": 716,
+    "frame_width": 312,
+    "frame_height": 540
+  },
+  "protocol": "sequential natural-cache navigation (cache retention is not guaranteed), one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance",
+  "pages": {
+    "home": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 2300.6
+        },
+        {
+          "state": "ready",
+          "ms": 2292.8
+        },
+        {
+          "state": "ready",
+          "ms": 2386.3
+        },
+        {
+          "state": "ready",
+          "ms": 3534.3
+        },
+        {
+          "state": "ready",
+          "ms": 3236.1
+        },
+        {
+          "state": "ready",
+          "ms": 2822.4
+        },
+        {
+          "state": "ready",
+          "ms": 3008.5
+        },
+        {
+          "state": "ready",
+          "ms": 3875.3
+        },
+        {
+          "state": "ready",
+          "ms": 2037.3
+        },
+        {
+          "state": "ready",
+          "ms": 2896.7
+        },
+        {
+          "state": "ready",
+          "ms": 2027.2
+        },
+        {
+          "state": "ready",
+          "ms": 3885.4
+        },
+        {
+          "state": "ready",
+          "ms": 3786.6
+        },
+        {
+          "state": "ready",
+          "ms": 3110.9
+        },
+        {
+          "state": "ready",
+          "ms": 2119.3
+        },
+        {
+          "state": "ready",
+          "ms": 2731.7
+        },
+        {
+          "state": "ready",
+          "ms": 2066.7
+        },
+        {
+          "state": "ready",
+          "ms": 1950.4
+        },
+        {
+          "state": "ready",
+          "ms": 2594.9
+        },
+        {
+          "state": "ready",
+          "ms": 2464.7
+        },
+        {
+          "state": "ready",
+          "ms": 2638.3
+        },
+        {
+          "state": "ready",
+          "ms": 2631.6
+        },
+        {
+          "state": "ready",
+          "ms": 3427.5
+        },
+        {
+          "state": "ready",
+          "ms": 2052.8
+        },
+        {
+          "state": "ready",
+          "ms": 2464
+        },
+        {
+          "state": "ready",
+          "ms": 2703.7
+        },
+        {
+          "state": "ready",
+          "ms": 2096.7
+        },
+        {
+          "state": "ready",
+          "ms": 2761.3
+        },
+        {
+          "state": "ready",
+          "ms": 2301.2
+        },
+        {
+          "state": "ready",
+          "ms": 1959.3
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 3090.2
+      }
+    },
+    "tasks": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 5549.6
+        },
+        {
+          "state": "ready",
+          "ms": 5226.3
+        },
+        {
+          "state": "ready",
+          "ms": 5383.4
+        },
+        {
+          "state": "ready",
+          "ms": 7873.9
+        },
+        {
+          "state": "ready",
+          "ms": 5689.1
+        },
+        {
+          "state": "ready",
+          "ms": 7941.5
+        },
+        {
+          "state": "ready",
+          "ms": 6371.9
+        },
+        {
+          "state": "ready",
+          "ms": 10177.1
+        },
+        {
+          "state": "ready",
+          "ms": 9605
+        },
+        {
+          "state": "ready",
+          "ms": 14647.2
+        },
+        {
+          "state": "ready",
+          "ms": 8524.4
+        },
+        {
+          "state": "ready",
+          "ms": 5785.3
+        },
+        {
+          "state": "ready",
+          "ms": 6780.9
+        },
+        {
+          "state": "ready",
+          "ms": 6997.9
+        },
+        {
+          "state": "ready",
+          "ms": 14658.8
+        },
+        {
+          "state": "ready",
+          "ms": 5425.5
+        },
+        {
+          "state": "ready",
+          "ms": 6138
+        },
+        {
+          "state": "ready",
+          "ms": 6111
+        },
+        {
+          "state": "ready",
+          "ms": 12379.9
+        },
+        {
+          "state": "ready",
+          "ms": 7161.5
+        },
+        {
+          "state": "ready",
+          "ms": 6688.1
+        },
+        {
+          "state": "ready",
+          "ms": 6432
+        },
+        {
+          "state": "ready",
+          "ms": 6480.2
+        },
+        {
+          "state": "ready",
+          "ms": 7862.6
+        },
+        {
+          "state": "ready",
+          "ms": 5482.9
+        },
+        {
+          "state": "ready",
+          "ms": 5918.9
+        },
+        {
+          "state": "ready",
+          "ms": 5470.8
+        },
+        {
+          "state": "ready",
+          "ms": 6037.2
+        },
+        {
+          "state": "ready",
+          "ms": 6150.6
+        },
+        {
+          "state": "ready",
+          "ms": 5238.8
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 6542.4
+      }
+    },
+    "workspace": {
+      "samples": [
+        {
+          "state": "ready",
+          "ms": 2941.4
+        },
+        {
+          "state": "ready",
+          "ms": 2907
+        },
+        {
+          "state": "ready",
+          "ms": 2780.4
+        },
+        {
+          "state": "ready",
+          "ms": 3062.9
+        },
+        {
+          "state": "ready",
+          "ms": 5364
+        },
+        {
+          "state": "ready",
+          "ms": 3988.7
+        },
+        {
+          "state": "ready",
+          "ms": 3057
+        },
+        {
+          "state": "ready",
+          "ms": 5818.8
+        },
+        {
+          "state": "ready",
+          "ms": 8496.9
+        },
+        {
+          "state": "ready",
+          "ms": 5359.6
+        },
+        {
+          "state": "ready",
+          "ms": 2893.7
+        },
+        {
+          "state": "ready",
+          "ms": 4477.8
+        },
+        {
+          "state": "ready",
+          "ms": 2933.7
+        },
+        {
+          "state": "ready",
+          "ms": 2995
+        },
+        {
+          "state": "ready",
+          "ms": 3663.7
+        },
+        {
+          "state": "ready",
+          "ms": 3435
+        },
+        {
+          "state": "ready",
+          "ms": 2958.3
+        },
+        {
+          "state": "ready",
+          "ms": 5608.7
+        },
+        {
+          "state": "ready",
+          "ms": 11130.6
+        },
+        {
+          "state": "ready",
+          "ms": 3549.7
+        },
+        {
+          "state": "ready",
+          "ms": 3724.4
+        },
+        {
+          "state": "ready",
+          "ms": 4500.7
+        },
+        {
+          "state": "ready",
+          "ms": 7120.1
+        },
+        {
+          "state": "ready",
+          "ms": 6064.8
+        },
+        {
+          "state": "ready",
+          "ms": 3438.1
+        },
+        {
+          "state": "ready",
+          "ms": 3407.7
+        },
+        {
+          "state": "ready",
+          "ms": 4499.8
+        },
+        {
+          "state": "ready",
+          "ms": 2919.9
+        },
+        {
+          "state": "ready",
+          "ms": 3639.8
+        },
+        {
+          "state": "ready",
+          "ms": 4632.6
+        }
+      ],
+      "warmup": {
+        "state": "ready",
+        "ms": 5405.7
+      }
+    }
+  }
+}
