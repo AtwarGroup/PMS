@@ -17,6 +17,7 @@ export async function mountWorkspace(sb,profile){
   if(suspended||document.hidden)return;if(pending){queued=true;return;}pending=true;queued=false;status.textContent='جاري تحديث مساحتك…';
   const sections=['tasks','decisions','projects','updates','requests'];
   try{
+   const panels=['admin','manager'].includes(profile.role)?Promise.allSettled([mountJobFollowup(document.getElementById('spaceJobFollowup'),sb),mountApprovalSettings(document.getElementById('spaceApprovalSettings'),sb,profile)]):Promise.resolve([]);
    const [tasks,projects,members,people,notifications,reschedules,changes,policies,versions,proposals,followups]=await Promise.allSettled([
     allRows(()=>sb.from('tasks').select('id,title,status,assignee_id,creator_id,approval_commissioner_id,task_type,start_date,due_date,project_id,progress,project_weight,deleted_at,legacy_metadata,submitted_at,created_at,completed_at,actual_end_date,priority,creator_name_snapshot,assignee_name_snapshot').is('deleted_at',null).order('id')),
     allRows(()=>sb.from('projects').select('id,title,status,manager_id,sponsor_id,created_by,due_date,deleted_at').is('deleted_at',null).order('id')),
@@ -52,7 +53,7 @@ export async function mountWorkspace(sb,profile){
    for(const key of ['upcoming','waiting','blockers']){const count=document.getElementById('spaceCount'+key);if(count)count.textContent=briefFailures[key]?'—':String(brief[key].length);}
    const managementHost=document.getElementById('spaceManagement');
    if(managementHost){managementHost.hidden=!['admin','manager'].includes(profile.role);if(!managementHost.hidden){const unavailable=failed.decisions||failed.projects||followups.status==='rejected';const body=document.getElementById('spaceManagementBody');if(body)body.innerHTML=unavailable?missing:renderManagementBriefing(managementBriefing({profile,tasks:value(tasks),projects:value(projects),directIds:value(people).map(p=>p.id),followups:value(followups),inbox,day:model.day}));}}
-   if(['admin','manager'].includes(profile.role)){await mountJobFollowup(document.getElementById('spaceJobFollowup'),sb);await mountApprovalSettings(document.getElementById('spaceApprovalSettings'),sb,profile);}
+   const panelResults=await panels;const panelError=panelResults.find(r=>r.status==='rejected');if(panelError)throw panelError.reason;
    document.getElementById('spaceFocus').textContent=failed.tasks?'متابعة أعمالك في مكان واحد':model.overdue?`لديك ${model.overdue} مهام متأخرة؛ ابدأ بالأقدم.`:model.due.length?`لديك ${model.due.length} مهام مستحقة اليوم.`:(model.decisions.length+requests.actions.length?`لديك ${model.decisions.length+requests.actions.length} إجراءات تنتظر منك مراجعة أو قرارًا.`:'يومك واضح؛ لا توجد مهام مستحقة أو إجراءات مطلوبة الآن.');
    document.querySelectorAll('[data-space-notification]').forEach(b=>b.onclick=async()=>{const row=value(notifications).find(n=>n.id===b.dataset.spaceNotification);await window.atwarOpenNotificationRecord?.(sb,row,'../',message=>{status.textContent=message;});});
    status.textContent=(Object.values(failed).some(Boolean)||Object.values(briefFailures).some(Boolean))?'بعض الأقسام غير متاحة؛ نعيد المحاولة تلقائيًا.':'محدّث الآن · تحديث تلقائي';window.lucide?.createIcons();

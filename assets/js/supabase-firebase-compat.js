@@ -2,7 +2,7 @@
 // Browser-safe only: uses the publishable key through atwarGetSupabase(). No service-role secret is present here.
 import {createRefreshCoordinator,createSharedInFlightReads} from './supabase-sync.mjs?v=1.9.7';
 import {readAllRows} from './paged-read.mjs?v=2.8.0';
-import {readRelatedRows} from './paged-related-read.mjs?v=2.8.0';
+import {readRelatedRows} from './paged-related-read.mjs?v=2.8.1';
 
 const sb = await window.atwarGetSupabase();
 
@@ -56,12 +56,14 @@ async function loadChildren(taskIds,taskRows=[]){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
   if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map(),pausedDays:new Map()};
   const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Riyadh';
-  const pausePromise=(async()=>{const rows=[];for(let i=0;i<ids.length;i+=100){const {data,error}=await sb.rpc('task_approval_pause_days',{p_task_ids:ids.slice(i,i+100),p_timezone:timezone});if(error)throw error;rows.push(...(data||[]));}return rows;})();
-  const [activitiesRows,subtaskRows,attachmentRows,pauseRows]=await Promise.all([
-    readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids),
-    readRelatedRows(chunk=>sb.from('subtasks').select('*').in('task_id',chunk).order('position',{ascending:true}),ids),
-    readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids),
-    pausePromise
+  const batchIds=[...new Set(taskRows.map(t=>t.batch_id).filter(Boolean))];
+  const pausePromise=readRelatedRows(chunk=>sb.rpc('task_approval_pause_days',{p_task_ids:chunk,p_timezone:timezone}),ids,{concurrency:2,paged:false});
+  const [activitiesRows,subtaskRows,attachmentRows,pauseRows,sharedRows]=await Promise.all([
+    readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids,{concurrency:2}),
+    readRelatedRows(chunk=>sb.from('subtasks').select('*').in('task_id',chunk).order('position',{ascending:true}),ids,{concurrency:2}),
+    readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids,{concurrency:2}),
+    pausePromise,
+    batchIds.length?readRelatedRows(chunk=>sb.from('task_batch_attachments').select('*').in('batch_id',chunk),batchIds,{concurrency:2}):Promise.resolve([])
   ]);
   const pausedDays=new Map(pauseRows.map(row=>[String(row.task_id),Number(row.paused_days)]));
   if(ids.some(id=>!pausedDays.has(String(id))))throw new Error('Task delay summary unavailable');
@@ -72,9 +74,8 @@ async function loadChildren(taskIds,taskRows=[]){
   for(const a of ar.data||[]){const x={type:a.event_type||'activity',detail:a.detail||'',userUid:a.actor_id||'',userName:a.actor_name_snapshot||'',createdAt:ms(a.created_at)};(activities.get(a.task_id)||activities.set(a.task_id,[]).get(a.task_id)).push(x)}
   for(const s of sr.data||[]){const x={id:s.id,title:s.title||'',done:!!s.done,createdAt:ms(s.created_at),completedAt:ms(s.completed_at)||null};(subtasks.get(s.task_id)||subtasks.set(s.task_id,[]).get(s.task_id)).push(x)}
   for(const f of fr.data||[]){const x={id:f.id,uploaderId:f.uploader_id||'',fileName:f.file_name||'',storagePath:f.storage_path||'',sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at)};(attachments.get(f.task_id)||attachments.set(f.task_id,[]).get(f.task_id)).push(x)}
-  const batchIds=[...new Set(taskRows.map(t=>t.batch_id).filter(Boolean))];
   if(batchIds.length){
-    const shared={data:await readRelatedRows(chunk=>sb.from('task_batch_attachments').select('*').in('batch_id',chunk),batchIds)};
+    const shared={data:sharedRows};
     if(shared.error)throw shared.error;
     for(const t of taskRows)for(const f of shared.data||[])if(t.batch_id===f.batch_id){
       const x={id:f.id,uploaderId:f.uploader_id,fileName:f.file_name,storagePath:f.storage_path,sizeBytes:Number(f.size_bytes||0),createdAt:ms(f.created_at),storageBucket:'task-batch-attachments',sharedBatch:true};
@@ -131,12 +132,11 @@ async function visibleTasks(extra=null){
     return query.order('updated_at',{ascending:false});
   });
   const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id,t.delegated_by_id]).filter(Boolean))];
-  let profileNames=new Map();
-  if(profileIds.length){
-    const profiles=await sb.from('profiles').select('id,full_name,email').in('id',profileIds);
-    if(!profiles.error)profileNames=new Map((profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
-  }
-  const children=await loadChildren((data||[]).map(x=>x.id),data||[]);
+  const [profiles,children]=await Promise.all([
+    profileIds.length?sb.from('profiles').select('id,full_name,email').in('id',profileIds):Promise.resolve({data:[]}),
+    loadChildren((data||[]).map(x=>x.id),data||[])
+  ]);
+  const profileNames=new Map((profiles.error?[]:profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
   return (data||[]).map(t=>taskLegacy(t,children,profileNames));
 }
 

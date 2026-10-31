@@ -2,7 +2,7 @@ import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.1";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.2";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.15";
 
@@ -759,8 +759,8 @@ onAuthStateChanged(auth,async(user)=>{
     bindDetailsCloseButtons();
     bindTaskFilters();
     applyHomeDashboardFilterFromUrl();
-    await refreshCompletedTaskCounts();
-    subscribeVisibleTasks();
+    const countsReady=refreshCompletedTaskCounts();
+    subscribeVisibleTasks(countsReady);
     subscribeNotifications();
     setTimeout(()=>checkOverdueNotifications(),1200);
 
@@ -1169,10 +1169,12 @@ function clearTaskListeners(){
   unsubscribeTasks=[];
 }
 
-function subscribeVisibleTasks(){
+function subscribeVisibleTasks(countsReady=Promise.resolve()){
   clearTaskListeners();
   document.documentElement.dataset.taskMeasureState='pending';
   let measureFailed=false;
+  const measureActor=currentUser?.uid;
+  const markReady=()=>{void countsReady.then(()=>{if(currentUser?.uid===measureActor&&!measureFailed)document.documentElement.dataset.taskMeasureState='ready';});};
 
   const ownerData=new Map();
   let renderTimer=null;
@@ -1227,7 +1229,7 @@ function subscribeVisibleTasks(){
     scheduleCompletedTaskCountsRefresh();
     setSaveStatus('saved');
     openUrlTargetTaskIfReady();
-    document.documentElement.dataset.taskMeasureState=measureFailed?'error':'ready';
+    markReady();
     checkOverdueNotifications();
   };
 
@@ -1246,7 +1248,7 @@ function subscribeVisibleTasks(){
     tasksInitialLoadReady=true;
     renderTasks();
     updateStats();
-    document.documentElement.dataset.taskMeasureState='ready';
+    markReady();
     return;
   }
 
