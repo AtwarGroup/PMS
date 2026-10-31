@@ -55,7 +55,7 @@ if(typeof document!=='undefined'&&document.getElementById('probe')){
  $('stop').onclick=()=>{cancelled=true;frame.src='about:blank';};
  $('start').onclick=async()=>{
   if(running)return;running=true;cancelled=false;$('start').disabled=true;$('cohort').disabled=true;$('stop').disabled=false;$('download').disabled=true;
-  report={schema:1,created_at:new Date().toISOString(),origin:location.origin,cohort:$('cohort').value,viewport:{width:innerWidth,height:innerHeight,frame_width:frame.clientWidth,frame_height:frame.clientHeight},protocol:'sequential warm-cache navigation, one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance',pages:Object.fromEntries(pages.map(p=>[p.key,{samples:[],warmup:null}]))};render();
+  report={schema:1,created_at:new Date().toISOString(),origin:location.origin,cohort:$('cohort').value,viewport:{width:innerWidth,height:innerHeight,frame_width:frame.clientWidth,frame_height:frame.clientHeight},protocol:'sequential natural-cache navigation (cache retention is not guaranteed), one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance',pages:Object.fromEntries(pages.map(p=>[p.key,{samples:[],warmup:null}]))};render();
   const resized=()=>{cancelled=true;report.stop_reason='viewport-changed';};addEventListener('resize',resized);
   try{
    for(const page of pages){
