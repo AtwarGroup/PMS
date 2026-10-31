@@ -52,14 +52,14 @@ function profileLegacy(p){
   };
 }
 
-async function loadChildren(taskIds,taskRows=[]){
+async function loadChildren(taskIds,taskRows=[],{includeActivity=true}={}){
   const ids=[...new Set((taskIds||[]).filter(Boolean))];
   if(!ids.length)return {activities:new Map(),subtasks:new Map(),attachments:new Map(),pausedDays:new Map()};
   const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Riyadh';
   const batchIds=[...new Set(taskRows.map(t=>t.batch_id).filter(Boolean))];
   const pausePromise=readRelatedRows(chunk=>sb.rpc('task_approval_pause_days',{p_task_ids:chunk,p_timezone:timezone}),ids,{concurrency:2,paged:false});
   const [activitiesRows,subtaskRows,attachmentRows,pauseRows,sharedRows]=await Promise.all([
-    readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids,{concurrency:2}),
+    includeActivity?readRelatedRows(chunk=>sb.from('task_activity').select('*').in('task_id',chunk).order('sequence_no',{ascending:true}),ids,{concurrency:2}):Promise.resolve([]),
     readRelatedRows(chunk=>sb.from('subtasks').select('*').in('task_id',chunk).order('position',{ascending:true}),ids,{concurrency:2}),
     readRelatedRows(chunk=>sb.from('task_attachments').select('id,task_id,uploader_id,file_name,storage_path,size_bytes,created_at').in('task_id',chunk).order('created_at',{ascending:false}),ids,{concurrency:2}),
     pausePromise,
@@ -131,13 +131,14 @@ async function visibleTasks(extra=null){
     if(extra?.id)query=query.eq('id',_aliases.get(extra.id)||extra.id);
     return query.order('updated_at',{ascending:false});
   });
+  const deferActivity=isMainTasksWorkspace&&!extra?.id;
   const profileIds=[...new Set((data||[]).flatMap(t=>[t.assignee_id,t.creator_id,t.delegated_by_id]).filter(Boolean))];
   const [profiles,children]=await Promise.all([
     profileIds.length?sb.from('profiles').select('id,full_name,email').in('id',profileIds):Promise.resolve({data:[]}),
-    loadChildren((data||[]).map(x=>x.id),data||[])
+    loadChildren((data||[]).map(x=>x.id),data||[],{includeActivity:!deferActivity})
   ]);
   const profileNames=new Map((profiles.error?[]:profiles.data||[]).map(p=>[String(p.id),p.full_name||p.email||'']));
-  return (data||[]).map(t=>taskLegacy(t,children,profileNames));
+  return (data||[]).map(t=>({...taskLegacy(t,children,profileNames),_activityDeferred:deferActivity}));
 }
 
 export async function get(r){

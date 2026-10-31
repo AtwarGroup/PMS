@@ -1,8 +1,9 @@
+import {createTaskActivityLoader,readTaskActivity} from './task-activity-loader.mjs?v=1.0.0';
 import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.2";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.3";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.15";
 
@@ -158,7 +159,7 @@ function selectedTask(){
 
 function scrollSelectedTaskIntoView(focusDetails=false){
   if(!selectedTaskKey)return;
-  const el=document.querySelector(`[data-task-key="${CSS.escape(selectedTaskKey)}"]`);
+  const el=document.querySelector(`[data-task-key="${CSS.escape(selectedTaskKey)}"]`)||document.querySelector(`[data-kanban-task="${CSS.escape(selectedTaskKey)}"]`);
   if(el){
     el.scrollIntoView({behavior:'smooth',block:'center'});
     if(focusDetails){
@@ -2281,6 +2282,7 @@ async function handleKanbanDrop(taskKey,targetStatus){
 
 function renderKanban(rows){
   const host=document.getElementById('kanbanBoard');if(!host)return;
+  if(taskViewMode!=='KANBAN'||isCompletedArchiveView()){host.replaceChildren();return;}
   const isOverdue=isCurrentlyOverdue;
   const columns=[
     {status:'قيد الانتظار',label:'لم تبدأ',color:'#64748b'},
@@ -2314,7 +2316,7 @@ function renderTasks(){
   const box=document.getElementById('tasksList'),rows=sortTasksForDisplay(filteredTasks());
   box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
   document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
-  rows.forEach(t=>{
+  if(taskViewMode!=='KANBAN'||isCompletedArchiveView())rows.forEach(t=>{
     const delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays),key=compositeKey(t);
     const selected=key===selectedTaskKey;
     const due=t.end||'بدون تاريخ';
@@ -2650,6 +2652,7 @@ function buildActivityEntry(type,detail=''){
     createdAt:Date.now()
   };
 }
+const taskActivityLoader=createTaskActivityLoader({read:async task=>readTaskActivity(await window.atwarGetSupabase(),task._relationalId),canRead:()=>currentProfile?.role==='admin',getScope:()=>currentUser?.uid,isCurrent:task=>selectedTask()===task,onChange:task=>renderActivityLog(task)});
 function renderActivityLog(task){
   const allowed=currentProfile?.role==='admin',section=document.getElementById('activityLogSection');
   if(section){section.hidden=!allowed;section.classList.toggle('hidden',!allowed);}
@@ -2659,7 +2662,15 @@ function renderActivityLog(task){
   const toggle=document.getElementById('activityLogToggle');
   if(!list||!summary||!toggle)return;
 
-  const rows=[...normalizeActivity(task)].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  let sourceRows=normalizeActivity(task);
+  if(task?._activityDeferred){
+    let state=taskActivityLoader.state(task);if(state.status==='idle'){void taskActivityLoader.load(task);state=taskActivityLoader.state(task);}
+    if(state.status==='loading'){summary.textContent='جاري تحميل سجل الإجراءات…';toggle.disabled=true;toggle.textContent='جاري التحميل';list.replaceChildren();return;}
+    if(state.status==='error'){summary.textContent='تعذر تحميل سجل الإجراءات';toggle.disabled=false;toggle.textContent='إعادة المحاولة';list.replaceChildren();return;}
+    sourceRows=state.rows;
+  }
+  toggle.disabled=false;
+  const rows=[...sourceRows].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
   summary.textContent=rows.length?`${rows.length} حركة مسجلة`:'لا يوجد نشاط مسجل';
   toggle.textContent=activityLogExpanded?'إخفاء':'إظهار';
   list.classList.toggle('hidden',!activityLogExpanded);
@@ -2681,8 +2692,9 @@ function renderActivityLog(task){
 }
 function toggleActivityLog(){
   if(currentProfile?.role!=='admin')return;
-  activityLogExpanded=!activityLogExpanded;
   const task=selectedTask();
+  if(task?._activityDeferred&&taskActivityLoader.state(task).status==='error'){void taskActivityLoader.load(task,{retry:true});renderActivityLog(task);return;}
+  activityLogExpanded=!activityLogExpanded;
   if(task)renderActivityLog(task);
 }
 
