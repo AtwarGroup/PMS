@@ -25,8 +25,13 @@ export function readiness(doc,key){
  return 'pending';
 }
 export function summarize(samples){const ok=samples.filter(s=>s.state==='ready').map(s=>s.ms);return {success:ok.length,failures:samples.length-ok.length,p50_ms:percentile(ok,.5),p95_ms:percentile(ok,.95),complete:ok.length===30};}
+export function createRunControl(initialWidth){
+ let reason=null;
+ return {get reason(){return reason;},stop(next){reason??=next;},resize(width){if(Math.abs(width-initialWidth)>1)this.stop('viewport-changed');}};
+}
+export function stopMessage(reason){return ({'user-stop':'تم الضغط على زر الإيقاف','viewport-changed':'تغير عرض الصفحة أو اتجاه الهاتف؛ يلزم تشغيل مستقل بالمقاس الجديد',background:'انتقلت الصفحة إلى الخلفية',login:'جلسة الدخول غير متاحة',timeout:'انتهت مهلة تحميل الصفحة',error:'تعذر تحميل بيانات الصفحة','paint-timeout':'لم يكتمل إطار الرسم في المهلة المحددة','cross-origin':'انتقلت الصفحة إلى نطاق آخر','unexpected-error':'حدث خطأ غير متوقع'})[reason]||'تعذر إكمال القياس';}
 if(typeof document!=='undefined'&&document.getElementById('probe')){
- const $=id=>document.getElementById(id),frame=$('probe');let running=false,cancelled=false,report;
+ const $=id=>document.getElementById(id),frame=$('probe');let running=false,run,report;
  const render=()=>{
   $('results').replaceChildren(...pages.map(page=>{const row=document.createElement('tr'),s=summarize(report.pages[page.key].samples);for(const value of [page.label,s.success,s.failures,s.p50_ms??'—',s.p95_ms??'—']){const td=document.createElement('td');td.textContent=value;row.append(td);}return row;}));
   $('report').textContent=JSON.stringify(report,null,2);
@@ -37,14 +42,14 @@ if(typeof document!=='undefined'&&document.getElementById('probe')){
   // Start before assignment; all clock readings belong to the same parent document.
   const navigationStart=performance.now();frame.src=target.href;
   while(performance.now()-navigationStart<45000){
-   if(cancelled)return {state:'cancelled'};
+   if(run.reason)return {state:run.reason};
    if(document.hidden)return {state:'background'};
    let state='pending';
    try{const doc=frame.contentDocument;if(doc?.location.pathname===target.pathname)state=readiness(doc,page.key);else if(doc&&(/\/(?:login|trial-login|admin-login)\.html$/.test(doc.location.pathname)||doc.querySelector('input[type=password]')))state='login';}catch{return {state:'cross-origin'};}
    if(state==='ready'){
     const painted=await Promise.race([new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true)))),new Promise(resolve=>setTimeout(()=>resolve(false),2000))]);
     if(!painted)return {state:'paint-timeout'};
-    if(cancelled||document.hidden)return {state:cancelled?'cancelled':'background'};
+    if(run.reason||document.hidden)return {state:run.reason||'background'};
     return {state,ms:Math.round((performance.now()-navigationStart)*100)/100};
    }
    if(state!=='pending')return {state};
@@ -52,25 +57,29 @@ if(typeof document!=='undefined'&&document.getElementById('probe')){
   }
   return {state:'timeout'};
  }
- $('stop').onclick=()=>{cancelled=true;frame.src='about:blank';};
+ $('stop').onclick=()=>{run?.stop('user-stop');frame.src='about:blank';};
  $('start').onclick=async()=>{
-  if(running)return;running=true;cancelled=false;$('start').disabled=true;$('cohort').disabled=true;$('stop').disabled=false;$('download').disabled=true;
-  report={schema:1,created_at:new Date().toISOString(),origin:location.origin,cohort:$('cohort').value,viewport:{width:innerWidth,height:innerHeight,frame_width:frame.clientWidth,frame_height:frame.clientHeight},protocol:'sequential natural-cache navigation (cache retention is not guaranteed), one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance',pages:Object.fromEntries(pages.map(p=>[p.key,{samples:[],warmup:null}]))};render();
-  const resized=()=>{cancelled=true;report.stop_reason='viewport-changed';};addEventListener('resize',resized);
+  if(running)return;running=true;run=createRunControl(innerWidth);$('start').disabled=true;$('cohort').disabled=true;$('stop').disabled=false;$('download').disabled=true;
+  report={schema:2,complete:false,interruptions:[],created_at:new Date().toISOString(),origin:location.origin,cohort:$('cohort').value,viewport:{width:innerWidth,height:innerHeight,frame_width:frame.clientWidth,frame_height:frame.clientHeight},protocol:'sequential natural-cache navigation (cache retention is not guaranteed), one excluded warm-up per route, 40ms readiness polling + two animation frames, 45s timeout; successful samples only; incomplete cohorts are not acceptance',pages:Object.fromEntries(pages.map(p=>[p.key,{samples:[],warmup:null}]))};render();
+  const resized=()=>run.resize(innerWidth);addEventListener('resize',resized);
   try{
    for(const page of pages){
     $('status').textContent=`إحماء ${page.label}`;const result=await sample(page);report.pages[page.key].warmup=result;render();
-    if(result.state!=='ready'){report.stop_reason=result.state;break;}
-    for(let i=0;i<30&&!cancelled;i++){
+    if(result.state!=='ready'){run.stop(result.state);break;}
+    for(let i=0;i<30&&!run.reason;i++){
      $('status').textContent=`${page.label}: العينة ${i+1} من 30`;
-     const result=await sample(page);report.pages[page.key].samples.push(result);render();
-     if(result.state!=='ready'){report.stop_reason=result.state;cancelled=true;break;}
+     const result=await sample(page);
+     if(['user-stop','viewport-changed','background'].includes(result.state))report.interruptions.push({page:page.key,state:result.state});
+     else report.pages[page.key].samples.push(result);
+     render();
+     if(result.state!=='ready'){run.stop(result.state);break;}
      frame.src='about:blank';await new Promise(resolve=>setTimeout(resolve,700));
     }
-    if(cancelled)break;
+    if(run.reason)break;
    }
+   if(run.reason)report.stop_reason=run.reason;
    report.complete=pages.every(p=>summarize(report.pages[p.key].samples).complete);
-   $('status').textContent=report.complete?'اكتمل القياس: 90 عينة ناجحة. هذه نتائج الجهاز والجلسة الحاليين فقط.':`توقف القياس: ${report.stop_reason||'إيقاف المستخدم'}. النتائج الجزئية ليست قبولًا نهائيًا.`;
+   $('status').textContent=report.complete?'اكتمل القياس: 90 عينة ناجحة. هذه نتائج الجهاز والجلسة الحاليين فقط.':`توقف القياس: ${stopMessage(report.stop_reason)}. النتائج الجزئية ليست قبولًا نهائيًا.`;
   }catch{report.stop_reason='unexpected-error';$('status').textContent='تعذر إكمال القياس. النتائج الجزئية ليست قبولًا نهائيًا.';}
   finally{frame.src='about:blank';removeEventListener('resize',resized);running=false;$('start').disabled=false;$('cohort').disabled=false;$('stop').disabled=true;$('download').disabled=false;render();}
  };
