@@ -39,6 +39,7 @@ if(typeof document!=='undefined'&&document.getElementById('probe')){
  async function sample(page){
   const target=new URL('../'+page.path,location.href);target.searchParams.set('performance_probe','1');
   frame.src='about:blank';await new Promise(resolve=>setTimeout(resolve,50));
+  if(run.reason)return {state:run.reason};
   // Start before assignment; all clock readings belong to the same parent document.
   const navigationStart=performance.now();frame.src=target.href;
   while(performance.now()-navigationStart<45000){
@@ -48,8 +49,8 @@ if(typeof document!=='undefined'&&document.getElementById('probe')){
    try{const doc=frame.contentDocument;if(doc?.location.pathname===target.pathname)state=readiness(doc,page.key);else if(doc&&(/\/(?:login|trial-login|admin-login)\.html$/.test(doc.location.pathname)||doc.querySelector('input[type=password]')))state='login';}catch{return {state:'cross-origin'};}
    if(state==='ready'){
     const painted=await Promise.race([new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true)))),new Promise(resolve=>setTimeout(()=>resolve(false),2000))]);
-    if(!painted)return {state:'paint-timeout'};
     if(run.reason||document.hidden)return {state:run.reason||'background'};
+    if(!painted)return {state:'paint-timeout'};
     return {state,ms:Math.round((performance.now()-navigationStart)*100)/100};
    }
    if(state!=='pending')return {state};

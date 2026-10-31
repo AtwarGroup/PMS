@@ -12,12 +12,13 @@ async function scenario(mode){
  const frame=nodes.get('probe');let current=null;
  Object.defineProperty(frame,'src',{set(url){if(url==='about:blank'){current=null;return;}loads++;const path=new URL(url).pathname;current={body:{},location:{pathname:path},documentElement:{dataset:{taskMeasureState:'ready'}},querySelector(selector){return ({'.atwar-data-status':{hidden:true,querySelector:()=>({disabled:false})},'#appShell':{classList:{contains:()=>false}},'#spaceSync':{textContent:'محدّث الآن · تحديث تلقائي'}})[selector]||null;}};}});
  Object.defineProperty(frame,'contentDocument',{get(){return current}});
- const ctx=vm.createContext({console,URL,Blob,document:{hidden:false,getElementById:id=>nodes.get(id),createElement:node},location:{href:'https://fixture.invalid/lab/performance.html',origin:'https://fixture.invalid'},innerWidth:360,innerHeight:716,performance:{now:()=>now},setTimeout(fn,ms){timers.push({fn,at:now+ms,id:sequence++});return sequence;},requestAnimationFrame(fn){timers.push({fn,at:now+16,id:sequence++});},addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name)});
+ const ctx=vm.createContext({console,URL,Blob,document:{hidden:false,getElementById:id=>nodes.get(id),createElement:node},location:{href:'https://fixture.invalid/lab/performance.html',origin:'https://fixture.invalid'},innerWidth:360,innerHeight:716,performance:{now:()=>now},setTimeout(fn,ms){timers.push({fn,at:now+ms,id:sequence++});return sequence;},requestAnimationFrame(fn){if(mode==='paint-stop'&&loads===10){hooked=true;nodes.get('stop').onclick();return;}timers.push({fn,at:now+16,id:sequence++});},addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name)});
  vm.runInContext(source,ctx);
  let done=false,error;nodes.get('start').onclick().then(()=>done=true,e=>{error=e;done=true;});
+ if(mode==='early-stop')nodes.get('stop').onclick();
  for(let i=0;i<10000&&!done;i++){
   await Promise.resolve();await Promise.resolve();await Promise.resolve();
-  if(!hooked&&loads===10){
+  if(!hooked&&loads===10&&['height','width','stop'].includes(mode)){
    hooked=true;
    if(mode==='height'){ctx.innerHeight=620;listeners.get('resize')();}
    if(mode==='width'){ctx.innerWidth=412;listeners.get('resize')();}
@@ -27,8 +28,11 @@ async function scenario(mode){
  }
  assert.ok(done,'synthetic run must terminate');if(error)throw error;
  assert.ok(!listeners.has('resize'),'listener removed');assert.equal(nodes.get('start').disabled,false);
+ if(mode==='early-stop')assert.equal(loads,0,'stop before navigation must not load an application page');
  return JSON.parse(nodes.get('report').textContent);
 }
 const height=await scenario('height');assert.equal(height.complete,true);assert.equal(Object.values(height.pages).reduce((n,p)=>n+p.samples.length,0),90);assert.equal(height.stop_reason,undefined);
-for(const [mode,reason] of [['width','viewport-changed'],['stop','user-stop']]){const r=await scenario(mode);assert.equal(r.complete,false);assert.equal(r.stop_reason,reason);assert.ok(r.interruptions.some(x=>x.state===reason));assert.ok(Object.values(r.pages).every(p=>p.samples.every(s=>s.state==='ready')),'interruptions are not data failures');}
+for(const [mode,reason] of [['width','viewport-changed'],['stop','user-stop'],['paint-stop','user-stop']]){const r=await scenario(mode);assert.equal(r.complete,false);assert.equal(r.stop_reason,reason);assert.ok(r.interruptions.some(x=>x.state===reason));assert.ok(Object.values(r.pages).every(p=>p.samples.every(s=>s.state==='ready')),'interruptions are not data failures');}
 console.log('PASS actual runner: mobile height-only resize completes 90 synthetic samples; width/manual stop preserve cause and partial evidence. No browser, backend or external requests.');
+
+const early=await scenario('early-stop');assert.equal(early.stop_reason,'user-stop');assert.equal(early.complete,false);
