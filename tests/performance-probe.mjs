@@ -19,3 +19,5 @@ console.log('Performance percentile, partial failure, readiness, privacy and not
 
 assert.equal(readiness({body:{},location:{pathname:'/trial-login.html'}},'home'),'login');
 assert.equal(readiness({body:{},location:{pathname:'/tasks/index.html'},documentElement:{dataset:{taskMeasureState:'ready'}},querySelector:()=>null},'tasks'),'pending');
+
+const markup=await readFile('lab/performance.html','utf8');assert.match(markup,/app-theme\.css/);assert.match(markup,/Tajawal/);
