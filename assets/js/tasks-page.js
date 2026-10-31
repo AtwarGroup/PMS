@@ -968,6 +968,7 @@ async function createUniqueNotification(uid,key,data){
 }
 
 async function checkOverdueNotifications(){
+  if(new URLSearchParams(location.search).get('performance_probe')==='1')return;
   if(!currentUser?.uid||!currentProfile)return;
   const today=localDateISO().replaceAll('-','');
   const overdueTasks=tasks.filter(t=>isCurrentlyOverdue(t));
@@ -1170,6 +1171,8 @@ function clearTaskListeners(){
 
 function subscribeVisibleTasks(){
   clearTaskListeners();
+  document.documentElement.dataset.taskMeasureState='pending';
+  let measureFailed=false;
 
   const ownerData=new Map();
   let renderTimer=null;
@@ -1224,6 +1227,7 @@ function subscribeVisibleTasks(){
     scheduleCompletedTaskCountsRefresh();
     setSaveStatus('saved');
     openUrlTargetTaskIfReady();
+    document.documentElement.dataset.taskMeasureState=measureFailed?'error':'ready';
     checkOverdueNotifications();
   };
 
@@ -1242,6 +1246,7 @@ function subscribeVisibleTasks(){
     tasksInitialLoadReady=true;
     renderTasks();
     updateStats();
+    document.documentElement.dataset.taskMeasureState='ready';
     return;
   }
 
@@ -1267,6 +1272,8 @@ function subscribeVisibleTasks(){
       scheduleRender();
     },
     error=>{
+      measureFailed=true;
+      document.documentElement.dataset.taskMeasureState='error';
       console.error('Tasks listener:',error);
       clearTimeout(renderTimer);
       if(!tasksInitialLoadReady){
