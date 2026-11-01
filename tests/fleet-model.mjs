@@ -75,3 +75,7 @@ assert.deepEqual(requestActions({...r,state:'draft'},{employee_id:'other',can_op
 assert.deepEqual(requestActions({...r,state:'repair'},{employee_id:'other',can_operate:true}),['request_increase','confirm_repair']);
 assert.deepEqual(requestActions({...r,state:'awaiting_advance'},{user_id:'fleet',can_operate:true,can_approve:true,can_finance:false}),[]);
 assert.deepEqual(requestActions({...r,state:'settlement'},{user_id:'admin',is_admin:true,can_operate:true,can_approve:true,can_finance:true}),['settle','return']);
+
+assert.equal(quoteTotal({scope:'parts',parts:100,labor:900,tax:15}),115);
+assert.equal(quoteTotal({scope:'labor',parts:900,labor:100,tax:15}),115);
+assert.equal(quoteTotal({scope:'parts_labor',parts:100,labor:50,tax:15}),165);
