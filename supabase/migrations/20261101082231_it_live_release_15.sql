@@ -1,0 +1,4 @@
+-- Production rollout checkpoint it_live_release_15.
+-- The native deployment applied this phase on the live database.
+-- Fresh installs use the canonical IT migrations dated 20261026 through 20261101004932.
+-- No additional SQL is required here; retain this version to keep native migration history aligned.

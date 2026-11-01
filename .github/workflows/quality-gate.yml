@@ -59,6 +59,8 @@ jobs:
           npm run test:fleet:db
           npm run test:recruitment:db
           npm run test:recruitment:release
+          node scripts/test-it-v2.mjs
+          node scripts/test-it-followup.mjs
           node scripts/test-fleet-alerts.mjs
           node scripts/test-action-history.mjs
           node scripts/test-business-conflict.mjs

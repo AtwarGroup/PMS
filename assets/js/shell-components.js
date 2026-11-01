@@ -38,7 +38,7 @@
     document.head.append(icon);
   }
   function depth(){
-    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication','fleet','recruitment'];
+    const nestedModules=['tasks','completed','team','profile','workspace','follow-up','notifications','search','admin','approvals','organization','job-library','my-day','recurring','policies','projects','communication','fleet','recruitment','it-support'];
     return nestedModules.some(name=>location.pathname.includes('/'+name+'/'))?'../':'';
   }
   function getSession(){
@@ -111,6 +111,7 @@
           ${nav('projects','projects/index.html','chart-gantt','إدارة المشاريع')}
           ${nav('fleet','fleet/index.html','truck','إدارة الأسطول')}
           ${nav('recruitment','recruitment/index.html','user-round-plus','التوظيف')}
+          ${nav('it_support','it-support/index.html','monitor-cog','دعم تقنية المعلومات')}
           ${nav('notes','workspace/index.html','notebook-tabs','مساحتي')}
           ${nav('employees','admin/employees.html','contact-round','الموظفون')}
           ${nav('jobLibrary','job-library/index.html','library-big','مكتبة الوظائف','manager')}
@@ -149,7 +150,8 @@
       const recurringAllowed=!s || ['manager','admin'].includes(s.role);
       const executiveAllowed=!s || s.role==='admin'||(s.permissions||[]).includes('tasks.read_all');
       const taskModuleOpen=/\/(tasks|completed|recurring)\//.test(currentPath);
-      const taskNav=taskModuleOpen?`
+      const supportPurchase=/\/it-support\/purchases\.html$/.test(currentPath),supportModuleOpen=/\/it-support\//.test(currentPath),supportArchive=String(new URLSearchParams(location.search).get('scope')||'').toUpperCase()==='COMPLETED';
+      const taskNav=supportModuleOpen?`<nav class="atwar-header-task-nav atwar-tabs" aria-label="قائمة دعم تقنية المعلومات"><a class="${!supportArchive&&!supportPurchase?'active':''}" href="${d}it-support/index.html"><i data-lucide="monitor-cog"></i><span>الدعم</span></a><a class="${supportPurchase&&!supportArchive?'active':''}" href="${d}it-support/purchases.html"><i data-lucide="shopping-cart"></i><span>الشراء التقني</span></a><a class="${supportArchive?'active':''}" href="${d}it-support/${supportPurchase?'purchases.html':'index.html'}?scope=COMPLETED"><i data-lucide="archive"></i><span>الأرشيف</span></a></nav>`:taskModuleOpen?`
         <nav class="atwar-header-task-nav atwar-tabs" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
           <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive"></i><span>المكتملة</span></a>
@@ -282,6 +284,7 @@
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
     if(row.type==='RECRUITMENT'){location.href=depthPrefix+'recruitment/index.html';return true;}
+    if(row.type==='IT_SUPPORT'){const {data,error}=await sb.rpc('it_support_notification_open',{p_id:row.id});if(error||!data){onError('الإشعار أو الطلب غير متاح لك حاليًا.');return false;}location.href=depthPrefix+'it-support/'+(data.purchase?'purchases.html':'index.html')+(data.ticket_id?'?request='+encodeURIComponent(data.ticket_id):'');return true;}
     if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
     if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
     if(row.type==='communication'||row.type==='communication_trial'){
