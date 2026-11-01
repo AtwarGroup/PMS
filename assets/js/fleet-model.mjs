@@ -37,8 +37,14 @@ export const money = (value) =>
   });
 export const quoteTotal = (q) =>
   Math.round(
-    (Number(q.parts || 0) + Number(q.labor || 0) + Number(q.tax || 0)) * 100,
+    (Number(q.scope === 'labor' ? 0 : q.parts || 0) + Number(q.scope === 'parts' ? 0 : q.labor || 0) + Number(q.tax || 0)) * 100,
   ) / 100;
+export const quoteScopes = {
+  parts_labor: 'قطع غيار وأجرة يد',
+  parts: 'قطع غيار فقط',
+  labor: 'أجرة يد فقط',
+};
+export const quoteIncludes = (q, kind) => (q.scope || 'parts_labor') === 'parts_labor' || q.scope === kind;
 export function requestActions(r, c) {
   const own = r.driver_id === c.employee_id,
     finance = (r.accountant_id === c.user_id || c.is_admin) && c.can_finance && !own;
