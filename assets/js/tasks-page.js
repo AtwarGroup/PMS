@@ -305,7 +305,7 @@ async function openUrlTargetTaskIfReady(){
   requestAnimationFrame(()=>scrollSelectedTaskIntoView(true));
   const openedNotificationId=new URLSearchParams(location.search).get('notification');
   if(openedNotificationId){
-    try{const sb=await window.atwarGetSupabase();await sb.from('notifications').delete().eq('id',openedNotificationId)}catch(error){console.warn('Notification cleanup:',error)}
+    try{const sb=await window.atwarGetSupabase();await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',openedNotificationId);window.atwarNotifyReadChange?.()}catch(error){console.warn('Notification cleanup:',error)}
   }
   urlTargetTaskKey='';
   return true;
@@ -762,7 +762,7 @@ onAuthStateChanged(auth,async(user)=>{
     applyHomeDashboardFilterFromUrl();
     const countsReady=refreshCompletedTaskCounts();
     subscribeVisibleTasks(countsReady);
-    subscribeNotifications();
+    // The shared shell owns the bell, unread counts and notification timer.
     setTimeout(()=>checkOverdueNotifications(),1200);
 
   }catch(error){

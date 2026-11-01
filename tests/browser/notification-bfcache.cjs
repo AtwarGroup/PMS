@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
       window.clearInterval = id => { if (timers.delete(id)) window.counts.stops++; originalClearInterval(id); };
       const sb = { auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) },
         from: () => ({ select() { return this; }, order() { return this; }, limit() { window.counts.reads++; return Promise.resolve({ data: [], error: null }); } }),
-        rpc: async () => ({ data: true }) };
+        rpc: async name => { if(name==='notification_overview'){window.counts.reads++;return {data:{total_unread:0,modules:{},items:[]}};}return {data:true}; } };
       window.atwarGetSupabase = async () => sb;
       document.body.innerHTML = '<div id="header"><button data-global-notification-button></button><div data-global-notification-panel><div data-global-notification-list></div></div><span data-global-notification-badge></span></div>';
     });

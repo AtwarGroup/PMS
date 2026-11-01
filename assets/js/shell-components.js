@@ -10,7 +10,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
   // Reuse and move the existing stylesheet after module CSS; never load two versions.
   const loadCanonicalTheme=()=>{
-    const href=new URL('css/app-theme.css?v=2.8.6',assetRoot).href;
+    const href=new URL('css/app-theme.css?v=notifications-20261101',assetRoot).href;
     const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
     const style=matches.shift()||document.createElement('link');
     for(const duplicate of matches)duplicate.remove();
@@ -46,7 +46,7 @@
   }
   const rank={employee:1,manager:2,admin:3};
   const soundSetting='atwar-notification-sound';
-  const soundTypes={assigned:'new',TASK_ASSIGNED:'new',TASK_DELEGATED:'new',approved:'approved',TASK_APPROVED:'approved',completed:'completed',TASK_COMPLETED:'completed'};
+  const soundTypes={IT_SUPPORT:'new',FLEET_WORKFLOW:'new',FLEET_HANDOVER:'new',RECRUITMENT:'new',JOB_DESCRIPTION_ASSIGNED:'new',assigned:'new',TASK_ASSIGNED:'new',TASK_DELEGATED:'new',approved:'approved',TASK_APPROVED:'approved',completed:'completed',TASK_COMPLETED:'completed'};
   let audioContext=null;
   window.atwarNotificationSound={
     enabled:()=>localStorage.getItem(soundSetting)!=='off',
@@ -99,7 +99,7 @@
         if(s && (rank[s.role]||0)<(rank[min]||0))return '';
         const unit={notes:'workspace',jobLibrary:'job_library'}[key]||key;
         if(window.AtwarModules?.context&&!window.AtwarModules.allowed(unit)&&!['home','profile'].includes(key))return '';
-        return `<a ${key==='fleet'?'data-module="fleet"':''} class="${active===key?'active':''}" href="${d}${path}">
+        return `<a data-notification-module="${unit}" ${key==='fleet'?'data-module="fleet"':''} class="${active===key?'active':''}" href="${d}${path}">
           <i data-lucide="${icon}"></i><span>${label}</span></a>`;
       };
       this.innerHTML=`<aside class="atwar-sidebar">
@@ -161,12 +161,12 @@
       const taskTools=mode==='tasks'?`
         <button type="button" id="addTaskButton" onclick="showQuickAdd()" class="atwar-task-add"><i data-lucide="plus"></i><span>إضافة مهمة</span></button>
         <div class="atwar-task-notification-wrap">
-          <button id="notificationButton" type="button" onclick="toggleNotifications()" class="atwar-icon-btn" title="الإشعارات">
-            <i data-lucide="bell"></i><span id="notificationBadge" class="hidden atwar-notification-badge">0</span>
+          <button id="notificationButton" data-global-notification-button type="button" class="atwar-icon-btn" title="الإشعارات">
+            <i data-lucide="bell"></i><span id="notificationBadge" data-global-notification-badge class="hidden atwar-notification-badge">0</span>
           </button>
-          <div id="notificationPanel" class="hidden atwar-task-notification-panel">
-            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button onclick="markAllNotificationsRead()">مسح جميع الإشعارات</button></div>
-            <div id="notificationList" class="atwar-notification-list"></div>
+          <div id="notificationPanel" data-global-notification-panel class="hidden atwar-task-notification-panel">
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button type="button" data-global-mark-read>تحديد الكل كمقروء</button></div>
+            <div id="notificationList" data-global-notification-list class="atwar-notification-list"></div><a class="atwar-notification-history" href="${d}notifications/index.html">عرض جميع الإشعارات</a>
           </div>
         </div>
         <label id="importLabel" for="importFile" class="atwar-icon-btn" title="رفع Excel"><i data-lucide="upload"></i></label>
@@ -178,7 +178,7 @@
             <i data-lucide="bell"></i><span class="atwar-badge hidden" data-global-notification-badge>0</span>
           </button>
           <div class="atwar-task-notification-panel hidden" data-global-notification-panel>
-            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button type="button" data-global-mark-read>مسح جميع الإشعارات</button></div>
+            <div class="atwar-notification-head"><b>الإشعارات</b><button type="button" data-sound-toggle aria-label="تبديل صوت الإشعارات"></button><button type="button" data-global-mark-read>تحديد الكل كمقروء</button></div>
             <div class="atwar-notification-list" data-global-notification-list><div style="padding:24px;text-align:center;font-size:10px;color:#94a3b8">جاري تحميل الإشعارات...</div></div>
             <a href="${d}notifications/index.html" style="display:block;padding:10px 14px;text-align:center;font-size:10px;font-weight:900;color:#2563eb;text-decoration:none;border-top:1px solid #eef2f7">عرض جميع الإشعارات</a>
           </div>
@@ -271,7 +271,7 @@
         else if(typeof window.logoutUser==='function')window.logoutUser();
         else location.href=d+'landing.html';
       });
-      if(mode!=='tasks'){
+      {
         const initNotifications=()=>window.atwarInitGlobalNotifications?.(this,d);
         if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initNotifications,{once:true});
         else initNotifications();
@@ -283,102 +283,131 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
-    if(row.type==='RECRUITMENT'){location.href=depthPrefix+'recruitment/index.html';return true;}
-    if(row.type==='IT_SUPPORT'){const {data,error}=await sb.rpc('it_support_notification_open',{p_id:row.id});if(error||!data){onError('الإشعار أو الطلب غير متاح لك حاليًا.');return false;}location.href=depthPrefix+'it-support/'+(data.purchase?'purchases.html':'index.html')+(data.ticket_id?'?request='+encodeURIComponent(data.ticket_id):'');return true;}
-    if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
-    if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
+    const markRead=async()=>{
+      const ids=Array.isArray(row.unread_ids)?row.unread_ids:(row.read_at?[]:[row.id]);
+      for(let i=0;i<ids.length;i+=100){const {error}=await sb.from('notifications').update({read_at:new Date().toISOString()}).in('id',ids.slice(i,i+100));if(error){onError('تعذر تحديث حالة الإشعار.');return false;}}
+      window.atwarNotifyReadChange?.();return true;
+    };
+    if(row.type==='RECRUITMENT'){if(!await markRead())return false;location.href=depthPrefix+'recruitment/index.html';return true;}
+    if(row.type==='IT_SUPPORT'){const {data,error}=await sb.rpc('it_support_notification_open',{p_id:row.id});if(error||!data){onError('الإشعار أو الطلب غير متاح لك حاليًا.');return false;}if(!await markRead())return false;location.href=depthPrefix+'it-support/'+(data.purchase?'purchases.html':'index.html')+(data.ticket_id?'?request='+encodeURIComponent(data.ticket_id):'');return true;}
+    if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}if(!await markRead())return false;const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
+    if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}if(!await markRead())return false;location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
     if(row.type==='communication'||row.type==='communication_trial'){
       const {data,error}=await sb.rpc(row.type==='communication'?'communication_notification_open':'communication_trial_notification_open',{p_id:row.id});
       if(error||!data){onError('المحادثة غير متاحة لك حاليًا.');return false;}
-      location.href=depthPrefix+(row.type==='communication'?'communication/':'communication-trial/')+'?conversation='+encodeURIComponent(data.conversation)+'&message='+encodeURIComponent(data.message);return true;
+      if(!await markRead())return false;location.href=depthPrefix+(row.type==='communication'?'communication/':'communication-trial/')+'?conversation='+encodeURIComponent(data.conversation)+'&message='+encodeURIComponent(data.message);return true;
     }
 
     if(row.improvement_id){
       const {data:proposal,error}=await sb.from('improvement_proposals').select('id').eq('id',row.improvement_id).maybeSingle();
       if(error||!proposal){onError('المقترح غير متاح لك حاليًا.');return false;}
-      const {error:readError}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
-      if(readError){onError('تعذر تحديث حالة الإشعار.');return false;}
+      if(!await markRead())return false;
       location.href=depthPrefix+'workspace/improvements.html?id='+encodeURIComponent(proposal.id);return true;
     }
     if(row.project_id){
       const {data:project,error}=await sb.from('projects').select('id').eq('id',row.project_id).maybeSingle();
       if(error||!project){onError('المشروع غير متاح لك حاليًا.');return false}
-      const {error:readError}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
-      if(readError){onError('تعذر تحديث حالة الإشعار.');return false}
+      if(!await markRead())return false;
       location.href=`${depthPrefix}projects/index.html?id=${encodeURIComponent(project.id)}&view=chat`;return true;
     }
     if(row.task_id){
-      const {data:task,error}=await sb.from('tasks').select('id,assignee_id,status,deleted_at').eq('id',row.task_id).maybeSingle();
+      const {data:task,error}=await sb.from('tasks').select('id,assignee_id,status,deleted_at,legacy_metadata').eq('id',row.task_id).maybeSingle();
       if(error||!task||task.deleted_at){onError('تعذر العثور على المهمة المرتبطة بهذا الإشعار.');return false}
+      const workflow=task.legacy_metadata?.job_workflow;
+      if(workflow){
+        let route='';
+        if(workflow.policy_id)route='policies/index.html?id='+encodeURIComponent(workflow.policy_id)+'&version='+encodeURIComponent(workflow.policy_version_id||'');
+        else if(workflow.request_id)route='job-library/employee-changes.html?id='+encodeURIComponent(workflow.request_id);
+        else if(workflow.phase==='EMPLOYEE_ACK'){
+          const {data:{session}}=await sb.auth.getSession();if(session?.user?.id===task.assignee_id)route='profile/index.html?view=job';
+        }else if(workflow.job_id)route='job-library/review.html?id='+encodeURIComponent(workflow.job_id);
+        if(route){if(!await markRead())return false;location.href=depthPrefix+route;return true;}
+      }
+      if(!await markRead())return false;
       const scope=task.status==='مكتملة'?'&scope=COMPLETED':'';
       location.href=`${depthPrefix}tasks/index.html?task=${encodeURIComponent(task.id)}&owner=${encodeURIComponent(task.assignee_id||'')}&notification=${encodeURIComponent(row.id)}${scope}`;
       return true;
     }
-    const {error}=await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',row.id);
-    if(error){onError('تعذر تحديث حالة الإشعار الآن.');return false}
+    if(!await markRead())return false;
     location.href=row.type==='overdue_summary'?`${depthPrefix}tasks/index.html?scope=OVERDUE`:row.type==='JOB_DESCRIPTION_ASSIGNED'?`${depthPrefix}profile/index.html?view=job#job-profile`:`${depthPrefix}home.html`;
     return true;
   };
 
+  const notificationLabels={tasks:'المهام',communication:'التواصل',projects:'المشاريع',fleet:'الأسطول',recruitment:'التوظيف',it_support:'دعم تقنية المعلومات',workspace:'مساحتي',employees:'الموظفون',job_library:'مكتبة الوظائف',policies:'السياسات',profile:'ملفي الوظيفي',home:'النظام'};
+  let notificationSnapshot=null;
+  const notificationEsc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function paintModuleBadges(data=notificationSnapshot){
+    for(const link of document.querySelectorAll('.atwar-nav a[href]')){
+      const path=new URL(link.href,location.href).pathname;
+      const module=link.dataset.notificationModule||window.AtwarModules?.routeModule?.(path)||(/\/profile\//.test(path)?'profile':/\/home\.html$/.test(path)?'home':'');
+      if(!module)continue;
+      let badge=link.querySelector('.atwar-module-badge');
+      const count=Number(data?.modules?.[module])||0;
+      if(!badge&&count){badge=document.createElement('span');badge.className='atwar-module-badge';badge.setAttribute('aria-hidden','true');link.append(badge);}
+      if(badge){const text=count>99?'99+':String(count);if(badge.textContent!==text)badge.textContent=text;badge.hidden=!count;}
+      const label=link.dataset.notificationLabel||(link.dataset.notificationLabel=link.querySelector('span:not(.atwar-module-badge)')?.textContent||link.textContent);
+      link.setAttribute('aria-label',label+(count?`، ${count} إشعارًا غير مقروء`:''));
+    }
+  }
+  window.atwarNotifyReadChange=()=>{
+    window.dispatchEvent(new Event('atwar:notifications-changed'));
+    try{localStorage.setItem('atwar-notification-change',String(Date.now())+Math.random())}catch{}
+  };
+  window.AtwarNotifications={get snapshot(){return notificationSnapshot},refresh:async()=>null};
   window.atwarInitGlobalNotifications=async function(headerEl,depthPrefix=''){
     if(!headerEl||headerEl.dataset.notificationsReady==='1')return;
-    const button=headerEl.querySelector('[data-global-notification-button]');
-    const panel=headerEl.querySelector('[data-global-notification-panel]');
-    const list=headerEl.querySelector('[data-global-notification-list]');
-    const badge=headerEl.querySelector('[data-global-notification-badge]');
-    const markAll=headerEl.querySelector('[data-global-mark-read]');
+    const button=headerEl.querySelector('[data-global-notification-button]'),panel=headerEl.querySelector('[data-global-notification-panel]'),list=headerEl.querySelector('[data-global-notification-list]'),badge=headerEl.querySelector('[data-global-notification-badge]'),markAll=headerEl.querySelector('[data-global-mark-read]');
     if(!button||!panel||!list||!badge)return;
-    headerEl.dataset.notificationsReady='1';
-    button.addEventListener('click',e=>{
-      e.preventDefault();e.stopPropagation();
-      const opening=panel.classList.contains('hidden');
-      panel.classList.toggle('hidden',!opening);
-      if(opening){list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">تحديث الإشعارات...</div>';void refresh()}
-    });
-    panel.addEventListener('click',e=>e.stopPropagation());
-    document.addEventListener('click',()=>panel.classList.add('hidden'));
-    const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    const ago=ts=>{if(!ts)return'';const d=Math.max(0,Date.now()-new Date(ts).getTime()),m=Math.floor(d/60000);if(m<1)return'الآن';if(m<60)return`منذ ${m} د`;const h=Math.floor(m/60);return h<24?`منذ ${h} س`:`منذ ${Math.floor(h/24)} يوم`};
-    async function refresh(){
-      try{
-        if(typeof window.atwarGetSupabase!=='function')throw new Error('Supabase runtime unavailable');
-        const sb=await window.atwarGetSupabase();
-        const {data:{session}}=await sb.auth.getSession();
-        if(!session?.user){badge.textContent='0';badge.classList.add('hidden');list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">سجل الدخول لعرض الإشعارات.</div>';return;}
-        window.atwarStartPresence(sb);
-        const {data,error}=await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(30);
-        if(error)throw error;
-        const rows=data||[];
-        window.atwarNotificationSound.observe(rows,session.user.id);
-        const unread=rows.filter(row=>!row.read_at);badge.textContent=unread.length>99?'99+':String(unread.length);badge.classList.toggle('hidden',unread.length===0);
-        list.innerHTML=rows.length?rows.slice(0,8).map(n=>`<button type="button" data-global-notification-id="${esc(n.id)}" class="atwar-global-notification-item ${n.read_at?'':'is-unread'}"><span class="atwar-global-notification-icon">🔔</span><span class="atwar-global-notification-copy"><b>${esc(n.title||n.type||'إشعار')}</b><small>${esc(n.message||n.detail||'')}</small></span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">لا توجد إشعارات جديدة.</div>';
-        list.querySelectorAll('[data-global-notification-id]').forEach(btn=>btn.addEventListener('click',async()=>{
-          const row=rows.find(x=>String(x.id)===btn.dataset.globalNotificationId);
-          // سياسة ATWAR ONE: فتح الإشعار يحذفه بعد نجاح الوصول للعنصر المرتبط.
-          panel.classList.add('hidden');
-          const opened=await window.atwarOpenNotificationRecord(sb,row,depthPrefix,()=>{});
-          if(!opened)await refresh();
-        }));
-        markAll.onclick=async()=>{const unreadRows=rows.filter(row=>!row.read_at);if(!unreadRows.length)return;const approved=await window.AtwarUI.confirm({title:'تحديد الكل كمقروء',message:`سيتم تحديد ${unreadRows.length} إشعارًا كمقروء مع الاحتفاظ به في السجل.`,confirmText:'تحديد كمقروء'});if(!approved)return;const ids=unreadRows.map(x=>x.id);const {error:e}=await sb.from('notifications').update({read_at:new Date().toISOString()}).in('id',ids);if(e)window.AtwarUI.toast(e.message,'error');else{window.AtwarUI.toast('تم تحديث الإشعارات','success');await refresh()}};
-      }catch(error){console.error('Global notifications:',error);list.innerHTML='<div style="padding:26px;text-align:center;font-size:10px;color:#94a3b8">الإشعارات غير متاحة حالياً.</div>';}
+    headerEl.dataset.notificationsReady='1';let pending=null,actor=null,rows=[],sb,timer,stopped=false,realtime,refreshAgain=false;
+    button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','الإشعارات');
+    const close=()=>{panel.classList.add('hidden');button.setAttribute('aria-expanded','false')};
+    button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const opening=panel.classList.contains('hidden');panel.classList.toggle('hidden',!opening);button.setAttribute('aria-expanded',String(opening));if(opening){list.innerHTML='<p class="atwar-notification-state">تحديث الإشعارات…</p>';void refresh()}});
+    panel.addEventListener('click',e=>e.stopPropagation());document.addEventListener('click',close);
+    headerEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.classList.contains('hidden')){close();button.focus()}});
+    const ago=ts=>{const m=Math.max(0,Math.floor((Date.now()-new Date(ts).getTime())/60000));return m<1?'الآن':m<60?`منذ ${m} د`:m<1440?`منذ ${Math.floor(m/60)} س`:`منذ ${Math.floor(m/1440)} يوم`};
+    function render(data){
+      notificationSnapshot=data;rows=data.items;paintModuleBadges(data);
+      const count=Number(data.total_unread)||0;badge.textContent=count>99?'99+':String(count);badge.classList.toggle('hidden',count===0);button.setAttribute('aria-label',count?`الإشعارات، ${count} غير مقروء`:'الإشعارات');
+      list.innerHTML=rows.length?rows.slice(0,30).map(n=>`<button type="button" data-global-notification-id="${notificationEsc(n.id)}" class="atwar-global-notification-item ${n.read_at?'':'is-unread'}"><span class="atwar-global-notification-icon" aria-hidden="true">${n.read_at?'✓':'●'}</span><span class="atwar-global-notification-copy"><span class="atwar-notification-module">${notificationEsc(notificationLabels[n.module]||'النظام')}</span><b>${notificationEsc(n.title||'إشعار')}</b><small>${notificationEsc(n.message||n.detail||'')}</small>${n.unread_count>1?`<small>${Number(n.unread_count)} تحديثات جديدة على الطلب نفسه</small>`:''}</span><span class="atwar-global-notification-time">${ago(n.created_at)}</span></button>`).join(''):'<p class="atwar-notification-state">لا توجد إشعارات.</p>';
+      list.querySelectorAll('[data-global-notification-id]').forEach(control=>control.onclick=async()=>{const row=rows.find(n=>String(n.id)===control.dataset.globalNotificationId);if(!row)return;control.disabled=true;const opened=await window.atwarOpenNotificationRecord(sb,row,depthPrefix,message=>window.AtwarUI?.toast(message,'error'));control.disabled=false;if(opened)close();else await refresh()});
+      window.dispatchEvent(new CustomEvent('atwar:notifications',{detail:data}));
     }
-    await refresh();
-    headerEl._atwarRefreshNotifications=refresh;
-    let timer;
-    const startRefreshTimer=()=>{
-      clearInterval(timer);
-      timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000);
-    };
-    const stopRefreshTimer=event=>{
-      clearInterval(timer);
-      if(event.persisted)window.addEventListener('pageshow',()=>{
-        startRefreshTimer();
-        void refresh();
-        window.addEventListener('pagehide',stopRefreshTimer,{once:true});
-      },{once:true});
-    };
-    startRefreshTimer();
-    window.addEventListener('pagehide',stopRefreshTimer,{once:true});
+    async function announce(data,user){
+      // Communication already has server-claimed alerts, sound and optional desktop delivery.
+      const key='atwar-notification-seen-'+user;
+      const claim=()=>{let previous;try{previous=localStorage.getItem(key)}catch{}const newest=data.items.reduce((n,row)=>Math.max(n,new Date(row.created_at).getTime()||0),0);try{localStorage.setItem(key,String(Math.max(Number(previous)||0,newest)))}catch{}return previous===null||previous===undefined?[]:data.items.filter(n=>!n.read_at&&n.module!=='communication'&&new Date(n.created_at).getTime()>Number(previous));};
+      const fresh=navigator.locks?await navigator.locks.request(key,claim):claim();
+      if(!fresh.length||document.visibilityState!=='visible')return;
+      const row=fresh[0];button.classList.add('has-new-notification');setTimeout(()=>button.classList.remove('has-new-notification'),2500);
+      document.querySelector('[data-atwar-arrival]')?.remove();
+      const toast=document.createElement('section');toast.className='atwar-notification-arrival';toast.dataset.atwarArrival='1';toast.setAttribute('role','status');
+      const copy=document.createElement('div'),title=document.createElement('b'),text=document.createElement('span');title.textContent=fresh.length>1?`لديك ${fresh.length} مستجدات جديدة`:notificationLabels[row.module]||'إشعار جديد';text.textContent=row.title||'وصل إشعار جديد';copy.append(title,text);
+      const open=document.createElement('button');open.type='button';open.textContent='فتح';open.onclick=()=>{if(fresh.length>1){toast.remove();if(panel.classList.contains('hidden'))button.click();}else void window.atwarOpenNotificationRecord(sb,row,depthPrefix,message=>window.AtwarUI?.toast(message,'error'))};
+      const dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='×';dismiss.setAttribute('aria-label','إغلاق التنبيه');dismiss.onclick=()=>toast.remove();toast.append(copy,open,dismiss);document.body.append(toast);setTimeout(()=>toast.remove(),9000);
+      if(window.atwarNotificationSound.enabled()&&soundTypes[row.type])window.atwarNotificationSound.play(soundTypes[row.type]);
+    }
+    async function refresh(force=false){
+      if(stopped)return;if(pending){if(force===true)refreshAgain=true;return pending;}
+      pending=(async()=>{try{
+        sb=await window.atwarGetSupabase();const {data:{session},error:authError}=await sb.auth.getSession();if(authError)throw authError;
+        if(!session?.user){actor=null;render({total_unread:0,modules:{},items:[]});return;}
+        const user=session.user.id;actor=user;window.atwarStartPresence(sb);
+        const {data,error}=await sb.rpc('notification_overview',{p_limit:100});if(error)throw error;
+        if(stopped||actor!==user)return;
+        if(!data||!Array.isArray(data.items)||!data.modules)throw Error('Invalid notification response');
+        render(data);await announce(data,user);
+        if(!realtime&&sb.channel){realtime=sb.channel('atwar-notifications-'+user).on('postgres_changes',{event:'*',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user},()=>{if(document.visibilityState==='visible')void refresh(true)}).subscribe();}
+      }catch(error){console.error('Global notifications:',error);list.innerHTML='<p class="atwar-notification-state" role="status">تعذر تحديث الإشعارات. <button type="button" data-notification-retry>إعادة المحاولة</button></p>';list.querySelector('[data-notification-retry]').onclick=()=>void refresh();}finally{pending=null;if(refreshAgain){refreshAgain=false;queueMicrotask(()=>void refresh())}}})();return pending;
+    }
+    window.AtwarNotifications.refresh=refresh;headerEl._atwarRefreshNotifications=refresh;
+    if(markAll)markAll.onclick=async()=>{if(!notificationSnapshot?.total_unread)return;const approved=await window.AtwarUI.confirm({title:'تحديد الكل كمقروء',message:'سيتم تحديد إشعاراتك الحالية كمقروءة مع الاحتفاظ بها في السجل.',confirmText:'تحديد كمقروء'});if(!approved)return;const cutoff=new Date().toISOString();const {error}=await sb.from('notifications').update({read_at:cutoff}).is('read_at',null).lte('created_at',cutoff);if(error)window.AtwarUI.toast('تعذر تحديث الإشعارات.','error');else window.atwarNotifyReadChange()};
+    const startRefreshTimer=()=>{clearInterval(timer);timer=setInterval(()=>{if(document.visibilityState==='visible')void refresh()},30000)};
+    const stopRefreshTimer=event=>{clearInterval(timer);if(event.persisted)window.addEventListener('pageshow',()=>{startRefreshTimer();void refresh();window.addEventListener('pagehide',stopRefreshTimer,{once:true})},{once:true})};
+    window.addEventListener('atwar:notifications-changed',()=>void refresh(true));window.addEventListener('storage',e=>{if(e.key==='atwar-notification-change')void refresh(true)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refresh()});window.addEventListener('online',()=>void refresh());
+    const observer=new MutationObserver(records=>{if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches('a[href],atwar-sidebar')||n.querySelector?.('.atwar-nav')))))paintModuleBadges()});observer.observe(document.body,{subtree:true,childList:true});
+    if(typeof window.atwarGetSupabase!=='function')return;
+    try{sb=await window.atwarGetSupabase();sb.auth.onAuthStateChange?.((event,session)=>{if(event==='SIGNED_OUT'||actor&&session?.user?.id&&session.user.id!==actor){actor=null;notificationSnapshot=null;rows=[];render({total_unread:0,modules:{},items:[]});close();if(realtime){void sb.removeChannel(realtime);realtime=null;}}});}catch{}
+    await refresh();startRefreshTimer();window.addEventListener('pagehide',stopRefreshTimer,{once:true});
   };
 
   // One heartbeat per document; server decides identity and timestamp.

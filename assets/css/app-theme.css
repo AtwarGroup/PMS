@@ -254,3 +254,18 @@
 .atwar-main .rec-navigation .atwar-tabs{flex:1 1 260px;margin-bottom:0!important}
 /* Detail-level tabs retain the same controls with a lighter container. */
 .atwar-main .review-tabs.atwar-tabs{background:transparent!important;border-bottom:1px solid #dce5ee!important;border-radius:0!important}
+/* Notifications are updates; workspace remains the action/task reference. */
+.atwar-nav a{position:relative}
+.atwar-nav .atwar-module-badge{margin-inline-start:auto;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#ffdd75;color:#1b2a42;font:800 12px/1 var(--atwar-font);direction:ltr}
+.atwar-nav .atwar-module-badge[hidden]{display:none!important}
+.atwar-notification-module{display:block;color:#1d4ed8;font-size:11px;font-weight:700;margin-bottom:4px}
+.atwar-notification-state{padding:22px;text-align:center;color:#526277;font-size:13px}
+.atwar-notification-state button{background:#edf4ff;color:#1d4ed8;border:0;border-radius:8px;padding:8px;font:inherit;cursor:pointer}
+.atwar-task-notification-panel{max-width:calc(100vw - 24px)!important;max-height:min(650px,80dvh);overflow:auto}
+.atwar-notification-list{max-height:min(470px,60dvh);overflow:auto}
+.atwar-notification-arrival{position:fixed;inset-inline-end:24px;bottom:24px;z-index:1600;display:flex;align-items:center;gap:14px;width:min(420px,calc(100vw - 32px));box-sizing:border-box;padding:18px;background:#fff;border:1px solid #cbd8e8;border-inline-start:4px solid #1769e0;border-radius:14px;box-shadow:0 12px 36px #0b244726;color:#17233a;font-family:var(--atwar-font)}
+.atwar-notification-arrival>div{flex:1;min-width:0}.atwar-notification-arrival b,.atwar-notification-arrival span{display:block;overflow-wrap:anywhere}.atwar-notification-arrival b{font-size:14px}.atwar-notification-arrival span{font-size:13px;margin-top:5px;line-height:1.7}.atwar-notification-arrival button{flex-shrink:0;border:0;border-radius:8px;padding:10px;background:#edf4ff;color:#1d4ed8;font:700 13px var(--atwar-font);cursor:pointer;min-width:40px;min-height:40px}.atwar-notification-arrival button:focus-visible{outline:2px solid #1769e0;outline-offset:2px}
+.has-new-notification{animation:atwar-notification-arrive .8s ease-in-out 3}
+@keyframes atwar-notification-arrive{50%{box-shadow:0 0 0 5px #86b6ff66}}
+@media(prefers-reduced-motion:reduce){.has-new-notification{animation:none;outline:2px solid #86b6ff}}
+@media(max-width:600px){.atwar-notification-arrival{inset-inline-end:16px;bottom:16px;padding:14px;gap:8px}.atwar-task-notification-panel{position:fixed!important;top:76px!important;inset-inline:12px!important;width:auto!important}}
