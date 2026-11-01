@@ -88,6 +88,7 @@ jobs:
           node tests/browser/legacy-redirects.cjs
           node tests/browser/theme-legibility.cjs
           node tests/browser/theme-contract.cjs
+          node tests/browser/unified-page-tabs.cjs
           node tests/browser/theme-dynamic.cjs
           node tests/browser/theme-runtime.cjs
           node tests/browser/policy-editor.cjs

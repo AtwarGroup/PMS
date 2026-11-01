@@ -10,7 +10,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startMobile,{once:true});else startMobile();
   // Reuse and move the existing stylesheet after module CSS; never load two versions.
   const loadCanonicalTheme=()=>{
-    const href=new URL('css/app-theme.css?v=2.8.5',assetRoot).href;
+    const href=new URL('css/app-theme.css?v=2.8.6',assetRoot).href;
     const matches=[...document.querySelectorAll('link[rel="stylesheet"]')].filter(link=>new URL(link.href,location.href).pathname===new URL(href).pathname);
     const style=matches.shift()||document.createElement('link');
     for(const duplicate of matches)duplicate.remove();
@@ -150,7 +150,7 @@
       const executiveAllowed=!s || s.role==='admin'||(s.permissions||[]).includes('tasks.read_all');
       const taskModuleOpen=/\/(tasks|completed|recurring)\//.test(currentPath);
       const taskNav=taskModuleOpen?`
-        <nav class="atwar-header-task-nav" aria-label="قائمة المهام">
+        <nav class="atwar-header-task-nav atwar-tabs" aria-label="قائمة المهام">
           <a class="${taskNavActive('tasks')?'active':''}" href="${d}tasks/index.html"><i data-lucide="square-check-big"></i><span>النشطة</span></a>
           <a class="${taskNavActive('completed')?'active':''}" href="${d}tasks/index.html?scope=COMPLETED"><i data-lucide="archive"></i><span>المكتملة</span></a>
           ${recurringAllowed?`<a class="${taskNavActive('recurring')?'active':''}" href="${d}recurring/index.html"><i data-lucide="repeat-2"></i><span>الدورية</span></a>`:''}
@@ -184,11 +184,6 @@
 
       this.innerHTML=`<style>
         .atwar-topbar{flex-wrap:nowrap}
-        .atwar-header-task-nav{display:flex;align-items:center;gap:4px;padding:4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:12px;white-space:nowrap}
-        .atwar-header-task-nav a{display:flex;align-items:center;gap:6px;text-decoration:none;color:#dbeafe;font-size:11px;font-weight:800;padding:8px 10px;border-radius:9px;transition:.15s ease}
-        .atwar-header-task-nav a:hover{background:rgba(255,255,255,.09);color:#fff}
-        .atwar-header-task-nav a.active{background:#2684ff;color:#fff}
-        .atwar-header-task-nav svg{width:15px;height:15px}
         .atwar-account-wrap{position:relative;flex:0 0 auto}
         .atwar-account-trigger{border:0;background:transparent;color:inherit;cursor:pointer;padding:4px 6px!important;min-height:44px!important;border-radius:12px!important}
         .atwar-account-trigger:hover,.atwar-account-trigger[aria-expanded="true"]{background:rgba(255,255,255,.08)}
@@ -198,11 +193,6 @@
         .atwar-account-copy{min-width:0}.atwar-account-copy b,.atwar-account-copy span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.atwar-account-copy b{font-size:12px}.atwar-account-copy span{font-size:10px;color:#64748b;margin-top:3px}
         .atwar-account-links{padding:7px}.atwar-account-links a,.atwar-account-links button{width:100%;min-height:40px!important;display:flex;align-items:center;gap:10px;padding:9px 11px!important;border:0;background:transparent;color:#334155;text-decoration:none;font-size:11px!important;font-weight:800;text-align:right;cursor:pointer;border-radius:9px!important}
         .atwar-account-links a:hover,.atwar-account-links button:hover{background:#f1f5f9}.atwar-account-links svg{width:16px;height:16px;color:#64748b}.atwar-account-links .danger{color:#dc2626;border-top:1px solid #edf2f7;margin-top:5px;border-radius:0!important}.atwar-account-links .danger svg{color:#dc2626}
-        @media(max-width:1050px){
-          .atwar-header-task-nav{overflow-x:auto;justify-content:flex-start}
-          .atwar-header-task-nav a{flex:0 0 auto}
-        }
-        @media(max-width:600px){.atwar-header-task-nav span{font-size:10px}.atwar-header-task-nav a{padding:7px 8px}}
       </style>
       <header class="atwar-topbar ${mode==='tasks'?'atwar-task-header':''}">
         <div class="atwar-top-brand">
@@ -214,7 +204,6 @@
           <div class="atwar-pm-label">Performance Management<br>System</div>
         </div>
         ${mode==='tasks'?`<span id="pageSubtitle" class="hidden"></span>`:''}
-        ${taskNav}
         <div class="atwar-top-actions ${mode==='tasks'?'atwar-task-tools':''}">
           <div class="atwar-search"><i data-lucide="search"></i>
             <input ${mode==='tasks'?'id="taskHeaderSearch"':'data-global-search'} type="text" placeholder="${mode==='tasks'?'البحث في المهام...':'ابحث في المهام، الموظفين، المستندات...'}">
@@ -256,6 +245,17 @@
         updateLabel();
         soundToggle.addEventListener('click',()=>{window.atwarNotificationSound.setEnabled(!window.atwarNotificationSound.enabled());updateLabel()});
       }
+      // Page navigation belongs with the page heading, outside the global header.
+      const mountTaskNavigation=()=>{
+        const heading=document.querySelector('main .task-suite-hero');
+        if(!taskNav||!heading||heading.parentElement.querySelector('.atwar-header-task-nav'))return;
+        heading.insertAdjacentHTML('afterend',taskNav);
+        const nav=heading.nextElementSibling;
+        nav.querySelector('a.active')?.setAttribute('aria-current','page');
+        window.lucide?.createIcons();
+      };
+      if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountTaskNavigation,{once:true});
+      else mountTaskNavigation();
       const accountMenu=this.querySelector('.atwar-account-menu');
       accountTrigger?.addEventListener('click',event=>{
         event.preventDefault();event.stopPropagation();

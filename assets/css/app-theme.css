@@ -227,3 +227,30 @@
 .atwar-main .home-metrics .dash-card:has(.dash-ico.purple){background:#faf5ff!important;border-color:#e6dbf4!important}.atwar-main .home-metrics .dash-card:has(.dash-ico.purple) .dash-num{color:#7c3aed!important}
 
 @media(max-width:700px){.atwar-main :is(.space-summary,.rec-metrics,.fleet-metrics){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* Shared page tabs: one contract for module navigation and in-page views.
+   Keep native hidden/role/selection behavior owned by each module. */
+.atwar-main .atwar-tabs{
+ display:flex!important;align-items:center;justify-content:flex-start;gap:6px!important;
+ flex-wrap:nowrap!important;overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box;
+ padding:5px!important;margin-block:0 20px!important;background:#eaf0f7!important;
+ border:0!important;border-radius:12px!important;white-space:nowrap;
+}
+.atwar-main .atwar-tabs>:is(button,a){
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:7px;
+ min-height:40px;box-sizing:border-box;padding:10px 14px!important;margin:0!important;
+ border:0!important;border-radius:9px!important;background:transparent!important;
+ color:#526277!important;box-shadow:none!important;font:700 13px var(--atwar-font)!important;
+ line-height:20px!important;text-decoration:none;white-space:nowrap;cursor:pointer;
+}
+.atwar-main .atwar-tabs>:is(.active,[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]){
+ background:#fff!important;color:#1d4ed8!important;box-shadow:0 2px 6px #0f172a08!important;
+}
+.atwar-main .atwar-tabs>:is(button,a):hover{color:#1d4ed8!important}
+.atwar-main .atwar-tabs>:is(button,a):focus-visible{outline:2px solid #1769e0;outline-offset:-2px}
+.atwar-main .atwar-tabs>[hidden]{display:none!important}
+.atwar-main .atwar-tabs svg{width:16px;height:16px;flex-shrink:0}
+.atwar-main .rec-navigation{border:0;align-items:flex-start;min-width:0}
+.atwar-main .rec-navigation .atwar-tabs{flex:1 1 260px;margin-bottom:0!important}
+/* Detail-level tabs retain the same controls with a lighter container. */
+.atwar-main .review-tabs.atwar-tabs{background:transparent!important;border-bottom:1px solid #dce5ee!important;border-radius:0!important}
