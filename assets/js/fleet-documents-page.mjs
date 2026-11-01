@@ -12,7 +12,7 @@ export async function initFleetDocuments({ rpc, show, run }) {
     populateFilters();
     render();
   }
-  const options = (items, selected) => items.map(([value, label]) => `<option value="${esc(value)}" ${value === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
+  const options = (items, selected) => items.map(([value, label]) => `<option value="${escapeHTML(value)}" ${value === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
   function populateFilters() {
     const selectedVehicle = firstLoad ? new URLSearchParams(location.search).get('vehicle') || '' : $('documentVehicle').value;
     const vehicles = [['', 'جميع السيارات'], ...data.vehicles.map(v => [v.id, v.plate])];
@@ -50,7 +50,7 @@ export async function initFleetDocuments({ rpc, show, run }) {
   $('documentSearch').oninput = render;
   $('clearDocumentFilters').onclick = () => {
     for (const id of ['documentVehicle','documentDriver','documentKind','documentState','documentSearch','documentDateFrom','documentDateTo']) $(id).value = '';
-    const url = new URL(location.href);url.searchParams.delete('vehicle');history.replaceState(null,'',url);
+    const url = new URL(location.href);url.searchParams.delete('vehicle');history.replaceState(history.state,'',url);
     render();
   };
   function editor(vehicleId) {
