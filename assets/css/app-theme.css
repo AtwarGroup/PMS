@@ -269,3 +269,5 @@
 @keyframes atwar-notification-arrive{50%{box-shadow:0 0 0 5px #86b6ff66}}
 @media(prefers-reduced-motion:reduce){.has-new-notification{animation:none;outline:2px solid #86b6ff}}
 @media(max-width:600px){.atwar-notification-arrival{inset-inline-end:16px;bottom:16px;padding:14px;gap:8px}.atwar-task-notification-panel{position:fixed!important;top:76px!important;inset-inline:12px!important;width:auto!important}}
+.atwar-topbar [data-global-notification-badge]{background:#ffdd75!important;color:#1b2a42!important}
+.atwar-notification-history{display:block;padding:12px;text-align:center;color:#1d4ed8;font-size:12px;font-weight:700;text-decoration:none;border-top:1px solid #eaf0f7}
