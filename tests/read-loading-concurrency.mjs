@@ -22,7 +22,7 @@ const visible=scope.visibleTasks();await flush();assert(childrenStarted,'Childre
 // Execute the actual auth startup block; counts must not block subscribing to task data.
 const taskSource=await readFile(new URL('../assets/js/tasks-page.js',import.meta.url),'utf8');
 let releaseCounts,subscribed=false;const counts=new Promise(resolve=>releaseCounts=resolve);
-const start=taskSource.slice(taskSource.indexOf('    const countsReady=refreshCompletedTaskCounts();'),taskSource.indexOf('    subscribeNotifications();'));
+const start=taskSource.slice(taskSource.indexOf('    const countsReady=refreshCompletedTaskCounts();'),taskSource.indexOf('    // The shared shell owns the bell'));
 vm.runInNewContext(start,{refreshCompletedTaskCounts:()=>counts,subscribeVisibleTasks:p=>{assert.equal(p,counts);subscribed=true;}});assert(subscribed);
 const markerBody=taskSource.slice(taskSource.indexOf('  clearTaskListeners();',taskSource.indexOf('function subscribeVisibleTasks(')),taskSource.indexOf('  const ownerData=',taskSource.indexOf('function subscribeVisibleTasks(')));
 const markerDoc={documentElement:{dataset:{}}};

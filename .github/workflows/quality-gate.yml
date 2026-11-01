@@ -69,7 +69,9 @@ jobs:
       - name: Test driver, manager, fleet and accountant interfaces
         run: npm run test:fleet:ui
       - name: Test notification recovery after browser history navigation
-        run: node tests/browser/notification-bfcache.cjs
+        run: |
+          node tests/browser/notification-bfcache.cjs
+          node tests/browser/unified-notifications.cjs
       - name: Generate current visual fixtures
         run: |
           node scripts/daily-work-preview.mjs
