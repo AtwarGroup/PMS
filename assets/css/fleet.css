@@ -370,3 +370,23 @@ button:focus-visible {
 .fleet-dashboard-scope{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.fleet-dashboard-scope select{padding:10px;border:1px solid var(--atwar-border,#dce5ee);border-radius:10px;background:var(--atwar-surface,#fff);font:inherit}.fleet-page input[type=number]{direction:ltr;font-variant-numeric:tabular-nums}
 
 .fleet-quote-attachments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.fleet-quote-attachments label{min-width:0}@media(max-width:640px){.fleet-quote-attachments{grid-template-columns:1fr}}
+
+.fleet-document-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:end;margin:20px 0 12px}
+.fleet-document-filters label{display:flex;flex-direction:column;gap:7px;min-width:0;font-weight:700;font-size:14px}
+.fleet-document-filters :is(input,select){box-sizing:border-box;width:100%;min-width:0;min-height:43px;padding:10px;border:1px solid var(--atwar-border,#dce5ee);border-radius:9px;background:var(--atwar-surface,#fff);color:inherit;font:inherit}
+.fleet-document-filters input[type=date]{direction:ltr;font-variant-numeric:tabular-nums}
+.fleet-document-filters :is(input,select):focus-visible{outline:2px solid var(--fleet-accent);outline-offset:2px}
+.fleet-document-legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.fleet-document-legend>span{border-radius:7px;padding:6px 10px;font-weight:700;font-size:13px}
+.fleet-document-legend>small{flex-basis:100%;color:#526277}
+.fleet-document-key-warning,.fleet-page #documentRows .fleet-document-warning>td{background:#fffbeb;color:#78350f}
+.fleet-document-key-urgent,.fleet-page #documentRows .fleet-document-urgent>td{background:#fff1f2;color:#881337}
+.fleet-document-key-expired,.fleet-page #documentRows .fleet-document-expired>td{background:#ffe4e6;color:#881337}
+.fleet-page #documentRows .fleet-document-warning>td:first-child{border-inline-start:4px solid #d97706}
+.fleet-page #documentRows .fleet-document-urgent>td:first-child{border-inline-start:4px solid #e11d48}
+.fleet-page #documentRows .fleet-document-expired>td:first-child{border-inline-start:4px solid #be123c}
+.fleet-page #documentRows :is(.fleet-document-cell-warning,.fleet-document-cell-urgent,.fleet-document-cell-expired)>b{font-weight:800}
+.fleet-page #documentRows .fleet-document-cell-warning>small{color:#92400e}
+.fleet-page #documentRows :is(.fleet-document-cell-urgent,.fleet-document-cell-expired)>small{color:#9f1239}
+.fleet-document-status{font-weight:700}
+@media(max-width:600px){.fleet-document-filters{grid-template-columns:minmax(0,1fr)}.fleet-document-filters>.fleet-btn{width:100%}}

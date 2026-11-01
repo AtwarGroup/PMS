@@ -10,7 +10,7 @@
     />
     <link rel="stylesheet" href="../assets/css/shared.css?v=2.5.26" />
     <link rel="stylesheet" href="../assets/css/app-theme.css?v=notifications-20261101" />
-    <link rel="stylesheet" href="../assets/css/fleet.css?v=4" />
+    <link rel="stylesheet" href="../assets/css/fleet.css?v=20261102.1" />
     <link rel="stylesheet" href="../assets/css/fleet-operations.css?v=20261027.3" />
     <script src="../assets/vendor/lucide-1.47.0.min.js"></script>
     <script src="../assets/js/supabase-config.js"></script>
@@ -220,15 +220,33 @@
                 تنبيه قبل الانتهاء وتنبيه عند انتهاء الصلاحية، دون تكرار يومي.
                 المستلمون: مسؤول الأسطول والسائق ومديره المباشر.
               </p>
+              <div class="fleet-document-legend" aria-label="دليل ألوان انتهاء الوثائق">
+                <span class="fleet-document-key-warning">من 45 إلى 16 يومًا</span>
+                <span class="fleet-document-key-urgent">من 15 يومًا حتى الانتهاء</span>
+                <span class="fleet-document-key-expired">منتهية</span>
+                <small>لون الصف حسب أكثر الوثائق المطابقة للفلاتر إلحاحًا. مواعيد الإشعارات تتبع إعدادات مسؤول النظام.</small>
+              </div>
+              <div class="fleet-document-filters" role="search" aria-label="تصفية وثائق السيارات">
+                <label>بحث برقم اللوحة<input id="documentSearch" type="search" placeholder="رقم اللوحة" autocomplete="off"></label>
+                <label>السيارة<select id="documentVehicle"></select></label>
+                <label>السائق<select id="documentDriver"></select></label>
+                <label>نوع الوثيقة<select id="documentKind"></select></label>
+                <label>حالة الوثيقة<select id="documentState"></select></label>
+                <label>تاريخ الانتهاء — من<input id="documentDateFrom" type="date" lang="en"></label>
+                <label>تاريخ الانتهاء — إلى<input id="documentDateTo" type="date" lang="en" aria-describedby="documentFilterStatus"></label>
+                <button id="clearDocumentFilters" class="fleet-btn secondary" type="button">مسح الفلاتر</button>
+              </div>
+              <p id="documentFilterStatus" class="fleet-expired" role="status" aria-live="polite"></p>
+              <p id="documentResultCount" class="fleet-muted" role="status" aria-live="polite"></p>
               <div class="fleet-table-wrap">
                 <table>
                   <thead>
                     <tr>
                       <th>السيارة / السائق</th>
-                      <th>التفويض</th>
-                      <th>رخصة السير</th>
-                      <th>التأمين</th>
-                      <th>الفحص الدوري</th>
+                      <th data-document-kind="authorization">التفويض</th>
+                      <th data-document-kind="registration">رخصة السير</th>
+                      <th data-document-kind="insurance">التأمين</th>
+                      <th data-document-kind="inspection">الفحص الدوري</th>
                       <th>الإجراء</th>
                     </tr>
                   </thead>
@@ -262,6 +280,6 @@
         </main>
       </section>
     </div>
-    <script type="module" src="../assets/js/fleet-page.mjs?v=20261101.1"></script>
+    <script type="module" src="../assets/js/fleet-page.mjs?v=20261102.1"></script>
   </body>
 </html>
