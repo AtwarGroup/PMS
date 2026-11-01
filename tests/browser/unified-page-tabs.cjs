@@ -8,7 +8,7 @@ const page=await browser.newPage();await page.addInitScript(()=>localStorage.set
 await page.route('**/*',route=>{const u=new URL(route.request().url()),f=path.join(root,decodeURIComponent(u.pathname));if(u.hostname!=='127.0.0.1')return route.fulfill({body:'',contentType:'text/plain'});if(!fs.existsSync(f)||!fs.statSync(f).isFile())return route.fulfill({status:404,body:''});if(f.endsWith('.js')||f.endsWith('.mjs')){if(!/\/(shell-components\.js|mobile-experience\.mjs|ui-feedback\.js)$/.test(u.pathname))return route.fulfill({body:'',contentType:'text/javascript'});}
 let body=fs.readFileSync(f);if(f.endsWith('.html'))body=Buffer.from(body.toString().replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,tag=>tag.includes('src=')&&(tag.includes('shell-components.js')||tag.includes('ui-feedback.js'))?tag:'').replace(/<meta[^>]*http-equiv=["']refresh["'][^>]*>/gi,''));return route.fulfill({body,contentType:f.endsWith('.html')?'text/html':f.endsWith('.css')?'text/css':/\.m?js$/.test(f)?'text/javascript':f.endsWith('.svg')?'image/svg+xml':'text/plain'});});
 
-const cases=[['tasks/index.html','.atwar-header-task-nav'],['tasks/index.html?scope=COMPLETED','.atwar-header-task-nav'],['recurring/index.html','.atwar-header-task-nav'],['tasks/executive.html','.atwar-header-task-nav'],['admin/employees.html','.hr-tabs'],['fleet/index.html','.fleet-tabs'],['fleet/completed.html','.fleet-tabs'],['recruitment/index.html','.rec-tabs'],['workspace/index.html','.space-tabs'],['job-library/index.html','.view-tabs']];
+const cases=[['admin/users.html','.access-page > .access-tabs'],['tasks/index.html','.atwar-header-task-nav'],['tasks/index.html?scope=COMPLETED','.atwar-header-task-nav'],['recurring/index.html','.atwar-header-task-nav'],['tasks/executive.html','.atwar-header-task-nav'],['admin/employees.html','.hr-tabs'],['fleet/index.html','.fleet-tabs'],['fleet/completed.html','.fleet-tabs'],['recruitment/index.html','.rec-tabs'],['workspace/index.html','.space-tabs'],['job-library/index.html','.view-tabs']];
 for(const width of [1440,390])for(const [url,selector] of cases){
  await page.setViewportSize({width,height:900});await page.goto('http://127.0.0.1:8765/'+url);
  await page.evaluate(()=>{document.body.style.visibility='visible';document.getElementById('appShell')?.classList.remove('hidden');document.getElementById('authLoadingScreen')?.remove()});
@@ -26,5 +26,5 @@ for(const width of [1440,390])for(const [url,selector] of cases){
  await tabs.locator('[aria-selected="true"]').focus();
  assert.equal(await tabs.locator('[aria-selected="true"]').evaluate(e=>getComputedStyle(e).outlineStyle),'solid',url);
 }
-console.log('PASS: unified tabs on 10 real page routes at desktop/mobile, selected states, focus, hidden controls and task navigation placement.');
+console.log('PASS: unified tabs on 11 real page routes at desktop/mobile, selected states, focus, hidden controls and task navigation placement.');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
