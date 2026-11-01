@@ -1,4 +1,4 @@
-import {esc,states,terminal} from './it-support-model.mjs?v=5';
+import {esc,states,terminal} from './it-support-model.mjs?v=6';
 export const purchasePhases={quote:'توفير عرض السعر',technical:'المراجعة الفنية',manager:'اعتماد المشرف المباشر',supply:'التوريد',receipt:'تأكيد الاستلام',receipt_issue:'معالجة ملاحظة الاستلام',payment:'الصرف والتسوية',closed:'مكتمل',cancelled:'ملغى',rejected:'مرفوض'};
 export const paymentStates={technical:'مراجعة قسم تقنية المعلومات',supervisor:'اعتماد مشرف تطوير الأعمال',chief:'مراجعة رئيس الحسابات',assigned:'لدى المحاسب المعني',paid:'تم الصرف',cancelled:'ملغى'};
 const financeRoles={technical:'قسم تقنية المعلومات',supervisor:'مشرف تطوير الأعمال',chief:'رئيس الحسابات',assigned:'المحاسب المعني'};

@@ -1,4 +1,4 @@
-import {esc,terminal} from './it-support-model.mjs?v=5';
+import {esc,terminal} from './it-support-model.mjs?v=6';
 let env;export const configureFiles=e=>env=e;
 const mime={pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',txt:'text/plain',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
 export const fileInput=()=>'<label class="wide">ملفات وصور<input name="files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.docx,.xlsx"><small class="it-file-hint">يمكن اختيار عدة ملفات وصور؛ 10 MB لكل ملف، وحتى 20 مرفقًا للطلب.</small></label><label class="wide">التقاط صورة بالجوال<input name="camera" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"></label>';
