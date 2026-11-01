@@ -1,7 +1,7 @@
 import {initWorkboard} from './fleet-workboard.mjs?v=20261027.7';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
-import { initFleetDocuments } from "./fleet-documents-page.mjs?v=3";
+import { initFleetDocuments } from "./fleet-documents-page.mjs?v=20261102.1";
 import {
   englishDigits,
   dashboardRequests,

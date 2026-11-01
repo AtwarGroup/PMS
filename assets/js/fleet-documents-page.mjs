@@ -1,45 +1,58 @@
 import { escapeHTML } from "./access-model.mjs";
 import { englishDigits } from "./fleet-model.mjs?v=3";
+import {documentKinds, documentStates, documentState, documentDateError, filterDocumentVehicles} from './fleet-document-model.mjs?v=20261102.1';
 const esc = value => escapeHTML(englishDigits(value));
-export const documentKinds = {
-  authorization: "تفويض السائق",
-  registration: "رخصة السير",
-  insurance: "التأمين",
-  inspection: "الفحص الدوري",
-};
+export {documentKinds};
 export async function initFleetDocuments({ rpc, show, run }) {
   let data;
+  let firstLoad = true;
   const $ = (id) => document.getElementById(id);
   async function load() {
     data = await rpc("fleet_documents_context");
+    populateFilters();
     render();
   }
-  function render() {
-    $("documentSettings").hidden = !data.can_configure;
-    const vehicleFilter = new URLSearchParams(location.search).get("vehicle");
-    $("documentRows").innerHTML = data.vehicles
-      .filter((v) => !vehicleFilter || v.id === vehicleFilter)
-      .map(
-        (v) =>
-          `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.driver_name || "غير مسندة")}</small></td>${Object.entries(
-            documentKinds,
-          )
-            .map(([kind]) => {
-              const d = data.documents.find(
-                (d) => d.vehicle_id === v.id && d.kind === kind,
-              );
-              return `<td>${d ? `<b>${esc(d.expires_on)}</b><small class="${d.days_left < 0 ? "fleet-expired" : ""}">${d.days_left < 0 ? "منتهية منذ " + Math.abs(d.days_left) + " يوم" : d.days_left === 0 ? "تنتهي اليوم" : "متبقي " + d.days_left + " يوم"}</small>${d.days_left >= 0 && d.days_left <= d.days_before ? "<small>ضمن مدة التنبيه</small>" : ""}` : '<span class="fleet-muted">غير مسجل</span>'}</td>`;
-            })
-            .join(
-              "",
-            )}<td>${data.can_edit ? `<button type="button" class="fleet-btn secondary" data-documents="${esc(v.id)}">تحديث الوثائق</button>` : ""}</td></tr>`,
-      )
-      .join("");
-    $("documentEmpty").hidden = data.vehicles.length > 0;
-    $("documentRules").textContent = data.settings
-      .map((s) => `${documentKinds[s.kind]}: قبل ${s.days_before} يوم`)
-      .join(" · ");
+  const options = (items, selected) => items.map(([value, label]) => `<option value="${escapeHTML(value)}" ${value === selected ? 'selected' : ''}>${esc(label)}</option>`).join('');
+  function populateFilters() {
+    const selectedVehicle = firstLoad ? new URLSearchParams(location.search).get('vehicle') || '' : $('documentVehicle').value;
+    const vehicles = [['', 'جميع السيارات'], ...data.vehicles.map(v => [v.id, v.plate])];
+    if (selectedVehicle && !vehicles.some(([id]) => id === selectedVehicle)) vehicles.push([selectedVehicle, 'سيارة غير متاحة']);
+    $('documentVehicle').innerHTML = options(vehicles, selectedVehicle);
+    const drivers = [...new Set(data.vehicles.map(v => v.driver_name || '__unassigned__'))].sort((a,b) => a.localeCompare(b,'ar'));
+    $('documentDriver').innerHTML = options([['','جميع السائقين'], ...drivers.map(name => [name, name === '__unassigned__' ? 'دون سائق' : name])], $('documentDriver').value);
+    if (firstLoad) {
+      $('documentKind').innerHTML = options([['','جميع الأنواع'], ...Object.entries(documentKinds)], '');
+      $('documentState').innerHTML = options([['','جميع الحالات'], ...Object.entries(documentStates)], '');
+    }
+    firstLoad = false;
   }
+  function render() {
+    if (!data) return;
+    $('documentSettings').hidden = !data.can_configure;
+    const filters = {vehicle: $('documentVehicle').value, driver: $('documentDriver').value, kind: $('documentKind').value, state: $('documentState').value, query: $('documentSearch').value, from: $('documentDateFrom').value, to: $('documentDateTo').value};
+    const error = documentDateError(filters);
+    $('documentDateTo').setCustomValidity(error);
+    $('documentFilterStatus').textContent = error;
+    const rows = filterDocumentVehicles(data, filters);
+    for (const header of document.querySelectorAll('#documents th[data-document-kind]')) header.hidden = Boolean(filters.kind && header.dataset.documentKind !== filters.kind);
+    $('documentRows').innerHTML = rows.map(({vehicle: v, documents, state}) =>
+      `<tr class="fleet-document-row fleet-document-${state}" data-document-state="${state}" data-document-vehicle="${esc(v.id)}"><td><b>${esc(v.plate)}</b><small>${esc(v.driver_name || 'غير مسندة')}</small><small class="fleet-document-status">${esc(documentStates[state])}</small></td>${Object.keys(documentKinds).map(kind => {
+        const d = documents.get(kind), state = documentState(d);
+        return `<td class="fleet-document-cell-${state}" data-kind="${kind}" ${filters.kind && kind !== filters.kind ? 'hidden' : ''}>${d ? `<b>${esc(d.expires_on)}</b><small>${d.days_left < 0 ? 'منتهية منذ ' + Math.abs(d.days_left) + ' يوم' : d.days_left === 0 ? 'تنتهي اليوم' : 'متبقي ' + d.days_left + ' يوم'}</small>${d.days_left >= 0 && d.days_left <= d.days_before ? '<small>ضمن مدة التنبيه</small>' : ''}` : '<span class="fleet-muted">غير مسجل</span>'}</td>`;
+      }).join('')}<td>${data.can_edit ? `<button type="button" class="fleet-btn secondary" data-documents="${esc(v.id)}">تحديث الوثائق</button>` : ''}</td></tr>`
+    ).join('');
+    $('documentResultCount').textContent = `عرض ${rows.length} من ${data.vehicles.length} سيارة`;
+    $('documentEmpty').hidden = rows.length > 0;
+    $('documentEmpty').textContent = error ? 'صحح نطاق التاريخ لعرض النتائج.' : data.vehicles.length ? 'لا توجد وثائق تطابق الفلاتر المحددة.' : 'لا توجد سيارات متاحة لك.';
+    $('documentRules').textContent = data.settings.map(s => `${documentKinds[s.kind]}: قبل ${s.days_before} يوم`).join(' · ');
+  }
+  for (const id of ['documentVehicle','documentDriver','documentKind','documentState','documentDateFrom','documentDateTo']) $(id).onchange = render;
+  $('documentSearch').oninput = render;
+  $('clearDocumentFilters').onclick = () => {
+    for (const id of ['documentVehicle','documentDriver','documentKind','documentState','documentSearch','documentDateFrom','documentDateTo']) $(id).value = '';
+    const url = new URL(location.href);url.searchParams.delete('vehicle');history.replaceState(history.state,'',url);
+    render();
+  };
   function editor(vehicleId) {
     const v = data.vehicles.find((v) => v.id === vehicleId);
     show(
