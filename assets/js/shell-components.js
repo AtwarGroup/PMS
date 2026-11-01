@@ -279,7 +279,7 @@
 
   window.atwarOpenNotificationRecord=async function(sb,row,depthPrefix='',onError=()=>{}){
     if(!row)return false;
-    if(row.type==='IT_SUPPORT'){location.href=depthPrefix+'it-support/index.html';return true;}
+    if(row.type==='IT_SUPPORT'){const {data,error}=await sb.rpc('it_support_notification_open',{p_id:row.id});if(error||!data){onError('الإشعار أو الطلب غير متاح لك حاليًا.');return false;}location.href=depthPrefix+'it-support/'+(data.purchase?'purchases.html':'index.html')+(data.ticket_id?'?request='+encodeURIComponent(data.ticket_id):'');return true;}
     if(row.type==='RECRUITMENT'){location.href=depthPrefix+'recruitment/index.html';return true;}
     if(['FLEET_WORKFLOW','FLEET_HANDOVER'].includes(row.type)){const {data,error}=await sb.rpc('fleet_workflow_notification_open',{p_notification:row.id});if(error||!data){onError('السجل غير متاح لك حاليًا.');return false;}const query=data.request_id?'request='+encodeURIComponent(data.request_id):'handover='+encodeURIComponent(data.handover_id);location.href=depthPrefix+'fleet/index.html?'+query;return true;}
     if(row.type==='FLEET_DOCUMENT'){const {data,error}=await sb.rpc('fleet_document_open',{p_notification:row.id});if(error||!data){onError('الوثيقة غير متاحة لك حاليًا.');return false;}location.href=depthPrefix+'fleet/index.html?view=documents&vehicle='+encodeURIComponent(data);return true;}
