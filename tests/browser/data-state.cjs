@@ -48,9 +48,9 @@ const root=path.resolve(__dirname,'../..');
     auth:{getSession:async()=>({data:{session:{user:{id:'isolated-user'}}}})},
     from(table){
      if(table==='profiles'){const query={select(){return query},eq(){return query},single:async()=>({data:{id:'isolated-user',role:'employee',active:true,status:'active'}})};return query}
-     if(table!=='notifications')throw Error('Unexpected table');
-     const query={select(){return query},order(){return query},limit(){window.notificationReads++;return new Promise(resolve=>{window.resolveNotifications=resolve})}};return query;
-    }
+     throw Error('Unexpected table');
+    },
+    rpc(name){if(name!=='notification_overview')throw Error('Unexpected RPC');window.notificationReads++;return new Promise(resolve=>{window.resolveNotifications=resolve})}
    });
    const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
    window.notificationFixtureDone=new AsyncFunction(source)();
@@ -65,7 +65,7 @@ const root=path.resolve(__dirname,'../..');
   await page.locator('#notifList button').click();
   await page.waitForFunction(()=>window.notificationReads===2);
   assert.equal(await page.locator('#notifList [data-state="loading"]').count(),1);
-  await page.evaluate(()=>window.resolveNotifications({data:[],error:null}));
+  await page.evaluate(()=>window.resolveNotifications({data:{items:[],modules:{},total_unread:0},error:null}));
   await page.waitForFunction(()=>document.getElementById('notifEmpty').style.display==='block');
   assert.equal(await page.locator('#notifList [data-state]').count(),0);
   assert.deepEqual(errors,[]);
