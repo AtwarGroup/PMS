@@ -1,3 +1,4 @@
+import {quoteFileIds, uploadFleetFiles, validateFleetUploadBudget} from './fleet-attachments.mjs?v=20261102.2';
 import {initWorkboard} from './fleet-workboard.mjs?v=20261027.7';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
@@ -53,7 +54,7 @@ const amountField = (name, label, value = "") =>
     'required min="0" max="99999999" step="0.01"',
   );
 const fileField = (name, label, required = false) =>
-  `<label>${esc(label)}<input name="${name}" type="file" accept="application/pdf,image/png,image/jpeg" ${required ? "required" : ""}><small class="fleet-muted">PDF أو صورة · حتى 5 ميجابايت</small></label>`;
+  `<label>${esc(label)}<input name="${name}" type="file" multiple accept="application/pdf,image/png,image/jpeg" ${required ? "required" : ""}><small class="fleet-muted">يمكن اختيار عدة ملفات · PDF أو صور · حتى 5 ميجابايت للملف</small></label>`;
 const badge = (s) =>
   `<span class="fleet-tag ${esc(s)}">${esc(states[s] || s)}</span>`;
 const button = (text, attrs = "", secondary = false) =>
@@ -190,7 +191,7 @@ function vehicleEditor(id) {
     });
 }
 function quoteEditor(q={},i){
- return `<section class="fleet-quote fleet-wide" data-quote><header><b>عرض ${i+1}</b><small data-optional-quote hidden>اختياري</small><small data-required-quote>إلزامي</small></header><div class="fleet-form"><label>يشمل العرض<select name="scope" required>${Object.entries(quoteScopes).map(([key,label])=>opt(key,label,q.scope||'parts_labor')).join('')}</select></label>${field('supplier','الورشة',q.supplier,'text','required minlength="10" maxlength="200"')}${field('phone','رقم جوال الورشة',q.phone,'tel','required pattern="(05[0-9]{8}|\\+9665[0-9]{8})" dir="ltr" placeholder="05XXXXXXXX"')}${amountField('parts','قيمة قطع الغيار',q.parts??0)}${amountField('labor','قيمة أجرة اليد',q.labor??0)}${amountField('tax','الضريبة',q.tax??0)}<div class="fleet-quote-attachments fleet-wide">${['parts','labor'].map(k=>`<label>${k==='parts'?'مرفق عرض قطع الغيار':'مرفق عرض أجرة اليد'}${q[k+'_file_id']?'<small>يوجد مرفق محفوظ؛ ارفع ملفًا لاستبداله.</small>':''}<input type="file" name="${k}_file" accept="application/pdf,image/jpeg,image/png" ${q[k+'_file_id']?'':'required'}><small class="fleet-muted">PDF أو صورة واضحة، حتى 5 ميجابايت.</small></label><input type="hidden" name="${k}_file_id" value="${esc(q[k+'_file_id']||'')}">`).join('')}</div></div><p>الإجمالي: <b data-quote-total>${money(quoteTotal(q))}</b> ر.س</p></section>`;
+ return `<section class="fleet-quote fleet-wide" data-quote><header><b>عرض ${i+1}</b><small data-optional-quote hidden>اختياري</small><small data-required-quote>إلزامي</small></header><div class="fleet-form"><label>يشمل العرض<select name="scope" required>${Object.entries(quoteScopes).map(([key,label])=>opt(key,label,q.scope||'parts_labor')).join('')}</select></label>${field('supplier','الورشة',q.supplier,'text','required minlength="10" maxlength="200"')}${field('phone','رقم جوال الورشة',q.phone,'tel','required pattern="(05[0-9]{8}|\\+9665[0-9]{8})" dir="ltr" placeholder="05XXXXXXXX"')}${amountField('parts','قيمة قطع الغيار',q.parts??0)}${amountField('labor','قيمة أجرة اليد',q.labor??0)}${amountField('tax','الضريبة',q.tax??0)}<div class="fleet-quote-attachments fleet-wide">${['parts','labor'].map(k=>`<label>${k==='parts'?'مرفق عرض قطع الغيار':'مرفق عرض أجرة اليد'}${quoteFileIds(q,k).length?`<small data-saved-attachment-count>مرفقات محفوظة: ${quoteFileIds(q,k).length}؛ يمكنك إضافة ملفات أخرى.</small>`:''}<input type="file" multiple name="${k}_file" accept="application/pdf,image/jpeg,image/png" ${q[k+'_file_id']?'':'required'}><small class="fleet-muted">يمكن اختيار عدة ملفات أو تصوير أكثر من صورة؛ حتى 5 ميجابايت للملف.</small></label><input type="hidden" name="${k}_file_id" value="${esc(quoteFileIds(q,k)[0]||'')}"><input type="hidden" name="${k}_file_ids" value="${esc(quoteFileIds(q,k).length?JSON.stringify(quoteFileIds(q,k)):'')}">`).join('')}</div></div><p>الإجمالي: <b data-quote-total>${money(quoteTotal(q))}</b> ر.س</p></section>`;
 }
 async function requestEditor(id){
  let r={};if(id)r=(await rpc('fleet_detail',{p_id:id})).request;currentEdit=r;
@@ -213,11 +214,13 @@ async function requestEditor(id){
  form.elements.vehicle_id.onchange=()=>{const v=vehicles.find(v=>v.id===form.elements.vehicle_id.value);form.elements.odometer.min=Math.max(1,v.odometer||0);form.elements.odometer.value='';};
  form.onsubmit=e=>run(e,async()=>{const send=e.submitter?.value==='send';const data=Object.fromEntries(new FormData(form));data.upgrade_workflow=true;data.stops_vehicle=data.request_type==='emergency'&&data.stops_vehicle==='true';data.needs_tow=data.stops_vehicle&&data.needs_tow==='true';
  if(!Number.isInteger(Number(data.odometer))||Number(data.odometer)<=0)throw Error('أدخل قراءة العداد الحالية، ويجب أن تكون أكبر من صفر.');
- const rows=activeRows();data.quotes=rows.map(q=>{const quote=Object.fromEntries([...q.querySelectorAll('input[name]:not([type=file]),select[name]')].map(x=>[x.name,englishDigits(x.value).trim()]));for(const kind of['parts','labor'])if(!quoteIncludes(quote,kind)){quote[kind]=0;delete quote[kind+'_file_id'];}return quote;});
+ const rows=activeRows();data.quotes=rows.map(q=>{const quote=Object.fromEntries([...q.querySelectorAll('input[name]:not([type=file]),select[name]')].map(x=>[x.name,englishDigits(x.value).trim()]));for(const kind of['parts','labor'])if(!quoteIncludes(quote,kind)){quote[kind]=0;delete quote[kind+'_file_id'];delete quote[kind+'_file_ids'];}else quote[kind+'_file_ids']=quote[kind+'_file_ids']?JSON.parse(quote[kind+'_file_ids']):quoteFileIds(quote,kind);return quote;});
  if(new Set(data.quotes.map(q=>q.scope)).size>1)throw Error('يجب أن تغطي جميع العروض نفس نطاق العمل المطلوب.');
  if(data.quotes.length<minimumQuotes(data))throw Error(`يلزم توفير ${minimumQuotes(data)} عروض أسعار على الأقل.`);
+ const selections=rows.flatMap((q,i)=>['parts','labor'].filter(kind=>quoteIncludes(data.quotes[i],kind)).flatMap(kind=>[...q.querySelector(`[name=${kind}_file]`).files].map(file=>({file,kind:'quote_'+kind}))));
+ await validateFleetUploadBudget(selections,currentEdit.id?(await rpc('fleet_detail',{p_id:currentEdit.id})).files:[]);
  const saved=await rpc('fleet_request_save',{p_id:currentEdit.id||null,p_revision:currentEdit.revision||null,p_data:data});currentEdit=(await rpc('fleet_detail',{p_id:saved})).request;
- for(const[i,q]of rows.entries())for(const kind of['parts','labor']){const input=q.querySelector(`[name=${kind}_file]`);if(quoteIncludes(data.quotes[i],kind)&&input.files[0]){const fid=await upload(saved,'quote_'+kind,input.files[0]);data.quotes[i][kind+'_file_id']=fid;q.querySelector(`[name=${kind}_file_id]`).value=fid;input.value='';input.required=false;}}
+ for(const[i,q]of rows.entries())for(const kind of['parts','labor']){const input=q.querySelector(`[name=${kind}_file]`);if(quoteIncludes(data.quotes[i],kind)&&input.files.length){const ids=await uploadFleetFiles([...input.files],file=>upload(saved,'quote_'+kind,file),quoteFileIds(data.quotes[i],kind),ids=>{data.quotes[i][kind+'_file_ids']=ids;data.quotes[i][kind+'_file_id']=ids[0];q.querySelector(`[name=${kind}_file_id]`).value=ids[0];q.querySelector(`[name=${kind}_file_ids]`).value=JSON.stringify(ids);input.required=false;});input.value='';input.dispatchEvent(new Event('change',{bubbles:true}));}}
  const latest=(await rpc('fleet_detail',{p_id:saved})).request;await rpc('fleet_request_save',{p_id:saved,p_revision:latest.revision,p_data:data});currentEdit=(await rpc('fleet_detail',{p_id:saved})).request;
  if(send)await rpc('fleet_command',{p_id:saved,p_revision:currentEdit.revision,p_action:'submit',p_data:{}});
  await load();$('fleetDialog').close();status(send?'تم إرسال الطلب للاعتماد.':'تم حفظ المسودة.');});
@@ -250,10 +253,12 @@ async function openRequest(id) {
     meta = context.requests.find((x) => x.id === id) || r,
     allowed = requestActions(r, context),
     balance = settlement(r);
+  const quoteLabels=new Map();
+  r.quotes.forEach((q,i)=>['parts','labor'].forEach(kind=>quoteFileIds(q,kind).forEach(id=>quoteLabels.set(id,`العرض ${i+1} — ${q.supplier} — ${kind==='parts'?'قطع الغيار':'أجرة اليد'}`))));
   show(
     `طلب صيانة #${r.number}`,
     `${meta.driver_name || ""} · ${meta.plate || ""}`,
-    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>نوع الصيانة: <b>${esc(maintenanceKinds[r.maintenance_kind]||'—')}</b></p><p>توقف السيارة: <b>${r.stops_vehicle?'نعم':'لا'}</b></p><p>توفير سطحة: <b>${r.needs_tow?'نعم':'لا'}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>الورشة</th><th>جوال الورشة</th><th>يشمل العرض</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr class="${i===r.selected_quote?'fleet-selected-quote':''}"><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td dir="ltr">${esc(q.phone||'—')}</td><td>${esc(quoteScopes[q.scope||'parts_labor'])}</td><td>${quoteIncludes(q,'parts')?money(q.parts):'—'}</td><td>${quoteIncludes(q,'labor')?money(q.labor):'—'}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc({ quote: "عرض سعر سابق",quote_parts:"عرض قطع الغيار",quote_labor:"عرض أجرة اليد",repair_photo:"صورة الإصلاح", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div>${context.audit_admin?`<h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>`:""}${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
+    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>نوع الصيانة: <b>${esc(maintenanceKinds[r.maintenance_kind]||'—')}</b></p><p>توقف السيارة: <b>${r.stops_vehicle?'نعم':'لا'}</b></p><p>توفير سطحة: <b>${r.needs_tow?'نعم':'لا'}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>الورشة</th><th>جوال الورشة</th><th>يشمل العرض</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr class="${i===r.selected_quote?'fleet-selected-quote':''}"><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td dir="ltr">${esc(q.phone||'—')}</td><td>${esc(quoteScopes[q.scope||'parts_labor'])}</td><td>${quoteIncludes(q,'parts')?money(q.parts):'—'}</td><td>${quoteIncludes(q,'labor')?money(q.labor):'—'}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc(quoteLabels.get(f.id)||{ quote: "عرض سعر سابق",quote_parts:"عرض قطع الغيار",quote_labor:"عرض أجرة اليد",repair_photo:"صورة الإصلاح", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div>${context.audit_admin?`<h3>سجل الإجراءات</h3><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol>`:""}${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
   );
 }
 function actionEditor(action) {
@@ -285,7 +290,7 @@ function actionEditor(action) {
     fields +=
       amountField("total", "إجمالي الفاتورة") +
       fileField("invoice", "الفاتورة", true) +
-      `<label>صورة الإصلاح<input name="repair_photo" type="file" accept="image/png,image/jpeg" required><small>صورة واضحة للإصلاح المنفذ.</small></label>` +
+      `<label>صورة الإصلاح<input name="repair_photo" type="file" multiple accept="image/png,image/jpeg" required><small>يمكن إرفاق عدة صور واضحة للإصلاح المنفذ.</small></label>` +
       `<label class="fleet-wide"><span><input name="received" type="checkbox" required style="width:auto"> أؤكد اكتمال الإصلاح واستلام السيارة</span></label><p class="fleet-muted fleet-wide">إذا شملت الفاتورة ضريبة، تحقق من اسم المؤسسة ورقمها الضريبي. الزيادة تحتاج اعتمادًا مسبقًا قبل تنفيذها.</p>`;
   if (["confirm_advance", "settle"].includes(action)) {
     const diff =
@@ -322,12 +327,10 @@ function actionEditor(action) {
     run(e, async () => {
       const data = Object.fromEntries(new FormData(e.target));
       if (action === "confirm_repair") {
-        data.invoice_id = await upload(
-          r.id,
-          "invoice",
-          e.target.elements.invoice.files[0],
-        );
-        if(r.workflow_version===2)data.repair_photo_id=await upload(r.id,'repair_photo',e.target.elements.repair_photo.files[0]);
+        await validateFleetUploadBudget([...e.target.elements.invoice.files].map(file=>({file,kind:'invoice'})).concat([...(e.target.elements.repair_photo?.files||[])].map(file=>({file,kind:'repair_photo'}))),(await rpc('fleet_detail',{p_id:r.id})).files);
+        data.invoice_ids = await uploadFleetFiles([...e.target.elements.invoice.files],file=>upload(r.id,'invoice',file));
+        data.invoice_id = data.invoice_ids[0];
+        if(e.target.elements.repair_photo.files.length){data.repair_photo_ids=await uploadFleetFiles([...e.target.elements.repair_photo.files],file=>upload(r.id,'repair_photo',file));data.repair_photo_id=data.repair_photo_ids[0];}
         data.received = true;
         delete data.invoice;delete data.repair_photo;
       }
@@ -340,12 +343,7 @@ function actionEditor(action) {
               }
             : settlement(r);
         data.amount = diff.amount;
-        if (diff.amount)
-          data.evidence_id = await upload(
-            r.id,
-            diff.kind,
-            e.target.elements.evidence.files[0],
-          );
+        if (diff.amount){await validateFleetUploadBudget([...e.target.elements.evidence.files].map(file=>({file,kind:diff.kind})),(await rpc('fleet_detail',{p_id:r.id})).files);data.evidence_ids=await uploadFleetFiles([...e.target.elements.evidence.files],file=>upload(r.id,diff.kind,file));data.evidence_id=data.evidence_ids[0];}
         delete data.evidence;
       }
       await rpc("fleet_command", {
