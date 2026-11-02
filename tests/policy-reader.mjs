@@ -57,3 +57,13 @@ for(const code of ['POL-TRAVEL','POL-COMPENSATION','POL-LEAVE']){
 }
 assert.equal(policyOpening('| بيان الوثيقة | التفاصيل |\n| --- | --- |\n| غير متوقع | أ | ب |').body,'| بيان الوثيقة | التفاصيل |\n| --- | --- |\n| غير متوقع | أ | ب |');
 console.log('PASS shared document control: source values preserved, no invented approvals/dates, purpose first, only control table converted, escaped extra fields');
+
+const {renderPolicyReviewSummary}=await import('../assets/js/policy-reader.mjs');
+const reviewSections=[{number:5,section:{id:'section-5',title:'سياسات إدارة الرواتب',body:'نص'}},{number:8,section:{id:'references',title:'المراجع',body:'نص'}}];
+const reviewHTML=renderPolicyReviewSummary([{actor_name:'المراجع',section_id:'section-5',body:'ملاحظة محفوظة <script>alert(1)</script>'}],reviewSections);
+assert(reviewHTML.includes('ملاحظات المراجعة <span>(1)</span>'));
+assert(reviewHTML.includes('القسم 5: سياسات إدارة الرواتب'));
+assert(reviewHTML.includes('data-review-target="section-5"'));
+assert(reviewHTML.includes('&lt;script&gt;'));
+assert(!reviewHTML.includes('<script>'));
+assert.equal(renderPolicyReviewSummary([{actor_name:'المراجع',section_id:'hidden',body:'مخفي'}],reviewSections),'');
