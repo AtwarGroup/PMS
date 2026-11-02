@@ -455,3 +455,13 @@ body.travel-policy-page .atwar-main{overflow:visible!important}
 #policyApp .policy-document-control>summary{cursor:pointer;font-size:13px;font-weight:600;color:#60748b}
 #policyApp .policy-document-control[open]>summary{margin-bottom:12px}
 @media print{#policyApp .travel-meta dl{gap:7px 20px}#policyApp .policy-document-control>summary{font-size:9px}#policyApp .policy-document-control{margin-top:7px;padding-top:7px}}
+
+/* Saved review comments are visible when making a policy decision. */
+#policyApp .policy-review-summary{border:1px solid #dfd2b0;border-inline-start:4px solid #bd9c57;background:#fffcf5;margin:20px 0;padding:20px 24px}
+#policyApp .policy-review-summary h2{margin:0 0 6px;font-size:1.05rem;color:#193553}
+#policyApp .policy-review-summary>p{margin:0 0 12px;color:#5a6575;font-size:.9rem}
+#policyApp .policy-summary-note{padding:12px 14px;background:#fff;border:1px solid #e4e8ee;border-radius:8px;margin-top:10px}
+#policyApp .policy-summary-note-meta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+#policyApp .policy-summary-link{border:0;background:transparent;padding:0;color:#2361a2;text-decoration:underline;cursor:pointer;font:inherit;text-align:start}
+#policyApp .policy-summary-note p{white-space:pre-wrap;margin:8px 0 0;line-height:1.8}
+@media print{#policyApp .policy-review-summary{display:none!important}}
