@@ -465,3 +465,4 @@ body.travel-policy-page .atwar-main{overflow:visible!important}
 #policyApp .policy-summary-link{border:0;background:transparent;padding:0;color:#2361a2;text-decoration:underline;cursor:pointer;font:inherit;text-align:start}
 #policyApp .policy-summary-note p{white-space:pre-wrap;margin:8px 0 0;line-height:1.8}
 @media print{#policyApp .policy-review-summary{display:none!important}}
+.policy-note-resolution{margin-top:1rem}.policy-note-resolution summary{cursor:pointer;font-weight:700;color:#203d60}.policy-note-decision{display:grid;gap:.75rem;padding-top:.75rem}.policy-note-decision label{display:grid;gap:.4rem;font-weight:700}.policy-note-decision textarea{width:100%;min-height:5rem;padding:.75rem;border:1px solid #c9d4e2;border-radius:.4rem;font:inherit}.policy-note-decision [data-note-editor] textarea{min-height:18rem;direction:rtl}.policy-decision-result{color:#356950;font-weight:700}
