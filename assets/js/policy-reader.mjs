@@ -51,6 +51,13 @@ export function policyReaderGroups(sections, code='POL-TRAVEL') {
  const selected=code==='POL-LEAVE'?[['نظرة عامة',[1,2,3]],['الإجازة السنوية والطارئة',[4,5,6]],['الإجازات والحالات الخاصة',[7,8,9,10,11,12,13,14]],['الإجراءات والعودة للعمل',[15,16,17,18,19,20]],['التذاكر والاستحقاق',[21,22,23,24,25]],['الحوكمة والسريان',[26,27]],['الملاحق',[28,29,30]]]:code==='POL-COMPENSATION'?[['التعريف والهيكل الوظيفي',[1,2]],['السلم والمزايا',[3,4]],['إدارة الرواتب والاعتمادات',[5,6]],['المراجع',[8]]]:groups;
  return selected.filter(([,numbers])=>sections.some(s=>numbers.includes(s.number)));
 }
+// Show saved review notes at the decision point without changing their underlying records.
+export function renderPolicyReviewSummary(comments, sections) {
+ const visible=new Map(sections.map(({section,number})=>[section.id,{section,number}]));
+ const notes=comments.filter(comment=>visible.has(comment.section_id));
+ if(!notes.length)return '';
+ return `<section class="policy-box policy-review-summary" aria-label="ملاحظات المراجعة"><h2>ملاحظات المراجعة <span>(${notes.length})</span></h2><p>الملاحظات المسجلة على أقسام السياسة.</p>${notes.map(note=>{const target=visible.get(note.section_id);return `<article class="policy-summary-note"><div class="policy-summary-note-meta"><strong>${esc(note.actor_name)}</strong><button type="button" class="policy-summary-link" data-review-target="${esc(target.section.id)}">القسم ${target.number}: ${esc(target.section.title)}</button></div><p>${esc(note.body)}</p></article>`;}).join('')}</section>`;
+}
 export function renderTravelReader(sections, renderBody, notes, options = {}) {
  const indexGroups=policyReaderGroups(sections,options.code);
 
