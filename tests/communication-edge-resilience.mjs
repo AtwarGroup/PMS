@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFile}from 'node:fs/promises';
+import vm from 'node:vm';
+import {transform}from 'esbuild';
+const source=await readFile(new URL('../supabase/functions/communication/index.ts',import.meta.url),'utf8');
+const {code}=await transform(source.replace(/^import .*;\n/gm,''),{loader:'ts',format:'esm'});
+let handler;const calls=[];
+const state={users:[{id:'user'}],messages:[{id:'m1',task:'old'},{id:'m2',task:'old'},{id:'m3',task:'current'}]};
+const caller={auth:{getUser:async()=>({data:{user:{id:'user'}}})},rpc:async name=>{calls.push('caller:'+name);return {data:name==='communication_status'?true:[]}},from(table){assert(['tasks','projects'].includes(table));let old=false;const q={select(){return q},is(){return q},order(){return q},in(key,ids){assert.equal(key,'id');assert.deepEqual([...ids],['old']);old=true;return q},limit(){calls.push('catalogue:'+table);return Promise.resolve({data:table==='tasks'?[{id:'current',title:'current'}]:[]})},then(resolve){assert(old);calls.push('old-tasks');return Promise.resolve({data:[{id:'old',title:'permitted'}]}).then(resolve)}};return q;}};
+const db={rpc:async name=>{calls.push('db:'+name);return {data:name==='communication_load'?{version:1,state:structuredClone(state),users:state.users}:name==='communication_file'?{id:'file',base64:'eA=='}:[]}}};
+vm.runInNewContext(code,{Deno:{env:{get:k=>k==='SUPABASE_URL'?'https://db.example':k==='SUPABASE_ANON_KEY'?'anon':'service'},serve:f=>handler=f},Response,Buffer,createClient:(url,key)=>key==='anon'?caller:db,snapshot:s=>({...s,messages:s.messages.map(x=>({...x})),tasks:[]}),command(){},conversation(){},notificationSettings(){}});
+const request=path=>({method:'POST',headers:new Headers({Authorization:'Bearer token'}),text:async()=>JSON.stringify({path,data:{id:'file'}})});
+assert.equal((await handler({method:'OPTIONS'})).headers.get('Access-Control-Max-Age'),'600');
+let r=await handler(request('file'));assert.equal(r.status,200);assert(!calls.includes('db:communication_load'),'file download loaded entire inbox');assert(calls.includes('caller:communication_status'));
+calls.length=0;r=await handler(request('state'));const result=await r.json();assert.equal(r.status,200);assert.equal(calls.filter(x=>x==='old-tasks').length,1,'duplicate old task lookups');assert.equal(result.messages[0].task.title,'permitted');assert.equal(result.messages[1].task.title,'permitted');assert(calls.includes('catalogue:tasks'));assert(calls.includes('catalogue:projects'));assert(calls.includes('caller:communication_assignees'));
+console.log('PASS communication edge: cached preflight, authenticated direct file RPC, RLS caller catalogues and one batched lookup for repeated old task links');

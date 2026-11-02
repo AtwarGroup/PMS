@@ -18,7 +18,7 @@
     if(style.href!==href)style.href=href;
     document.head.append(style);
   };
-  if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261027-bfcache',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
+  if(!location.pathname.includes('/communication/')&&!location.pathname.includes('/communication-trial/')){import(new URL('js/communication-global.mjs?v=20261102-resilience',assetRoot).href).then(m=>m.startCommunicationAlerts()).catch(()=>{});}
   const loadCanonicalTypography=()=>{
     const style=document.querySelector('link[data-atwar-typography]')||document.createElement('link');
     style.rel='stylesheet';style.dataset.atwarTypography='1';

@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.0';
 import { Buffer } from 'node:buffer';
 import { command, snapshot, conversation, notificationSettings } from './model.mjs';
-const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Content-Type':'application/json'};
+const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Content-Type':'application/json','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Max-Age':'600'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers});
 Deno.serve(async(req)=>{
  if(req.method==='OPTIONS')return new Response(null,{headers});
@@ -15,31 +15,43 @@ Deno.serve(async(req)=>{
   const raw=await req.text();if(raw.length>14500000)return json({error:'الطلب يتجاوز الحد المسموح.'},413);
   const input=JSON.parse(raw),db=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
   if(input.path==='action'&&input.data?.action==='presence'){const {data:result,error:pe}=await db.rpc('communication_presence',{p_actor:user.id,p_data:input.data.data||{}});if(pe)throw pe;return json(result);}
+  // These RPCs already enforce actor and conversation access. Do not load the whole inbox first.
+  if(input.path==='message'){
+   const {data:row,error}=await db.rpc('communication_message',{p_actor:user.id,p_message:input.data?.id});if(error)throw error;
+   return json({...row,task:row.task?{id:row.task,restricted:true}:null});
+  }
+  if(input.path==='history'){
+   const {data:rows,error}=await db.rpc('communication_history',{p_actor:user.id,p_conversation:input.data?.conversation,p_before:input.data?.before});if(error)throw error;
+   return json(rows.map((m:any)=>({...m,task:m.task?{id:m.task,restricted:true}:null})));
+  }
+  if(input.path==='file'){
+   const {data:f,error}=await db.rpc('communication_file',{p_actor:user.id,p_file:input.data?.id});if(error)throw error;return json(f);
+  }
   for(let attempt=0;attempt<5;attempt++){
    const {data:record,error}=await db.rpc('communication_load',{p_actor:user.id});if(error)throw error;
    let state=record.state;
    // Active accounts and relationships come from profiles, never from the browser.
    state.users=record.users;
-   if(input.path==='message'){
-    const {data:row,error:re}=await db.rpc('communication_message',{p_actor:user.id,p_message:input.data?.id});if(re)throw re;return json({...row,task:row.task?{id:row.task,restricted:true}:null});
-   }
-   if(input.path==='history'){
-    const {data:rows,error:he}=await db.rpc('communication_history',{p_actor:user.id,p_conversation:input.data?.conversation,p_before:input.data?.before});if(he)throw he;
-    return json(rows.map((m:any)=>({...m,task:m.task?{id:m.task,restricted:true}:null})));
-   }
    if(input.path==='accounts')return json(state.users.filter((p:any)=>p.id===user.id));
    if(input.path==='state'){
     if(input.data?.target&&!state.messages.some((m:any)=>m.id===input.data.target)){const {data:row,error:re}=await db.rpc('communication_message',{p_actor:user.id,p_message:input.data.target});if(re)throw re;state.messages.push(row);if(row.thread&&!state.messages.some((m:any)=>m.id===row.thread)){const {data:root,error:rr}=await db.rpc('communication_message',{p_actor:user.id,p_message:row.thread});if(rr)throw rr;state.messages.push(root);}}
     const safe={...state,messages:state.messages.map((m:any)=>({...m,task:null}))};const view=snapshot(safe,user.id);
-    const {data:tasks,error:te}=await caller.from('tasks').select('id,title,status,assignee_id,creator_id,due_date').is('deleted_at',null).order('created_at',{ascending:false}).limit(500);if(te)throw te;
-    const {data:projects,error:pe}=await caller.from('projects').select('id,title,status').is('deleted_at',null).order('updated_at',{ascending:false}).limit(200);if(pe)throw pe;
-    view.tasks=(tasks||[]).map((t:any)=>({id:t.id,title:t.title,status:t.status,assignee:t.assignee_id,creator:t.creator_id,due:t.due_date,real:true}));
-    // Lookup linked tasks separately: an old linked task must not vanish at the catalogue limit.
-    for(const m of view.messages){const id=state.messages.find((x:any)=>x.id===m.id)?.task;if(!id)continue;let t=view.tasks.find((x:any)=>x.id===id);if(!t){const {data:row,error:re}=await caller.from('tasks').select('id,title,status,assignee_id,creator_id,due_date').eq('id',id).is('deleted_at',null).maybeSingle();if(re)throw re;if(row)t={id:row.id,title:row.title,status:row.status,assignee:row.assignee_id,creator:row.creator_id,due:row.due_date,real:true};}m.task=t||{id,restricted:true};}
-    const {data:assignees,error:ae}=await caller.rpc('communication_assignees');if(ae)throw ae;view.assignees=assignees||[];view.projects=projects||[];return json(view);
-   }
-   if(input.path==='file'){
-    const {data:f,error:fe}=await db.rpc('communication_file',{p_actor:user.id,p_file:input.data?.id});if(fe)throw fe;return json(f);
+    // Independent RLS-protected catalogues run concurrently, rather than serial network round trips.
+    const [taskResult,projectResult,assigneeResult]=await Promise.all([
+     caller.from('tasks').select('id,title,status,assignee_id,creator_id,due_date').is('deleted_at',null).order('created_at',{ascending:false}).limit(500),
+     caller.from('projects').select('id,title,status').is('deleted_at',null).order('updated_at',{ascending:false}).limit(200),
+     caller.rpc('communication_assignees')
+    ]);
+    if(taskResult.error||projectResult.error||assigneeResult.error)throw taskResult.error||projectResult.error||assigneeResult.error;
+    const asTask=(t:any)=>({id:t.id,title:t.title,status:t.status,assignee:t.assignee_id,creator:t.creator_id,due:t.due_date,real:true});
+    view.tasks=(taskResult.data||[]).map(asTask);
+    const taskMap=new Map(view.tasks.map((t:any)=>[t.id,t]));
+    const messageTasks=new Map(state.messages.map((m:any)=>[m.id,m.task]));
+    const missing=[...new Set(view.messages.map((m:any)=>messageTasks.get(m.id)).filter((id:any)=>id&&!taskMap.has(id)))];
+    // Batch old linked tasks once, retaining RLS and restricted-record fallbacks.
+    for(let offset=0;offset<missing.length;offset+=100){const {data:rows,error}=await caller.from('tasks').select('id,title,status,assignee_id,creator_id,due_date').in('id',missing.slice(offset,offset+100)).is('deleted_at',null);if(error)throw error;for(const row of rows||[])taskMap.set(row.id,asTask(row));}
+    for(const m of view.messages){const id=messageTasks.get(m.id);if(id)m.task=taskMap.get(id)||{id,restricted:true};}
+    view.assignees=assigneeResult.data||[];view.projects=projectResult.data||[];return json(view);
    }
    if(input.path!=='action')return json({error:'الإجراء غير متاح.'},400);
    if(['createTask','linkTask'].includes(input.data?.action)){
