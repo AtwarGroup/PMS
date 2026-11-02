@@ -16,6 +16,7 @@ let currentUser=null;
 let currentProfile=null;
 let users=[];
 let tasks=[];
+let pendingTaskReschedules=new Map(),reschedulesLoaded=false,rescheduleLoad=null;
 let unsubscribeTasks=[];
 let selectedTaskKey=null;
 let transientSelectedTask=null; // يحافظ على تفاصيل المهمة أثناء إعادة الإسناد
@@ -684,6 +685,7 @@ onAuthStateChanged(auth,async(user)=>{
   users=[];
   tasks=[];
   tasksInitialLoadReady=false;
+  pendingTaskReschedules=new Map();reschedulesLoaded=false;rescheduleLoad=null;
   for(const id of ['stat-total','stat-completed','stat-progress','stat-pending','stat-approval','stat-delayed']){const metric=document.getElementById(id);if(metric)metric.textContent='—';}
   const count=document.getElementById('visibleCount');if(count)count.textContent='جارٍ تحميل المهام…';
   selectedTaskKey=null;
@@ -1218,6 +1220,7 @@ function subscribeVisibleTasks(countsReady=Promise.resolve()){
     }
 
     tasksInitialLoadReady=true;
+    void refreshPendingTaskReschedules();
 
     if(selectedTaskKey&&!selectedTask()&&!transientSelectedTask){
       selectedTaskKey=null;
@@ -1633,6 +1636,38 @@ async function updateTaskField(task,f,v){
   }
 }
 
+function pendingTaskReschedule(task){
+  return pendingTaskReschedules.get(String(task._relationalId||task._key));
+}
+function taskRescheduleBadge(task){
+  return pendingTaskReschedule(task)?'<span class="task-reschedule-badge">بانتظار اعتماد إعادة الجدولة</span>':'';
+}
+async function refreshPendingTaskReschedules(){
+  if(!currentUser?.uid||isCompletedArchiveView())return;
+  if(rescheduleLoad)return rescheduleLoad;
+  const actor=currentUser.uid;
+  const run=(async()=>{
+    try{
+      const rows=[];
+      for(let offset=0;;offset+=1000){
+        const {data,error}=await window.ATWAR_SUPABASE.from('task_reschedule_requests').select('id,task_id').eq('status','PENDING').order('id').range(offset,offset+999);
+        if(error)throw error;
+        rows.push(...data);if(data.length<1000)break;
+      }
+      if(currentUser?.uid!==actor)return;
+      pendingTaskReschedules=new Map(rows.map(row=>[String(row.task_id),row]));reschedulesLoaded=true;
+      renderTasks();updateVisibleCount();
+    }catch(error){
+      if(currentUser?.uid!==actor)return;
+      console.error('Pending task reschedules:',error);reschedulesLoaded=false;
+      const count=document.getElementById('rescheduleFilterCount');if(count)count.textContent='—';
+    }
+  })();
+  rescheduleLoad=run;try{await run;}finally{if(rescheduleLoad===run)rescheduleLoad=null;}
+}
+window.addEventListener('atwar:notifications',()=>{if(tasksInitialLoadReady)void refreshPendingTaskReschedules();});
+window.addEventListener('online',()=>{if(tasksInitialLoadReady)void refreshPendingTaskReschedules();});
+
 let taskRescheduleBusy=false;
 async function requestSelectedTaskReschedule(){
   const task=selectedTask();
@@ -1646,6 +1681,7 @@ async function requestSelectedTaskReschedule(){
     const {error}=await window.ATWAR_SUPABASE.rpc('request_task_reschedule',{p_task_id:task._relationalId||task._key,p_start_date:proposal.start,p_due_date:proposal.due,p_reason:proposal.reason});
     if(error)throw error;
     showToast('تم إرسال طلب إعادة الجدولة إلى منشئ المهمة.','success',5000);
+    await refreshPendingTaskReschedules();
     await loadReschedulePanel(task);
   }catch(error){
     console.error('Reschedule request:',error);
@@ -1664,8 +1700,8 @@ async function loadReschedulePanel(task){
   if(error)return;
   const requestButton=document.getElementById('requestRescheduleButton');if(requestButton)requestButton.disabled=!!data||taskRescheduleBusy;
   const hint=document.getElementById('rescheduleRequestHint');if(data&&hint)hint.textContent='يوجد طلب إعادة جدولة بانتظار قرار منشئ المهمة.';
-  if(!data||!mayDecide)return;
-  box.innerHTML=`<div class="text-xs font-black text-amber-800">طلب إعادة جدولة معلق</div><div class="mt-1 text-[11px] leading-5 text-amber-700">من ${escapeHTML(data.current_start_date||'—')} / ${escapeHTML(data.current_due_date||'—')} إلى ${escapeHTML(data.proposed_start_date||'—')} / ${escapeHTML(data.proposed_due_date||'—')}<br><b>السبب:</b> ${escapeHTML(data.reason||'')}</div><div class="mt-2 flex gap-2"><button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black text-white" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',true)">موافقة وتعديل التواريخ</button><button type="button" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-[11px] font-black text-rose-700" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',false)">رفض</button></div>`;
+  if(!data)return;
+  box.innerHTML=`<div class="text-xs font-black text-amber-800">بانتظار اعتماد إعادة الجدولة</div><div class="mt-1 text-[11px] leading-5 text-amber-700"><b>المواعيد الحالية (بداية / نهاية):</b> ${escapeHTML(data.current_start_date||'—')} / ${escapeHTML(data.current_due_date||'—')}<br><b>المواعيد المقترحة (بداية / نهاية):</b> ${escapeHTML(data.proposed_start_date||'—')} / ${escapeHTML(data.proposed_due_date||'—')}<br><b>السبب:</b> ${escapeHTML(data.reason||'')}</div>${mayDecide?`<div class="mt-2 flex gap-2"><button type="button" class="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black text-white" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',true)">موافقة وتعديل التواريخ</button><button type="button" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-[11px] font-black text-rose-700" onclick="decideSelectedTaskReschedule('${escapeHTML(data.id)}',false)">رفض</button></div>`:''}`;
   box.classList.remove('hidden');
 }
 async function decideSelectedTaskReschedule(requestId,approve){
@@ -1675,6 +1711,7 @@ async function decideSelectedTaskReschedule(requestId,approve){
   if(error)return showToast('تعذر تسجيل القرار: '+error.message,'error',5000);
   showToast(approve?'تمت الموافقة وتحديث تواريخ المهمة.':'تم رفض طلب إعادة الجدولة.','success',5000);
   await refreshTaskData();
+  await refreshPendingTaskReschedules();
   renderDetails();
 }
 
@@ -2230,9 +2267,10 @@ function filteredTasks(){
       if(currentProfile?.role==='employee')return false;
     }
 
+    if(status==='RESCHEDULE'&&!pendingTaskReschedule(t))return false;
     if(status==='DELAYED'&&!isCurrentlyOverdue(t))return false;
     if(status==='TODAY'&&!isToday(t.start)&&!isToday(t.end))return false;
-    if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&String(t.status||'').trim()!==String(status).trim())return false;
+    if(status!=='ALL'&&status!=='DELAYED'&&status!=='TODAY'&&status!=='RESCHEDULE'&&String(t.status||'').trim()!==String(status).trim())return false;
     if(isCompletedArchiveView()&&(completedFrom||completedTo)){
       const completedDate=t.completedAt?localDateISO(new Date(t.completedAt)):'';
       if(completedFrom&&(!completedDate||completedDate<completedFrom))return false;
@@ -2294,7 +2332,7 @@ function renderKanban(rows){
     const columnRows=smart?rows.filter(isOverdue):rows.filter(t=>String(t.status||'')===status&&!isOverdue(t));
     const cards=columnRows.map(t=>{
       const key=compositeKey(t),delay=calcDelay(t.end,t.actualEnd,t.status,t.submittedAt,t.activity,undefined,t.approvalPausedDays),progress=normalizeProgress(t.progress);
-      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${isCurrentlyOverdue(t)?'text-rose-600':'text-slate-400'}">${delay>0?(isCurrentlyOverdue(t)?'متأخرة ':'تأخر التسليم ')+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
+      return `<article class="kanban-card ${selectedTaskKey===key?'ring-2 ring-blue-300':''}" draggable="${smart||t.jobWorkflow?'false':'true'}" data-kanban-task="${escapeHTML(key)}"><div class="flex items-center justify-between gap-2"><span class="priority-dot priority-${escapeHTML(t.priority||'normal')}"></span><span class="text-[9px] font-bold ${isCurrentlyOverdue(t)?'text-rose-600':'text-slate-400'}">${delay>0?(isCurrentlyOverdue(t)?'متأخرة ':'تأخر التسليم ')+delay+' يوم':smartDate(t.end)}</span></div>${t.isDelegated?`<span class="delegation-badge" title="فوّضها ${escapeHTML(t.delegatedBy||'مسؤول المهمة')}">↪ مفوّضة</span>`:''}${taskRescheduleBadge(t)}<div class="kanban-card-title mt-2">${escapeHTML(t.title||'بدون عنوان')}</div><div class="kanban-card-meta"><span>👤 ${escapeHTML(t.assign||'')}</span><span>${progress}%</span></div><div class="kanban-progress"><span style="width:${progress}%"></span></div></article>`;
     }).join('');
     return `<section class="kanban-column ${smart?'kanban-column-overdue':''}"><header class="kanban-column-head"><span style="color:${color}">${label}</span><span class="kanban-column-count">${columnRows.length}</span></header><div class="kanban-column-body" ${smart?'data-kanban-smart="overdue"':`data-kanban-status="${status}"`}>${cards||'<div class="p-6 text-center text-xs text-slate-400">لا توجد مهام</div>'}</div></section>`;
   }).join('');
@@ -2313,6 +2351,8 @@ function renderKanban(rows){
 
 function renderTasks(){
   setupAssigneeFilter();
+  const rescheduleCount=document.getElementById('rescheduleFilterCount');
+  if(rescheduleCount)rescheduleCount.textContent=reschedulesLoaded?String(tasks.filter(t=>pendingTaskReschedule(t)).length):'—';
   const box=document.getElementById('tasksList'),rows=sortTasksForDisplay(filteredTasks());
   box.innerHTML='';document.getElementById('visibleCount').textContent=rows.length===tasks.length?`${rows.length} مهام`:`${rows.length} من ${tasks.length}`;
   document.getElementById('emptyState').classList.toggle('hidden',rows.length!==0);
@@ -2370,6 +2410,7 @@ function renderTasks(){
             ${t.status==='قيد التنفيذ'?'<span class="text-blue-600 font-bold">قيد التنفيذ</span>':''}
             ${t.status==='بانتظار الاعتماد'?'<span class="text-amber-600 font-bold">بانتظار الاعتماد</span>':''}
             ${t.status==='مكتملة'?'<span class="text-emerald-600 font-bold">مكتملة</span>':''}
+            ${taskRescheduleBadge(t)}
             ${t.managerNotes?`<span class="text-amber-700 font-bold" title="${escapeHTML(t.managerNotes)}">📝 ملاحظة مدير</span>`:''}
             ${t.isDelegated?`<span class="delegation-badge" title="المنشئ: ${escapeHTML(t.createdBy||'—')} • المفوِّض: ${escapeHTML(t.delegatedBy||'—')} • المنفذ: ${escapeHTML(t.assign||'—')}">↪ مفوّضة بواسطة ${escapeHTML(t.delegatedBy||'المسؤول السابق')}</span>`:''}
             <span class="text-blue-700 font-black" title="مرفقات المهمة">📎 ${t.attachments?.length||0}</span>
