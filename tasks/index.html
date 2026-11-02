@@ -209,7 +209,7 @@
 <link rel="stylesheet" href="../assets/css/app-theme.css?v=notifications-20261101" data-atwar-app-theme="1">
 <style>.task-suite-metrics{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:1100px){.task-suite-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){.task-suite-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
 <link rel="stylesheet" href="../assets/css/task-batches.css?v=1.0.0">
-<link rel="stylesheet" href="../assets/css/task-reschedule.css?v=1.0.0">
+<link rel="stylesheet" href="../assets/css/task-reschedule.css?v=1.1.0">
 <style>
 /* Selection must remain visible above shared theme and task status backgrounds. */
 .atwar-main #tasksList .task-card.selected,
@@ -324,6 +324,7 @@
         <button type="button" data-filter="DELAYED" class="qf">متأخرة</button>
         <button type="button" data-filter="قيد التنفيذ" class="qf">قيد التنفيذ</button>
         <button type="button" data-filter="بانتظار الاعتماد" class="qf">بانتظار الاعتماد</button>
+        <button type="button" data-filter="RESCHEDULE" class="qf">طلبات إعادة الجدولة <span id="rescheduleFilterCount" aria-live="polite">—</span></button>
       </div>
       <div id="taskViewSwitch" class="view-switch" aria-label="طريقة عرض المهام">
         <button id="listViewButton" type="button" onclick="setTaskViewMode('LIST')">قائمة</button>
@@ -346,6 +347,7 @@
       <select id="statusFilter" class="hidden">
         <option value="ALL">الكل</option><option value="TODAY">اليوم</option><option value="DELAYED">متأخرة</option>
         <option value="قيد التنفيذ">قيد التنفيذ</option><option value="بانتظار الاعتماد">بانتظار الاعتماد</option>
+                  <option value="RESCHEDULE">طلبات إعادة الجدولة</option>
                   <option value="مكتملة">مكتملة</option>
       </select>
     </section>
@@ -602,7 +604,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.8.16-notifications"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.8.17-reschedule"></script>
 
 <script src="../assets/js/permissions.js?v=2.8.0"></script>
 <script>
