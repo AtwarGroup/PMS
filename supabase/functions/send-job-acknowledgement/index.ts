@@ -48,7 +48,7 @@ function emailHtml(row:Record<string,unknown>){
     <div style="max-width:650px;margin:24px auto;background:#fff;border:1px solid #dfe7f2;border-radius:14px;overflow:hidden">
       <div style="background:#0c2347;color:#fff;padding:22px 28px"><div style="font-size:20px;font-weight:700">ATWAR ONE</div><div style="font-size:13px;color:#bcd0ee;margin-top:5px">إقرار الاطلاع على الوصف الوظيفي</div></div>
       <div style="padding:26px 28px">
-        <h2 style="margin:0 0 14px">تم اعتماد إقرار الموظف</h2>
+        <h2 style="margin:0 0 14px">تم اعتماد إقرار الموظف — الإصدار ${escapeHtml(row.job_revision)}</h2>
         <div style="border:1px solid #e1e8f2;border-radius:10px;padding:18px;line-height:2">
           <div><b>الموظف:</b> ${escapeHtml(row.employee_name_snapshot)}</div>
           <div><b>المسمى الوظيفي:</b> ${escapeHtml(title)}</div>
@@ -123,10 +123,10 @@ Deno.serve(async request=>{
     if(!employeeEmail)throw new Error('Employee email is missing.');
 
     const send=await fetch('https://api.resend.com/emails',{
-      method:'POST',headers:{...jsonHeaders,Authorization:`Bearer ${RESEND_API_KEY}`},
+      method:'POST',headers:{...jsonHeaders,Authorization:`Bearer ${RESEND_API_KEY}`,'Idempotency-Key':`job-ack/${acknowledgementId}/${isCorrection?'correction-'+digest:'initial'}`},
       body:JSON.stringify({
         from:EMAIL_FROM,to:[employeeEmail],cc,reply_to:EMAIL_REPLY_TO,
-        subject:`${isCorrection?'نسخة مصححة — ':''}إقرار الوصف الوظيفي: ${String(row.employee_name_snapshot??'الموظف')}`,
+        subject:`${isCorrection?'نسخة مصححة — ':''}إقرار الوصف الوظيفي — الإصدار ${String(row.job_revision)}: ${String(row.employee_name_snapshot??'الموظف')}`,
         html:isCorrection?emailHtml(row).replace('تم اعتماد إقرار الموظف','إعادة إرسال النسخة المصححة من إقرار الموظف'):emailHtml(row),
         attachments:[{filename:`ATWAR_JOB_ACK_${acknowledgementId}.pdf`,content:pdf!.clean}],
       }),
