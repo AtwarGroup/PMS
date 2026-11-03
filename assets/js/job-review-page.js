@@ -161,7 +161,7 @@ function headerActions() {
 
   if (!editing && canStage('FINAL_REVIEW') && job.status === 'MANAGER_APPROVED' && !job.final_reviewed_at) buttons.push('<button id="finalReviewBtn" class="review-btn primary">التحقق من اكتمال الإصدار</button>');
   if (!editing && canStage('PUBLISH') && job.status === 'MANAGER_APPROVED' && job.final_reviewed_at && !openSchedule()) buttons.push('<button id="publishBtn" class="review-btn primary">اعتماد وتحديد السريان</button>');
-  if (!editing && !openSchedule() && ((job.status==='IN_REVIEW'&&job.reviewer_id===me.id)||(job.status==='MANAGER_APPROVED'&&(canStage('FINAL_REVIEW')||canStage('PUBLISH'))))) buttons.push('<button id="returnDraftBtn" class="review-btn">إعادة للتعديل</button>');
+  if (!editing && !openSchedule() && ((job.status==='IN_REVIEW'&&(job.reviewer_id===me.id||me.role==='admin'))||(job.status==='MANAGER_APPROVED'&&(canStage('FINAL_REVIEW')||canStage('PUBLISH'))))) buttons.push('<button id="returnDraftBtn" class="review-btn">إعادة للتعديل</button>');
   if(!editing&&canStage('PUBLISH')&&job.status==='PUBLISHED')buttons.push('<button id="archiveJobBtn" class="review-btn">أرشفة الوصف</button>');
   return buttons.join('');
 }
