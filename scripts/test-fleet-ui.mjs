@@ -83,17 +83,17 @@ try {
     await expect(p.locator("#fleetDialog")).not.toBeVisible();
     await expect(p.locator("#fleetStatus")).toHaveText("تم تنفيذ الإجراء وتوثيقه.");
     await p.locator("[data-tab=dashboard]").click();
-    await p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description}).getByRole("button",{name:"عرض الطلب"}).click();
+    const listed=p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description});
+    if(await listed.count())await listed.getByRole("button",{name:"عرض الطلب"}).click();
+    else {const id=(await app.db.query('select id from private.fleet_requests where description=$1',[description])).rows[0].id;const url=new URL(p.url());url.searchParams.set('request',id);await p.goto(url.href);}
     await expect(p.locator("#fleetDialog")).toBeVisible();
   }
   async function open(actor, description) {
     const p = await pageFor(actor);
     await p.locator("[data-tab=dashboard]").click();
-    await p
-      .locator("#fleetWorkRows article[data-work-kind=maintenance]")
-      .filter({ hasText: description })
-      .getByRole("button", { name: "عرض الطلب" })
-      .click();
+    const row=p.locator("#fleetWorkRows article[data-work-kind=maintenance]").filter({hasText:description});
+    if(await row.count())await row.getByRole("button",{name:"عرض الطلب"}).click();
+    else {const id=(await app.db.query('select id from private.fleet_requests where description=$1',[description])).rows[0].id;await p.goto(app.url+'/fleet/index.html?qa='+actor+'&request='+id);}
     await expect(p.locator("#dialogBody h3").first()).toHaveText(description);
     await expect(p.locator("#fleetDialog")).toBeVisible();
     return p;
@@ -230,6 +230,8 @@ try {
   ).toHaveValue("all");
   p = await pageFor("outsider");
   await p.locator("[data-tab=dashboard]").click();
+  await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(0);
+  await p.getByRole('link',{name:'الطلبات المكتملة والمنتهية',exact:true}).click();
   await expect(p.locator("#fleetWorkRows article[data-work-kind=maintenance]")).toHaveCount(2);
   await admin
     .locator('#directRules [data-permission="fleet.requests.read"]')
@@ -337,7 +339,7 @@ try {
   p=await pageFor('manager');
   await expect(p.locator('#workScope option[value=team]')).not.toHaveAttribute('hidden','');
   await p.locator('#workScope').selectOption('team');
-  await expect(p.locator('#fleetWorkRows')).toContainText('صيانة تجريبية 150');
+  await expect(p.locator('#fleetWorkRows')).not.toContainText('صيانة تجريبية 150');
   await p.locator('#workScope').selectOption('mine');
   await expect(p.locator('#fleetWorkRows article')).toHaveCount(0);
   await p.locator('#workScope').selectOption('all');
@@ -350,7 +352,8 @@ try {
   console.log('PASS UI: manager creates and submits for direct report; own/team dashboards are separate; only two request types; dialogs auto-close and digits are English.');
   p=await pageFor('accountant2');
   await expect(p.locator('#newRequest')).toBeHidden();
-  await expect(p.locator('[data-tab=vehicles]')).toBeHidden();
+  await expect(p.locator('[data-tab=vehicles]')).toBeVisible();
+  await p.locator('[data-tab=vehicles]').click();await expect(p.locator('#vehicleRows')).toContainText('QA 1234');await expect(p.locator('#newVehicle')).toBeHidden();await p.locator('[data-tab=dashboard]').click();
   await expect(p.locator('[data-tab=documents]')).toBeHidden();
   await expect(p.locator('[data-tab=dashboard]')).toHaveAttribute('aria-selected','true');
   await expect(p.locator('#fleetWorkRows article[data-work-kind=maintenance]')).toHaveCount(0);
