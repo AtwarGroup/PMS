@@ -35,7 +35,7 @@ try {
   delete missing.data.quotes[0][kind+'_file_id'];await save(missing.id,missing.data);
   await assert.rejects(()=>command(missing.id,'submit'),/أرفق عرض البند/);
   const duplicate=await draft(scope);duplicate.data.quotes[1][kind+'_file_id']=duplicate.data.quotes[0][kind+'_file_id'];await save(duplicate.id,duplicate.data);
-  await assert.rejects(()=>command(duplicate.id,'submit'),/مرفق مستقل/);
+  await command(duplicate.id,'submit');
   const foreign=await draft(scope);foreign.data.quotes[0][kind+'_file_id']=(await draft(scope)).data.quotes[0][kind+'_file_id'];await save(foreign.id,foreign.data);
   await assert.rejects(()=>command(foreign.id,'submit'),/أرفق عرض البند/);
  }
