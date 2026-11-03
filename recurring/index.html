@@ -225,7 +225,7 @@ else{
  if(!p||!['manager','admin'].includes(p.role))location.href='../home.html';
  else{
   window.atwarSyncShellIdentity?.(p,session.user);
-  const pr=await sb.from('profiles').select('id,full_name,email,manager_id,role,active,status').eq('active',true).eq('status','active').order('full_name');
+  const pr=await sb.from('profiles').select('id,full_name,email,manager_id,role,active,status').eq('active',true).eq('status','active').or('role.eq.admin,allowed_modules.cs.{tasks}').order('full_name');
   if(pr.error)throw pr.error;
   const all=pr.data||[],descendants=new Set([p.id]);let changed=true;
   while(changed){changed=false;for(const x of all)if(x.manager_id&&descendants.has(x.manager_id)&&!descendants.has(x.id)){descendants.add(x.id);changed=true}}
