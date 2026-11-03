@@ -1,0 +1,19 @@
+import {chromium,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {startPreview} from './fleet-preview.mjs';
+import {ids} from './fleet-test-db.mjs';
+const app=await startPreview();let browser;
+try {
+ await app.db.query('update private.hr_employees set manager_id=$1 where profile_id=$2',[ids.outsider,ids.fleet]);
+ await app.rpc('admin','access_direct_save',{p_profile:ids.outsider,p_rules:[{permission:'fleet.requests.read',scope:'all'},{permission:'fleet.vehicles.read',scope:'all'}]});
+ const car=(await app.rpc('fleet','fleet_snapshot')).vehicles[0];
+ async function draft(actor,description){const data={vehicle_id:car.id,accountant_id:ids.accountant,request_type:'repair',maintenance_kind:'tire',odometer:12510,description,fault_notes:'التحقق من عرض المشرف دون صلاحية إجراء',selected_quote:0,quotes:[]};const id=await app.rpc(actor,'fleet_request_save',{p_id:null,p_revision:null,p_data:data});const file=await app.rpc(actor,'fleet_upload',{p_request:id,p_kind:'quote_parts',p_name:'quote.pdf',p_mime:'application/pdf',p_base64:Buffer.from('%PDF-1.4 quote').toString('base64')});data.quotes=[0,1].map(i=>({scope:'parts',supplier:'ورشة اختبار المشرف '+i,phone:'0501234567',parts:400,labor:0,tax:0,parts_file_id:file}));await app.rpc(actor,'fleet_request_save',{p_id:id,p_revision:1,p_data:data});return id;}
+ const driver=await draft('driver','مسودة خاصة بالسائق فقط');const fleet=await draft('fleet','مسودة أنشأها مسؤول الأسطول');
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.route('**/*',r=>r.request().url().startsWith(app.url)||/^(data:|blob:)/.test(r.request().url())?r.continue():r.abort());
+ const page=async actor=>{await p.goto(app.url+'/fleet/index.html?qa='+actor);await expect(p.locator('#fleetStatus')).toHaveText('');};
+ await page('admin');await expect(p.locator('#fleetWorkRows')).toContainText('مسودة خاصة بالسائق فقط');await expect(p.locator('#fleetWorkRows')).toContainText('مسودة أنشأها مسؤول الأسطول');
+ await page('outsider');await expect(p.locator('#fleetWorkRows')).not.toContainText('مسودة خاصة بالسائق فقط');await expect(p.locator('#fleetWorkRows')).toContainText('مسودة أنشأها مسؤول الأسطول');await p.locator(`#fleetWorkRows [data-request="${fleet}"]`).click();await expect(p.locator('#dialogBody [data-action]')).toHaveCount(0);await expect(p.locator('.fleet-request-history')).not.toHaveAttribute('open','');await p.locator('.fleet-request-history summary').click();await expect(p.locator('.fleet-request-history')).toContainText('مسؤول الأسطول التجريبي');await p.locator('#closeDialog').click();
+ await app.rpc('driver','fleet_command',{p_id:driver,p_revision:2,p_action:'submit',p_data:{}});await page('outsider');await expect(p.locator('#fleetWorkRows')).toContainText('مسودة خاصة بالسائق فقط');await p.locator(`#fleetWorkRows [data-request="${driver}"]`).click();await expect(p.locator('#dialogBody [data-action]')).toHaveCount(0);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false);
+ const r=(await app.rpc('fleet','fleet_detail',{p_id:driver})).request;await app.rpc('fleet','fleet_command',{p_id:driver,p_revision:r.revision,p_action:'approve',p_data:{}});await page('outsider');await expect(p.locator('#fleetWorkRows')).not.toContainText('مسودة خاصة بالسائق فقط');await page('admin');await expect(p.locator('#fleetWorkRows')).toContainText('مسودة خاصة بالسائق فقط');assert.deepEqual(errors,[]);
+ console.log('PASS mobile admin all-stage visibility, supervisor mirrored queue/history with no proxy actions, private unrelated drafts and disappearance on owner handoff.');
+}finally{await browser?.close();await app.close();}
