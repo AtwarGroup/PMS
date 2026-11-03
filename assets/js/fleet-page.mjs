@@ -1,5 +1,5 @@
 import {quoteFileIds, uploadFleetFiles, validateFleetUploadBudget} from './fleet-attachments.mjs?v=20261102.2';
-import {initWorkboard} from './fleet-workboard.mjs?v=20261103.1';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261103.3';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=20261102.1";
