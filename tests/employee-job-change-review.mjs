@@ -11,7 +11,7 @@ const changed={...old,target:'8'};
 const requests=[{id:'manager-pending',manager_id:'manager',status:'MANAGER_REVIEW',section:'KPIS',action:'MODIFY',original_value:old,proposed_value:changed,reason:'مراجعة المؤشر',published_revision:1},{id:'ready',manager_id:'manager',manager_decided_at:'2026-10-13',status:'ADMIN_REVIEW',section:'KPIS',action:'MODIFY',original_value:old,proposed_value:changed,reason:'تغيير المستهدف',published_revision:1},{id:'unchanged',manager_id:'manager',status:'ADMIN_REVIEW',section:'PURPOSE',action:'MODIFY',original_value:'الغرض الحالي',proposed_value:' الغرض الحالي ',reason:'ملاحظات دون تعديل',published_revision:1}];
 requests[1].approval_snapshot={section:'KPIS',action:'MODIFY',index:null,original:old,proposed:changed,impact:''};
 const sb={from(){return {select(){return this},order(){return Promise.resolve({data:requests})},in(){return Promise.resolve({data:[{id:'manager',full_name:'الرئيس التنفيذي'}]})}}}};
-async function render(profile){const host={innerHTML:'',querySelectorAll:()=>[]};await context.mountChangeReview(host,{sb,profile,embedded:true});return host.innerHTML;}
+async function render(profile){const host={innerHTML:'',querySelector:()=>null,querySelectorAll:()=>[]};await context.mountChangeReview(host,{sb,profile,embedded:true});return host.innerHTML;}
 const article=(html,id)=>html.split(`data-request="${id}"`)[1].split('<p role="status"')[0];
 const admin=await render({id:'admin',role:'admin'});
 assert.match(article(admin,'manager-pending'),/الإجراء الحالي لدى الرئيس التنفيذي/);
