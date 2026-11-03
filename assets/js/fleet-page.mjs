@@ -1,7 +1,9 @@
+import {filterFleetVehicles} from './fleet-registry.mjs?v=1';
+import {openFleetAttachment} from './fleet-file-viewer.mjs?v=1';
 import {quoteFileIds, uploadFleetFiles, validateFleetUploadBudget} from './fleet-attachments.mjs?v=20261102.2';
 import {initWorkboard} from './fleet-workboard.mjs?v=20261103.3';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
-import {initFleetOperations} from "./fleet-operations.mjs?v=20261027.1";
+import {initFleetOperations} from "./fleet-operations.mjs?v=20261103.4";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=20261102.1";
 import {
   englishDigits,
@@ -143,15 +145,30 @@ function render() {
         return `<div class="fleet-stage"><span>${esc(label)}</span><b>${n}</b><progress max="${Math.max(1, dashboardRows.length)}" value="${n}" aria-label="${esc(label)}"></progress></div>`;
       })
       .join("") || '<p class="fleet-muted">ستظهر مراحل العمل مع أول طلب.</p>';
-  $("vehicleRows").innerHTML = context.vehicles
-    .map(
-      (v) =>
-        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA-u-nu-latn")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}<small>${esc({available:"متاحة",maintenance:"تحت الصيانة",stopped:"متوقفة"}[v.operational_status]||"متاحة")}</small></td><td>${button("ملف السيارة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
-    )
-    .join("");
-  $("vehicleEmpty").hidden = context.vehicles.length > 0;
+  renderVehicleFilterOptions();
+  renderVehicles();
   renderRequests();
   operations?.render();
+}
+function renderVehicleFilterOptions(){
+ const select=(id,values,label)=>{const input=$(id),current=input.value;input.innerHTML=opt('',label,current)+values.map(([value,text])=>opt(value,text,current)).join('');};
+ const unique=key=>[...new Set(context.vehicles.map(v=>v[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')).map(v=>[v,v]);
+ select('vehicleCityFilter',unique('city'),'جميع المدن');select('vehicleTypeFilter',unique('vehicle_type'),'جميع الأنواع');
+ const drivers=[...new Map(context.vehicles.filter(v=>v.driver_id).map(v=>[v.driver_id,v.driver_name||'سائق مسجل'])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'ar'));
+ select('vehicleDriverFilter',[['unassigned','غير مسندة'],...drivers],'جميع السائقين');
+}
+function renderVehicles(){
+ if(!context)return;
+ const rows=filterFleetVehicles(context.vehicles,{query:$('vehicleSearch').value,city:$('vehicleCityFilter').value,type:$('vehicleTypeFilter').value,driver:$('vehicleDriverFilter').value,active:$('vehicleActiveFilter').value,operation:$('vehicleOperationFilter').value});
+  $("vehicleRows").innerHTML = rows
+    .map(
+      (v) =>
+        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td><b>${esc(v.registration_number||"—")}</b><small>هوية المالك: ${esc(v.owner_identity_number||"—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA-u-nu-latn")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}<small>${esc({available:"متاحة",maintenance:"تحت الصيانة",stopped:"متوقفة"}[v.operational_status]||"متاحة")}</small></td><td>${button("ملف السيارة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
+    )
+    .join("");
+  $("vehicleEmpty").hidden = rows.length > 0;
+  $("vehicleEmpty").textContent=context.vehicles.length?"لا توجد سيارات مطابقة للفلاتر.":"لا توجد سيارات متاحة. راجع مسؤول الأسطول لربط سيارتك.";
+  $("vehicleFilterCount").textContent=`عرض ${rows.length} من ${context.vehicles.length} سيارة`;
 }
 function renderRequests() {
   if (!context) return;
@@ -172,11 +189,12 @@ function vehicleEditor(id) {
   show(
     id ? "تعديل بيانات السيارة" : "إضافة سيارة",
     "الربط من سجل الموظفين الحالي",
-    `<form id="vehicleForm" class="fleet-form">${field("plate", "رقم اللوحة", v.plate, "text", 'required maxlength="30"')}${field("vin", "رقم الهيكل", v.vin, "text", 'maxlength="40"')}${field("vehicle_type", "نوع السيارة", v.vehicle_type, "text", 'required maxlength="100"')}${field("model", "الموديل", v.model, "text", 'maxlength="100"')}${field("city", "المدينة", v.city, "text", 'maxlength="100"')}${field("odometer", "قراءة العداد (كم)", v.odometer || 0, "number", 'required min="0" step="1"')}${v.id?`<input type="hidden" name="driver_id" value="${esc(v.driver_id||'')}">`:""}<label>السائق<select name="driver_id" disabled>${opt("", "غير مسندة", v.driver_id)}${context.employees.map((e) => opt(e.id, `${e.name} — ${e.code}`, v.driver_id)).join("")}</select><small class="fleet-muted">تُضاف السيارة دون سائق؛ الإسناد وتغيير العهدة يتمان بمحضر التسليم والاستلام.</small></label><label>التشغيل<select name="active">${opt("true", "نشطة", String(v.active ?? true))}${opt("false", "موقوفة", String(v.active ?? true))}</select></label>${field("reason", "سبب الإضافة أو التعديل", "", "text", 'required minlength="3" maxlength="500"')}<div class="fleet-wide"><button class="fleet-btn" type="submit">حفظ السيارة</button></div></form>`,
+    `<form id="vehicleForm" class="fleet-form">${field("plate", "رقم اللوحة", v.plate, "text", 'required maxlength="30"')}${field("vin", "رقم الهيكل", v.vin, "text", 'maxlength="40"')}${field("registration_number", "رقم الاستمارة", v.registration_number, "text", 'inputmode="numeric" pattern="[0-9٠-٩۰-۹]+" maxlength="30" dir="ltr"')}${field("owner_identity_number", "هوية المالك", v.owner_identity_number, "text", 'inputmode="numeric" pattern="[0-9٠-٩۰-۹]+" maxlength="30" dir="ltr"')}${field("vehicle_type", "نوع السيارة", v.vehicle_type, "text", 'required maxlength="100"')}${field("model", "الموديل", v.model, "text", 'maxlength="100"')}${field("city", "المدينة", v.city, "text", 'maxlength="100"')}${field("odometer", "قراءة العداد (كم)", v.odometer || 0, "number", 'required min="0" step="1"')}${v.id?`<input type="hidden" name="driver_id" value="${esc(v.driver_id||'')}">`:""}<label>السائق<select name="driver_id" disabled>${opt("", "غير مسندة", v.driver_id)}${context.employees.map((e) => opt(e.id, `${e.name} — ${e.code}`, v.driver_id)).join("")}</select><small class="fleet-muted">تُضاف السيارة دون سائق؛ الإسناد وتغيير العهدة يتمان بمحضر التسليم والاستلام.</small></label><label>التشغيل<select name="active">${opt("true", "نشطة", String(v.active ?? true))}${opt("false", "موقوفة", String(v.active ?? true))}</select></label>${field("reason", "سبب الإضافة أو التعديل", "", "text", 'required minlength="3" maxlength="500"')}<div class="fleet-wide"><button class="fleet-btn" type="submit">حفظ السيارة</button></div></form>`,
   );
   $("vehicleForm").onsubmit = (e) =>
     run(e, async () => {
       const data = Object.fromEntries(new FormData(e.target));
+      for(const key of ["registration_number","owner_identity_number"])data[key]=englishDigits(data[key]||"").trim();
       const reason = data.reason;
       delete data.reason;
       await rpc("fleet_vehicle_save", {
@@ -258,7 +276,7 @@ async function openRequest(id) {
   show(
     `طلب صيانة #${r.number}`,
     `${meta.driver_name || ""} · ${meta.plate || ""}`,
-    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>نوع الصيانة: <b>${esc(maintenanceKinds[r.maintenance_kind]||'—')}</b></p><p>توقف السيارة: <b>${r.stops_vehicle?'نعم':'لا'}</b></p><p>توفير سطحة: <b>${r.needs_tow?'نعم':'لا'}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>الورشة</th><th>جوال الورشة</th><th>يشمل العرض</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr class="${i===r.selected_quote?'fleet-selected-quote':''}"><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td dir="ltr">${esc(q.phone||'—')}</td><td>${esc(quoteScopes[q.scope||'parts_labor'])}</td><td>${quoteIncludes(q,'parts')?money(q.parts):'—'}</td><td>${quoteIncludes(q,'labor')?money(q.labor):'—'}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-download="${esc(f.id)}"`, true)}<small>${esc(quoteLabels.get(f.id)?.join(" | ")||{ quote: "عرض سعر سابق",quote_parts:"عرض قطع الغيار",quote_labor:"عرض أجرة اليد",repair_photo:"صورة الإصلاح", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><details class="fleet-card fleet-request-history"><summary>سجل إجراءات الطلب</summary><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol></details>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
+    `<section>${operations?.journeyHTML(r,currentDetail.journey)||""}${badge(r.state)}<h3>${esc(r.description)}</h3><p>${esc(r.fault_notes)}</p><div class="fleet-form"><p>نوع الطلب: <b>${esc(types[r.request_type])}</b></p><p>نوع الصيانة: <b>${esc(maintenanceKinds[r.maintenance_kind]||'—')}</b></p><p>توقف السيارة: <b>${r.stops_vehicle?'نعم':'لا'}</b></p><p>توفير سطحة: <b>${r.needs_tow?'نعم':'لا'}</b></p><p>العداد: <b>${esc(r.odometer)} كم</b></p><p>المحاسب: <b>${esc(meta.accountant_name || "—")}</b></p><p>مسار الطلب: <b>${r.route === "small" ? "حتى 300 ريال — استعاضة" : r.route === "large" ? "أكثر من 300 ريال — صرف مسبق" : "يُحدد عند الإرسال"}</b></p></div><div class="fleet-finance">المعتمد: <b>${money(r.approved)} ر.س</b> · المصروف: <b>${money(r.advance)} ر.س</b> · الفاتورة: <b>${r.invoice_total ? money(r.invoice_total) + " ر.س" : "لم تُرفع"}</b>${r.proposed_total ? `<p>الإجمالي المطلوب بعد الزيادة: ${money(r.proposed_total)} ر.س — ${esc(r.increase_reason)}</p>` : ""}${r.invoice_total ? `<p>${esc(balance.label)}: ${money(balance.amount)} ر.س</p>` : ""}</div>${r.exception_reason ? `<p>سبب استثناء العروض: ${esc(r.exception_reason)}</p>` : ""}<h3>عروض الأسعار</h3><div class="fleet-table-wrap"><table><thead><tr><th>الورشة</th><th>جوال الورشة</th><th>يشمل العرض</th><th>قطع الغيار</th><th>أجرة اليد</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>${r.quotes.map((q, i) => `<tr class="${i===r.selected_quote?'fleet-selected-quote':''}"><td>${esc(q.supplier)}${i === r.selected_quote ? " · المختار" : ""}</td><td dir="ltr">${esc(q.phone||'—')}</td><td>${esc(quoteScopes[q.scope||'parts_labor'])}</td><td>${quoteIncludes(q,'parts')?money(q.parts):'—'}</td><td>${quoteIncludes(q,'labor')?money(q.labor):'—'}</td><td>${money(q.tax)}</td><td>${money(quoteTotal(q))}</td></tr>`).join("")}</tbody></table></div><h3>المرفقات</h3>${currentDetail.files.map((f) => `<div class="fleet-file">${button(f.name, `data-preview="${esc(f.id)}"`, true)}${button("تنزيل", `data-download="${esc(f.id)}"`, true)}<small>${esc(quoteLabels.get(f.id)?.join(" | ")||{ quote: "عرض سعر سابق",quote_parts:"عرض قطع الغيار",quote_labor:"عرض أجرة اليد",repair_photo:"صورة الإصلاح", invoice: "فاتورة", payment: "إثبات صرف", refund: "إثبات استرداد" }[f.kind])}</small></div>`).join("") || '<p class="fleet-muted">لا توجد مرفقات.</p>'}<div class="fleet-action-buttons">${allowed.map((a) => button(a === "edit" ? "تعديل المسودة" : actions[a], `data-action="${a}"`, ["return", "reject", "decline_increase"].includes(a))).join("")}</div><div id="actionHost"></div><details class="fleet-card fleet-request-history"><summary>سجل إجراءات الطلب</summary><ol class="fleet-history">${currentDetail.events.map((e) => `<li><b>${esc(actions[e.action] || { draft_saved: "حفظ المسودة" }[e.action] || e.action)}</b> · ${esc(e.actor_name)}<small>${new Date(e.created_at).toLocaleString("ar-SA-u-nu-latn")} ${e.to_state ? " · " + esc(states[e.to_state]) : ""}</small>${e.payload.reason ? `<p>${esc(e.payload.reason)}</p>` : ""}</li>`).join("")}</ol></details>${currentDetail.payments.length ? `<h3>الحركات المالية</h3>${currentDetail.payments.map((p) => `<p>${esc({ advance: "صرف عهدة", refund: "استرداد متبقٍ", reimbursement: "استعاضة", topup: "صرف فرق", settle: "تسوية" }[p.kind])}: ${money(p.amount)} ر.س · المرجع ${esc(p.reference)}</p>`).join("")}` : ""}</section>`,
   );
 }
 function actionEditor(action) {
@@ -376,7 +394,8 @@ async function run(event, work) {
 $("dialogBody").onclick = async (e) => {
   if (busy) return;
   const a = e.target.closest("[data-action]"),
-    d = e.target.closest("[data-download]");
+    d = e.target.closest("[data-download]"),preview=e.target.closest("[data-preview]");
+  if(preview){await openFleetAttachment(rpc,preview.dataset.preview);return;}
   if (a) actionEditor(a.dataset.action);
   if (d)
     try {
@@ -442,6 +461,9 @@ $("stateFilter").innerHTML =
   Object.entries(states)
     .map(([id, name]) => opt(id, name, ""))
     .join("");
+$('vehicleSearch').oninput=renderVehicles;
+for(const id of ['vehicleCityFilter','vehicleTypeFilter','vehicleDriverFilter','vehicleActiveFilter','vehicleOperationFilter'])$(id).onchange=renderVehicles;
+$('resetVehicleFilters').onclick=()=>{for(const id of ['vehicleSearch','vehicleCityFilter','vehicleTypeFilter','vehicleDriverFilter','vehicleActiveFilter','vehicleOperationFilter'])$(id).value='';renderVehicles();};
 $("requestSearch").oninput = renderRequests;
 $("stateFilter").onchange = renderRequests;
 operations=initFleetOperations({rpc,show,run,getContext:()=>context,reload:load,openRequest,switchTab});
