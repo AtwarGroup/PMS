@@ -2,8 +2,8 @@ import {createTaskActivityLoader,readTaskActivity} from './task-activity-loader.
 import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
 import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
-import {createTaskBatchesController} from "./task-batches.mjs?v=1.0.0";
-import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.3";
+import {createTaskBatchesController} from "./task-batches.mjs?v=1.1.0-task-module";
+import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.4-task-module";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
 import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.15";
 
@@ -374,16 +374,19 @@ function visibleUsers(){
 
 // المستخدمون الذين يمكن إسناد مهمة إليهم:
 // المدير يستطيع التكليف عبر كامل الشجرة الإدارية.
+function isTaskAssignmentEligible(profile){
+  return isActiveProfile(profile)&&(profile.role==='admin'||(Array.isArray(profile.allowedModules)&&profile.allowedModules.includes('tasks')));
+}
 function assignableUsers(){
   if(!currentProfile||!currentUser)return [];
 
   if(currentProfile.role==='admin'){
-    return users.filter(isActiveProfile);
+    return users.filter(isTaskAssignmentEligible);
   }
 
   if(currentProfile.role==='manager'){
     return users.filter(u=>
-      isActiveProfile(u) &&
+      isTaskAssignmentEligible(u) &&
       (
         String(u.uid)===String(currentUser.uid) ||
         ((currentProfile.permissions||[]).includes('tasks.assign_indirect') && isDescendantOf(u,currentUser.uid)) ||
@@ -392,7 +395,7 @@ function assignableUsers(){
     );
   }
 
-  return users.filter(u=>String(u.uid)===String(currentUser.uid));
+  return users.filter(u=>isTaskAssignmentEligible(u)&&String(u.uid)===String(currentUser.uid));
 }
 
 function canManageUser(uid){
@@ -407,7 +410,7 @@ function canReassignTaskTo(task,uid){
   if(!task||!currentProfile||!currentUser)return false;
   if(isExecutiveReadOnlyTask(task))return false;
   const target=getUserByUid(uid);
-  if(!target||!isActiveProfile(target))return false;
+  if(!target||!isTaskAssignmentEligible(target))return false;
   if(currentProfile.role==='admin')return true;
   if(currentProfile.role!=='manager')return false;
   if(String(uid)===String(currentUser.uid))return true;
@@ -551,7 +554,7 @@ function withTimeout(promise,ms=8000){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('database-timeout')),ms))
   ]);
 }
-const taskBatchesController=createTaskBatchesController({getProfile:()=>currentProfile,getSupabase:()=>window.atwarGetSupabase(),onChanged:()=>refreshTaskData(),toast:showToast});
+const taskBatchesController=createTaskBatchesController({getProfile:()=>currentProfile,canAssign:id=>isTaskAssignmentEligible(getUserByUid(id)),getSupabase:()=>window.atwarGetSupabase(),onChanged:()=>refreshTaskData(),toast:showToast});
 
 function applyRoleUI(){
   taskBatchesController.syncRole();
@@ -2093,8 +2096,8 @@ async function addNewTask(quickTitle='',openDetails=true,options={}){
   const owner=users.find(u=>String(u.uid)===ownerUid)||(
     String(currentProfile?.uid||currentUser?.uid)===ownerUid?currentProfile:null
   );
-  if(!owner||!isActiveProfile(owner)){
-    showToast('تعذر العثور على المستخدم المسؤول عن المهمة.','error');
+  if(!owner||!isTaskAssignmentEligible(owner)){
+    showToast('المستخدم غير مفعّل له قسم المهام.','error');
     return false;
   }
 

@@ -45,6 +45,7 @@ function profileLegacy(p){
     uid:p.id,email:p.email||'',name:p.full_name||p.email||'',fullName:p.full_name||'',
     title:p.job_title||'',jobTitle:p.job_title||'',department:p.department||'',
     role:p.role||'employee',managerUid:p.manager_id||'',managerId:p.manager_id||'',
+    allowedModules:Array.isArray(p.allowed_modules)?p.allowed_modules:[],
     managerChain:p.manager_chain||{},permissions:Array.isArray(p.permissions)?p.permissions:[],
     active:p.active!==false,status:p.status||'active',firebase_uid:p.firebase_uid||'',
     employeeCode:p.employee_code||'',joinDate:p.join_date||'',workLocation:p.work_location||'',employmentType:p.employment_type||'',

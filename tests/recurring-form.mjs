@@ -22,7 +22,7 @@ const people=[me,{id:'employee',full_name:'موظف',manager_id:'manager'}];
 const rows=[{id:'ended',title:'انتهى',assignee_id:'employee',recurrence:'daily',interval_count:1,active:false,created_count:2,next_run_at:'2030-01-01T06:00:00Z',recurrence_rule:{mode:'calendar',pattern:'day',endMode:'count',endCount:2}}, {id:'existing',title:'دورية محفوظة',description:'',assignee_id:'employee',priority:'normal',recurrence:'monthly',interval_count:1,next_run_at:'2030-02-28T06:00:00Z',schedule_start_at:'2030-01-31T06:00:00Z',due_offset_days:3,active:true,created_count:0,waiting_for_completion:false,recurrence_rule:{mode:'calendar',pattern:'day',day:31,endMode:'never',days:[]}}];
 let inserted=null,updated=null;
 function query(table){let op='select';const q={
- select(){return q;},eq(){return q;},order(){return q;},single(){return Promise.resolve({data:me});},maybeSingle(){return Promise.resolve({data:{id:'existing'}});},
+ select(){return q;},eq(){return q;},or(value){assert.equal(value,'role.eq.admin,allowed_modules.cs.{tasks}');return q;},order(){return q;},single(){return Promise.resolve({data:me});},maybeSingle(){return Promise.resolve({data:{id:'existing'}});},
  insert(payload){op='insert';inserted=payload;return q;},update(payload){op='update';updated=payload;return q;},
  then(resolve,reject){return Promise.resolve({data:op==='select'?(table==='profiles'?people:rows):null}).then(resolve,reject);}
 };return q;}

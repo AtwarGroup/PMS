@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const source=await readFile(new URL('../assets/js/tasks-page.js',import.meta.url),'utf8');
+const compat=await readFile(new URL('../assets/js/supabase-firebase-compat.js',import.meta.url),'utf8');
+const c=vm.createContext({Array,currentUser:{uid:'manager'},currentProfile:{role:'manager',permissions:[]},isActiveProfile:p=>!!p&&p.active!==false&&p.status==='active',isDescendantOf:p=>p.managerUid==='indirect',getUserByUid:id=>c.users.find(u=>u.uid===id),isExecutiveReadOnlyTask:()=>false});
+vm.runInContext(compat.slice(compat.indexOf('function profileLegacy('),compat.indexOf('async function loadChildren(')),c);
+const profile=(id,modules,role='employee',manager='manager')=>c.profileLegacy({id,full_name:id,active:true,status:'active',role,manager_id:manager,allowed_modules:modules});
+c.users=[profile('manager',['tasks'],'manager',''),profile('staff',['tasks']),profile('branch',['it_support']),profile('revoked',[]),profile('missing',null),profile('indirect',['tasks'],'employee','indirect'),{...profile('inactive',['tasks']),active:false},profile('admin',[],'admin')];
+vm.runInContext(source.slice(source.indexOf('function visibleUsers(){'),source.indexOf('function canManageUser(')),c);
+vm.runInContext(source.slice(source.indexOf('function canReassignTaskTo('),source.indexOf('function canDeleteTask(')),c);
+assert.deepEqual(Array.from(c.assignableUsers(),p=>p.uid),['manager','staff','admin']);
+assert.equal(c.canReassignTaskTo({},'branch'),false);
+assert.equal(c.canReassignTaskTo({},'staff'),true);
+c.currentProfile.permissions=['tasks.assign_indirect'];assert.ok(c.assignableUsers().some(p=>p.uid==='indirect'));
+c.currentProfile.role='admin';assert.deepEqual(Array.from(c.assignableUsers(),p=>p.uid),['manager','staff','indirect','admin']);
+assert.equal(c.canReassignTaskTo({},'branch'),false);
+// Historical visibility and the organizational tree remain independent of new-assignment eligibility.
+assert.ok(c.visibleUsers().some(p=>p.uid==='branch'));
+c.currentProfile.role='employee';c.currentUser.uid='branch';assert.equal(c.assignableUsers().length,0);
+c.currentUser.uid='staff';assert.deepEqual(Array.from(c.assignableUsers(),p=>p.uid),['staff']);
+assert.equal(c.profileLegacy({id:'empty'}).allowedModules.length,0);
+assert.match(source,/if\(!owner\|\|!isTaskAssignmentEligible\(owner\)\)/);
+console.log('PASS task assignees: IT-only/disabled/missing modules excluded; staff/admin eligibility, manager scopes, delegation, creation guard and historical visibility preserved.');
+
+const batches=await readFile(new URL('../assets/js/task-batches.mjs',import.meta.url),'utf8');
+const recurring=await readFile(new URL('../recurring/index.html',import.meta.url),'utf8');
+assert.match(batches,/filter\(p=>canAssign\(p.id\)\)/);
+assert.match(batches,/selected\].some\(id=>!canAssign\(id\)\)/);
+assert.match(recurring,/role.eq.admin,allowed_modules.cs.\{tasks\}/);
