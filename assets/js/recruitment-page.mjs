@@ -1,4 +1,4 @@
-import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=1';
+import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=2';
 import {sendRecruitmentEmail} from './recruitment-email.mjs?v=mail1';
 import {offerDocument,printOfferDocument} from './recruitment-offer.mjs?v=offer2';
 import { approvalSteps, progress, elapsed, taskDestination } from "./recruitment-progress.mjs?v=tasknav3";

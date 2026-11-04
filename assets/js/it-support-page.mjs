@@ -1,9 +1,9 @@
-import {attachmentActions} from './attachment-viewer.mjs?v=1';
+import {attachmentActions} from './attachment-viewer.mjs?v=2';
 import {supervisionHTML} from './it-support-supervision.mjs?v=1';
 import {composerHTML,actionFields,actionView,composerActions} from './it-support-composer.mjs?v=1';
 import {purchasePhases as phases,paymentStates as payStates,ownerRole,requestJourney,paymentJourney,systemText} from './it-support-presentation.mjs?v=2';
 import {states,priorities,esc,terminal,archived,overdue,delayDays,targetLabels} from './it-support-model.mjs?v=6';
-import {fileInput,filesOf,validateFiles,uploadFiles,downloadFile,configureFiles} from './it-support-files.mjs?v=4';
+import {fileInput,filesOf,validateFiles,uploadFiles,downloadFile,configureFiles} from './it-support-files.mjs?v=5-arabic';
 const $=id=>document.getElementById(id),purchaseMode=location.pathname.endsWith('/purchases.html'),archiveMode=new URLSearchParams(location.search).get('scope')?.toUpperCase()==='COMPLETED';
 let sb,ctx,rows=[],detail,supervisorData=null,busy=false,display='LIST',filter='all',view='all';
 const date=v=>v?new Date(v).toLocaleString('ar-SA-u-nu-latn',{dateStyle:'medium',timeStyle:'short'}):'—';

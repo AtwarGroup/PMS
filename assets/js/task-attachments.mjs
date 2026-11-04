@@ -1,4 +1,4 @@
-import {storedAttachment} from './attachment-viewer.mjs?v=1';
+import {storedAttachment} from './attachment-viewer.mjs?v=2';
 function safeExtension(name){
   const extension=String(name||'').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
   return extension&&extension.length<=8?`.${extension}`:'';

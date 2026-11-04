@@ -1,4 +1,4 @@
-import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=1';
+import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=2';
 import {createMessageSearch} from './project-message-search.mjs?v=1.0.0';
 import {baselineRevisions,renderBaseline} from './project-baseline.mjs?v=1.0.0';
 import {historyQuery,historyPage,mergeHistory} from './project-history.mjs?v=2.5.57';

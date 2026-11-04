@@ -32,7 +32,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/module-access.js?v=it-live-20261101"></script><script src="../assets/js/supabase-runtime.js?v=2.8.0"></script>
 <script type="module">
-import {attachmentActions,storedAttachment} from '../assets/js/attachment-viewer.mjs?v=1';
+import {attachmentActions,storedAttachment} from '../assets/js/attachment-viewer.mjs?v=2';
 import {renderDataState} from "../assets/js/data-state.mjs?v=20261029-loading";
 const sb=await window.atwarGetSupabase();
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));

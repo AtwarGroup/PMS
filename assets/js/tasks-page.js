@@ -1,4 +1,4 @@
-import {attachmentActions} from './attachment-viewer.mjs?v=1';
+import {attachmentActions} from './attachment-viewer.mjs?v=2';
 import {createTaskActivityLoader,readTaskActivity} from './task-activity-loader.mjs?v=1.0.0';
 import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
@@ -6,7 +6,7 @@ import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.1.0-task-module";
 import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.4-task-module";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
-import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.16-preview";
+import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.17-arabic";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
