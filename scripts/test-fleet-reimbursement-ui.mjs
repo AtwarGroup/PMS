@@ -4,6 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {startPreview} from './fleet-preview.mjs';
 import {ids} from './fleet-test-db.mjs';
 import {amountInWords,financeRequestView} from '../assets/js/fleet-reimbursement-pdf.mjs';
+const legacy=financeRequestView({request:{selected_quote:1,quotes:[{file_id:'other'},{file_id:'approved'}]},files:[{id:'other',kind:'quote'},{id:'approved',kind:'quote'}]},{can_finance:true,finance_only:true,employee_id:'accountant-employee'});assert.deepEqual(legacy.files.map(f=>f.id),['approved']);
 const app=await startPreview();let browser;
 try{
  assert.equal((await app.db.query("select has_function_privilege('anon','public.fleet_reimbursement_voucher(uuid)','execute') allowed")).rows[0].allowed,false);

@@ -1,10 +1,11 @@
+import {quoteFileIds} from './fleet-attachments.mjs?v=20261102.2';
 import {money,englishDigits,quoteTotal,quoteIncludes,types,maintenanceKinds} from './fleet-model.mjs?v=20261104.1';
 
 export function financeRequestView(detail,context){
  const r=detail.request;
  const finance=context.can_finance&&!context.is_admin&&!context.can_correct&&!context.supervised_owner_id&&r.driver_id!==context.employee_id&&(context.finance_only||r.accountant_id===context.user_id);
  const quotes=(r.quotes||[]).map((quote,index)=>({quote,index})).filter(x=>!finance||x.index===Number(r.selected_quote));
- const ids=new Set(quotes.flatMap(({quote:q})=>['parts','labor'].flatMap(k=>q[k+'_file_ids']?.length?q[k+'_file_ids']:[q[k+'_file_id']]).filter(Boolean)));
+ const ids=new Set(quotes.flatMap(({quote:q})=>[...['parts','labor'].flatMap(k=>quoteFileIds(q,k)),q.file_id].filter(Boolean)));
  return {finance,quotes,files:(detail.files||[]).filter(f=>!finance||!['quote','quote_parts','quote_labor'].includes(f.kind)||ids.has(f.id))};
 }
 const units=['','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة'];
