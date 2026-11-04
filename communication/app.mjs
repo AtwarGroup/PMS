@@ -1,4 +1,4 @@
-import {attachmentActions,openAttachmentViewer,downloadAttachment} from '../assets/js/attachment-viewer.mjs?v=1';
+import {attachmentActions,openAttachmentViewer,downloadAttachment} from '../assets/js/attachment-viewer.mjs?v=2';
 import {invokeCommunication} from './transport.mjs?v=20261102';
 import {workReferences,workURL,resolveWorkReferences} from './work-links.mjs?v=20261008';
 import {withReadTimeout} from './read-timeout.mjs?v=20261010';

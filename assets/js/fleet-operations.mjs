@@ -1,4 +1,4 @@
-import {attachmentActions,openAttachmentViewer,downloadAttachment} from './attachment-viewer.mjs?v=1';
+import {attachmentActions,openAttachmentViewer,downloadAttachment} from './attachment-viewer.mjs?v=2';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {escapeHTML,englishDigits,states,money,summary} from './fleet-model.mjs?v=4';
 import {carDiagram,carParts,damageTypes,cargoParts} from './fleet-car-diagram.mjs?v=2';

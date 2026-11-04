@@ -1,4 +1,4 @@
-import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=1';
+import {attachmentActions,storedAttachment} from './attachment-viewer.mjs?v=2';
 import {esc,terminal} from './it-support-model.mjs?v=6';
 let env;export const configureFiles=e=>env=e;
 const mime={pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',txt:'text/plain',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
