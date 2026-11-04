@@ -82,7 +82,7 @@ export async function startPreview({currentWorkflow=true}={}) {
         !route.startsWith("/assets/") &&
         !route.startsWith("/fleet/") &&
         !route.startsWith("/admin/") &&
-        route !== "/favicon.svg"
+        route !== "/favicon.svg" && route !== "/logo.png"
       ) {
         res.writeHead(404);
         res.end();
@@ -104,6 +104,7 @@ export async function startPreview({currentWorkflow=true}={}) {
           ".mjs": "text/javascript",
           ".css": "text/css",
           ".svg": "image/svg+xml",
+          ".png": "image/png",
         }[ext] || "application/octet-stream",
       );
       if (ext === ".html") {

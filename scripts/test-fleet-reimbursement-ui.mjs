@@ -1,0 +1,36 @@
+import {chromium,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {startPreview} from './fleet-preview.mjs';
+import {ids} from './fleet-test-db.mjs';
+import {amountInWords,financeRequestView} from '../assets/js/fleet-reimbursement-pdf.mjs';
+const app=await startPreview();let browser;
+try{
+ assert.equal((await app.db.query("select has_function_privilege('anon','public.fleet_reimbursement_voucher(uuid)','execute') allowed")).rows[0].allowed,false);
+ const car=(await app.rpc('fleet','fleet_snapshot')).vehicles[0];
+ const data={vehicle_id:car.id,accountant_id:ids.accountant,request_type:'repair',maintenance_kind:'tire',odometer:12510,description:'استبدال الإطار التالف للسيارة',fault_notes:'تلف الإطار وحاجة السيارة إلى الاستبدال',selected_quote:0,quotes:[]};
+ const id=await app.rpc('driver','fleet_request_save',{p_id:null,p_revision:null,p_data:data});
+ const detail=(actor='driver')=>app.rpc(actor,'fleet_detail',{p_id:id});
+ const cmd=async(actor,action,p_data={})=>app.rpc(actor,'fleet_command',{p_id:id,p_revision:(await detail(actor)).request.revision,p_action:action,p_data});
+ const upload=(actor,kind,name)=>app.rpc(actor,'fleet_upload',{p_request:id,p_kind:kind,p_name:name,p_mime:kind==='repair_photo'?'image/png':'application/pdf',p_base64:kind==='repair_photo'?'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=':Buffer.from('%PDF-1.4 synthetic '+name).toString('base64')});
+ for(let i=0;i<2;i++)data.quotes.push({scope:'parts',supplier:i?'ورشة العرض المعتمد الثاني':'ورشة العرض غير المعتمد الأول',phone:'0501234567',parts:250+i*20,labor:0,tax:0,parts_file_id:await upload('driver','quote_parts','quote-'+i+'.pdf')});
+ await app.rpc('driver','fleet_request_save',{p_id:id,p_revision:1,p_data:data});
+ await assert.rejects(()=>app.rpc('accountant','fleet_reimbursement_voucher',{p_id:id}));
+ await cmd('driver','submit');await cmd('manager','approve',{selected_quote:1});
+ const invoice=await upload('driver','invoice','invoice.pdf'),photo=await upload('driver','repair_photo','repair.png');
+ await cmd('driver','confirm_repair',{total:265,invoice_id:invoice,repair_photo_id:photo,received:true});await cmd('fleet','approve');
+ for(const actor of ['outsider','accountant2','driver'])await assert.rejects(()=>app.rpc(actor,'fleet_reimbursement_voucher',{p_id:id}),/denied/i);
+ let voucher=await app.rpc('accountant','fleet_reimbursement_voucher',{p_id:id});assert.equal(voucher.detail.request.invoice_total,265);assert.equal(voucher.employee_code,(await app.db.query('select employee_code from private.hr_employees where id=$1',[ids.driver])).rows[0].employee_code);assert.equal(voucher.detail.request.selected_quote,1);
+ await app.db.exec(`create table private.it_support_settings(chief_accountant_id uuid);insert into private.it_support_settings values('${ids.manager}');create table private.recruitment_route_settings(finance_id uuid);insert into private.recruitment_route_settings values('${ids.admin}');`);
+ voucher=await app.rpc('accountant','fleet_reimbursement_voucher',{p_id:id});assert(voucher.chief_accountant_name);assert(voucher.finance_manager_name);
+ const accountantContext=await app.rpc('accountant','fleet_snapshot'),view=financeRequestView(await detail('accountant'),accountantContext);assert.equal(view.quotes.length,1);assert.equal(view.quotes[0].index,1);assert.equal(view.files.length,3);
+ assert.equal(financeRequestView(await detail('admin'),await app.rpc('admin','fleet_snapshot')).quotes.length,2);assert.match(amountInWords(265.75),/خمسة وستون.*خمسة وسبعون/);assert.match(amountInWords(0),/صفر/);
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});const p=await browser.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.route('**/*',route=>route.request().url().startsWith(app.url)||/^(data:|blob:)/.test(route.request().url())?route.continue():route.abort());
+ const page=async actor=>{await p.goto(app.url+'/fleet/index.html?qa='+actor+'&request='+id);await expect(p.locator('#fleetStatus')).toHaveText('');await expect(p.locator('#fleetDialog')).toBeVisible();};
+ await page('accountant');await expect(p.locator('#dialogBody h3')).toContainText(['استبدال الإطار التالف للسيارة','العرض المعتمد','المرفقات']);await expect(p.locator('#dialogBody tbody tr')).toHaveCount(1);await expect(p.locator('#dialogBody')).not.toContainText('ورشة العرض غير المعتمد الأول');await expect(p.locator('[data-preview="'+data.quotes[0].parts_file_id+'"]')).toHaveCount(0);await expect(p.locator('[data-preview="'+data.quotes[1].parts_file_id+'"]')).toBeVisible();await expect(p.locator('[data-preview="'+invoice+'"]')).toBeVisible();await expect(p.locator('[data-preview="'+photo+'"]')).toBeVisible();
+ const download=p.waitForEvent('download');await p.locator('[data-reimbursement-pdf]').click();await expect(p.locator('[data-reimbursement-pdf]')).toBeEnabled();const f=await download;await mkdir('test-results',{recursive:true});await f.saveAs('test-results/fleet-reimbursement.pdf');assert.match(f.suggestedFilename(),/\.pdf$/);await expect(p.locator('#dialogStatus')).toHaveText('');
+ const encoded=await p.evaluate(async d=>{const {reimbursementCanvas}=await import('/assets/js/fleet-reimbursement-pdf.mjs');const c=await reimbursementCanvas(d);return c.toDataURL('image/png').split(',')[1];},voucher);await writeFile('test-results/fleet-reimbursement.png',Buffer.from(encoded,'base64'));
+ await page('fleet');await expect(p.locator('#dialogBody tbody tr')).toHaveCount(2);await page('admin');await expect(p.locator('#dialogBody tbody tr')).toHaveCount(2);
+ const evidence=await upload('accountant','payment','payment.pdf');await cmd('accountant','settle',{amount:265,reference:'1234',evidence_id:evidence});voucher=await app.rpc('accountant','fleet_reimbursement_voucher',{p_id:id});assert.equal(voucher.detail.payments.at(-1).kind,'reimbursement');await page('admin');const after=p.waitForEvent('download');await p.locator('[data-reimbursement-pdf]').click();await (await after).saveAs('test-results/fleet-reimbursement-paid.pdf');
+ assert.deepEqual(errors,[]);console.log('PASS accountant sees approved quote/attachments only; admins/owner retain comparison; authenticated voucher data, live employee/settings, actual invoice amount, pre/post payment single-page PDF download, no signed-form upload.');
+}finally{await browser?.close();await app.close();}
