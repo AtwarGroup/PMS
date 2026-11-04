@@ -19,6 +19,7 @@ export const types = {
 };
 export const actions = {
   submit: "إرسال الطلب",
+  request_corrected: "تعديل بيانات الطلب",
   approve_exception: "اعتماد الاستثناء",
   approve: "اعتماد",
   request_increase: "طلب اعتماد زيادة",
