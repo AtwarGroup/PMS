@@ -1,0 +1,38 @@
+/* Shared list surface for Tasks and Fleet. Business actions stay module-specific. */
+.task-list-filter,.task-list-panel{--list-title-size:14px;--list-meta-size:11px;--list-operation-size:12px;--list-row-x:16px;--list-row-y:10px}
+.atwar-main .task-list-filter{padding:12px!important;border:1px solid #e2e8f0!important;border-radius:14px!important;background:#fff!important;box-shadow:none!important;min-width:0}
+.atwar-main .task-list-filter :is(input[type=search],#searchInput,select,.qf){box-sizing:border-box;font-size:13px!important;line-height:1.5!important;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#475569;min-height:40px!important;padding:8px 12px;font-family:inherit}
+.atwar-main .task-list-filter .qf{white-space:nowrap;font-weight:700;cursor:pointer;flex-shrink:0}
+.atwar-main .task-list-filter .qf.active{background:#0f172a!important;color:#fff!important;border-color:#0f172a!important}
+.atwar-main .task-list-filter .view-switch{display:flex;gap:4px;padding:4px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.atwar-main .task-list-filter .view-switch button{min-height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#64748b;font:800 11px/1.5 var(--atwar-type-font,Tajawal,sans-serif);cursor:pointer}
+.atwar-main .task-list-filter .view-switch button.active{background:#fff;color:#1769e0;box-shadow:0 2px 7px #0f172a14}
+.atwar-main .task-list-panel{border:1px solid #e2e8f0!important;border-radius:14px!important;background:#fff!important;box-shadow:none!important;overflow:hidden;min-width:0}
+.atwar-main .task-list-panel.task-suite-panel{padding:0!important}
+.atwar-main .task-list-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0!important;padding:12px 20px!important;border-bottom:1px solid #e2e8f0;background:#fff}
+.atwar-main .task-list-heading h2{margin:0!important;font-size:17px!important;line-height:1.5!important;font-weight:900}
+.atwar-main .task-list-heading :is(#visibleCount,[role=status]){font-size:12.5px!important;font-weight:700;color:#64748b}
+.atwar-main .task-list-row.task-card{position:relative;margin:0!important;padding:var(--list-row-y,10px) var(--list-row-x,16px)!important;border:0!important;border-bottom:1px solid #e2e8f0!important;border-radius:0!important;background:#f8fafc!important;box-shadow:none!important;min-width:0}
+.atwar-main .task-list-row.task-card:last-child{border-bottom:0!important}
+.atwar-main .task-list-row.task-card:hover{background:#f1f5f9!important}
+.atwar-main .task-list-row .task-list-row-main{display:flex;align-items:center;gap:12px;min-height:44px;min-width:0}
+.atwar-main .task-list-row .task-list-row-copy{flex:1;min-width:0}
+.atwar-main .task-list-row .task-title-line{margin:0;font-size:var(--list-title-size,14px)!important;font-weight:700!important;line-height:1.45!important;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atwar-main .task-list-row .task-secondary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-top:4px;font-size:var(--list-meta-size,11px)!important;line-height:1.5!important;color:#64748b}
+.atwar-main .task-list-row .task-operational{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;padding-top:8px;border-top:1px solid #edf2f7;font-size:var(--list-operation-size,12px)!important;line-height:1.55!important;color:#64748b}
+.atwar-main .task-list-row .task-operational b{font-size:inherit!important;line-height:inherit!important;color:#94a3b8}
+.atwar-main .task-list-row.task-card.is-overdue{background:linear-gradient(90deg,#fef2f2d9,#fff)!important;border-inline-start:3px solid #e11d48!important}
+.atwar-main .task-list-row.task-card.is-completed{background:linear-gradient(90deg,#fff,#f5fff9)!important;border-inline-start:3px solid #22a06b!important}
+.atwar-main .task-list-row.task-card.is-completed .task-title-line{color:#1f3b31!important}
+.atwar-main .task-list-filter :is(button,input,select):focus-visible,.atwar-main .task-list-row button:focus-visible{outline:2px solid #1769e0;outline-offset:2px}
+@media(max-width:768px){.task-list-filter,.task-list-panel{--list-operation-size:11px}.atwar-main .task-list-filter :is(input[type=search],#searchInput,select,.qf){font-size:12px!important;min-height:44px!important}.atwar-main .task-list-row .task-operational{gap:.45rem!important}.atwar-main .task-list-row .task-title-line{font-size:14px!important}}
+.atwar-main :is(.task-list-filter.task-suite-panel,.task-list-filter.task-filter-bar){padding:12px!important}
+.atwar-main .task-list-filter.task-filter-bar,.atwar-main .task-list-filter .fleet-task-filter-bar{display:flex!important;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.atwar-main .task-list-filter :is(#searchInput,#workSearch){flex:1 1 260px;width:100%;max-width:360px;min-width:0}
+.atwar-main .task-list-filter :is(#quickFilters,.fleet-quick-filters){display:flex;flex:1 1 360px;gap:6px;flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+.atwar-main .task-list-filter #assigneeFilter{flex-basis:100%;width:100%}
+.atwar-main .task-list-row.task-card.is-overdue::before{display:none}
+@media(max-width:768px){.atwar-main .task-list-filter :is(#searchInput,#workSearch){flex-basis:100%;max-width:none}.atwar-main .task-list-filter :is(#quickFilters,.fleet-quick-filters){flex-basis:100%}}
+.atwar-main .task-list-panel .task-list-heading{flex-direction:row!important;flex-wrap:wrap;text-align:start!important}
+.atwar-main .task-list-panel .task-list-heading h2{flex:1;min-width:0;text-align:start!important}
+.atwar-main .task-list-panel .task-list-heading :is(#visibleCount,[role=status]){white-space:nowrap}

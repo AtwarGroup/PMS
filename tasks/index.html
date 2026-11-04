@@ -221,6 +221,7 @@
 }
 .atwar-main #tasksList .task-card.selected .task-operational{border-top-color:#93c5fd!important}
 </style>
+<link rel="stylesheet" href="../assets/css/task-list-theme.css?v=20261104.1">
 </head>
 
 <body class="bg-slate-100 text-slate-900 min-h-screen atwar-task-page">
@@ -316,7 +317,7 @@
     </section>
 
     <!-- Filters -->
-    <section class="task-filter-bar bg-white border border-slate-200 rounded-2xl shadow-sm p-3">
+    <section class="task-filter-bar task-list-filter bg-white border border-slate-200 rounded-2xl shadow-sm p-3">
       <input id="searchInput" type="text" placeholder="🔍 بحث في المهام..." class="w-full md:w-[420px] border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500">
       <div class="flex flex-wrap gap-1.5" id="quickFilters">
         <button type="button" data-filter="ALL" class="qf active">الكل</button>
@@ -358,8 +359,8 @@
 
     <!-- To Do layout -->
     <section id="workspaceGrid" class="details-closed grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_390px] gap-4 items-start">
-      <div id="taskListPanel" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[360px] xl:order-1">
-        <div id="listHeaderSticky" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+      <div id="taskListPanel" class="task-list-panel bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden min-h-[360px] xl:order-1">
+        <div id="listHeaderSticky" class="task-list-heading px-5 py-3 border-b border-slate-200 flex items-center justify-between">
           <h2 class="font-black text-lg">المهام</h2>
           <button id="batchFollowButton" type="button" class="batch-action" hidden>متابعة الإسناد الجماعي</button>
           <span id="visibleCount" class="text-xs font-bold text-slate-500">جارٍ تحميل المهام…</span>
@@ -604,7 +605,7 @@
   Release Candidate: 10 (Full-system pre-upload review)
   Frozen from validated UAT build V3.21.2
 -->
-<script type="module" src="../assets/js/tasks-page.js?v=2.8.20-arabic"></script>
+<script type="module" src="../assets/js/tasks-page.js?v=2.8.21-fleet-theme"></script>
 
 <script src="../assets/js/permissions.js?v=2.8.0"></script>
 <script>

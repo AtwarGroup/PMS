@@ -2367,7 +2367,7 @@ function renderTasks(){
     const timing=delay>0?`متأخرة ${delay} يوم`:t.status==='مكتملة'?'تم الإنجاز':`${calcDuration(localDateISO(),t.end)} يوم`;
     const timingClass=delay>0?'text-rose-600':'text-slate-500';
     const card=document.createElement('div');
-    card.className=`task-card ${selected?'selected':''} ${isCurrentlyOverdue(t)&&!isCompletedArchiveView()?'is-overdue':''} ${t.status==='مكتملة'?'is-completed':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
+    card.className=`task-card task-list-row ${selected?'selected':''} ${isCurrentlyOverdue(t)&&!isCompletedArchiveView()?'is-overdue':''} ${t.status==='مكتملة'?'is-completed':''} px-4 py-2.5 cursor-pointer border-0 border-b border-slate-100 rounded-none`;
     card.dataset.taskKey=key;
     card.onclick=()=>{
       if(selectedTaskKey!==key && pendingAssigneeChange){
@@ -2398,9 +2398,9 @@ function renderTasks(){
         </div>`;
 
     card.innerHTML=`
-      <div class="flex items-center gap-3 min-h-[44px]">
+      <div class="task-list-row-main flex items-center gap-3 min-h-[44px]">
         <button class="w-6 h-6 rounded-full border-2 ${t.status==='مكتملة'?'border-emerald-500 bg-emerald-500 text-white':'border-slate-400 bg-white'} flex items-center justify-center shrink-0" title="${t.jobWorkflow?'تُغلق من الوثيقة المرتبطة':'تغيير حالة الإنجاز'}" ${t.jobWorkflow?'disabled':''}>${t.status==='مكتملة'?'✓':''}</button>
-        <div class="min-w-0 flex-1">
+        <div class="task-list-row-copy min-w-0 flex-1">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 min-w-0">
               ${(t.priority||'normal')==='normal'?'':`<span class="priority-dot priority-${escapeHTML(t.priority)}" title="الأولوية: ${priorityLabel(t.priority)}"></span>`}
