@@ -1,3 +1,4 @@
+import {attachmentActions} from './attachment-viewer.mjs?v=1';
 import {createTaskActivityLoader,readTaskActivity} from './task-activity-loader.mjs?v=1.0.0';
 import {createTaskMeasurementLinks} from './task-measurement-links.mjs?v=1.0.0';
 import {createTaskFollowupController} from './task-followup-page.mjs?v=1.0.0';
@@ -5,7 +6,7 @@ import {promptTaskReschedule} from "./task-reschedule.mjs?v=1.0.0";
 import {createTaskBatchesController} from "./task-batches.mjs?v=1.1.0-task-module";
 import { initializeApp, getApps, getDatabase, ref, set, update, push, onValue, remove, get, query, orderByChild, equalTo, limitToLast, runTransaction, serverTimestamp, refreshTaskData, getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./supabase-firebase-compat.js?v=2.8.4-task-module";
 import { escapeHTML, isActiveProfile, localDateISO, parseDateOnly, calcDuration, calcDelay, normalizeProgress, isISODate, validateTaskFieldValue, formatDateAR, priorityLabel, smartDate, isToday, roleLabel, sortTaskRows } from "./tasks-core.mjs?v=1.9.9";
-import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.15";
+import {createTaskAttachmentsController} from "./task-attachments.mjs?v=1.9.16-preview";
 
 const compatConfig = {};
 const app=getApps().length?getApps()[0]:initializeApp(compatConfig);
@@ -2022,7 +2023,7 @@ function getTaskAttachmentsController(){
   return taskAttachmentsController;
 }
 
-async function openTaskAttachment(id){return getTaskAttachmentsController().open(id)}
+async function openTaskAttachment(id,download=false){return getTaskAttachmentsController().open(id,download)}
 async function deleteTaskAttachment(id){return getTaskAttachmentsController().remove(id)}
 async function uploadTaskAttachment(event){return getTaskAttachmentsController().upload(event)}
 
@@ -2835,7 +2836,7 @@ function renderDetails(){
   document.getElementById('detailAttachmentsCount').textContent=attachmentCount;
   const attachmentsList=document.getElementById('taskAttachmentsList');
   attachmentsList.innerHTML=attachmentCount
-    ? task.attachments.map(file=>{const canDeleteAttachment=!file.sharedBatch&&task.status!=='مكتملة'&&(currentProfile?.role==='admin'||currentProfile?.role==='manager'||isTaskOwner(task)||String(file.uploaderId||'')===String(currentUser?.uid||''));return `<div class="flex items-center gap-2"><button type="button" onclick="openTaskAttachment('${escapeHTML(file.id)}')" class="min-w-0 flex-1 flex items-center justify-between gap-2 bg-white border border-blue-100 hover:border-blue-300 rounded-lg px-3 py-2 text-right"><span class="truncate text-[11px] font-bold text-slate-700">📄 ${escapeHTML(file.fileName||'مرفق')}${file.sharedBatch?' · مرفق جماعي':''}</span><span class="text-[9px] text-slate-400 shrink-0">${file.sizeBytes?Math.ceil(file.sizeBytes/1024)+' KB':'فتح'}</span></button>${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
+    ? task.attachments.map(file=>{const canDeleteAttachment=!file.sharedBatch&&task.status!=='مكتملة'&&(currentProfile?.role==='admin'||currentProfile?.role==='manager'||isTaskOwner(task)||String(file.uploaderId||'')===String(currentUser?.uid||''));return `<div class="flex items-center gap-2">${attachmentActions(file.fileName||'مرفق',file.id,{key:'task-file',buttonClass:'atwar-btn'})}${canDeleteAttachment?`<button type="button" onclick="deleteTaskAttachment('${escapeHTML(file.id)}')" class="w-8 h-8 shrink-0 rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50" title="حذف المرفق" aria-label="حذف المرفق">🗑</button>`:''}</div>`}).join('')
     : '<div class="text-[10px] text-blue-500">لا توجد مرفقات حتى الآن.</div>';
   document.getElementById('detailNotes').value=task.notes||'';
   const managerNotes=document.getElementById('detailManagerNotes');
@@ -3112,6 +3113,7 @@ window.handleImport=handleImport;
 window.exportToExcel=exportToExcel;
 window.deleteTaskAttachment=deleteTaskAttachment;
 window.openTaskAttachment=openTaskAttachment;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-task-file],[data-task-file-download]');if(b)void openTaskAttachment(b.dataset.taskFile||b.dataset.taskFileDownload,!!b.dataset.taskFileDownload);});
 window.uploadTaskAttachment=uploadTaskAttachment;
 window.markAllNotificationsRead=markAllNotificationsRead;
 window.toggleNotifications=toggleNotifications;
