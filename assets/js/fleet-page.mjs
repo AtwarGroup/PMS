@@ -1,7 +1,7 @@
 import {filterFleetVehicles} from './fleet-registry.mjs?v=1';
 import {openFleetAttachment} from './fleet-file-viewer.mjs?v=3-arabic';
 import {quoteFileIds, uploadFleetFiles, validateFleetUploadBudget} from './fleet-attachments.mjs?v=20261102.2';
-import {initWorkboard} from './fleet-workboard.mjs?v=20261104.1';
+import {initWorkboard} from './fleet-workboard.mjs?v=20261104.theme.1';
 import {archiveFleetFile,fleetFile} from './fleet-file-storage.mjs?v=2.8.0';
 import {initFleetOperations} from "./fleet-operations.mjs?v=20261104-arabic";
 import { initFleetDocuments } from "./fleet-documents-page.mjs?v=20261102.1";
