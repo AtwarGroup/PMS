@@ -15,7 +15,7 @@ try {
   await rpc(actor,'fleet_request_save',{p_id:id,p_revision:(await detail(actor,id)).request.revision,p_data:data});return id;
  }
  const id=await draft();
- for(const actor of ['manager','fleet','accountant','accountant2','outsider']){
+ for(const actor of ['manager','accountant','accountant2','outsider']){
   assert(!(await snapshot(actor)).requests.some(r=>r.id===id),actor+' cannot list another employee unsent draft');
   await assert.rejects(()=>detail(actor,id),/Access denied/);
  }
@@ -23,15 +23,15 @@ try {
  const created=await draft('fleet');assert((await snapshot('fleet')).requests.some(r=>r.id===created),'Fleet-created draft remains accessible to creator');assert((await snapshot('driver')).requests.some(r=>r.id===created));
  const cmd=async(actor,action,data={})=>rpc(actor,'fleet_command',{p_id:id,p_revision:(await detail(actor,id)).request.revision,p_action:action,p_data:data});
  await cmd('driver','submit');
- for(const actor of ['driver','manager','fleet','accountant'])assert((await detail(actor,id)).events.length>0,actor+' sees history for an authorized submitted request');assert((await snapshot('manager')).requests.some(r=>r.id===id));assert(!(await snapshot('accountant')).requests.some(r=>r.id===id));assert(!(await snapshot('fleet')).requests.some(r=>r.id===id));
+ for(const actor of ['driver','manager','fleet','accountant'])assert((await detail(actor,id)).events.length>0,actor+' sees history for an authorized submitted request');assert((await snapshot('manager')).requests.some(r=>r.id===id));assert(!(await snapshot('accountant')).requests.some(r=>r.id===id));assert((await snapshot('fleet')).requests.some(r=>r.id===id));
  for(const actor of ['outsider','accountant2']){assert(!(await snapshot(actor)).requests.some(r=>r.id===id));await assert.rejects(()=>detail(actor,id),/Access denied/);}
- await cmd('manager','approve');assert.equal((await detail('driver',id)).request.state,'repair');assert(!(await snapshot('accountant')).requests.some(r=>r.id===id),'Assigned accountant does not list requests before their financial action');assert(!(await snapshot('manager')).requests.some(r=>r.id===id),'Manager request leaves the queue after approval');assert(!(await snapshot('fleet')).requests.some(r=>r.id===id),'Fleet does not list driver repair steps');
+ await cmd('manager','approve');assert.equal((await detail('driver',id)).request.state,'repair');assert(!(await snapshot('accountant')).requests.some(r=>r.id===id),'Assigned accountant does not list requests before their financial action');assert(!(await snapshot('manager')).requests.some(r=>r.id===id),'Manager request leaves the queue after approval');assert((await snapshot('fleet')).requests.some(r=>r.id===id),'Fleet owner retains visibility during driver repair');
  const events=(await detail('driver',id)).events;assert(events.some(e=>e.action==='approve'&&e.actor_name));
  const invoice=await rpc('driver','fleet_upload',{p_request:id,p_kind:'invoice',p_name:'invoice.pdf',p_mime:'application/pdf',p_base64:Buffer.from('%PDF-1.4 invoice').toString('base64')});
  const photo=await rpc('driver','fleet_upload',{p_request:id,p_kind:'repair_photo',p_name:'repair.png',p_mime:'image/png',p_base64:'iVBORw0KGgo='});
  await cmd('driver','confirm_repair',{total:100,received:true,invoice_id:invoice,repair_photo_id:photo});
  assert((await snapshot('fleet')).requests.some(r=>r.id===id));assert(!(await snapshot('manager')).requests.some(r=>r.id===id));assert(!(await snapshot('accountant')).requests.some(r=>r.id===id));
- await cmd('fleet','approve');assert(!(await snapshot('fleet')).requests.some(r=>r.id===id));assert((await snapshot('accountant')).requests.some(r=>r.id===id));
+ await cmd('fleet','approve');assert((await snapshot('fleet')).requests.some(r=>r.id===id));assert((await snapshot('accountant')).requests.some(r=>r.id===id));
  const proof=await rpc('accountant','fleet_upload',{p_request:id,p_kind:'payment',p_name:'proof.pdf',p_mime:'application/pdf',p_base64:Buffer.from('%PDF-1.4 proof').toString('base64')});
  await cmd('accountant','settle',{amount:100,reference:'1234',evidence_id:proof});assert.equal((await detail('driver',id)).request.state,'closed');
 
