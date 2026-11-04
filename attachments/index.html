@@ -32,6 +32,7 @@
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/module-access.js?v=it-live-20261101"></script><script src="../assets/js/supabase-runtime.js?v=2.8.0"></script>
 <script type="module">
+import {attachmentActions,storedAttachment} from '../assets/js/attachment-viewer.mjs?v=1';
 import {renderDataState} from "../assets/js/data-state.mjs?v=20261029-loading";
 const sb=await window.atwarGetSupabase();
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -66,9 +67,9 @@ function render(){
    <div><b style="font-size:11px">${esc(x.task?.title||'—')}</b><div class="meta">${esc(x.task?.status||'')}</div></div>
    <div class="meta">${esc(x.task?.assignee_name_snapshot||'—')}</div>
    <div class="meta">${esc(fmt(x.created_at))}</div>
-   <button class="btn open" data-path="${esc(x.storage_path)}">فتح</button>
+   ${attachmentActions(x.file_name,x.id,{key:'attachment',buttonClass:'btn'})}
  </div>`).join(''):'<div class="empty"><i data-lucide="paperclip" style="width:28px;height:28px;margin-bottom:8px"></i><div>لا توجد مرفقات مطابقة.</div></div>';
- document.querySelectorAll('.open').forEach(b=>b.onclick=async()=>{const r=await sb.storage.from('task-attachments').createSignedUrl(b.dataset.path,120);if(r.error)window.atwarUI?.toast(r.error.message,{tone:'error'});else window.open(r.data.signedUrl,'_blank','noopener')});
+ document.querySelectorAll('[data-attachment],[data-attachment-download]').forEach(b=>b.onclick=async()=>{try{const f=rows.find(x=>x.id===(b.dataset.attachment||b.dataset.attachmentDownload));if(!f)throw Error('المرفق غير متاح.');await storedAttachment(sb,'task-attachments',f.storage_path,f.file_name,{download:!!b.dataset.attachmentDownload});}catch(error){window.AtwarUI?.toast(error.message,'error');}});
  try{lucide.createIcons()}catch{}
 }
 document.getElementById('q').addEventListener('input',render);

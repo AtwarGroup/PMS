@@ -5,15 +5,16 @@ import {readRelatedRows} from '../assets/js/paged-related-read.mjs';
 import {createTaskAttachmentsController} from '../assets/js/task-attachments.mjs';
 const calls=[];
 const task={attachments:[{id:'shared',sharedBatch:true,storageBucket:'task-batch-attachments',storagePath:'owner/batch/file',fileName:'تعليمات'},{id:'personal',storagePath:'task/file',fileName:'إنجاز'}]};
-const originalOpen=globalThis.open;
+const originalOpen=globalThis.open,originalDocument=globalThis.document;
+globalThis.document={body:{append(){}},createElement:()=>({click(){},remove(){}})};
 globalThis.open=(...args)=>calls.push(['open',...args]);
 try {
- const controller=createTaskAttachmentsController({getSupabase:async()=>({storage:{from(bucket){return {async createSignedUrl(path){calls.push(['sign',bucket,path]);return {data:{signedUrl:'https://example.invalid/signed'}};}};}}}),getSelectedTask:()=>task,getCurrentUser:()=>({uid:'owner'}),getCurrentProfile:()=>({role:'admin'}),confirmAction:async()=>{throw Error('Shared file deletion must stop before confirmation');},toast:()=>{}});
+ const controller=createTaskAttachmentsController({getSupabase:async()=>({storage:{from(bucket){return {async download(path){calls.push(['read',bucket,path]);return {data:new Blob(['test'])};}};}}}),getSelectedTask:()=>task,getCurrentUser:()=>({uid:'owner'}),getCurrentProfile:()=>({role:'admin'}),confirmAction:async()=>{throw Error('Shared file deletion must stop before confirmation');},toast:()=>{}});
  await controller.remove('shared');
- await controller.open('shared');
- await controller.open('personal');
- assert.deepEqual(calls.filter(c=>c[0]==='sign'),[['sign','task-batch-attachments','owner/batch/file'],['sign','task-attachments','task/file']]);
-} finally {globalThis.open=originalOpen;}
+ await controller.open('shared',true);
+ await controller.open('personal',true);
+ assert.deepEqual(calls.filter(c=>c[0]==='read'),[['read','task-batch-attachments','owner/batch/file'],['read','task-attachments','task/file']]);
+} finally {globalThis.open=originalOpen;globalThis.document=originalDocument;}
 const source=readFileSync('assets/js/supabase-firebase-compat.js','utf8');
 let failShared=false;
 const context=vm.createContext({readRelatedRows,ms:()=>1,sb:{async rpc(name,{p_task_ids}){assert.equal(name,'task_approval_pause_days');return {data:p_task_ids.map(task_id=>({task_id,paused_days:0}))};},from(table){const result={error:table==='task_batch_attachments'&&failShared?new Error('Access failed'):null,data:table==='task_batch_attachments'?[{id:'shared',batch_id:'batch-a',file_name:'تعليمات',storage_path:'owner/batch/file',size_bytes:10}]:[]};return {select(){return this;},in(){return this;},order(){return this;},range(){return this;},then(resolve){return Promise.resolve(result).then(resolve);}};}}});

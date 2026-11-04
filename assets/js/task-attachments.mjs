@@ -1,3 +1,4 @@
+import {storedAttachment} from './attachment-viewer.mjs?v=1';
 function safeExtension(name){
   const extension=String(name||'').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
   return extension&&extension.length<=8?`.${extension}`:'';
@@ -28,14 +29,12 @@ export function createTaskAttachmentsController({
   const deleteLocks=new Set();
   const selectedAttachment=id=>(getSelectedTask()?.attachments||[]).find(file=>String(file.id)===String(id))||null;
 
-  async function open(id){
+  async function open(id,download=false){
     const file=selectedAttachment(id);
     if(!file?.storagePath){toast('تعذر تحديد مسار المرفق.','error');return;}
     try{
       const sb=await getSupabase();
-      const {data,error}=await sb.storage.from(file.storageBucket||'task-attachments').createSignedUrl(file.storagePath,120);
-      if(error)throw error;
-      globalThis.open(data.signedUrl,'_blank','noopener');
+      await storedAttachment(sb,file.storageBucket||'task-attachments',file.storagePath,file.fileName||'مرفق',{download,mime:file.contentType});
     }catch(error){
       console.error('Open attachment:',error);
       toast('تعذر فتح المرفق.','error');

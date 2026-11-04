@@ -66,6 +66,8 @@ jobs:
           node scripts/test-business-conflict.mjs
       - name: Install browser
         run: npx playwright install --with-deps chromium
+      - name: Test shared attachment preview and download
+        run: node scripts/test-attachment-viewer-ui.mjs
       - name: Test driver, manager, fleet and accountant interfaces
         run: npm run test:fleet:ui
       - name: Test notification recovery after browser history navigation
