@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {currentFleetDB,ids,seedAssignedVehicle} from './fleet-v2-fixture.mjs';
+const {db,rpc}=await currentFleetDB();
+try{
+ const car=await seedAssignedVehicle(db,rpc,'fleet',{p_id:null,p_revision:null,p_data:{plate:'EDIT QA',vehicle_type:'سيارة اختبار التعديل',driver_id:ids.driver,active:true,odometer:10},p_reason:'إعداد اختبار التعديل'});
+ const data={vehicle_id:car,accountant_id:ids.accountant,request_type:'emergency',stops_vehicle:true,needs_tow:true,odometer:20,description:'طلب تجريبي للتحقق من تعديل الطلب',fault_notes:'تجربة صلاحيات التعديل وحفظ السجل',quotes:[],selected_quote:0};
+ await db.query("update private.access_direct_tasks set permissions=array['fleet.finance']where profile_id=$1",[ids.admin]);
+ const snap=await rpc('driver','fleet_snapshot');assert(!snap.accountants.some(a=>a.id===ids.admin));assert(snap.accountants.some(a=>a.id===ids.accountant));
+ await assert.rejects(()=>rpc('driver','fleet_request_save',{p_id:null,p_revision:null,p_data:{...data,accountant_id:ids.admin}}),/محاسب/);
+ const id=await rpc('driver','fleet_request_save',{p_id:null,p_revision:null,p_data:data});
+ const detail=()=>rpc('admin','fleet_detail',{p_id:id});let r=(await detail()).request;
+ assert((await rpc('fleet','fleet_snapshot')).requests.some(x=>x.id===id),'Fleet sees driver draft');
+ await assert.rejects(()=>rpc('driver','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{description:'تغيير لا يحق للموظف تنفيذه'},p_reason:'اختبار الصلاحية'}),/مسؤول النظام/);
+ const edited=await rpc('admin','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{accountant_id:ids.accountant2,description:'قام مسؤول النظام بتصحيح وصف الطلب'},p_reason:'تصحيح المحاسب المسؤول ووصف الطلب'});
+ assert.equal(edited.request.accountant_id,ids.accountant2);assert.equal(edited.request.state,'draft');assert(edited.events.some(e=>e.action==='request_corrected'&&e.payload.before.accountant_id===ids.accountant));
+ await assert.rejects(()=>rpc('admin','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{accountant_id:ids.accountant},p_reason:'اختبار تعارض النسخ'}),/حدّث/);
+ r=edited.request;await assert.rejects(()=>rpc('admin','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{advance:100},p_reason:'محاولة تعديل صرف مباشر'}),/لا يعدل مباشرة/);
+ await db.query("update private.fleet_requests set state='awaiting_advance',approved=500,route='large'where id=$1",[id]);r=(await detail()).request;
+ await rpc('fleet','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{accountant_id:ids.accountant},p_reason:'تصحيح المحاسب قبل الصرف'});
+ r=(await detail()).request;assert.equal(r.state,'awaiting_advance');assert.equal(r.approved,500);
+ await db.query('update private.fleet_requests set advance=100 where id=$1',[id]);r=(await detail()).request;
+ await assert.rejects(()=>rpc('fleet','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{quotes:[{parts:1,labor:1,tax:1}]},p_reason:'تغيير العرض بعد الصرف'}),/صرفًا/);
+ await db.query("update private.fleet_requests set state='closed',closed_at=now()where id=$1",[id]);r=(await detail()).request;
+ const closed=await rpc('admin','fleet_request_correct',{p_id:id,p_revision:r.revision,p_data:{fault_notes:'تصحيح إداري في طلب مغلق مع حفظ المال'},p_reason:'تصحيح الملاحظات فقط'});assert.equal(closed.request.state,'closed');assert.equal(closed.request.advance,100);
+ const nextId=await rpc('driver','fleet_request_save',{p_id:null,p_revision:null,p_data:data});
+ const upload=kind=>rpc('driver','fleet_upload',{p_request:nextId,p_kind:kind,p_name:'quote.pdf',p_mime:'application/pdf',p_base64:Buffer.from('%PDF-1.4 correction test').toString('base64')});
+ const part=await upload('quote_parts'),labor=await upload('quote_labor');
+ const quote={scope:'parts_labor',supplier:'ورشة اختبار التعديل',phone:'0551234567',parts:400,labor:100,tax:75,parts_file_id:part,labor_file_id:labor};
+ let next=(await rpc('driver','fleet_detail',{p_id:nextId})).request;
+ await rpc('driver','fleet_request_save',{p_id:nextId,p_revision:next.revision,p_data:{...data,quotes:[quote]}});
+ const command=async(user,action)=>{const row=(await rpc(user,'fleet_detail',{p_id:nextId})).request;return rpc(user,'fleet_command',{p_id:nextId,p_revision:row.revision,p_action:action,p_data:{}});};
+ await command('driver','submit');await command('fleet','approve');next=(await rpc('admin','fleet_detail',{p_id:nextId})).request;assert.equal(next.state,'awaiting_advance');
+ const revised=await rpc('admin','fleet_request_correct',{p_id:nextId,p_revision:next.revision,p_data:{quotes:[{...quote,parts:500,tax:90}]},p_reason:'تصحيح عرض السعر وإعادة الاعتماد'});
+ assert.equal(revised.request.state,'fleet_review');assert.equal(revised.request.approved,690);assert.equal(revised.request.advance,0);
+ assert(revised.events.some(e=>e.action==='request_corrected'&&e.payload.approval_restarted));
+ console.log('PASS correction permissions, all-stage visibility, admin excluded from finance, accountant correction without workflow reset, audit snapshots, stale revisions, finance ledger and completed-request guards.');
+}finally{await db.close()}

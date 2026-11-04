@@ -3,7 +3,9 @@
 const url = Deno.env.get('SUPABASE_URL') || '';
 const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const apiKey = Deno.env.get('RESEND_API_KEY') || '';
-const sender = Deno.env.get('EMAIL_FROM') || 'ATWAR ONE <tasks@notify.tiradorstores.com>';
+const brand = 'ATWAR One - نظام ادارة الاداء المؤسسي';
+const configuredSender = Deno.env.get('EMAIL_FROM') || 'tasks@notify.tiradorstores.com';
+const sender = `${brand} <${configuredSender.match(/<([^<>]+)>/)?.[1] || configuredSender}>`;
 const replyTo = Deno.env.get('EMAIL_REPLY_TO') || 'atwar.one@tiradorstores.com';
 const base = 'https://one.atwargroup.com';
 const escape = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] || c));
@@ -23,9 +25,9 @@ function content(items: Array<{payload:Record<string,string>}>) {
   const link = base + p.path;
   return {html:`<tr><td style="padding:18px;border-bottom:1px solid #e2e8f0"><h2 style="font-size:18px;margin:0 0 12px">${escape(p.subject)}</h2><p style="line-height:1.9">${escape(p.summary)}</p>${p.due_at?`<p>الموعد المستهدف: ${escape(new Date(p.due_at).toLocaleDateString('ar-SA',{timeZone:'Asia/Riyadh',calendar:'gregory'}))}</p>`:''}<a href="${escape(link)}" style="display:inline-block;padding:12px 22px;background:#1769db;color:#fff;text-decoration:none;border-radius:8px">فتح الطلب في أطوار ون</a></td></tr>`,text:`${p.subject}\n${p.summary}\n${p.due_at?'الموعد المستهدف: '+p.due_at+'\n':''}${link}`};
  });
- return {subject:`أطوار ون — ${subject}`.replace(/[\r\n]/g,' '),
-  html:`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escape(subject)}</title></head><body style="margin:0;background:#f3f6fb;font-family:Tahoma,Arial,sans-serif;color:#10213d"><table role="presentation" width="100%"><tr><td align="center"><table role="presentation" width="100%" style="max-width:620px;background:#fff;margin:24px auto;border:1px solid #dfe7f2;border-radius:12px"><tr><td style="padding:24px;background:#0c2347;color:#fff;font-size:22px;font-weight:bold">ATWAR ONE — أطوار ون</td></tr>${blocks.map(b=>b.html).join('')}<tr><td style="padding:18px;font-size:12px;color:#52627a">رسالة آلية لإجراء مهم. افتح النظام للاطلاع على الحالة الحالية والتفاصيل وتنفيذ الإجراء.</td></tr></table></td></tr></table></body></html>`,
-  text:blocks.map(b=>b.text).join('\n\n')+'\n\nرسالة آلية من أطوار ون.'};
+ return {subject:`${brand} | ${subject}`.replace(/[\r\n]/g,' '),
+  html:`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escape(subject)}</title></head><body style="margin:0;background:#f3f6fb;font-family:Tahoma,Arial,sans-serif;color:#10213d"><table role="presentation" width="100%"><tr><td align="center"><table role="presentation" width="100%" style="max-width:620px;background:#fff;margin:24px auto;border:1px solid #dfe7f2;border-radius:12px"><tr><td style="padding:24px;background:#0c2347;color:#fff;font-size:22px;font-weight:bold"><span dir="ltr">ATWAR One</span> - نظام ادارة الاداء المؤسسي</td></tr>${blocks.map(b=>b.html).join('')}<tr><td style="padding:18px;font-size:12px;color:#52627a">رسالة آلية لإجراء مهم. افتح النظام للاطلاع على الحالة الحالية والتفاصيل وتنفيذ الإجراء.</td></tr></table></td></tr></table></body></html>`,
+  text:blocks.map(b=>b.text).join('\n\n')+'\n\n'+brand};
 }
 
 Deno.serve(async request => {

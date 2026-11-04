@@ -10,7 +10,7 @@ const context={Deno:{env:{get:k=>({SUPABASE_URL:'https://db.example',SUPABASE_SE
  if(u.endsWith('/important_email_claim')){const args=JSON.parse(opts.body);if(args.p_probe)return Response.json({ready:true,enabled:true});return Response.json(claims++===0?batch:{items:[]});}
  if(u.endsWith('/important_email_validate'))return Response.json(mode!=='stale');
  if(u.endsWith('/important_email_finish')){finishes.push(JSON.parse(opts.body));return new Response('null');}
- if(u==='https://api.resend.com/emails'){sends++;const mail=JSON.parse(opts.body);assert.deepEqual(mail.to,['test@example.test']);assert.equal(opts.headers['Idempotency-Key'],'important-action/b1');assert(mail.html.includes('&lt;script&gt;'));assert(!mail.html.includes('<script>'));assert(mail.text.includes('https://one.atwargroup.com/fleet/'));return Response.json(statusCode===200?{id:'provider1'}:{message:'rejected'},{status:statusCode});}
+ if(u==='https://api.resend.com/emails'){sends++;const mail=JSON.parse(opts.body);assert.deepEqual(mail.to,['test@example.test']);assert(mail.subject.startsWith('ATWAR One - نظام ادارة الاداء المؤسسي'));assert(mail.html.includes('نظام ادارة الاداء المؤسسي'));assert(mail.from.includes('ATWAR One - نظام ادارة الاداء المؤسسي'));assert(!mail.html.includes('ATWAR ONE — أطوار ون'));assert.equal(opts.headers['Idempotency-Key'],'important-action/b1');assert(mail.html.includes('&lt;script&gt;'));assert(!mail.html.includes('<script>'));assert(mail.text.includes('https://one.atwargroup.com/fleet/'));return Response.json(statusCode===200?{id:'provider1'}:{message:'rejected'},{status:statusCode});}
  throw Error('Unexpected request '+u);
 }};
 vm.runInNewContext(code,context);

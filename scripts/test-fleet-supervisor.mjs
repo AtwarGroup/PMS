@@ -18,13 +18,13 @@ try {
  const own=await draft();assert(await listed('admin',own),'Admin sees an unrelated unsent draft');assert.equal(await listed('outsider',own),false);
  await grant(['fleet.requests.read','fleet.vehicles.read']);
  assert.equal((await snap('outsider')).supervised_owner_id,ids.fleet);
- assert.equal(await listed('outsider',own),false,'Supervisor does not see unrelated driver drafts');
+ assert.equal(await listed('outsider',own),true,'Supervisor sees all owner-visible requests read-only');
  const fleetDraft=await draft('fleet');assert(await listed('outsider',fleetDraft),'Supervisor mirrors fleet-created draft');assert((await detail('outsider',fleetDraft)).events.length>0);
  await cmd('driver',own,'submit');assert(await listed('fleet',own));assert(await listed('outsider',own));
  const observer=await snap('outsider');assert.equal(observer.can_approve,false);assert.equal(observer.can_manage,false);assert.equal(observer.can_finance,false);
  await assert.rejects(()=>cmd('outsider',own,'approve'),/غير مسموح|denied/i);
  await assert.rejects(()=>rpc('outsider','fleet_upload',{p_request:own,p_kind:'quote_parts',p_name:'unauthorized.pdf',p_mime:'application/pdf',p_base64:Buffer.from('%PDF-1.4 bad').toString('base64')}),/denied/i);
- await cmd('fleet',own,'approve');assert.equal(await listed('outsider',own),false,'Observer queue follows owner handoff to accountant');assert(await listed('admin',own));assert(await listed('accountant',own));
+ await cmd('fleet',own,'approve');assert.equal(await listed('outsider',own),true,'Supervisor retains read-only visibility after accountant handoff');assert(await listed('admin',own));assert(await listed('accountant',own));
  await grant([]);assert.equal((await snap('outsider')).supervised_owner_id,null);assert.equal(await listed('outsider',fleetDraft),false);await assert.rejects(()=>detail('outsider',fleetDraft),/denied/i);
  await grant(['fleet.requests.read','fleet.vehicles.read']);await db.query('update private.hr_employees set manager_id=null where profile_id=$1',[ids.fleet]);assert.equal((await snap('outsider')).supervised_owner_id,null);assert.equal(await listed('outsider',fleetDraft),false);
  await db.query('update private.hr_employees set manager_id=$1 where profile_id=$2',[ids.outsider,ids.fleet]);
