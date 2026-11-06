@@ -61,6 +61,7 @@ jobs:
           npm run test:recruitment:release
           node scripts/test-it-v2.mjs
           node scripts/test-it-followup.mjs
+          node scripts/test-it-auto-close.mjs
           node scripts/test-fleet-alerts.mjs
           node scripts/test-action-history.mjs
           node scripts/test-business-conflict.mjs
@@ -77,7 +78,9 @@ jobs:
       - name: Test shared attachment preview and download
         run: node scripts/test-attachment-viewer-ui.mjs
       - name: Test driver, manager, fleet and accountant interfaces
-        run: npm run test:fleet:ui
+        run: |
+          npm run test:fleet:ui
+          node scripts/test-it-auto-close-ui.mjs
       - name: Test notification recovery after browser history navigation
         run: |
           node tests/browser/notification-bfcache.cjs
