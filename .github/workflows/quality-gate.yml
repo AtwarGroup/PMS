@@ -69,6 +69,9 @@ jobs:
       matrix:
         suite: ${{ fromJSON(needs.plan.outputs.suites) }}
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --ipc=host
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
@@ -76,19 +79,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - run: npm ci --ignore-scripts
-      - name: Install browser dependencies
-        timeout-minutes: 5
-        shell: bash
+      - name: Verify the pinned browser runtime
         run: |
-          set -euo pipefail
-          printf '%s\n' 'Acquire::Retries "2";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/80atwar-ci >/dev/null
-          for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
-            if [ -f "$source_file" ]; then
-              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
-            fi
-          done
-          npx playwright install --with-deps chromium
+          node -e "if(require('@playwright/test/package.json').version!=='1.56.1')throw Error('Update the pinned browser image together with Playwright')"
+          python3 --version
       - name: Run the selected module suite
         env:
           CI_SUITE: ${{ matrix.suite }}

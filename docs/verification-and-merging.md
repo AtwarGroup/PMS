@@ -14,7 +14,7 @@ Full verification also runs daily at **02:30 Asia/Riyadh** and can be started ma
 
 The final gate always runs. Failure, cancellation, missing outputs, an invalid plan or an unexpectedly skipped selected suite fails the gate. Documentation-only changes may skip module browser jobs, while audit and assets checks still run. There are no workflow-level path filters that could leave required checks indefinitely pending.
 
-Browser setup has bounded package-download timeouts and a five-minute step limit. A stalled dependency download fails verification rather than allowing a merge or consuming the entire job timeout; rerun the failed job after the infrastructure recovers.
+Module jobs use the official Playwright browser image pinned to the same version as the project's Playwright dependency. This avoids reinstalling browser/system packages from OS mirrors on each run. A runtime version check fails if the dependency and image drift apart; Python is provided separately for the existing import and preview tests. Every suite retains a job timeout and infrastructure failures still block verification.
 
 Branch protection, strict up-to-date requirements, access permissions and deployment settings are unchanged. The plan and results are recorded in each workflow run. Superseded runs for the same pull request are cancelled; independent suites run in parallel. Group related edits in one pull request and merge a shared-source change before updating dependent pull requests to avoid repeated synchronizations. This change supports a merge queue but does not enable one or add automatic merge authority.
 
