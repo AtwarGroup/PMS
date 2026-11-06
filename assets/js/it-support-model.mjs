@@ -7,7 +7,7 @@ export const terminal=s=>['closed','cancelled','rejected'].includes(s);
 export function archived(t,now=Date.now()){
  if(!terminal(t.state))return false;
  if(t.state!=='closed')return true;
- const completed=Date.parse(t.closed_at||t.updated_at||t.state_since);
+ const completed=Date.parse(t.closed_at||t.auto_closed_at||t.updated_at||t.state_since);
  return !Number.isFinite(completed)||Number(now)>=completed+7*86400000;
 }
 export const targetLabels={1:'4 ساعات فعلية',2:'8 ساعات عمل',3:'يومان عمل',4:'5 أيام عمل'};

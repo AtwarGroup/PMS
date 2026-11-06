@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createITTestDB} from './it-support-test-db.mjs';
+const {db,rpc,create,detail,action,ids}=await createITTestDB();
+const legacy=await create();await action(ids.fleet,legacy,'resolve',{note:'حل قديم قبل اعتماد مهلة الإغلاق التلقائي'});await db.query("update private.it_support_tickets set resolved_at=now()-interval '30 days'where id=$1",[legacy]);
+await db.exec(await readFile('supabase/migrations/20261106220359_it_support_business_hour_auto_close.sql','utf8'));
+assert(new Date((await detail(legacy)).ticket.auto_close_at)>new Date());await action(ids.driver,legacy,'close',{note:'تم تأكيد الحل القديم',rating:4});
+try{
+const row=async id=>(await detail(id)).ticket;
+const run=async()=>(await db.query('select private.it_support_solution_reminders() n')).rows[0].n;
+const a=await create();await action(ids.fleet,a,'resolve',{note:'تم إصلاح المشكلة وإعادة تشغيل الخدمة'});
+let t=await row(a);assert(t.auto_close_at&&t.confirmation_reminder_at);assert.equal(Number((await db.query('select private.it_work_minutes($1,$2) n',[t.confirmation_started_at,t.auto_close_at])).rows[0].n),2880);
+assert.equal(await run(),0);
+let notices=(await db.query("select * from public.notifications where it_support_ticket_id=$1 and title like 'تم تقديم الحل%'",[a])).rows;assert.equal(notices.length,1);assert(notices[0].message.includes('48 ساعة عمل'));
+await db.query("update private.it_support_tickets set confirmation_reminder_at=now()-interval '1 minute' where id=$1",[a]);assert.equal(await run(),1);assert.equal(await run(),0);
+await db.query("update private.it_support_tickets set confirmation_started_at=now()-interval '1 hour' where id=$1",[a]);
+await action(ids.fleet,a,'comment',{note:'ملاحظة داخلية لا تجدد مهلة الموظف',internal:true});const old=(await row(a)).confirmation_started_at;assert(new Date(old)<new Date(Date.now()-3000000));
+await action(ids.driver,a,'comment',{note:'سأتحقق من عمل الخدمة وأرد عليكم'});t=await row(a);assert(new Date(t.confirmation_started_at)>new Date(old));assert.equal(t.confirmation_reminded_at,null);
+await action(ids.driver,a,'reopen',{note:'المشكلة لم تحل حتى الآن'});t=await row(a);assert.equal(t.state,'working');assert.equal(t.auto_close_at,null);assert.equal(await run(),0);
+await action(ids.fleet,a,'resolve',{note:'تم استكمال المعالجة وإصلاح المشكلة نهائيًا'});t=await row(a);await db.query("update private.it_support_tickets set auto_close_at=now()-interval '1 second' where id=$1",[a]);
+const before=(await rpc(ids.driver,'it_support_context')).capacity.total;assert.equal(await run(),1);assert.equal(await run(),0);t=await row(a);assert.equal(t.state,'closed');assert(t.auto_closed_at);assert.equal(t.rating,null);assert.equal((await rpc(ids.driver,'it_support_context')).capacity.total,before-1);
+const d=await detail(a);assert(d.messages.some(m=>m.system_event&&m.body.includes('أُغلق الطلب تلقائيًا')));assert.equal((await db.query("select count(*) n from private.it_support_events where ticket_id=$1 and action='auto_close'",[a])).rows[0].n,1);
+await action(ids.driver,a,'reopen',{note:'أعدت التجربة وما زالت المشكلة قائمة'});assert.equal((await row(a)).auto_closed_at,null);
+await action(ids.fleet,a,'resolve',{note:'تجربة التأكيد اليدوي قبل انتهاء المهلة'});await action(ids.driver,a,'close',{note:'تأكدت من نجاح الحل',rating:4});assert.equal((await row(a)).auto_closed_at,null);assert.equal(await run(),0);
+const purchase=await create({service_key:'purchase',quantity:1,quote_provider:'specialist'});await db.query("update private.it_support_tickets set state='resolved',resolved_at=now()-interval '30 days'where id=$1",[purchase]);assert.equal((await row(purchase)).auto_close_at,null);await run();assert.equal((await row(purchase)).state,'resolved');
+assert.equal(new Date((await db.query("select private.it_work_add('2026-11-05 14:00:00+00',2880)d")).rows[0].d).toISOString(),'2026-11-12T08:00:00.000Z');
+await db.exec('begin;set local role authenticated');await assert.rejects(db.query('select private.it_support_solution_reminders()'),/permission denied/);await db.exec('rollback');
+assert.equal(new Date((await db.query("select private.it_work_add('2026-11-05 13:00:00+00',240)d")).rows[0].d).toISOString(),'2026-11-07T08:00:00.000Z');
+assert.equal(new Date((await db.query("select private.it_work_add('2026-09-22 14:00:00+00',60)d")).rows[0].d).toISOString(),'2026-09-24T06:00:00.000Z');
+console.log('PASS 48 business-hour clock, single reminder, owner reply renewal, internal reply isolation, reopen cancellation, idempotent automatic closure, system transcript, no invented rating, capacity released, manual closure and purchase exclusion.');
+}finally{await db.close();}
