@@ -8,6 +8,18 @@ export function financeRequestView(detail,context){
  const ids=new Set(quotes.flatMap(({quote:q})=>[...['parts','labor'].flatMap(k=>quoteFileIds(q,k)),q.file_id].filter(Boolean)));
  return {finance,quotes,files:(detail.files||[]).filter(f=>!finance||!['quote','quote_parts','quote_labor'].includes(f.kind)||ids.has(f.id))};
 }
+export function hasAdvanceVoucher(detail){
+ const r=detail.request;
+ return r.route==='large'&&((r.state==='awaiting_advance'&&Number(r.approved)>Number(r.advance))||(Number(r.advance)>0&&(detail.payments||[]).some(p=>p.kind==='advance'&&Number(p.amount)>0)));
+}
+export function paymentVoucherModel(data){
+ const {request:r,payments=[]}=data.detail,advance=data.voucher_kind==='advance'||r.route==='large';
+ const pending=advance&&r.state==='awaiting_advance'&&Number(r.approved)>Number(r.advance);
+ const payment=pending?null:payments.filter(p=>p.kind===(advance?'advance':'reimbursement')).at(-1);
+ const amount=advance?(pending?Math.round((Number(r.approved)-Number(r.advance))*100)/100:Number(payment?.amount)):Number(r.invoice_total);
+ if(!Number.isFinite(amount)||amount<=0)throw Error('بيانات أمر الصرف غير مكتملة.');
+ return {advance,payment,paid:Boolean(payment),amount};
+}
 const units=['','واحد','اثنان','ثلاثة','أربعة','خمسة','ستة','سبعة','ثمانية','تسعة'];
 function under1000(n){
  const out=[];if(n>=100){out.push(['','مائة','مائتان','ثلاثمائة','أربعمائة','خمسمائة','ستمائة','سبعمائة','ثمانمائة','تسعمائة'][Math.floor(n/100)]);n%=100;}
@@ -31,7 +43,8 @@ export function canvasPDF(canvas){
 }
 async function imageAt(path){const img=new Image();img.src=new URL(path,import.meta.url).href;await img.decode();return img;}
 export async function reimbursementCanvas(data){
- const {request:r,events=[],payments=[]}=data.detail;const q=r.quotes?.[Number(r.selected_quote)];if(!q||!Number(r.invoice_total))throw Error('بيانات الاستعاضة غير مكتملة.');
+ const {request:r,events=[],payments=[]}=data.detail;const q=r.quotes?.[Number(r.selected_quote)];if(!q)throw Error('بيانات العرض المعتمد غير مكتملة.');
+ const {advance,payment,paid,amount}=paymentVoucherModel(data);
  const [atwar,tirador]=await Promise.all([imageAt('../../logo.png'),imageAt('../images/tirador-logo.png')]);await document.fonts.ready;
  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,1240,1754);
  const ink='#102b4e',muted='#53657b',blue='#304394',line='#d7e1ec';const L=78,R=1162,W=R-L;
@@ -43,16 +56,16 @@ export async function reimbursementCanvas(data){
  function pair(label,value,x,y,width=500){text(label,x,y,21,muted);paragraph(value,x,y+34,width,25,2);}
  function logo(img,x,y,maxW,maxH){const k=Math.min(maxW/img.width,maxH/img.height);c.drawImage(img,x+(maxW-img.width*k)/2,y+(maxH-img.height*k)/2,img.width*k,img.height*k);}
  logo(atwar,R-260,56,260,120);logo(tirador,L,56,250,120);text('ATWAR ONE',620,103,29,blue,'center',true);text('إدارة أسطول السيارات',620,143,23,muted,'center');rule(196);
- text('طلب صرف استعاضة — صيانة سيارة',620,249,35,ink,'center',true);
- const payment=payments.filter(p=>p.kind==='reimbursement').at(-1),paid=Boolean(payment);text(paid?'تم الصرف — نسخة توثيقية':'طلب صرف — لم يتم الصرف',620,291,25,paid?'#08734c':'#9a5b08','center',true);
+ text(advance?'أمر صرف مسبق — صيانة سيارة':'طلب صرف استعاضة — صيانة سيارة',620,249,35,ink,'center',true);
+ text(paid?'تم الصرف — نسخة توثيقية':'طلب صرف — لم يتم الصرف',620,291,25,paid?'#08734c':'#9a5b08','center',true);
  text(`رقم الطلب: ${r.number}  |  إصدار البيانات: ${r.revision}`,R,337,23);text(`تاريخ النموذج: ${date(data.issued_at)}`,L,337,23,muted,'left');
  section('بيانات المستفيد والسيارة',365);pair('المستفيد',data.employee_name,R-16,440);pair('الرقم الوظيفي / الإدارة',`${data.employee_code||'—'} / ${data.department||'—'}`,L+510,440);
  pair('السيارة / اللوحة',`${data.vehicle_type||''} ${data.model||''} / ${data.plate||'—'}`,R-16,534);pair('قراءة العداد / تاريخ الطلب',`${r.odometer} كم / ${date(r.created_at)}`,L+510,534);
- section('تفاصيل الصيانة والعرض المعتمد',623);text(`${types[r.request_type]||'صيانة'}${maintenanceKinds[r.maintenance_kind]?' / '+maintenanceKinds[r.maintenance_kind]:''}`,R-16,700,23,muted);paragraph(r.description,R-16,740,W-32,25,2);text('تفاصيل الأعمال الكاملة والفاتورة محفوظة في الطلب الإلكتروني.',R-16,803,20,muted);
+ section('تفاصيل الصيانة والعرض المعتمد',623);text(`${types[r.request_type]||'صيانة'}${maintenanceKinds[r.maintenance_kind]?' / '+maintenanceKinds[r.maintenance_kind]:''}`,R-16,700,23,muted);paragraph(r.description,R-16,740,W-32,25,2);text(advance?'يُصرف المبلغ وفق العرض المعتمد، وتُرفع الفاتورة بعد تنفيذ الإصلاح.':'تفاصيل الأعمال الكاملة والفاتورة محفوظة في الطلب الإلكتروني.',R-16,803,20,muted);
  paragraph(`الورشة: ${q.supplier}`,R-16,850,740,24,2);text(`الجوال: ${q.phone||'—'}`,L+16,850,23,muted,'left');
  const cols=Array.from({length:4},(_,i)=>L+W*(3.5-i)/4);['قطع الغيار','أجرة اليد','الضريبة','إجمالي العرض'].forEach((s,i)=>text(s,cols[i],906,23,muted,'center'));[quoteIncludes(q,'parts')?money(q.parts):'—',quoteIncludes(q,'labor')?money(q.labor):'—',money(q.tax),money(quoteTotal(q))].forEach((s,i)=>text(s,cols[i],950,27,ink,'center',true));rule(975);
- c.fillStyle='#edf5f2';c.fillRect(L,997,W,110);text(`إجمالي الفاتورة: ${money(r.invoice_total)} ر.س`,R-20,1039,25);text(`مبلغ الاستعاضة: ${money(r.invoice_total)} ر.س`,R-20,1081,29,ink,'right',true);
- paragraph(amountInWords(r.invoice_total),R-16,1150,W-32,24,2);
+ c.fillStyle='#edf5f2';c.fillRect(L,997,W,110);text(advance?`المعتمد: ${money(r.approved)} ر.س | إجمالي المصروف: ${money(r.advance)} ر.س`:`إجمالي الفاتورة: ${money(r.invoice_total)} ر.س`,R-20,1039,25);text(`${advance?'مبلغ أمر الصرف':'مبلغ الاستعاضة'}: ${money(amount)} ر.س`,R-20,1081,29,ink,'right',true);
+ paragraph(amountInWords(amount),R-16,1150,W-32,24,2);
  const approvals=events.filter(e=>['approve','approve_exception','approve_increase','confirm_repair'].includes(e.action));text('الإجراءات المسجلة بالنظام',R-16,1234,23,ink,'right',true);paragraph(approvals.map(e=>`${e.action==='confirm_repair'?'تأكيد الإصلاح':'اعتماد'}: ${e.actor_name} (${date(e.created_at)})`).join(' • ')||'راجع سجل إجراءات الطلب',R-16,1273,W-32,21,2);
  section('الاعتمادات الورقية للصرف',1353);
  const signatures=[['إعداد المحاسب',data.accountant_name],['اعتماد رئيس الحسابات',data.chief_accountant_name],['اعتماد المدير المالي',data.finance_manager_name]];
@@ -60,3 +73,8 @@ export async function reimbursementCanvas(data){
  rule(1610);if(paid)paragraph(`توثيق الصرف: ${money(payment.amount)} ر.س | ${date(payment.created_at)} | المرجع: ${payment.reference}`,R,1643,W,16,2);else text('يُسلّم النموذج لموظف البنك للصرف بعد استكمال التوقيعات.',620,1651,21,muted,'center');text(`ATWAR ONE • FLEET-${r.number} • صفحة 1 من 1`,620,1698,19,muted,'center');return canvas;
 }
 export async function downloadReimbursementPDF(data){const canvas=await reimbursementCanvas(data);const url=URL.createObjectURL(canvasPDF(canvas));const a=document.createElement('a');a.href=url;a.download=`fleet-reimbursement-${data.detail.request.number}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+
+export async function downloadAdvancePDF(data){
+ const canvas=await reimbursementCanvas(data),url=URL.createObjectURL(canvasPDF(canvas));
+ const a=document.createElement('a');a.href=url;a.download=`fleet-advance-${data.detail.request.number}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
