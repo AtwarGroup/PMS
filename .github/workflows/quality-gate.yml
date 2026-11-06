@@ -66,7 +66,15 @@ jobs:
           node scripts/test-action-history.mjs
           node scripts/test-business-conflict.mjs
       - name: Install browser
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Azure's Ubuntu mirror stalled on font downloads; retain all browser
+          # dependencies and tests while using the official Ubuntu HTTPS mirror.
+          for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
+            if [ -f "$source_file" ]; then
+              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
+            fi
+          done
+          npx playwright install --with-deps chromium
       - name: Test shared attachment preview and download
         run: node scripts/test-attachment-viewer-ui.mjs
       - name: Test driver, manager, fleet and accountant interfaces
