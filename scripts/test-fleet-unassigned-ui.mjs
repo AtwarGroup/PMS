@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {chromium,expect} from '@playwright/test';
+import {startPreview} from './fleet-preview.mjs';
+const app=await startPreview();let browser;
+try{
+ const car=(await app.rpc('fleet','fleet_snapshot')).vehicles[0];
+ browser=await chromium.launch({args:['--no-sandbox','--disable-dev-shm-usage']});
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',r=>r.request().url().startsWith(app.url)||/^(data:|blob:)/.test(r.request().url())?r.continue():r.abort());
+ await page.goto(app.url+'/fleet/index.html?qa=fleet&followup=list');
+ await expect(page.locator('#unassignedFollowup')).toBeVisible();
+ await page.locator('[data-release-vehicle="'+car.id+'"]').click();
+ const form=page.locator('#unassignedForm');
+ await form.locator('[name=release_note]').fill('استلام السيارة حسب المحضر 123');
+ await form.locator('[name=reason]').selectOption('sale_pending');
+ await form.locator('[name=location]').fill('موقف المعرض');
+ await form.locator('[name=next_action]').fill('تقييم سعر البيع');
+ await form.locator('[name=action_due]').fill('2026-01-01');
+ await form.getByRole('button',{name:'تأكيد فك الإسناد'}).click();
+ await expect(page.locator('#unassignedFollowup')).toContainText('لم يتم التحقق');
+ await expect(page.locator('#unassignedFollowup')).toContainText('إجراء متأخر');
+ await page.locator('[data-unassigned="'+car.id+'"]').click();
+ const image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=20;c.height=20;c.getContext('2d').fillRect(0,0,20,20);return c.toDataURL().split(',')[1];});
+ await form.locator('[name=photo]').setInputFiles({name:'inspection.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
+ await form.locator('[name=note]').fill('تم التحقق من وجود السيارة');
+ await form.getByRole('button',{name:'حفظ المتابعة'}).click();
+ await expect(page.locator('#fleetDialog'),await page.locator('#dialogStatus').textContent()).not.toBeVisible();
+ await expect(page.locator('#unassignedFollowup')).not.toContainText('لم يتم التحقق');
+ await expect(page.locator('#unassignedFollowup')).toContainText('إجراء متأخر');
+ await page.locator('[data-unassigned="'+car.id+'"]').click();
+ await page.getByRole('button',{name:'عرض آخر صورة'}).click();
+ await expect(page.locator('#unassignedEvidence img')).toBeVisible();
+ assert.deepEqual(errors,[]);
+ console.log('PASS mobile unassigned list, release, photo verification, evidence preview and independent overdue action');
+}finally{await browser?.close();await app.close();}
