@@ -1,9 +1,0 @@
-module.exports={
-  content:[
-    './tasks/index.html',
-    './assets/js/tasks-page.js',
-    './assets/js/shell-components.js'
-  ],
-  theme:{extend:{}},
-  plugins:[]
-};
