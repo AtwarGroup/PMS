@@ -5,28 +5,50 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  merge_group:
+    types: [checks_requested]
+  schedule:
+    # 02:30 Asia/Riyadh, every day. Always runs every suite.
+    - cron: '30 23 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: atwar-quality-${{ github.ref }}
-  cancel-in-progress: true
+  group: atwar-quality-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 jobs:
+  plan:
+    name: Select affected verification suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      suites: ${{ steps.scope.outputs.suites }}
+      kind: ${{ steps.scope.outputs.kind }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: scope
+        run: node scripts/ci/plan.mjs
+
   audit:
+    # Retain the existing required check name. Fast regressions always run.
     name: System and workflow audit
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Install pinned audit dependencies
-        run: npm ci --ignore-scripts
+          cache: npm
+      - run: npm ci --ignore-scripts
       - name: Run every JavaScript regression test
         shell: bash
         run: |
@@ -37,81 +59,52 @@ jobs:
             echo "::endgroup::"
           done
 
-  fleet:
-    name: Fleet database and browser workflow
-    # Playwright 1.56.1 supports Ubuntu 24.04; ubuntu-latest may move ahead.
+  checks:
+    name: Module verification (${{ matrix.suite }})
+    needs: plan
+    if: ${{ needs.plan.outputs.suites != '[]' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        suite: ${{ fromJSON(needs.plan.outputs.suites) }}
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --ipc=host
     timeout-minutes: 25
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - name: Install pinned test dependencies
-        run: npm ci --ignore-scripts
-      - name: Test offline vehicle mapping
-        run: python scripts/test-fleet-import.py
-      - name: Test PostgreSQL permissions and financial workflows
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - name: Verify the pinned browser runtime
         run: |
-          npm run test:fleet:db
-          npm run test:recruitment:db
-          npm run test:recruitment:release
-          node scripts/test-it-v2.mjs
-          node scripts/test-it-followup.mjs
-          node scripts/test-it-auto-close.mjs
-          node scripts/test-fleet-alerts.mjs
-          node scripts/test-action-history.mjs
-          node scripts/test-business-conflict.mjs
-      - name: Install browser
-        run: |
-          # Azure's Ubuntu mirror stalled on font downloads; retain all browser
-          # dependencies and tests while using the official Ubuntu HTTPS mirror.
-          for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do
-            if [ -f "$source_file" ]; then
-              sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' "$source_file"
-            fi
-          done
-          npx playwright install --with-deps chromium
-      - name: Test shared attachment preview and download
-        run: node scripts/test-attachment-viewer-ui.mjs
-      - name: Test driver, manager, fleet and accountant interfaces
-        run: |
-          npm run test:fleet:ui
-          node scripts/test-it-auto-close-ui.mjs
-      - name: Test notification recovery after browser history navigation
-        run: |
-          node tests/browser/notification-bfcache.cjs
-          node tests/browser/unified-notifications.cjs
-      - name: Generate current visual fixtures
-        run: |
-          node scripts/daily-work-preview.mjs
-          node scripts/library-preview.mjs
-          node scripts/employee-change-preview.mjs
-          node scripts/project-preview.mjs
-          node scripts/job-document-preview.mjs
-      - name: Test employee directory and per-account units
-        run: |
-          python3 -m http.server 8765 >/tmp/atwar-browser-server.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid"' EXIT
-          node tests/browser/employee-access.cjs
-          node tests/browser/account-modules.cjs
-          node tests/browser/home-resilience.cjs
-          node tests/browser/data-state.cjs
-          node tests/browser/shell-loading.cjs
-          node tests/browser/legacy-redirects.cjs
-          node tests/browser/theme-legibility.cjs
-          node tests/browser/theme-contract.cjs
-          node tests/browser/unified-page-tabs.cjs
-          node tests/browser/theme-dynamic.cjs
-          node tests/browser/theme-runtime.cjs
-          node tests/browser/policy-editor.cjs
-          node tests/browser/compensation-reader.cjs
-          node tests/browser/leave-reader.cjs
-          PORT=4174 node scripts/recruitment-preview.mjs >/tmp/atwar-recruitment-theme.log 2>&1 &
-          recruitment_pid=$!
-          trap 'kill "$server_pid" "$recruitment_pid"' EXIT
-          node tests/browser/theme-recruitment.cjs
+          node -e "if(require('@playwright/test/package.json').version!=='1.56.1')throw Error('Update the pinned browser image together with Playwright')"
+          python3 --version
+      - name: Run the selected module suite
+        env:
+          CI_SUITE: ${{ matrix.suite }}
+        run: node scripts/ci/run-suite.mjs "$CI_SUITE"
+
+  fleet:
+    # Stable required gate; failed/cancelled work and missing plans cannot pass.
+    name: Fleet database and browser workflow
+    needs: [plan, audit, checks]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Require successful classification, audit and selected suites
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/ci/check-gate.mjs
