@@ -1,3 +1,4 @@
+import {initUnassigned} from './fleet-unassigned.mjs?v=20261107.1';
 import {financeRequestView,downloadReimbursementPDF,hasAdvanceVoucher,downloadAdvancePDF} from './fleet-reimbursement-pdf.mjs?v=20261107.1';
 import {filterFleetVehicles} from './fleet-registry.mjs?v=1';
 import {openFleetAttachment} from './fleet-file-viewer.mjs?v=3-arabic';
@@ -89,6 +90,7 @@ async function load() {
   try {
   context = await rpc("fleet_snapshot");
   render();
+  await unassigned.refresh(context);
   if(operations)await operations.refresh();
   workboard?.setLoading(false);
   workboard?.render();
@@ -102,7 +104,7 @@ async function load() {
 }
 function render() {
   $('newRequest').hidden=!context.can_create;
-  for(const [tab,allowed] of [['vehicles',context.can_view_vehicles],['documents',context.can_view_documents]]){
+  for(const [tab,allowed] of [['vehicles',context.can_view_vehicles||context.supervised_owner_id],['documents',context.can_view_documents]]){
     const button=document.querySelector(`[data-tab="${tab}"]`);
     button.hidden=!allowed;
     if(!allowed)$(tab).hidden=true;
@@ -158,13 +160,14 @@ function renderVehicleFilterOptions(){
  const drivers=[...new Map(context.vehicles.filter(v=>v.driver_id).map(v=>[v.driver_id,v.driver_name||'سائق مسجل'])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'ar'));
  select('vehicleDriverFilter',[['unassigned','غير مسندة'],...drivers],'جميع السائقين');
 }
+const unassigned=initUnassigned({rpc,show,run,esc,load,status});
 function renderVehicles(){
  if(!context)return;
  const rows=filterFleetVehicles(context.vehicles,{query:$('vehicleSearch').value,city:$('vehicleCityFilter').value,type:$('vehicleTypeFilter').value,driver:$('vehicleDriverFilter').value,active:$('vehicleActiveFilter').value,operation:$('vehicleOperationFilter').value});
   $("vehicleRows").innerHTML = rows
     .map(
       (v) =>
-        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td><b>${esc(v.registration_number||"—")}</b><small>هوية المالك: ${esc(v.owner_identity_number||"—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA-u-nu-latn")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}<small>${esc({available:"متاحة",maintenance:"تحت الصيانة",stopped:"متوقفة"}[v.operational_status]||"متاحة")}</small></td><td>${button("ملف السيارة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
+        `<tr><td><b>${esc(v.plate)}</b><small>${esc(v.vin || "—")}</small></td><td><b>${esc(v.registration_number||"—")}</b><small>هوية المالك: ${esc(v.owner_identity_number||"—")}</small></td><td>${esc(v.vehicle_type)}<small>${esc(v.model)}</small></td><td>${esc(v.driver_name || "غير مسندة")}</td><td>${esc(v.city || "—")}</td><td>${Number(v.odometer).toLocaleString("ar-SA-u-nu-latn")} كم</td><td>${v.active ? "نشطة" : "موقوفة"}<small>${esc({available:"متاحة",maintenance:"تحت الصيانة",stopped:"متوقفة"}[v.operational_status]||"متاحة")}</small></td><td>${button("ملف السيارة", `data-history="${esc(v.id)}"`, true)} ${context.can_manage ? button("تعديل", `data-vehicle="${esc(v.id)}"`, true) : ""} ${context.can_correct && v.driver_id ? button("فك الإسناد", `data-release-vehicle="${esc(v.id)}"`, true) : ""}</td></tr>`,
     )
     .join("");
   $("vehicleEmpty").hidden = rows.length > 0;
@@ -436,6 +439,12 @@ document.querySelector("main").addEventListener("click", async (e) => {
     v = e.target.closest("[data-vehicle]"),
     h = e.target.closest("[data-history]");
   try {
+    const release=e.target.closest('[data-release-vehicle]');
+    if(release){
+      const vehicle=context.vehicles.find(row=>row.id===release.dataset.releaseVehicle);
+      if(vehicle)await unassigned.open(vehicle.id,vehicle);
+      return;
+    }
     if (r) await openRequest(r.dataset.request);
     if (v) vehicleEditor(v.dataset.vehicle);
     if (h) await operations.vehicleProfile(h.dataset.history);
@@ -496,6 +505,10 @@ try {
     await load();
     if(context.can_view_documents)await initFleetDocuments({ rpc, show, run });
     const target=new URLSearchParams(location.search);
+    if(target.get("followup")){
+      switchTab("vehicles");
+      if(target.get("followup")!=="list")await unassigned.open(target.get("followup"));
+    }
     if(target.get("request"))await openRequest(target.get("request"));
     if(target.get("handover")){switchTab("handovers");await operations.openHandover(target.get("handover"));}
   }
